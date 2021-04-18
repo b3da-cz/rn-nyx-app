@@ -14,7 +14,7 @@ import DocumentPicker from 'react-native-document-picker'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import Icon from 'react-native-vector-icons/Feather'
 import messaging from '@react-native-firebase/messaging'
-import { ComposePostModal, confirm, DiscussionView, HistoryView, Nyx, Styling, Storage } from './'
+import {ComposePostModal, confirm, DiscussionView, HistoryView, Nyx, Styling, Storage, NotificationsView} from './';
 
 type Props = {
   isDarkMode: boolean,
@@ -27,6 +27,7 @@ export class MainView extends Component<Props> {
       activeView: 'history',
       title: 'History',
       activeDiscussionId: 0,
+      activePostId: 0,
       isFetching: false,
       isModalImagesVisible: false,
       images: [],
@@ -36,6 +37,7 @@ export class MainView extends Component<Props> {
       animatedViewLeft_history: new Animated.Value(-Styling.metrics.screen.width),
       animatedViewLeft_bookmarks: new Animated.Value(-Styling.metrics.screen.width),
       animatedViewLeft_discussion: new Animated.Value(-Styling.metrics.screen.width),
+      animatedViewLeft_notifications: new Animated.Value(-Styling.metrics.screen.width),
     }
     this.refDiscussionView = null
     this.refComposePostModal = null
@@ -152,6 +154,8 @@ export class MainView extends Component<Props> {
         return 'Bookmarks'
       case 'discussion':
         return 'Discussion'
+      case 'notifications':
+        return 'Notifications'
     }
   }
 
@@ -180,6 +184,13 @@ export class MainView extends Component<Props> {
       await this.refDiscussionView.reloadDiscussionLatest()
     }
     this.setState({ isFetching: false })
+  }
+
+  async showPost(discussionId, postId?) {
+    this.switchView('discussion', { activeDiscussionId: discussionId, activePostId: postId || 0 })
+    // if (this.refDiscussionView) {
+    //   await this.refDiscussionView.jumpToPost(discussionId, postId)
+    // }
   }
 
   render() {
@@ -222,11 +233,16 @@ export class MainView extends Component<Props> {
                   {/*<Text style={{color: Styling.colors.primary, fontSize: 24, lineHeight: 60, width: 60, paddingHorizontal: 5, textAlign: 'right'}}>+</Text>*/}
                 </TouchableOpacity>
               ) : (
-                <View style={{ width: 60, lineHeight: 60 }}>
-                  <Text style={{ color: 'red', fontSize: 24, lineHeight: 60, textAlign: 'right' }}>
-                    {this.state.notificationsUnread > 0 ? this.state.notificationsUnread : ''}
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  style={{ alignItems: 'center', justifyContent: 'center' }}
+                  accessibilityRole="button"
+                  onPress={() => this.switchView('notifications')}>
+                  <View style={{ width: 60, lineHeight: 60 }}>
+                    <Text style={{ color: 'red', fontSize: 24, lineHeight: 60, textAlign: 'right' }}>
+                      {this.state.notificationsUnread}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
               )}
             </View>
             {this.state.activeView === 'history' && (
@@ -258,6 +274,21 @@ export class MainView extends Component<Props> {
                 />
               </Animated.View>
             )}
+            {this.state.activeView === 'notifications' && (
+              <Animated.View
+                style={[
+                  Styling.groups.themeView(false),
+                  { width: '100%', height: '100%' },
+                  { left: this.state.animatedViewLeft_notifications },
+                ]}>
+                <NotificationsView
+                  isDarkMode={this.props.isDarkMode}
+                  nyx={this.nyx}
+                  onImages={(images, i) => this.showImages(images, i)}
+                  onNavigation={({ discussionId, postId }) => this.showPost(discussionId, postId)}
+                />
+              </Animated.View>
+            )}
             {this.state.activeView === 'discussion' && (
               <Animated.View
                 style={[
@@ -270,6 +301,7 @@ export class MainView extends Component<Props> {
                   isDarkMode={this.props.isDarkMode}
                   nyx={this.nyx}
                   id={this.state.activeDiscussionId}
+                  postId={this.state.activePostId}
                   onDiscussionFetched={({ title, uploadedFiles }) => this.setState({ title, uploadedFiles })}
                   onImages={(images, i) => this.showImages(images, i)}
                 />

@@ -111,7 +111,6 @@ export class Nyx {
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      console.warn(res, this.auth); // TODO: remove
       return res
     } catch (e) {
       console.warn('get notifications error', e)
@@ -139,11 +138,7 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}/${vote}`, {
         method: 'POST',
         referrerPolicy: 'no-referrer',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.auth.token}`,
-        },
+        headers: this.getHeaders(),
       }).then(resp => resp.json())
       console.warn(res, this.auth); // TODO: remove
       return res

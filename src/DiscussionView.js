@@ -7,6 +7,7 @@ import { Nyx, Styling, generateUuidV4, PostComponent } from './'
 
 type Props = {
   id: number,
+  postId?: number,
   isDarkMode: boolean,
   nyx: Nyx,
   onDiscussionFetched: Function,
@@ -20,10 +21,16 @@ export class DiscussionView extends Component<Props> {
       discussionId: null,
       posts: [],
       isFetching: false,
-      scrollHeight: 0,
     }
     this.refScroll = null
-    setTimeout(() => this.reloadDiscussionLatest(), 1000)
+  }
+
+  componentDidMount() {
+    if (this.props.postId > 0) {
+      this.jumpToPost(this.props.id, this.props.postId)
+    } else {
+      this.reloadDiscussionLatest()
+    }
   }
 
   async reloadDiscussionLatest() {
@@ -67,7 +74,7 @@ export class DiscussionView extends Component<Props> {
     }`
     const uploadedFiles = res.discussion_common.waiting_files || []
     this.setState({
-      title: title,
+      title,
       posts: newPosts,
       isFetching: false,
     })
@@ -93,7 +100,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   getStoredPostById(postId) {
-    return this.state.posts.filter(p => p.id == postId)[0]
+    return this.state && this.state.posts && this.state.posts.filter(p => p.id == postId)[0] // this.state check needed for navigating from notification
   }
 
   scrollToPost(post, animated = false) {
