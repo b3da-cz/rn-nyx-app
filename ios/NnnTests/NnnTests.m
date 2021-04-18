@@ -7,11 +7,11 @@
 #define TIMEOUT_SECONDS 600
 #define TEXT_TO_LOOK_FOR @"Welcome to React"
 
-@interface NyxTests : XCTestCase
+@interface NnnTests : XCTestCase
 
 @end
 
-@implementation NyxTests
+@implementation NnnTests
 
 - (BOOL)findSubviewInView:(UIView *)view matching:(BOOL(^)(UIView *view))test
 {
