@@ -11,10 +11,14 @@
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.15.2",
+    "@react-native-firebase/app": "^11.3.0",
+    "@react-native-firebase/messaging": "^11.3.0",
     "node-html-parser": "^3.1.5",
     "react": "17.0.1",
     "react-native": "0.64.0",
     "react-native-autoheight-webview": "^1.5.8",
+    "react-native-device-info": "^8.1.0",
     "react-native-document-picker": "^5.0.3",
     "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-swipeable-row": "^0.8.1",

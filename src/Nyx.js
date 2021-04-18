@@ -1,27 +1,40 @@
+import DeviceInfo from 'react-native-device-info'
+import { confirm, Storage } from './'
+
 export class Nyx {
   constructor(userId) {
     this.userUd = userId
-    this.auth = {
-      token: 'ZwiO3LfRjljXTT7ZpOEgBzAaMuKd27VA',
-      confirmationCode: 'jbRVnSAp',
-    }
+    this.auth = {}
     this.store = {}
     // this.auth = {
     //   token: window.localStorage.getItem('nyx_auth_token'),
     //   confirmationCode: window.localStorage.getItem('nyx_auth_confirmation_code'),
     // }
+    this.userAgent = `Nnn v${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
     this.init()
   }
 
   async init() {
+    let auth = await Storage.getAuth()
+    // console.warn({auth}, `${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`); // TODO: remove
     let isAuthConfirmed = true
-    if (!this.auth.token || this.auth.token === 'undefined') {
-      isAuthConfirmed = await this.createAuthToken()
+    if (!auth) {
+      // auth = {
+      //   token: 'ZwiO3LfRjljXTT7ZpOEgBzAaMuKd27VA', // todo
+      //   confirmationCode: 'jbRVnSAp',
+      // }
+      auth = {
+        token: null,
+        confirmationCode: null,
+      }
     }
-    // console.warn({isAuthConfirmed}); // TODO: remove
-    if (isAuthConfirmed) {
-      // const history = await this.getNotifications()
-      // console.warn({history}); // TODO: remove
+    this.auth = auth
+
+    if (!this.auth.token || this.auth.token === 'undefined') {
+      isAuthConfirmed = await this.createAuthToken() // todo test and cleanup heavily
+      if (isAuthConfirmed) {
+        await Storage.setAuth(this.auth)
+      }
     }
   }
 
@@ -30,6 +43,9 @@ export class Nyx {
     try {
       const res = await fetch(`https://nyx.cz/api/create_token/${this.userUd}`, {
         method: 'POST',
+        headers: {
+          'User-Agent': this.userAgent,
+        },
       }).then(resp => resp.json())
       this.auth = {
         token: res.token,
@@ -38,7 +54,7 @@ export class Nyx {
       window.localStorage.setItem('nyx_auth_token', this.auth.token)
       window.localStorage.setItem('nyx_auth_confirmation_code', this.auth.confirmationCode)
       console.warn(res, this.auth); // TODO: remove
-      const isAuthConfirmed = confirm(`Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`)
+      const isAuthConfirmed = await confirm('Confirm auth in Nyx settings', `Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`)
       // console.warn(isAuthConfirmed); // TODO: remove
       if (isAuthConfirmed) {
         return true
@@ -562,6 +578,26 @@ export class Nyx {
       return res
     } catch (e) {
       console.warn('get notifications error', e); // TODO: remove
+    }
+    return null
+  }
+
+  async subscribeForFCM(fcmToken) {
+    // console.warn('register for FCM ', this.auth, fcmToken); // TODO: remove
+    try {
+      const res = await fetch(`https://nyx.cz/api/register_for_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.auth.token}`,
+        },
+      }).then(resp => resp.json())
+      // console.warn(res, this.auth); // TODO: remove
+      return res
+    } catch (e) {
+      console.warn('fcm sub error', e); // TODO: remove
     }
     return null
   }

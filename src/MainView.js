@@ -3,7 +3,8 @@ import { ActivityIndicator, Alert, Animated, BackHandler, Text, TextInput, Touch
 import DocumentPicker from 'react-native-document-picker'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import Icon from 'react-native-vector-icons/Feather'
-import { DiscussionView, HistoryView, Nyx, Styling } from './'
+import messaging from '@react-native-firebase/messaging'
+import { confirm, DiscussionView, HistoryView, Nyx, Styling, Storage } from './'
 
 type Props = {
   isDarkMode: boolean,
@@ -39,6 +40,10 @@ export class MainView extends Component<Props> {
     })
   }
 
+  componentDidMount() {
+    this.initFCM()
+  }
+
   async initNyx() {
     // console.warn(`init nyx`); // TODO: remove
     this.nyx = new Nyx('B3DA')
@@ -63,7 +68,29 @@ export class MainView extends Component<Props> {
     // setTimeout(() => this.slideReset(), 6000)
     // setTimeout(() => this.slideIn(), 7000)
     // setTimeout(() => this.slideOut(), 8000)
+  }
 
+  async initFCM() {
+    // FCM foreground {"notification":{"android":{},"body":"Budes to portovat na iOS? Docela by me zajimala performance Flutter vs. React Native.","title":"LUCIEN"},"sentTime":1618761935185,"data":{"type":"new_mail"},"from":"68046947866","messageId":"0:1618761935204425%6045de3f6045de3f","ttl":2419200,"collapseKey":"net.b3da.nnn"}
+    try {
+      let config = await Storage.getConfig()
+      if (!config) {
+        const fcmToken = await messaging().getToken()
+        const subFCMRes = await this.nyx.subscribeForFCM(fcmToken)
+        config = {
+          fcmToken,
+          isFCMSubscribed: !subFCMRes.error,
+        }
+        await Storage.setConfig(config)
+      }
+      await messaging().getInitialNotification()
+      const unsubscribeFromFCM = messaging().onMessage(async remoteMessage => {
+        console.warn('FCM foreground', JSON.stringify(remoteMessage)); // todo
+        if (remoteMessage.data && remoteMessage.data.type === 'new_mail') {
+          Alert.alert(remoteMessage.notification.title, remoteMessage.notification.body)
+        }
+      });
+    } catch (e) { console.warn(e) }
   }
 
   slideReset(view) {
