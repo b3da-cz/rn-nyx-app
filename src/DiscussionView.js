@@ -68,12 +68,13 @@ export class DiscussionView extends Component<Props> {
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
+    const uploadedFiles = res.discussion_common.waiting_files || []
     this.setState({
       title: title,
       posts: newPosts,
       isFetching: false,
     })
-    this.props.onDiscussionFetched({ title })
+    this.props.onDiscussionFetched({ title, uploadedFiles })
     return newPosts
   }
 
@@ -83,6 +84,9 @@ export class DiscussionView extends Component<Props> {
     for (const item of [...posts, ...this.state.posts]) {
       if (!map.has(item.id)) {
         map.set(item.id, true)
+        if (!item.uuid) {
+          item.uuid = generateUuidV4()
+        }
         newPosts.push(item)
       }
     }
@@ -199,13 +203,18 @@ export class DiscussionView extends Component<Props> {
     this.props.onImages(images, imgIndex)
   }
 
+  onPostDelete(postId) {
+    const posts = this.state.posts.filter(p => p.id != postId)
+    this.setState({ posts })
+  }
+
   render() {
     return (
       <FlatList
         ref={r => (this.scrollRef = r)}
         data={this.state.posts}
         extraData={this.state}
-        keyExtractor={(item, index) => `${item.id}`}
+        keyExtractor={(item, index) => `${item.uuid}`}
         refreshing={this.state.isFetching}
         onRefresh={() => this.loadDiscussionTop()}
         onEndReached={() => this.loadDiscussionBottom()}
@@ -222,6 +231,7 @@ export class DiscussionView extends Component<Props> {
             onLayout={(postId, y) => (this.postCoords[postId] = y)}
             onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
             onImages={(images, i) => this.showImages(images, i)}
+            onDelete={postId => this.onPostDelete(postId)}
           />
         )}
       />
