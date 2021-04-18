@@ -1,4 +1,4 @@
-package com.nyx;
+package net.b3da.nnn;
 
 import com.facebook.react.ReactActivity;
 
@@ -10,6 +10,6 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "Nyx";
+    return "Nnn";
   }
 }
