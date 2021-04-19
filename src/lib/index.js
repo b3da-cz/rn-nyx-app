@@ -1,4 +1,5 @@
 export * from './Nyx'
+export * from './Parser'
 export * from './Styling'
 export * from './Storage'
 export * from './Util'

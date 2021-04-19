@@ -33,7 +33,7 @@ export class LoginView extends Component<Props> {
         contentInsetAdjustmentBehavior="automatic"
         style={[
           Styling.groups.themeView(this.props.isDarkMode),
-          { maxHeight: Math.max(Styling.metrics.window.height, Styling.metrics.window.width) - 60 },
+          { maxHeight: Math.max(Styling.metrics.window().height, Styling.metrics.window().width) - 60 },
         ]}>
         {this.state.isUsernameConfirmed && this.props.confirmationCode && this.props.confirmationCode.length > 0 ? (
           <View>

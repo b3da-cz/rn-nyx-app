@@ -12,20 +12,31 @@ export const Styling = {
     black: '#000',
   },
   metrics: {
-    window: {
+    window: () => ({
       height: Dimensions.get('window').height,
       width: Dimensions.get('window').width,
-    },
-    screen: {
+    }),
+    screen: () => ({
       height: Dimensions.get('screen').height,
       width: Dimensions.get('screen').width,
+    }),
+    block: {
+      xxsmall: 1,
+      xsmall: 2,
+      small: 5,
+      medium: 10,
+      large: 20,
+      xlarge: 30,
+      xxlarge: 50,
     },
     fontSize: {
-      XSMALL: 14,
-      SMALL: 16,
-      MEDIUM: 24,
-      LARGE: 32,
-      XLARGE: 40,
+      xxsmall: 8,
+      xsmall: 10,
+      small: 14,
+      medium: 16,
+      large: 18,
+      xlarge: 20,
+      xxlarge: 24,
     },
   },
   groups: {

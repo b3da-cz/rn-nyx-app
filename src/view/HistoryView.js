@@ -33,7 +33,7 @@ export class HistoryView extends Component<Props> {
         contentInsetAdjustmentBehavior="automatic"
         style={[
           Styling.groups.themeView(this.props.isDarkMode),
-          { maxHeight: Math.max(Styling.metrics.window.height, Styling.metrics.window.width) - 60 },
+          { maxHeight: Math.max(Styling.metrics.window().height, Styling.metrics.window().width) - 60 },
         ]}
         refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getHistory()} />}>
         <View>
@@ -66,7 +66,7 @@ export class HistoryView extends Component<Props> {
             <View
               style={[
                 {
-                  height: Styling.metrics.window.height - 60,
+                  height: Styling.metrics.window().height - 60,
                   width: '100%',
                   alignItems: 'center',
                   justifyContent: 'center',

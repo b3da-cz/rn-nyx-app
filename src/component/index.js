@@ -1,3 +1,7 @@
+export * from './CodeBlockComponent'
 export * from './ConfirmationDialog'
+export * from './ImageComponent'
+export * from './LinkComponent'
 export * from './PostComponent'
 export * from './PostHeaderComponent'
+export * from './VideoYoutubeComponent'

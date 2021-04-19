@@ -26,11 +26,11 @@ export class MainView extends Component<Props> {
       uploadedFiles: [],
       notificationsUnread: 0,
       confirmationCode: null,
-      animatedViewLeft_history: new Animated.Value(-Styling.metrics.screen.width),
-      animatedViewLeft_bookmarks: new Animated.Value(-Styling.metrics.screen.width),
-      animatedViewLeft_discussion: new Animated.Value(-Styling.metrics.screen.width),
-      animatedViewLeft_notifications: new Animated.Value(-Styling.metrics.screen.width),
-      animatedViewLeft_mail: new Animated.Value(-Styling.metrics.screen.width),
+      animatedViewLeft_history: new Animated.Value(-Styling.metrics.screen().width),
+      animatedViewLeft_bookmarks: new Animated.Value(-Styling.metrics.screen().width),
+      animatedViewLeft_discussion: new Animated.Value(-Styling.metrics.screen().width),
+      animatedViewLeft_notifications: new Animated.Value(-Styling.metrics.screen().width),
+      animatedViewLeft_mail: new Animated.Value(-Styling.metrics.screen().width),
     }
     this.refDiscussionView = null
     this.refComposePostModal = null
@@ -135,7 +135,7 @@ export class MainView extends Component<Props> {
 
   slideReset(view) {
     Animated.timing(this.state[`animatedViewLeft_${view}`], {
-      toValue: -Styling.metrics.screen.width,
+      toValue: -Styling.metrics.screen().width,
       duration: 0,
       useNativeDriver: false,
     }).start()
@@ -151,7 +151,7 @@ export class MainView extends Component<Props> {
 
   slideOut(view) {
     Animated.spring(this.state[`animatedViewLeft_${view}`], {
-      toValue: Styling.metrics.screen.width,
+      toValue: Styling.metrics.screen().width,
       friction: 9,
       useNativeDriver: false,
     }).start()
@@ -285,7 +285,7 @@ export class MainView extends Component<Props> {
                   color: Styling.colors.primary,
                   fontSize: 24,
                   lineHeight: 60,
-                  maxWidth: Styling.metrics.window.width - 120,
+                  maxWidth: Styling.metrics.window().width - 120,
                 }}
                 numberOfLines={1}>
                 {this.state.title}
