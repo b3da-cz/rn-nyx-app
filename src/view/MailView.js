@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { FlatList, Text, View } from 'react-native';
-import { Nyx, Styling } from './'
+import { Nyx, Styling } from '../lib'
 
 type Props = {
   isDarkMode: boolean,

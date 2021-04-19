@@ -3,18 +3,8 @@ import { AppState, Alert, Animated, BackHandler, Text, TouchableOpacity, Modal, 
 import ImageViewer from 'react-native-image-zoom-viewer'
 import Icon from 'react-native-vector-icons/Feather'
 import messaging from '@react-native-firebase/messaging'
-import {
-  ComposePostModal,
-  confirm,
-  DiscussionView,
-  HistoryView,
-  Nyx,
-  Styling,
-  Storage,
-  NotificationsView,
-  MailView,
-  LoginView,
-} from './'
+import { Nyx, Styling, Storage } from '../lib'
+import { ComposePostModal, DiscussionView, HistoryView, NotificationsView, MailView, LoginView } from '../view'
 
 type Props = {
   isDarkMode: boolean,
@@ -56,31 +46,46 @@ export class MainView extends Component<Props> {
   }
 
   componentDidMount() {
-    this.initFCM()
-    AppState.addEventListener('change', this.onAppStateChange)
+    this.listenForFCM()
+    // AppState.addEventListener('change', this.onAppStateChange)
   }
 
   componentWillUnmount() {
-    AppState.removeEventListener('change', this.onAppStateChange)
+    // AppState.removeEventListener('change', this.onAppStateChange)
+    if (this.backgroundNotificationListener) {
+      this.backgroundNotificationListener();
+    }
+    if (this.closedAppNotificationListener) {
+      // this.closedAppNotificationListener(); hmm is not unsub fn..
+    }
+    if (this.onMessageListener) {
+      this.onMessageListener();
+    }
   }
 
-  async onAppStateChange(nextAppState) {
-    if (!this.nyx) {
-      return
-    }
+  async listenForFCM() {
     try {
-      if (
-        // this.state.appState.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
-        const initialNotification = await messaging().getInitialNotification()
-        if (initialNotification) {
-          console.warn({ initialNotification }) // TODO: remove
-          if (initialNotification.data && initialNotification.data.type === 'new_mail') {
-            Alert.alert(initialNotification.notification.title, initialNotification.notification.body)
+      const processMessage = (message, isForegroundMsg = false) => {
+        if (message && message.data) {
+          console.warn(message, isForegroundMsg)
+          // Alert.alert(message.notification.title, message.notification.body)
+          switch (message.data.type) {
+            case 'new_mail':
+              return setTimeout(() => this.switchView('mail'), 100)
+            // case 'new_mail':
+            //   return setTimeout(() => this.switchView('mail'), 100)
           }
         }
       }
+      this.backgroundNotificationListener = messaging().onNotificationOpenedApp(async (message) => {
+        processMessage(message)
+      })
+      this.closedAppNotificationListener = messaging().getInitialNotification().then((message) => {
+        processMessage(message)
+      })
+      this.onMessageListener = messaging().onMessage( message => {
+        processMessage(message, true)
+      })
     } catch (e) {
       console.warn(e)
     }
@@ -105,6 +110,7 @@ export class MainView extends Component<Props> {
       setTimeout(() => this.slideIn('history'), 100)
       setTimeout(() => this.checkNotifications(), 700) // meh todo
     }
+    this.initFCM()
   }
 
   async initFCM() {
@@ -113,7 +119,7 @@ export class MainView extends Component<Props> {
     }
     try {
       let config = await Storage.getConfig()
-      if (!config) {
+      if (!config || (config && !config.isFCMSubscribed)) {
         const fcmToken = await messaging().getToken()
         const subFCMRes = await this.nyx.subscribeForFCM(fcmToken)
         config = {
@@ -122,12 +128,6 @@ export class MainView extends Component<Props> {
         }
         await Storage.setConfig(config)
       }
-      const unsubscribeFromFCM = messaging().onMessage(async msg => {
-        console.warn('FCM foreground', JSON.stringify(msg)) // todo
-        if (msg.data && msg.data.type === 'new_mail') {
-          Alert.alert(msg.notification.title, msg.notification.body)
-        }
-      })
     } catch (e) {
       console.warn(e)
     }

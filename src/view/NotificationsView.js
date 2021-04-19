@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { FlatList, Image, View } from 'react-native';
-import { Nyx, PostComponent, Styling } from './'
+import { FlatList, Image, View } from 'react-native'
+import { PostComponent } from '../component'
+import { Nyx, Styling } from '../lib'
 
 type Props = {
   isDarkMode: boolean,
@@ -52,15 +53,14 @@ export class NotificationsView extends Component<Props> {
         style={[
           Styling.groups.themeView(this.props.isDarkMode),
           { borderBottomWidth: 2, borderColor: Styling.colors.primary },
-        ]}
-      >
-      {/*// <TouchableOpacity*/}
-      {/*//   style={[*/}
-      {/*//     Styling.groups.themeView(this.props.isDarkMode),*/}
-      {/*//     { borderBottomWidth: 2, borderColor: Styling.colors.primary },*/}
-      {/*//   ]}*/}
-      {/*//   accessibilityRole="button"*/}
-      {/*//   onPress={() => this.showPost(item.data.discussion_id, item.data.id)}>*/}
+        ]}>
+        {/*// <TouchableOpacity*/}
+        {/*//   style={[*/}
+        {/*//     Styling.groups.themeView(this.props.isDarkMode),*/}
+        {/*//     { borderBottomWidth: 2, borderColor: Styling.colors.primary },*/}
+        {/*//   ]}*/}
+        {/*//   accessibilityRole="button"*/}
+        {/*//   onPress={() => this.showPost(item.data.discussion_id, item.data.id)}>*/}
         <PostComponent
           key={item.data.id}
           post={item.data}

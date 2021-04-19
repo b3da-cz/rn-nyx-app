@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, Modal, View } from 'react-native'
 import DocumentPicker from 'react-native-document-picker'
 import Icon from 'react-native-vector-icons/Feather'
-import { confirm, Nyx, Styling } from './'
+import { confirm } from '../component'
+import { Nyx, Styling } from '../lib'
 
 type Props = {
   isDarkMode: boolean,

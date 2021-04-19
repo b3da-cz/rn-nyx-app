@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, ScrollView, Text, TextInput, RefreshControl, TouchableOpacity, View } from 'react-native'
-import { Styling } from './'
+import { Styling } from '../lib'
 
 type Props = {
   isDarkMode: boolean,

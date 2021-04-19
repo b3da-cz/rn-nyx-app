@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import { Text, TouchableOpacity, Linking, Image, View } from 'react-native'
-import { generateUuidV4, PostHeaderComponent, Nyx, Styling } from './'
 import AutoHeightWebView from 'react-native-autoheight-webview'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { parse } from 'node-html-parser'
+import { PostHeaderComponent } from '../component'
+import { generateUuidV4, Nyx, Styling } from '../lib'
 
 type Props = {
   post: Object,

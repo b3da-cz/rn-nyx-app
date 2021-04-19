@@ -3,7 +3,8 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native'
-import { Nyx, Styling, generateUuidV4, PostComponent } from './'
+import { PostComponent } from '../component'
+import { Nyx, Styling, generateUuidV4 } from '../lib'
 
 type Props = {
   id: number,

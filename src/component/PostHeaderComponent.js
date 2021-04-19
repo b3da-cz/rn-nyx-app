@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import { Text, TouchableOpacity, Image, View } from 'react-native'
 import Swipeable from 'react-native-swipeable-row'
-import { confirm, Nyx, Styling } from './'
 import Icon from 'react-native-vector-icons/Feather'
+import { confirm } from '../component'
+import { Nyx, Styling } from '../lib'
 
 type Props = {
   post: Object,

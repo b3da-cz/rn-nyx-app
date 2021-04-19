@@ -1,5 +1,5 @@
 import DeviceInfo from 'react-native-device-info'
-import { confirm, Storage } from './'
+import { Storage } from '../lib'
 
 export class Nyx {
   constructor(username) {
