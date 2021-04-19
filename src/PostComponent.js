@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, TouchableOpacity, Image, View } from 'react-native'
+import { Text, TouchableOpacity, Linking, Image, View } from 'react-native'
 import { generateUuidV4, PostHeaderComponent, Nyx, Styling } from './'
 import AutoHeightWebView from 'react-native-autoheight-webview'
 import YoutubePlayer from 'react-native-youtube-iframe'
@@ -36,6 +36,24 @@ export class PostComponent extends Component<Props> {
             { color: Styling.colors.primary, fontSize: 16, margin: 0, paddingVertical: 5 },
           ]}>
           @{reply.text}
+        </Text>
+      </TouchableOpacity>
+    )
+  }
+
+  renderLink(link) {
+    return (
+      <TouchableOpacity
+        // style={{borderWidth: 1, borderColor: 'red'}}
+        accessibilityRole="button"
+        onPress={() => Linking.openURL(link.url).catch(() => console.warn('failed to open ', link.url, link))}>
+        <Text
+          style={[
+            Styling.groups.description,
+            Styling.groups.themeComponent(this.props.isDarkMode),
+            { color: Styling.colors.secondary, fontSize: 16, margin: 0, paddingVertical: 5 },
+          ]}>
+          {link.text}
         </Text>
       </TouchableOpacity>
     )
@@ -147,6 +165,7 @@ export class PostComponent extends Component<Props> {
   render() {
     const { post } = this.props
     const html = parse(`<div>${post.content}</div>`)
+    // todo: spoilers, text formatting
     const replies = html.querySelectorAll('a[data-discussion-id]').map(a => ({
       id: generateUuidV4(),
       raw: a.toString(),
@@ -154,13 +173,20 @@ export class PostComponent extends Component<Props> {
       discussionId: a.getAttribute('data-discussion-id'),
       postId: a.getAttribute('data-id'),
     }))
-    // const links = html.querySelectorAll('a').map(a => ({
-    //   id: generateUuidV4(),
-    //   raw: a.toString(),
-    //   text: a.innerText,
-    //   discussionId: a.getAttribute('data-discussion-id'),
-    //   postId: a.getAttribute('data-id'),
-    // }))
+    const links = html
+      .querySelectorAll('a')
+      .filter(
+        a =>
+          !a.hasAttribute('data-discussion-id') &&
+          !a.getAttribute('href').includes('youtube') &&
+          !a.getAttribute('href').includes('youtu.be'),
+      )
+      .map(a => ({
+        id: generateUuidV4(),
+        raw: a.toString(),
+        text: a.innerText,
+        url: a.getAttribute('href'),
+      }))
     const images = html.querySelectorAll('img').map(i => ({
       id: generateUuidV4(),
       raw: i.toString(),
@@ -190,14 +216,17 @@ export class PostComponent extends Component<Props> {
     }))
 
     const TOKEN = {
+      // meh todo
       SPLIT: '//######//',
       REPLY: '###R#',
+      LINK: '###L#',
       IMG: '###I#',
       CODE: '###C#',
       YT: '###Y#',
     }
     let content = post.content
     replies.forEach(l => (content = content.split(l.raw).join(`${TOKEN.SPLIT}${TOKEN.REPLY}${l.id}${TOKEN.SPLIT}`)))
+    links.forEach(l => (content = content.split(l.raw).join(`${TOKEN.SPLIT}${TOKEN.LINK}${l.id}${TOKEN.SPLIT}`)))
     images.forEach(i => (content = content.split(i.raw).join(`${TOKEN.SPLIT}${TOKEN.IMG}${i.id}${TOKEN.SPLIT}`)))
     codeBlocks.forEach(c => (content = content.split(c.raw).join(`${TOKEN.SPLIT}${TOKEN.CODE}${c.id}${TOKEN.SPLIT}`)))
     ytBlocks.forEach(y => (content = content.split(y.raw).join(`${TOKEN.SPLIT}${TOKEN.YT}${y.id}${TOKEN.SPLIT}`)))
@@ -222,6 +251,9 @@ export class PostComponent extends Component<Props> {
               if (part.startsWith(TOKEN.REPLY)) {
                 const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
                 return this.renderReply(reply)
+              } else if (part.startsWith(TOKEN.LINK)) {
+                const link = links.filter(l => l.id === part.replace(TOKEN.LINK, ''))[0]
+                return this.renderLink(link)
               } else if (part.startsWith(TOKEN.IMG)) {
                 const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
                 return this.renderImage(img, images)

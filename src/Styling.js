@@ -3,6 +3,7 @@ import { Dimensions, StyleSheet } from 'react-native'
 export const Styling = {
   colors: {
     primary: '#1292B4',
+    secondary: '#b46612',
     white: '#FFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
@@ -76,6 +77,10 @@ export const Styling = {
       width: 50,
       height: 50,
       backgroundColor: 'red',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    flexCentered: {
       alignItems: 'center',
       justifyContent: 'center',
     },

@@ -1,20 +1,20 @@
 import React, { Component } from 'react'
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  BackHandler,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  View,
-} from 'react-native';
-import DocumentPicker from 'react-native-document-picker'
+import { AppState, Alert, Animated, BackHandler, Text, TouchableOpacity, Modal, View } from 'react-native'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import Icon from 'react-native-vector-icons/Feather'
 import messaging from '@react-native-firebase/messaging'
-import {ComposePostModal, confirm, DiscussionView, HistoryView, Nyx, Styling, Storage, NotificationsView} from './';
+import {
+  ComposePostModal,
+  confirm,
+  DiscussionView,
+  HistoryView,
+  Nyx,
+  Styling,
+  Storage,
+  NotificationsView,
+  MailView,
+  LoginView,
+} from './'
 
 type Props = {
   isDarkMode: boolean,
@@ -23,6 +23,7 @@ export class MainView extends Component<Props> {
   constructor(props) {
     super(props)
     this.state = {
+      isNyxInitialized: false,
       navStack: [{ view: 'history', args: {} }],
       activeView: 'history',
       title: 'History',
@@ -34,10 +35,12 @@ export class MainView extends Component<Props> {
       imgIndex: 0,
       uploadedFiles: [],
       notificationsUnread: 0,
+      confirmationCode: null,
       animatedViewLeft_history: new Animated.Value(-Styling.metrics.screen.width),
       animatedViewLeft_bookmarks: new Animated.Value(-Styling.metrics.screen.width),
       animatedViewLeft_discussion: new Animated.Value(-Styling.metrics.screen.width),
       animatedViewLeft_notifications: new Animated.Value(-Styling.metrics.screen.width),
+      animatedViewLeft_mail: new Animated.Value(-Styling.metrics.screen.width),
     }
     this.refDiscussionView = null
     this.refComposePostModal = null
@@ -54,15 +57,60 @@ export class MainView extends Component<Props> {
 
   componentDidMount() {
     this.initFCM()
+    AppState.addEventListener('change', this.onAppStateChange)
   }
 
-  async initNyx() {
-    this.nyx = new Nyx('B3DA')
-    setTimeout(() => this.slideIn('history'), 100)
-    setTimeout(() => this.checkNotifications(), 700) // meh todo
+  componentWillUnmount() {
+    AppState.removeEventListener('change', this.onAppStateChange)
+  }
+
+  async onAppStateChange(nextAppState) {
+    if (!this.nyx) {
+      return
+    }
+    try {
+      if (
+        // this.state.appState.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        const initialNotification = await messaging().getInitialNotification()
+        if (initialNotification) {
+          console.warn({ initialNotification }) // TODO: remove
+          if (initialNotification.data && initialNotification.data.type === 'new_mail') {
+            Alert.alert(initialNotification.notification.title, initialNotification.notification.body)
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(e)
+    }
+  }
+
+  async initNyx(username?, isAuthProcess = false) {
+    if (!username) {
+      const auth = await Storage.getAuth()
+      if (!auth || (auth && !auth.username)) {
+        this.setState({ activeView: 'login' })
+        Storage.removeAll()
+        return
+      }
+      username = auth.username
+    }
+    this.nyx = new Nyx(username.toUpperCase())
+    await this.nyx.init()
+    this.setState({ isNyxInitialized: true })
+    if (isAuthProcess) {
+      this.setState({ confirmationCode: this.nyx.auth.confirmationCode })
+    } else {
+      setTimeout(() => this.slideIn('history'), 100)
+      setTimeout(() => this.checkNotifications(), 700) // meh todo
+    }
   }
 
   async initFCM() {
+    if (!this.nyx) {
+      return
+    }
     try {
       let config = await Storage.getConfig()
       if (!config) {
@@ -74,7 +122,6 @@ export class MainView extends Component<Props> {
         }
         await Storage.setConfig(config)
       }
-      await messaging().getInitialNotification()
       const unsubscribeFromFCM = messaging().onMessage(async msg => {
         console.warn('FCM foreground', JSON.stringify(msg)) // todo
         if (msg.data && msg.data.type === 'new_mail') {
@@ -136,9 +183,14 @@ export class MainView extends Component<Props> {
   }
 
   navigateBack() {
-    // console.warn(this.state.navStack); // TODO: remove
+    if (this.state.activeView === 'login') {
+      return
+    }
+    // console.warn(this.state.navStack) // TODO: remove
     if (this.state.navStack.length === 1) {
-      BackHandler.exitApp()
+      // BackHandler.exitApp() // todo
+      this.switchView('mail')
+      // this.setState({activeView: 'login'})
     } else {
       this.state.navStack.splice(this.state.navStack.length - 1)
       const last = this.state.navStack[this.state.navStack.length - 1]
@@ -148,6 +200,8 @@ export class MainView extends Component<Props> {
 
   getTitle(view) {
     switch (view) {
+      case 'login':
+        return 'Login'
       case 'history':
         return 'History'
       case 'bookmarks':
@@ -156,6 +210,8 @@ export class MainView extends Component<Props> {
         return 'Discussion'
       case 'notifications':
         return 'Notifications'
+      case 'mail':
+        return 'Mail'
     }
   }
 
@@ -197,7 +253,17 @@ export class MainView extends Component<Props> {
     // todo refactor
     return (
       <Animated.View>
-        {this.nyx && (
+        {this.state.activeView === 'login' && (
+          <View style={[Styling.groups.themeView(this.props.isDarkMode), { width: '100%', height: '100%' }]}>
+            <LoginView
+              isDarkMode={this.props.isDarkMode}
+              confirmationCode={this.state.confirmationCode}
+              onUsername={username => this.initNyx(username, true)}
+              onLogin={() => this.setState({ activeView: 'history' })}
+            />
+          </View>
+        )}
+        {this.state.isNyxInitialized && (
           <View>
             <View
               style={[
@@ -209,7 +275,7 @@ export class MainView extends Component<Props> {
                 accessibilityRole="button"
                 onPress={() => this.navigateBack()}>
                 {this.state.navStack.length === 1 ? (
-                  <Icon name="x" size={24} color="#ccc" />
+                  <Icon name="mail" size={24} color="#ccc" />
                 ) : (
                   <Icon name="chevron-left" size={24} color="#ccc" />
                 )}
@@ -224,7 +290,7 @@ export class MainView extends Component<Props> {
                 numberOfLines={1}>
                 {this.state.title}
               </Text>
-              {this.state.activeView === 'discussion' ? (
+              {this.state.activeView === 'discussion' || this.state.activeView === 'mail' ? (
                 <TouchableOpacity
                   style={{ alignItems: 'center', justifyContent: 'center' }}
                   accessibilityRole="button"
@@ -277,11 +343,26 @@ export class MainView extends Component<Props> {
             {this.state.activeView === 'notifications' && (
               <Animated.View
                 style={[
-                  Styling.groups.themeView(false),
+                  Styling.groups.themeView(this.props.isDarkMode),
                   { width: '100%', height: '100%' },
                   { left: this.state.animatedViewLeft_notifications },
                 ]}>
                 <NotificationsView
+                  isDarkMode={this.props.isDarkMode}
+                  nyx={this.nyx}
+                  onImages={(images, i) => this.showImages(images, i)}
+                  onNavigation={({ discussionId, postId }) => this.showPost(discussionId, postId)}
+                />
+              </Animated.View>
+            )}
+            {this.state.activeView === 'mail' && (
+              <Animated.View
+                style={[
+                  Styling.groups.themeView(this.props.isDarkMode),
+                  { width: '100%', height: '100%' },
+                  { left: this.state.animatedViewLeft_mail },
+                ]}>
+                <MailView
                   isDarkMode={this.props.isDarkMode}
                   nyx={this.nyx}
                   onImages={(images, i) => this.showImages(images, i)}

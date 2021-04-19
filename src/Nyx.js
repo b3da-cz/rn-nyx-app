@@ -2,12 +2,11 @@ import DeviceInfo from 'react-native-device-info'
 import { confirm, Storage } from './'
 
 export class Nyx {
-  constructor(userId) {
-    this.userUd = userId
+  constructor(username) {
+    this.username = username
     this.auth = {}
     this.store = {}
     this.userAgent = `Nnn v${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
-    this.init()
   }
 
   async init() {
@@ -15,6 +14,7 @@ export class Nyx {
     let isAuthConfirmed = true
     if (!auth) {
       auth = {
+        username: this.username,
         token: null,
         confirmationCode: null,
       }
@@ -23,7 +23,9 @@ export class Nyx {
 
     if (!this.auth.token || this.auth.token === 'undefined') {
       isAuthConfirmed = await this.createAuthToken()
+      console.warn('ccc'); // TODO: remove
       if (isAuthConfirmed) {
+        console.warn('ccc save'); // TODO: remove
         await Storage.setAuth(this.auth)
       }
     }
@@ -40,23 +42,24 @@ export class Nyx {
 
   async createAuthToken() {
     try {
-      const res = await fetch(`https://nyx.cz/api/create_token/${this.userUd}`, {
+      const res = await fetch(`https://nyx.cz/api/create_token/${this.username}`, {
         method: 'POST',
         headers: {
           'User-Agent': this.userAgent,
         },
       }).then(resp => resp.json())
       this.auth = {
+        username: this.username,
         token: res.token,
         confirmationCode: res.confirmation_code,
       }
-      const isAuthConfirmed = await confirm(
-        'Confirm auth in Nyx settings',
-        `Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`,
-      )
-      if (isAuthConfirmed) {
+      // const isAuthConfirmed = await confirm(
+      //   'Confirm auth in Nyx settings',
+      //   `Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`,
+      // )
+      // if (isAuthConfirmed) {
         return true
-      }
+      // }
     } catch (e) {
       console.warn('create token error', e)
     }
@@ -104,9 +107,24 @@ export class Nyx {
     return null
   }
 
+  async getMail() {
+    // todo querystring
+    try {
+      const res = await fetch(`https://nyx.cz/api/mail`, {
+        method: 'GET',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('get mail error', e)
+    }
+    return null
+  }
+
   async getNotifications() {
     try {
-      const res = await fetch(`https://nyx.cz/api/notifications/`, {
+      const res = await fetch(`https://nyx.cz/api/notifications`, {
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),

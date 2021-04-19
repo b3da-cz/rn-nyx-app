@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import {FlatList, Image, Text, TouchableOpacity, View} from 'react-native';
+import { FlatList, Image, View } from 'react-native';
 import { Nyx, PostComponent, Styling } from './'
 
 type Props = {
@@ -17,7 +17,10 @@ export class NotificationsView extends Component<Props> {
       isFetching: false,
     }
     this.refScroll = null
-    setTimeout(() => this.getNotifications(), 1000)
+  }
+
+  componentDidMount() {
+    this.getNotifications()
   }
 
   async getNotifications() {
@@ -57,7 +60,7 @@ export class NotificationsView extends Component<Props> {
       {/*//     { borderBottomWidth: 2, borderColor: Styling.colors.primary },*/}
       {/*//   ]}*/}
       {/*//   accessibilityRole="button"*/}
-      {/*//   onPress={() => this.showPost(item.data.discussionId, item.data.id)}>*/}
+      {/*//   onPress={() => this.showPost(item.data.discussion_id, item.data.id)}>*/}
         <PostComponent
           key={item.data.id}
           post={item.data}
