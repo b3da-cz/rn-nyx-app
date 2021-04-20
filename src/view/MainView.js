@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { AppState, Alert, Animated, BackHandler, Text, TouchableOpacity, Modal, View } from 'react-native'
 import ImageViewer from 'react-native-image-zoom-viewer'
+import ImageView from "react-native-image-viewing";
 import Icon from 'react-native-vector-icons/Feather'
 import messaging from '@react-native-firebase/messaging'
 import { Nyx, Styling, Storage } from '../lib'
@@ -32,8 +33,9 @@ export class MainView extends Component<Props> {
       animatedViewLeft_notifications: new Animated.Value(-Styling.metrics.screen().width),
       animatedViewLeft_mail: new Animated.Value(-Styling.metrics.screen().width),
     }
-    this.refDiscussionView = null
     this.refComposePostModal = null
+    this.refDiscussionView = null
+    this.refMailView = null
     this.nyx = null
     this.initNyx()
     BackHandler.addEventListener('hardwareBackPress', () => {
@@ -71,7 +73,12 @@ export class MainView extends Component<Props> {
           // Alert.alert(message.notification.title, message.notification.body)
           switch (message.data.type) {
             case 'new_mail':
-              return setTimeout(() => this.switchView('mail'), 100)
+              if (this.state.activeView === 'mail' && this.refMailView) {
+                this.refMailView.getMessages()
+              } else {
+                setTimeout(() => this.switchView('mail'), 100)
+              }
+              break
             // case 'new_mail':
             //   return setTimeout(() => this.switchView('mail'), 100)
           }
@@ -159,6 +166,9 @@ export class MainView extends Component<Props> {
 
   switchView(view, args = {}, isBackNav: false) {
     const oldView = this.state.activeView
+    if (view === oldView) {
+      return
+    }
     setTimeout(() => this.slideOut(oldView), 50)
     if (isBackNav) {
       setTimeout(() => this.setState({ activeView: view, ...args, title: this.getTitle(view) }), 200)
@@ -363,6 +373,7 @@ export class MainView extends Component<Props> {
                   { left: this.state.animatedViewLeft_mail },
                 ]}>
                 <MailView
+                  ref={r => (this.refMailView = r)}
                   isDarkMode={this.props.isDarkMode}
                   nyx={this.nyx}
                   onImages={(images, i) => this.showImages(images, i)}
@@ -391,14 +402,24 @@ export class MainView extends Component<Props> {
           </View>
         )}
         {this.state.images && this.state.images.length > 0 && (
-          <Modal
+          <ImageView
+            images={this.state.images.map(i => ({ uri: i.url }))}
+            imageIndex={this.state.imgIndex}
             visible={this.state.isModalImagesVisible}
-            transparent={true}
-            animationType={'slide'}
-            onRequestClose={() => this.setState({ isModalImagesVisible: false })}>
-            <ImageViewer imageUrls={this.state.images} index={this.state.imgIndex} />
-          </Modal>
+            swipeToCloseEnabled={false}
+            presentationStyle={'overFullScreen'}
+            onRequestClose={() => this.setState({ isModalImagesVisible: false })}
+          />
         )}
+        {/*todo decide which image viewer*/}
+        {/*<Modal*/}
+        {/*  visible={this.state.isModalImagesVisible}*/}
+        {/*  transparent={true}*/}
+        {/*  animationType={'slide'}*/}
+        {/*  onRequestClose={() => this.setState({ isModalImagesVisible: false })}>*/}
+        {/*  <Icon name="x" size={24} color="#ccc" style={{position: 'absolute', top: 15, right: 15, zIndex: 1}} />*/}
+        {/*  <ImageViewer imageUrls={this.state.images} index={this.state.imgIndex} />*/}
+        {/*</Modal>*/}
         <ComposePostModal
           ref={r => (this.refComposePostModal = r)}
           isDarkMode={this.props.isDarkMode}

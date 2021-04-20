@@ -90,6 +90,7 @@ export const Styling = {
       backgroundColor: 'red',
       alignItems: 'center',
       justifyContent: 'center',
+      marginRight: 5,
     },
     flexCentered: {
       alignItems: 'center',

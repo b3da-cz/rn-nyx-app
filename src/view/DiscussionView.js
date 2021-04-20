@@ -1,10 +1,7 @@
 import React, { Component } from 'react'
-import {
-  ActivityIndicator,
-  FlatList,
-} from 'react-native'
+import { ActivityIndicator, FlatList } from 'react-native'
 import { PostComponent } from '../component'
-import { Nyx, Styling, generateUuidV4 } from '../lib'
+import { Nyx, Styling, getDistinctPosts } from '../lib'
 
 type Props = {
   id: number,
@@ -69,7 +66,7 @@ export class DiscussionView extends Component<Props> {
     // console.warn('fetch ', idOrQueryString); // TODO: remove
     this.setState({ isFetching: true })
     const res = await this.props.nyx.getDiscussion(idOrQueryString)
-    const newPosts = this.getDistinctPosts(res.posts)
+    const newPosts = getDistinctPosts(res.posts, this.state.posts)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
@@ -80,23 +77,6 @@ export class DiscussionView extends Component<Props> {
       isFetching: false,
     })
     this.props.onDiscussionFetched({ title, uploadedFiles })
-    return newPosts
-  }
-
-  getDistinctPosts(posts) {
-    let newPosts = []
-    const map = new Map()
-    for (const item of [...posts, ...this.state.posts]) {
-      if (!map.has(item.id)) {
-        map.set(item.id, true)
-        if (!item.uuid) {
-          item.uuid = generateUuidV4()
-        }
-        newPosts.push(item)
-      }
-    }
-    newPosts.sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0))
-    // console.warn('posts len', newPosts.length); // TODO: remove
     return newPosts
   }
 
@@ -150,6 +130,7 @@ export class DiscussionView extends Component<Props> {
             post={item}
             nyx={this.props.nyx}
             isDarkMode={this.props.isDarkMode}
+            isHeaderInteractive={true}
             onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
             onImages={(images, i) => this.showImages(images, i)}
             onDelete={postId => this.onPostDelete(postId)}

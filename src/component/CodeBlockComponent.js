@@ -1,6 +1,6 @@
 import React from 'react'
 import { Styling } from '../lib'
-import AutoHeightWebView from 'react-native-autoheight-webview';
+import AutoHeightWebView from 'react-native-autoheight-webview'
 
 export const CodeBlockComponent = ({ html, fontSize = 10 }) => {
   return (

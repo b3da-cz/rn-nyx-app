@@ -107,10 +107,9 @@ export class Nyx {
     return null
   }
 
-  async getMail() {
-    // todo querystring
+  async getMail(queryString = '') {
     try {
-      const res = await fetch(`https://nyx.cz/api/mail`, {
+      const res = await fetch(`https://nyx.cz/api/mail${queryString}`, {
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),

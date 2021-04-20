@@ -2,10 +2,11 @@ import React from 'react'
 import { Text, TouchableOpacity } from 'react-native'
 import { Styling } from '../lib'
 
-export const LinkComponent = ({ children, color = Styling.colors.primary, fontSize = 16, onPress }) => {
+export const LinkComponent = ({ children, color = Styling.colors.secondary, fontSize = 16, onPress }) => {
   return (
     <TouchableOpacity
       // style={{borderWidth: 1, borderColor: 'blue'}}
+      style={{ marginHorizontal: Styling.metrics.block.small }}
       accessibilityRole="button"
       onPress={() => onPress()}>
       <Text

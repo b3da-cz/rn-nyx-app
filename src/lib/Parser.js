@@ -1,6 +1,17 @@
 import { parse } from 'node-html-parser'
 import { generateUuidV4 } from '../lib'
 
+export const TOKEN = {
+  // meh todo
+  SPLIT: '//######//',
+  SPOILER: '###S#',
+  REPLY: '###R#',
+  LINK: '###L#',
+  IMG: '###I#',
+  CODE: '###C#',
+  YT: '###Y#',
+}
+
 export class Parser {
   constructor(htmlString) {
     this.contentRaw = htmlString
@@ -9,15 +20,7 @@ export class Parser {
     this.isParsed = false
     this.isTokenized = false
     this.html = parse(`<div>${htmlString}</div>`)
-    this.TOKEN = {
-      // meh todo
-      SPLIT: '//######//',
-      REPLY: '###R#',
-      LINK: '###L#',
-      IMG: '###I#',
-      CODE: '###C#',
-      YT: '###Y#',
-    }
+    this.TOKEN = TOKEN
   }
 
   parse() {
@@ -29,6 +32,7 @@ export class Parser {
     }
     return {
       contentParts: this.contentParts,
+      spoilers: this.spoilers,
       replies: this.replies,
       links: this.links,
       images: this.images,
@@ -38,6 +42,7 @@ export class Parser {
   }
 
   getBlocksFromHtml() {
+    this.spoilers = this.getSpoilers()
     this.replies = this.getReplies()
     this.links = this.getLinks()
     this.images = this.getImages()
@@ -50,6 +55,7 @@ export class Parser {
   tokenizeContent() {
     const T = this.TOKEN
     let content = this.contentRaw
+    this.spoilers.forEach(s => (content = content.split(s.raw).join(`${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
     this.replies.forEach(l => (content = content.split(l.raw).join(`${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
     this.links.forEach(l => (content = content.split(l.raw).join(`${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
     this.images.forEach(i => (content = content.split(i.raw).join(`${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
@@ -59,6 +65,14 @@ export class Parser {
     this.contentParts = content.split(T.SPLIT)
     this.contentTemplate = content
     this.isTokenized = true
+  }
+
+  getSpoilers() {
+    return this.html.querySelectorAll('.spoiler').map(s => ({
+      id: generateUuidV4(),
+      raw: s.toString(),
+      text: s.innerText,
+    }))
   }
 
   getReplies() {
@@ -112,8 +126,9 @@ export class Parser {
         id: generateUuidV4(),
         raw: a.toString(),
         text: a.innerText,
+        link: a.getAttribute('href'),
         videoId: a.getAttribute('href').includes('youtube')
-          ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '')
+          ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
           : a.getAttribute('href').replace('https://youtu.be/', ''),
       }))
   }

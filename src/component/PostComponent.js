@@ -5,14 +5,17 @@ import {
   PostHeaderComponent,
   ImageComponent,
   LinkComponent,
+  SpoilerComponent,
   VideoYoutubeComponent,
 } from '../component'
-import { generateUuidV4, Nyx, Parser, Styling } from '../lib'
+import { Nyx, Parser, TOKEN, Styling } from '../lib'
 
 type Props = {
   post: Object,
-  isDarkMode: boolean,
   nyx: Nyx,
+  isDarkMode: boolean,
+  isHeaderInteractive: boolean,
+  onHeaderPress?: Function,
   onDiscussionDetailShow: Function,
   onImages: Function,
   onDelete: Function,
@@ -24,7 +27,18 @@ export class PostComponent extends Component<Props> {
       isFetching: false,
       ratings: {},
       enabledYtPlayers: {},
+      visibleSpoilers: {},
     }
+  }
+
+  componentDidMount() {
+    setTimeout(() => this.parseContent(), 10)
+  }
+
+  parseContent() {
+    const parser = new Parser(this.props.post.content)
+    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = parser.parse()
+    this.setState({ contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers })
   }
 
   renderReply(reply) {
@@ -42,10 +56,19 @@ export class PostComponent extends Component<Props> {
   renderLink(link) {
     return (
       <LinkComponent
-        color={Styling.colors.secondary}
         onPress={() => Linking.openURL(link.url).catch(() => console.warn('failed to open ', link.url, link))}>
         {link.text}
       </LinkComponent>
+    )
+  }
+
+  renderSpoiler({ id, text }) {
+    return (
+      <SpoilerComponent
+        text={text}
+        isVisible={this.state.visibleSpoilers[id]}
+        onPress={() => this.setState({ visibleSpoilers: { ...this.state.visibleSpoilers, ...{ [id]: true } } })}
+      />
     )
   }
 
@@ -86,6 +109,7 @@ export class PostComponent extends Component<Props> {
     return (
       <VideoYoutubeComponent
         videoId={ytBlock.videoId}
+        videoLink={ytBlock.link}
         previewSrc={img && img.src}
         width={Styling.metrics.window().width}
         height={Styling.metrics.window().width / 1.777}
@@ -102,14 +126,15 @@ export class PostComponent extends Component<Props> {
     return (
       <Text
         style={[
-          Styling.groups.description,
           Styling.groups.themeComponent(this.props.isDarkMode),
-          { fontSize: 16, paddingVertical: 2 },
+          { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
         ]}>
         {text
           .split('<br>')
           .join('\n')
           .split('<br />')
+          .join('\n')
+          .split('\n\n')
           .join('\n')
           .replace(/(<([^>]+)>)/gi, '')}
       </Text>
@@ -118,15 +143,15 @@ export class PostComponent extends Component<Props> {
 
   render() {
     const { post } = this.props
-    const parser = new Parser(post.content)
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks } = parser.parse()
-    const TOKEN = parser.TOKEN
+    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = this.state
     return (
       <View>
         <PostHeaderComponent
           post={post}
-          isDarkMode={this.props.isDarkMode}
           nyx={this.props.nyx}
+          isDarkMode={this.props.isDarkMode}
+          isInteractive={this.props.isHeaderInteractive}
+          onPress={postId => this.props.onHeaderPress(postId)}
           onDelete={postId => this.props.onDelete(postId)}
         />
         <View
@@ -143,6 +168,9 @@ export class PostComponent extends Component<Props> {
               } else if (part.startsWith(TOKEN.LINK)) {
                 const link = links.filter(l => l.id === part.replace(TOKEN.LINK, ''))[0]
                 return this.renderLink(link)
+              } else if (part.startsWith(TOKEN.SPOILER)) {
+                const spoiler = spoilers.filter(s => s.id === part.replace(TOKEN.SPOILER, ''))[0]
+                return this.renderSpoiler(spoiler)
               } else if (part.startsWith(TOKEN.IMG)) {
                 const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
                 return this.renderImage(img, images)

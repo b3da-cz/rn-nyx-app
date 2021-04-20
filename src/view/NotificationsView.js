@@ -66,6 +66,7 @@ export class NotificationsView extends Component<Props> {
           post={item.data}
           nyx={this.props.nyx}
           isDarkMode={this.props.isDarkMode}
+          isHeaderInteractive={false}
           onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
           onImages={(images, i) => this.showImages(images, i)}
           onDelete={postId => this.onPostDelete(postId)}
@@ -105,6 +106,7 @@ export class NotificationsView extends Component<Props> {
             post={post}
             nyx={this.props.nyx}
             isDarkMode={this.props.isDarkMode}
+            isHeaderInteractive={false}
             onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
             onImages={(images, i) => this.showImages(images, i)}
             onDelete={postId => this.onPostDelete(postId)}

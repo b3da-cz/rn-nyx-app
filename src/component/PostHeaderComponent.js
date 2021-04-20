@@ -7,8 +7,10 @@ import { Nyx, Styling } from '../lib'
 
 type Props = {
   post: Object,
-  isDarkMode: boolean,
   nyx: Nyx,
+  isDarkMode: boolean,
+  isInteractive: boolean,
+  onPress?: Function,
   onDelete: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
@@ -16,19 +18,24 @@ export class PostHeaderComponent extends Component<Props> {
     super(props)
     this.state = {
       isFetching: false,
-      ratings: {},
+      ratings: [],
+      ratingWidth: 16,
+      ratingHeight: 24,
+      ratingSwiperWidth: 50,
     }
     this.refSwipeable = null
   }
 
   async getRating(post) {
-    if (this.state.ratings[post.id]) {
+    if (this.state.ratings && this.state.ratings.length > 0) {
       return
     }
-    const res = await this.props.nyx.getRating(post)
-    const ratings = { ...this.state.ratings }
-    ratings[post.id] = res
-    this.setState({ ratings })
+    const ratings = await this.props.nyx.getRating(post)
+    if (ratings && ratings.length > 36) {
+      this.setState({ ratings, ratingWidth: 9, ratingHeight: 16, ratingSwiperWidth: ratings.length > 70 ? 300 : 150 })
+    } else {
+      this.setState({ ratings })
+    }
   }
 
   async castVote(post, vote) {
@@ -56,26 +63,6 @@ export class PostHeaderComponent extends Component<Props> {
 
   render() {
     const { post } = this.props
-    let ratingH = 24 // 8*14 | 14*21 for 2 rows
-    let ratingW = 16
-    if (
-      this.state.ratings[post.id] &&
-      this.state.ratings[post.id].length > 0 &&
-      this.state.ratings[post.id].length <= 10
-    ) {
-      // ratingH = 40
-      // ratingW = 30
-    } else if (
-      this.state.ratings[post.id] &&
-      this.state.ratings[post.id].length > 10 &&
-      this.state.ratings[post.id].length <= 36
-    ) {
-      ratingH = 24
-      ratingW = 16
-    } else if (this.state.ratings[post.id] && this.state.ratings[post.id].length > 36) {
-      ratingH = 16
-      ratingW = 9
-    }
     return (
       <Swipeable
         leftButtons={[
@@ -107,9 +94,9 @@ export class PostHeaderComponent extends Component<Props> {
         ]}
         leftButtonContainerStyle={{ alignItems: 'flex-end' }}
         leftButtonWidth={post.can_be_deleted ? 25 : 50}
-        rightButtonWidth={300}
+        rightButtonWidth={this.state.ratingSwiperWidth}
         rightButtons={
-          this.state.ratings[post.id] && this.state.ratings[post.id].length > 0
+          this.state.ratings && this.state.ratings.length > 0
             ? [
                 <View
                   style={{
@@ -118,17 +105,18 @@ export class PostHeaderComponent extends Component<Props> {
                     justifyContent: 'flex-start',
                     flexWrap: 'wrap',
                   }}>
-                  {this.state.ratings[post.id].map(r => (
+                  {this.state.ratings.map(r => (
                     <View
+                      key={`${r.username}${r.tag}`}
                       style={{
-                        maxWidth: ratingW,
-                        maxHeight: ratingH,
+                        maxWidth: this.state.ratingWidth,
+                        maxHeight: this.state.ratingHeight,
                         marginRight: 3,
                         borderColor: 'red',
                         borderWidth: 0,
                       }}>
                       <Image
-                        style={{ width: ratingW, height: ratingH }}
+                        style={{ width: this.state.ratingWidth, height: this.state.ratingHeight }}
                         resizeMethod={'scale'}
                         resizeMode={'center'}
                         source={{ uri: `https://nyx.cz/${r.username[0]}/${r.username}.gif` }}
@@ -146,6 +134,7 @@ export class PostHeaderComponent extends Component<Props> {
           justifyContent: 'flex-start',
           flexWrap: 'wrap',
         }}
+        disable={!this.props.isInteractive}
         onRef={r => (this.refSwipeable = r)}>
         <View
           style={{
