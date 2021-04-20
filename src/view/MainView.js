@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { AppState, Alert, Animated, BackHandler, Text, TouchableOpacity, Modal, View } from 'react-native'
 import ImageViewer from 'react-native-image-zoom-viewer'
-import ImageView from "react-native-image-viewing";
+import ImageView from 'react-native-image-viewing'
 import Icon from 'react-native-vector-icons/Feather'
 import messaging from '@react-native-firebase/messaging'
 import { Nyx, Styling, Storage } from '../lib'
@@ -84,13 +84,15 @@ export class MainView extends Component<Props> {
           }
         }
       }
-      this.backgroundNotificationListener = messaging().onNotificationOpenedApp(async (message) => {
+      this.backgroundNotificationListener = messaging().onNotificationOpenedApp(async message => {
         processMessage(message)
       })
-      this.closedAppNotificationListener = messaging().getInitialNotification().then((message) => {
-        processMessage(message)
-      })
-      this.onMessageListener = messaging().onMessage( message => {
+      this.closedAppNotificationListener = messaging()
+        .getInitialNotification()
+        .then(message => {
+          processMessage(message)
+        })
+      this.onMessageListener = messaging().onMessage(message => {
         processMessage(message, true)
       })
     } catch (e) {
@@ -402,24 +404,30 @@ export class MainView extends Component<Props> {
           </View>
         )}
         {this.state.images && this.state.images.length > 0 && (
-          <ImageView
-            images={this.state.images.map(i => ({ uri: i.url }))}
-            imageIndex={this.state.imgIndex}
+          <Modal
             visible={this.state.isModalImagesVisible}
-            swipeToCloseEnabled={false}
-            presentationStyle={'overFullScreen'}
-            onRequestClose={() => this.setState({ isModalImagesVisible: false })}
-          />
+            transparent={true}
+            animationType={'slide'}
+            onRequestClose={() => this.setState({ isModalImagesVisible: false })}>
+            <TouchableOpacity
+              style={{ position: 'absolute', top: 15, right: 15, zIndex: 1 }}
+              // style={{ alignItems: 'center', justifyContent: 'center' }}
+              accessibilityRole="button"
+              onPress={() => this.setState({ isModalImagesVisible: false })}>
+              <Icon name="x" size={24} color="#ccc" />
+            </TouchableOpacity>
+            <ImageViewer imageUrls={this.state.images} index={this.state.imgIndex} />
+          </Modal>
         )}
-        {/*todo decide which image viewer*/}
-        {/*<Modal*/}
+        {/*todo decide which image viewer .. ImageView cant handle landscape well, but otherwise bit better*/}
+        {/*<ImageView*/}
+        {/*  images={this.state.images.map(i => ({ uri: i.url }))}*/}
+        {/*  imageIndex={this.state.imgIndex}*/}
         {/*  visible={this.state.isModalImagesVisible}*/}
-        {/*  transparent={true}*/}
-        {/*  animationType={'slide'}*/}
-        {/*  onRequestClose={() => this.setState({ isModalImagesVisible: false })}>*/}
-        {/*  <Icon name="x" size={24} color="#ccc" style={{position: 'absolute', top: 15, right: 15, zIndex: 1}} />*/}
-        {/*  <ImageViewer imageUrls={this.state.images} index={this.state.imgIndex} />*/}
-        {/*</Modal>*/}
+        {/*  swipeToCloseEnabled={false}*/}
+        {/*  presentationStyle={'overFullScreen'}*/}
+        {/*  onRequestClose={() => this.setState({ isModalImagesVisible: false })}*/}
+        {/*/>*/}
         <ComposePostModal
           ref={r => (this.refComposePostModal = r)}
           isDarkMode={this.props.isDarkMode}

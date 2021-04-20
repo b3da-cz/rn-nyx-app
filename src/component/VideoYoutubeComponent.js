@@ -31,8 +31,9 @@ export const VideoYoutubeComponent = ({
               backgroundColor,
               margin: Styling.metrics.block.small,
             }}
+            // loadingIndicatorSource={'debug..'}
             resizeMethod={'scale'}
-            resizeMode={'center'}
+            resizeMode={'cover'}
             source={{ uri: previewSrc }}
           />
         </TouchableOpacity>

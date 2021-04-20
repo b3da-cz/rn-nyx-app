@@ -93,10 +93,10 @@ export class DiscussionView extends Component<Props> {
             animated,
           })
           this.setState({ isFetching: false })
-        }, 100)
+        }, 300) // todo .. get onListUpdated
       }
     } catch (e) {
-      console.warn(e);
+      console.warn(e)
     }
   }
 

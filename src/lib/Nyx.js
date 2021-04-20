@@ -213,7 +213,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('upload file error', e); // TODO: remove
+      console.warn('upload file error', e)
     }
     return null
   }
