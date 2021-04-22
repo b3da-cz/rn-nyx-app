@@ -85,19 +85,17 @@ export class Nyx {
     return null
   }
 
-  async getLastPost(isRatedByFriends?) {
+  async getLastPosts(isRatedByFriends?) {
     try { // todo nope, why?
       const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      console.warn(res); // TODO: remove
-      // this.store.context = res.context
-      // this.store.discussions = res.discussions
+      this.store.context = res.context
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      console.warn('get last posts error', e)
     }
     return null
   }

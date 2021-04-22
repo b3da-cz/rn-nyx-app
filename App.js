@@ -43,7 +43,9 @@ const App: () => Node = () => {
     <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
       <Context.Provider value={{ nyx, theme, refs }}>
         <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
-          <Router nyx={nyx} refs={refs} />
+          {/*<RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} headerMode={'none'}>*/}
+            <Router nyx={nyx} refs={refs} />
+          {/*</RootStack.Navigator>*/}
         </NavigationContainer>
       </Context.Provider>
       <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>

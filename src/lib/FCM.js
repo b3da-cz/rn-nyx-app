@@ -25,24 +25,17 @@ export const subscribeFCM = async onMessage => {
   try {
     const processMessage = (message, isForegroundMsg = false) => {
       if (message && message.data) {
-        console.warn(message, isForegroundMsg)
-        // Alert.alert(message.notification.title, message.notification.body)
+        // console.warn(message, isForegroundMsg)
         onMessage && typeof onMessage === 'function'
           ? onMessage({
+              isForegroundMsg,
               type: message.data.type,
-              // discussionId: message.data.type,
-              // postId: message.data.type,
+              discussionId: message.data.discussionId,
+              postId: message.data.postId,
+              title: message.notification.title,
+              body: message.notification.body,
             })
           : null
-        // switch (message.data.type) {
-        //   case 'new_mail':
-        //     if (this.state.activeView === 'mail' && this.refMailView) {
-        //       this.refMailView.getMessages()
-        //     } else {
-        //       setTimeout(() => this.switchView('mail'), 100)
-        //     }
-        //     break
-        // }
       }
     }
     return {

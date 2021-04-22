@@ -34,8 +34,14 @@ export class HistoryView extends Component<Props> {
   }
 
   render() {
-    const unreadRowColor = unreads =>
-      unreads > 0 ? Styling.colors.primary : this.isDarkMode ? Styling.colors.light : Styling.colors.dark
+    const unreadRowColor = (unreads, replies) =>
+      replies > 0
+        ? Styling.colors.secondary
+        : unreads > 0
+        ? Styling.colors.primary
+        : this.isDarkMode
+        ? Styling.colors.light
+        : Styling.colors.dark
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -62,7 +68,7 @@ export class HistoryView extends Component<Props> {
                       {
                         width: '75%',
                         fontSize: 14,
-                        color: unreadRowColor(d.new_posts_count),
+                        color: unreadRowColor(d.new_posts_count, d.new_replies_count),
                       },
                     ]}>
                     {d.full_name}
@@ -73,14 +79,22 @@ export class HistoryView extends Component<Props> {
                         width: '25%',
                         textAlign: 'right',
                         fontSize: 14,
-                        color: unreadRowColor(d.new_posts_count),
+                        color: unreadRowColor(d.new_posts_count, d.new_replies_count),
                       },
                     ]}>
                     {d.new_posts_count}
-                    {'  '}
-                    {d.new_images_count > 0 ? <Icon name="image" size={14} color={unreadRowColor(d.new_posts_count)} /> : ''}
+                    {`${d.new_replies_count > 0 ? `+${d.new_replies_count}` : ''}  `}
+                    {d.new_images_count > 0 ? (
+                      <Icon name="image" size={14} color={unreadRowColor(d.new_posts_count)} />
+                    ) : (
+                      ''
+                    )}
                     {d.new_images_count > 0 ? `${d.new_images_count}` : ''}
-                    {d.new_links_count > 0 ? <Icon name="link" size={14} color={unreadRowColor(d.new_posts_count)} /> : ''}
+                    {d.new_links_count > 0 ? (
+                      <Icon name="link" size={14} color={unreadRowColor(d.new_posts_count)} />
+                    ) : (
+                      ''
+                    )}
                     {d.new_links_count > 0 ? `${d.new_links_count}` : ''}
                   </Text>
                 </View>

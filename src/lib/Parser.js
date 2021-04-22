@@ -141,3 +141,23 @@ export class Parser {
     }))
   }
 }
+
+export const parsePostsContent = posts => {
+  for (const post of posts) {
+    if (!post.parsed) {
+      const parser = new Parser(post.content)
+      post.parsed = parser.parse()
+    }
+  }
+  return posts
+}
+
+export const parseNotificationsContent = notifications => {
+  for (const notification of notifications) {
+    notification.data = parsePostsContent([notification.data])[0]
+    if (notification?.details?.replies?.length) {
+      notification.details.replies = parsePostsContent(notification.details.replies)
+    }
+  }
+  return notifications
+}

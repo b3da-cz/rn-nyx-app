@@ -15,9 +15,10 @@ type Props = {
   nyx: Nyx,
   isDarkMode: boolean,
   isHeaderInteractive: boolean,
+  isHeaderPressable: boolean,
   onHeaderPress?: Function,
   onDiscussionDetailShow: Function,
-  onImages: Function,
+  onImage: Function,
   onDelete: Function,
 }
 export class PostComponent extends Component<Props> {
@@ -31,19 +32,10 @@ export class PostComponent extends Component<Props> {
     }
   }
 
-  componentDidMount() {
-    setTimeout(() => this.parseContent(), 10) // todo - parse all on view level
-  }
-
-  parseContent() {
-    const parser = new Parser(this.props.post.content)
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = parser.parse()
-    this.setState({ contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers })
-  }
-
   renderReply(reply) {
     return (
       <LinkComponent
+        key={reply.raw}
         color={Styling.colors.primary}
         fontSize={Styling.metrics.fontSize.large}
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
@@ -57,7 +49,17 @@ export class PostComponent extends Component<Props> {
   renderLink(link) {
     return (
       <LinkComponent
-        onPress={() => Linking.openURL(link.url).catch(() => console.warn('failed to open ', link.url, link))}>
+        key={link.raw}
+        onPress={() => {
+          Linking.openURL(link.url).catch(() => {
+            if (link.url.startsWith('/discussion/')) {
+              const parts = link.url.split('/')
+              this.props.onDiscussionDetailShow(parts[2], parts.length > 3 ? parts[4] : null)
+            } else {
+              console.warn('failed to open ', link.url, link)
+            }
+          })
+        }}>
         {link.text}
       </LinkComponent>
     )
@@ -66,6 +68,7 @@ export class PostComponent extends Component<Props> {
   renderSpoiler({ id, text }) {
     return (
       <SpoilerComponent
+        key={text}
         text={text}
         isVisible={this.state.visibleSpoilers[id]}
         onPress={() => this.setState({ visibleSpoilers: { ...this.state.visibleSpoilers, ...{ [id]: true } } })}
@@ -75,26 +78,17 @@ export class PostComponent extends Component<Props> {
 
   renderImage(img, images) {
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
-      let imgIndex = 0
-      images.forEach((im, i) => {
-        // meh meh meh todo
-        if (im.src === img.src) {
-          imgIndex = i
-        }
-      })
       let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       return (
         <ImageComponent
+          key={img.src}
           src={img.src}
           width={w}
           height={h / 2.5}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() =>
-            this.props.onImages(
-              images.map(i => ({ url: i.src })),
-              imgIndex,
-            )
+            this.props.onImage(img)
           }
         />
       )
@@ -109,6 +103,7 @@ export class PostComponent extends Component<Props> {
     const img = images.filter(i => i.src.includes(ytBlock.videoId))[0]
     return (
       <VideoYoutubeComponent
+        key={ytBlock.videoId}
         videoId={ytBlock.videoId}
         videoLink={ytBlock.link}
         previewSrc={img && img.src}
@@ -124,14 +119,19 @@ export class PostComponent extends Component<Props> {
   }
 
   renderTextNode(text) {
-    if (text.startsWith(':')) { // todo
+    if (text.startsWith(':')) {
       text = text.substring(1)
     }
     if (text.startsWith('<br>')) {
       text = text.substring(4)
     }
+    text = text.trim()
+    if (!text || (text && (text.length === 0 || text === ' '))) {
+      return null
+    }
     return (
       <Text
+        key={text.replace(/(<([^>]+)>)/gi, '').substr(0, 9) || `${Math.random()}`}
         style={[
           Styling.groups.themeComponent(this.props.isDarkMode),
           { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
@@ -149,8 +149,15 @@ export class PostComponent extends Component<Props> {
   }
 
   render() {
-    const { post } = this.props
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = this.state
+    if (!this.props.post.parsed) {
+      return (
+        <View>
+          <Text>error: not parsed</Text>
+        </View>
+      );
+    }
+    const { post } = this.props;
+    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = this.props.post.parsed
     return (
       <View>
         <PostHeaderComponent
@@ -158,7 +165,8 @@ export class PostComponent extends Component<Props> {
           nyx={this.props.nyx}
           isDarkMode={this.props.isDarkMode}
           isInteractive={this.props.isHeaderInteractive}
-          onPress={postId => this.props.onHeaderPress(postId)}
+          isPressable={this.props.isHeaderPressable}
+          onPress={(discussionId, postId) => this.props.onHeaderPress(discussionId, postId)}
           onDelete={postId => this.props.onDelete(postId)}
         />
         <View

@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { Text, TouchableOpacity, Image, View } from 'react-native'
+import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import { confirm, UserIconComponent } from '../component'
@@ -10,7 +11,8 @@ type Props = {
   nyx: Nyx,
   isDarkMode: boolean,
   isInteractive: boolean,
-  onPress?: Function, // todo, does it make sense? find better way
+  isPressable: boolean,
+  onPress?: Function,
   onDelete: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
@@ -148,51 +150,56 @@ export class PostHeaderComponent extends Component<Props> {
         }}
         disable={!this.props.isInteractive}
         onRef={r => (this.refSwipeable = r)}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: 5,
-            paddingBottom: 5,
-            paddingTop: 5,
-            borderTopColor: Styling.colors.dark,
-            borderTopWidth: 1,
-            backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-            borderColor: Styling.colors.primary,
-            borderBottomWidth: post.new ? 1 : 0,
-          }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
-            <UserIconComponent username={post.username} marginRight={10} />
-            <View>
-              <Text style={Styling.groups.link()} numberOfLines={1}>
-                {post.username}{' '}
-                <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
-                  {post.activity &&
+        <TouchableRipple
+          disabled={!this.props.isPressable}
+          onPress={() => this.props.onPress(post.discussion_id, post.id)}
+          rippleColor={'rgba(18,146,180, 0.73)'}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: 5,
+              paddingBottom: 5,
+              paddingTop: 5,
+              borderTopColor: Styling.colors.dark,
+              borderTopWidth: 1,
+              // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+              borderColor: Styling.colors.primary,
+              borderBottomWidth: post.new ? 1 : 0,
+            }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
+              <UserIconComponent username={post.username} marginRight={10} />
+              <View>
+                <Text style={Styling.groups.link()} numberOfLines={1}>
+                  {post.username}{' '}
+                  <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
+                    {post.activity &&
                     `[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}] ${
                       post.activity.location
                     }`}
+                  </Text>
                 </Text>
-              </Text>
-              <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>{this.formatDate(post.inserted_at)}</Text>
+                <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>{this.formatDate(post.inserted_at)}</Text>
+              </View>
             </View>
+            <Text
+              style={[
+                {
+                  width: '10%',
+                  color:
+                    post.my_rating === 'positive'
+                      ? 'green'
+                      : post.my_rating === 'negative'
+                      ? 'red'
+                      : Styling.colors.lighter,
+                  textAlign: 'right',
+                },
+              ]}>
+              {post.rating}
+            </Text>
           </View>
-          <Text
-            style={[
-              {
-                width: '10%',
-                color:
-                  post.my_rating === 'positive'
-                    ? 'green'
-                    : post.my_rating === 'negative'
-                    ? 'red'
-                    : Styling.colors.lighter,
-                textAlign: 'right',
-              },
-            ]}>
-            {post.rating}
-          </Text>
-        </View>
+        </TouchableRipple>
       </Swipeable>
     )
   }

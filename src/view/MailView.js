@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { PostComponent } from '../component'
-import { Context, getDistinctPosts, Styling } from '../lib'
+import { Context, getDistinctPosts, Styling, parsePostsContent } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -30,9 +30,10 @@ export class MailView extends Component<Props> {
   async getMessages() {
     this.setState({ isFetching: true })
     const res = await this.nyx.getMail()
+    const parsedMessages = parsePostsContent(res.posts)
     this.setState({
       conversations: res.conversations,
-      messages: res.posts,
+      messages: parsedMessages,
       isFetching: false,
     })
   }
@@ -45,9 +46,10 @@ export class MailView extends Component<Props> {
     }`
     const res = await this.nyx.getMail(queryString)
     const newMessages = getDistinctPosts(res.posts, messages)
+    const parsedMessages = parsePostsContent(newMessages)
     this.setState({
       conversations: res.conversations,
-      messages: newMessages,
+      messages: parsedMessages,
       isFetching: false,
     })
   }
@@ -64,8 +66,8 @@ export class MailView extends Component<Props> {
     })
   }
 
-  showImages(images, imgIndex) {
-    this.props.onImages(images, imgIndex)
+  showImages(image) {
+    this.props.onImages([{ url: image.src }], 0)
   }
 
   showPost(discussionId, postId) {
@@ -93,7 +95,7 @@ export class MailView extends Component<Props> {
         isDarkMode={this.isDarkMode}
         isHeaderInteractive={false}
         onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
-        onImages={(images, i) => this.showImages(images, i)}
+        onImage={image => this.showImages(image)}
         onDelete={postId => this.onPostDelete(postId)}
       />
     )
@@ -109,9 +111,14 @@ export class MailView extends Component<Props> {
             prompt={'Recipient'}
             selectedValue={this.state.activeRecipient}
             onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
-            <Picker.Item label={'All'} value={'all'} color={this.getPickerItemColor('all')} />
+            <Picker.Item key={'all'} label={'All'} value={'all'} color={this.getPickerItemColor('all')} />
             {this.state.conversations.map(c => (
-              <Picker.Item label={c.username} value={c.username} color={this.getPickerItemColor(c.username)} />
+              <Picker.Item
+                key={c.username}
+                label={c.username}
+                value={c.username}
+                color={this.getPickerItemColor(c.username)}
+              />
             ))}
           </Picker>
         )}

@@ -5587,6 +5587,11 @@ react-native-gesture-handler@^1.10.3:
     invariant "^2.2.4"
     prop-types "^15.7.2"
 
+react-native-image-helper@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/react-native-image-helper/-/react-native-image-helper-0.0.3.tgz#68eb4dc24ae5ba642f11c0d6784dee24e091e0a4"
+  integrity sha512-a4tPpxdnIy+qbd1XACHDO+DnmPsCt8qV0of/8zlLj6ssZuERCexD+n/9086O+05qj9K1m5x6mvECFsLmC5PFmg==
+
 react-native-image-pan-zoom@^2.1.12:
   version "2.1.12"
   resolved "https://registry.yarnpkg.com/react-native-image-pan-zoom/-/react-native-image-pan-zoom-2.1.12.tgz#eb98bf56fb5610379bdbfdb63219cc1baca98fd2"
@@ -5608,6 +5613,11 @@ react-native-iphone-x-helper@^1.3.0, react-native-iphone-x-helper@^1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/react-native-iphone-x-helper/-/react-native-iphone-x-helper-1.3.1.tgz#20c603e9a0e765fd6f97396638bdeb0e5a60b010"
   integrity sha512-HOf0jzRnq2/aFUcdCJ9w9JGzN3gdEg0zFE4FyYlp4jtidqU03D5X7ZegGKfT1EWteR0gPBGp9ye5T5FvSWi9Yg==
+
+react-native-notification-banner@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/react-native-notification-banner/-/react-native-notification-banner-2.0.0.tgz#52533f912a9b2618f4018bb09622fa43ee1d69bd"
+  integrity sha512-kaYsSVLh9TsQ6NMBeJRWL2aINCFfOHoYXo2FHtFta+W4K79dSpqtsQ2KEXA17MJsIylrfsD1mmY9BbNg6JU8lg==
 
 react-native-paper@^4.7.2:
   version "4.7.2"

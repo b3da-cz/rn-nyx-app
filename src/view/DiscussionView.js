@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList } from 'react-native'
 import { PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts } from '../lib'
+import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
 
 type Props = {
   id: number,
@@ -17,6 +17,7 @@ export class DiscussionView extends Component<Props> {
       title: '',
       discussionId: null,
       posts: [],
+      images: [],
       isFetching: false,
     }
     this.refScroll = null
@@ -44,7 +45,10 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadDiscussionBottom() {
-    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
+    if (this.state.posts.length < 20) {
+      return // prevent reloading of new discussion, todo variable min len
+    }
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id;
     const bottomPostId = this.state.posts.length > 0 && this.state.posts[this.state.posts.length - 1].id
     const queryString = `${discussionId}?order=older_than&from_id=${bottomPostId}`
     await this.fetchDiscussion(queryString)
@@ -68,13 +72,16 @@ export class DiscussionView extends Component<Props> {
     this.setState({ isFetching: true })
     const res = await this.nyx.getDiscussion(idOrQueryString)
     const newPosts = getDistinctPosts(res.posts, this.state.posts)
+    const parsedPosts = parsePostsContent(newPosts)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
     const uploadedFiles = res.discussion_common.waiting_files || []
+    const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
       title,
-      posts: newPosts,
+      images,
+      posts: parsedPosts,
       isFetching: false,
     })
     this.props.onDiscussionFetched({ title, uploadedFiles })
@@ -102,7 +109,9 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
-  showImages(images, imgIndex) {
+  showImages(image) {
+    const imgIndex = this.state.images.indexOf(image)
+    const images = this.state.images.map(img => ({ url: img.src }))
     this.props.onImages(images, imgIndex)
   }
 
@@ -138,7 +147,7 @@ export class DiscussionView extends Component<Props> {
             isDarkMode={this.isDarkMode}
             isHeaderInteractive={true}
             onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
-            onImages={(images, i) => this.showImages(images, i)}
+            onImage={image => this.showImages(image)}
             onDelete={postId => this.onPostDelete(postId)}
           />
         )}

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { FlatList, Image, View } from 'react-native'
 import { PostComponent } from '../component'
-import { Context, Styling } from '../lib'
+import { Context, parseNotificationsContent, Styling } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -28,15 +28,16 @@ export class NotificationsView extends Component<Props> {
   async getNotifications() {
     this.setState({ isFetching: true })
     const res = await this.nyx.getNotifications()
+    const parsedNotifications = parseNotificationsContent(res.notifications)
     this.setState({
       unreadCount: res.context.user.notifications_unread,
-      posts: res.notifications,
+      posts: parsedNotifications,
       isFetching: false,
     })
   }
 
-  showImages(images, imgIndex) {
-    this.props.onImages(images, imgIndex)
+  showImages(image) {
+    this.props.onImages([{ url: image.src }], 0)
   }
 
   showPost(discussionId, postId) {
@@ -68,8 +69,10 @@ export class NotificationsView extends Component<Props> {
           nyx={this.nyx}
           isDarkMode={this.isDarkMode}
           isHeaderInteractive={false}
+          isHeaderPressable={true}
+          onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
           onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
-          onImages={(images, i) => this.showImages(images, i)}
+          onImage={image => this.showImages(image)}
           onDelete={postId => this.onPostDelete(postId)}
         />
         {thumbs_up && thumbs_up.length > 0 && (
@@ -108,8 +111,10 @@ export class NotificationsView extends Component<Props> {
             nyx={this.nyx}
             isDarkMode={this.isDarkMode}
             isHeaderInteractive={false}
+            isHeaderPressable={true}
+            onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
             onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
-            onImages={(images, i) => this.showImages(images, i)}
+            onImage={image => this.showImages(image)}
             onDelete={postId => this.onPostDelete(postId)}
           />
         </View>

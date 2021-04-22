@@ -14,6 +14,10 @@ export const getDistinctPosts = (posts, oldPosts) => {
       if (!item.uuid) {
         item.uuid = generateUuidV4()
       }
+      if (!item.parsed) {
+        const oldParsedPost = oldPosts.filter(p => p.id === item.id)
+        item.parsed = oldParsedPost.length ? oldParsedPost[0].parsed : null
+      }
       newPosts.push(item)
     }
   }

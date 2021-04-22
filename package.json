@@ -1,6 +1,6 @@
 {
   "name": "nnn",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -27,8 +27,10 @@
     "react-native-device-info": "^8.1.0",
     "react-native-document-picker": "^5.0.3",
     "react-native-gesture-handler": "^1.10.3",
+    "react-native-image-helper": "^0.0.3",
     "react-native-image-viewing": "^0.2.0",
     "react-native-image-zoom-viewer": "^3.0.1",
+    "react-native-notification-banner": "^2.0.0",
     "react-native-paper": "^4.7.2",
     "react-native-reanimated": "^2.1.0",
     "react-native-safe-area-context": "^3.2.0",
