@@ -1,13 +1,13 @@
 import React from 'react'
-import { Text, TouchableOpacity } from 'react-native'
+import { Text, TouchableRipple } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const LinkComponent = ({ children, color = Styling.colors.secondary, fontSize = 16, onPress }) => {
   return (
-    <TouchableOpacity
+    <TouchableRipple
       // style={{borderWidth: 1, borderColor: 'blue'}}
       style={{ marginHorizontal: Styling.metrics.block.small }}
-      accessibilityRole="button"
+      rippleColor={'rgba(18,146,180, 0.3)'}
       onPress={() => onPress()}>
       <Text
         style={[
@@ -15,6 +15,6 @@ export const LinkComponent = ({ children, color = Styling.colors.secondary, font
         ]}>
         {children}
       </Text>
-    </TouchableOpacity>
+    </TouchableRipple>
   )
 }

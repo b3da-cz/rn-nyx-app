@@ -32,7 +32,7 @@ export class PostComponent extends Component<Props> {
   }
 
   componentDidMount() {
-    setTimeout(() => this.parseContent(), 10)
+    setTimeout(() => this.parseContent(), 10) // todo - parse all on view level
   }
 
   parseContent() {
@@ -49,6 +49,7 @@ export class PostComponent extends Component<Props> {
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
         {!reply.text.includes('@') && '@'}
         {reply.text}
+        {!reply.text.includes('@') && ':'}
       </LinkComponent>
     )
   }
@@ -123,6 +124,12 @@ export class PostComponent extends Component<Props> {
   }
 
   renderTextNode(text) {
+    if (text.startsWith(':')) { // todo
+      text = text.substring(1)
+    }
+    if (text.startsWith('<br>')) {
+      text = text.substring(4)
+    }
     return (
       <Text
         style={[
@@ -138,7 +145,7 @@ export class PostComponent extends Component<Props> {
           .join('\n')
           .replace(/(<([^>]+)>)/gi, '')}
       </Text>
-    )
+    );
   }
 
   render() {

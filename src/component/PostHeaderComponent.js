@@ -156,6 +156,9 @@ export class PostHeaderComponent extends Component<Props> {
             paddingHorizontal: 5,
             paddingBottom: 5,
             paddingTop: 5,
+            borderTopColor: Styling.colors.dark,
+            borderTopWidth: 1,
+            backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
             borderColor: Styling.colors.primary,
             borderBottomWidth: post.new ? 1 : 0,
           }}>

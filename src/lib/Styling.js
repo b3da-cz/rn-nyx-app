@@ -4,6 +4,7 @@ export const Styling = {
   colors: {
     primary: '#1292B4',
     secondary: '#b46612',
+    accent: '#c40000',
     white: '#FFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
@@ -96,5 +97,29 @@ export const Styling = {
       alignItems: 'center',
       justifyContent: 'center',
     },
+  },
+}
+
+export const NavOptions = {
+  tabBarOptions: {
+    style: {
+      height: 50,
+      backgroundColor: Styling.colors.black,
+    },
+    labelStyle: {
+      fontSize: 11,
+    },
+    indicatorStyle: {
+      backgroundColor: Styling.colors.primary,
+      height: 3,
+    },
+    pressColor: Styling.colors.primary,
+    activeTintColor: Styling.colors.primary,
+  },
+  screenOptions: {
+    headerStyle: {
+      backgroundColor: Styling.colors.black,
+    },
+    headerTintColor: '#fff',
   },
 }

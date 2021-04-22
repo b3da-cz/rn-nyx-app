@@ -1,5 +1,6 @@
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import { Text, TouchableRipple } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const SpoilerComponent = ({ children, text, isVisible, onPress }) => {
@@ -17,15 +18,15 @@ export const SpoilerComponent = ({ children, text, isVisible, onPress }) => {
           {text}
         </Text>
       ) : (
-        <TouchableOpacity
+        <TouchableRipple
           style={{ padding: Styling.metrics.block.medium, borderWidth: 1, borderColor: Styling.colors.secondary }}
-          accessibilityRole="button"
+          rippleColor={'rgba(18,146,180, 0.3)'}
           onPress={() => onPress()}>
           <Text
             style={{ fontSize: Styling.metrics.fontSize.large, color: Styling.colors.secondary, textAlign: 'center' }}>
             SPOILER
           </Text>
-        </TouchableOpacity>
+        </TouchableRipple>
       )}
     </View>
   )
