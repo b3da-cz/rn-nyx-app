@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Text, TouchableOpacity, Image, View } from 'react-native'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
-import { confirm } from '../component'
+import { confirm, UserIconComponent } from '../component'
 import { Nyx, Styling } from '../lib'
 
 type Props = {
@@ -10,7 +10,7 @@ type Props = {
   nyx: Nyx,
   isDarkMode: boolean,
   isInteractive: boolean,
-  onPress?: Function,
+  onPress?: Function, // todo, does it make sense? find better way
   onDelete: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
@@ -31,10 +31,30 @@ export class PostHeaderComponent extends Component<Props> {
       return
     }
     const ratings = await this.props.nyx.getRating(post)
-    if (ratings && ratings.length > 36) {
-      this.setState({ ratings, ratingWidth: 9, ratingHeight: 16, ratingSwiperWidth: ratings.length > 70 ? 300 : 150 })
+    // next is 144 on op6 screen width.. (~280 on landscape)
+    if (ratings && ratings.length > 84) {
+      this.setState({
+        ratings,
+        ratingWidth: 10,
+        ratingHeight: 12.5,
+        ratingSwiperWidth: ((ratings.length + 1) / 4) * 11 + 5,
+      })
+    } else if (ratings && ratings.length > 36) {
+      this.setState({
+        ratings,
+        ratingWidth: 13.3,
+        ratingHeight: 16.6,
+        ratingSwiperWidth: ((ratings.length + 1) / 3) * 14.3 + 5,
+      })
+    } else if (ratings && ratings.length > 9) {
+      this.setState({
+        ratings,
+        ratingWidth: 20,
+        ratingHeight: 25,
+        ratingSwiperWidth: ((ratings.length + 1) / 2) * 21 + 5,
+      })
     } else {
-      this.setState({ ratings })
+      this.setState({ ratings, ratingWidth: 40, ratingHeight: 50, ratingSwiperWidth: ratings.length * 41 + 5 })
     }
   }
 
@@ -106,22 +126,14 @@ export class PostHeaderComponent extends Component<Props> {
                     flexWrap: 'wrap',
                   }}>
                   {this.state.ratings.map(r => (
-                    <View
+                    <UserIconComponent
                       key={`${r.username}${r.tag}`}
-                      style={{
-                        maxWidth: this.state.ratingWidth,
-                        maxHeight: this.state.ratingHeight,
-                        marginRight: 3,
-                        borderColor: 'red',
-                        borderWidth: 0,
-                      }}>
-                      <Image
-                        style={{ width: this.state.ratingWidth, height: this.state.ratingHeight }}
-                        resizeMethod={'scale'}
-                        resizeMode={'center'}
-                        source={{ uri: `https://nyx.cz/${r.username[0]}/${r.username}.gif` }}
-                      />
-                    </View>
+                      username={r.username}
+                      width={this.state.ratingWidth}
+                      height={this.state.ratingHeight}
+                      borderWidth={1}
+                      marginRight={1}
+                    />
                   ))}
                 </View>,
               ]
@@ -144,16 +156,14 @@ export class PostHeaderComponent extends Component<Props> {
             paddingHorizontal: 5,
             paddingBottom: 5,
             paddingTop: 5,
+            borderTopColor: Styling.colors.dark,
+            borderTopWidth: 1,
+            backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
             borderColor: Styling.colors.primary,
             borderBottomWidth: post.new ? 1 : 0,
           }}>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
-            <Image
-              style={{ width: 30, height: 40, marginRight: 10, borderWidth: 1, borderColor: Styling.colors.lighter }}
-              resizeMethod={'scale'}
-              resizeMode={'center'}
-              source={{ uri: `https://nyx.cz/${post.username[0]}/${post.username}.gif` }}
-            />
+            <UserIconComponent username={post.username} marginRight={10} />
             <View>
               <Text style={Styling.groups.link()} numberOfLines={1}>
                 {post.username}{' '}

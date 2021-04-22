@@ -1,5 +1,6 @@
 import React from 'react'
-import { TouchableOpacity, Linking, Image, View } from 'react-native'
+import { Linking, Image, View } from 'react-native'
+import { TouchableRipple } from 'react-native-paper'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { LinkComponent } from '../component'
 import { Styling } from '../lib'
@@ -20,9 +21,9 @@ export const VideoYoutubeComponent = ({
       {isPlayerVisible ? (
         <YoutubePlayer height={Styling.metrics.window().width / 1.777} videoId={videoId} />
       ) : (
-        <TouchableOpacity
+        <TouchableRipple
           // style={{borderWidth: 1, borderColor: 'red'}}
-          accessibilityRole="button"
+          rippleColor={'rgba(18,146,180, 0.3)'}
           onPress={() => onPreviewPress()}>
           <Image
             style={{
@@ -31,11 +32,12 @@ export const VideoYoutubeComponent = ({
               backgroundColor,
               margin: Styling.metrics.block.small,
             }}
+            // loadingIndicatorSource={'debug..'}
             resizeMethod={'scale'}
-            resizeMode={'center'}
+            resizeMode={'cover'}
             source={{ uri: previewSrc }}
           />
-        </TouchableOpacity>
+        </TouchableRipple>
       )}
     </View>
   )

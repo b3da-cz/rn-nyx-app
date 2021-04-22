@@ -16,7 +16,9 @@ export const ImageComponent = ({ src, backgroundColor, width, height, onPress })
           margin: Styling.metrics.block.small,
         }}
         resizeMethod={'scale'}
-        resizeMode={'center'}
+        // resizeMode={'cover'} for thumbs
+        resizeMode={'contain'}
+        // resizeMode={'center'}
         source={{ uri: src }}
       />
     </TouchableOpacity>

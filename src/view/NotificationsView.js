@@ -1,15 +1,14 @@
 import React, { Component } from 'react'
 import { FlatList, Image, View } from 'react-native'
 import { PostComponent } from '../component'
-import { Nyx, Styling } from '../lib'
+import { Context, Styling } from '../lib'
 
 type Props = {
-  isDarkMode: boolean,
-  nyx: Nyx,
   onImages: Function,
   onNavigation: Function,
 }
 export class NotificationsView extends Component<Props> {
+  static contextType = Context
   constructor(props) {
     super(props)
     this.state = {
@@ -21,12 +20,14 @@ export class NotificationsView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.nyx = this.context.nyx
+    this.isDarkMode = this.context.theme === 'dark'
     this.getNotifications()
   }
 
   async getNotifications() {
     this.setState({ isFetching: true })
-    const res = await this.props.nyx.getNotifications()
+    const res = await this.nyx.getNotifications()
     this.setState({
       unreadCount: res.context.user.notifications_unread,
       posts: res.notifications,
@@ -51,12 +52,12 @@ export class NotificationsView extends Component<Props> {
     return (
       <View
         style={[
-          Styling.groups.themeView(this.props.isDarkMode),
+          Styling.groups.themeView(this.isDarkMode),
           { borderBottomWidth: 2, borderColor: Styling.colors.primary },
         ]}>
         {/*// <TouchableOpacity*/}
         {/*//   style={[*/}
-        {/*//     Styling.groups.themeView(this.props.isDarkMode),*/}
+        {/*//     Styling.groups.themeView(this.isDarkMode),*/}
         {/*//     { borderBottomWidth: 2, borderColor: Styling.colors.primary },*/}
         {/*//   ]}*/}
         {/*//   accessibilityRole="button"*/}
@@ -64,8 +65,8 @@ export class NotificationsView extends Component<Props> {
         <PostComponent
           key={item.data.id}
           post={item.data}
-          nyx={this.props.nyx}
-          isDarkMode={this.props.isDarkMode}
+          nyx={this.nyx}
+          isDarkMode={this.isDarkMode}
           isHeaderInteractive={false}
           onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
           onImages={(images, i) => this.showImages(images, i)}
@@ -96,7 +97,7 @@ export class NotificationsView extends Component<Props> {
         <View
           style={{
             flex: 1,
-            backgroundColor: this.props.isDarkMode ? Styling.colors.black : Styling.colors.white,
+            backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white,
             zIndex: 1,
           }}
         />
@@ -104,8 +105,8 @@ export class NotificationsView extends Component<Props> {
           <PostComponent
             key={post.id}
             post={post}
-            nyx={this.props.nyx}
-            isDarkMode={this.props.isDarkMode}
+            nyx={this.nyx}
+            isDarkMode={this.isDarkMode}
             isHeaderInteractive={false}
             onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
             onImages={(images, i) => this.showImages(images, i)}
@@ -142,7 +143,7 @@ export class NotificationsView extends Component<Props> {
     // todo undefined keys in list ?
     return (
       <FlatList
-        style={{ backgroundColor: this.props.isDarkMode ? Styling.colors.black : Styling.colors.white }}
+        style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}
         ref={r => (this.refScroll = r)}
         data={this.state.posts}
         extraData={this.state}

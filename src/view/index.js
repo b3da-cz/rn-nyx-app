@@ -1,6 +1,7 @@
 export * from './ComposePostModal'
 export * from './DiscussionView'
 export * from './HistoryView'
+export * from './ImageModal'
 export * from './LoginView'
 export * from './MailView'
 export * from './MainView'

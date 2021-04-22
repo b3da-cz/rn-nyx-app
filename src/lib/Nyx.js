@@ -2,15 +2,19 @@ import DeviceInfo from 'react-native-device-info'
 import { Storage } from '../lib'
 
 export class Nyx {
-  constructor(username) {
+  constructor(username?) {
     this.username = username
     this.auth = {}
     this.store = {}
     this.userAgent = `Nnn v${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
   }
 
-  async init() {
+  async init(username?) {
+    if (username) {
+      this.username = username
+    }
     let auth = await Storage.getAuth()
+    // console.warn(auth); // TODO: remove
     let isAuthConfirmed = true
     if (!auth) {
       auth = {
@@ -23,12 +27,11 @@ export class Nyx {
 
     if (!this.auth.token || this.auth.token === 'undefined') {
       isAuthConfirmed = await this.createAuthToken()
-      console.warn('ccc'); // TODO: remove
       if (isAuthConfirmed) {
-        console.warn('ccc save'); // TODO: remove
         await Storage.setAuth(this.auth)
       }
     }
+    return isAuthConfirmed
   }
 
   getHeaders(contentType = 'application/json') {
@@ -76,6 +79,59 @@ export class Nyx {
       this.store.context = res.context
       this.store.discussions = res.discussions
       return res
+    } catch (e) {
+      console.warn('get history error', e)
+    }
+    return null
+  }
+
+  async getLastPost(isRatedByFriends?) {
+    try { // todo nope, why?
+      const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
+        method: 'GET',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      console.warn(res); // TODO: remove
+      // this.store.context = res.context
+      // this.store.discussions = res.discussions
+      return res
+    } catch (e) {
+      console.warn('get history error', e)
+    }
+    return null
+  }
+
+  async getLastDiscussions() {
+    try {
+      const res = await fetch('https://nyx.cz/api/last/discussions', { // todo nope, why ? in browser ok
+        method: 'GET',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.text()) // todo
+
+      console.warn(res); // TODO: remove
+      // this.store.context = res.context
+      // this.store.discussions = res.discussions
+      return []
+    } catch (e) {
+      console.warn('get history error', e)
+    }
+    return null
+  }
+
+  async search(phrase) {
+    try {
+      const res = await fetch(`/api/search/unified?search=${phrase}&limit=20`, {
+        method: 'GET',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.text()) // todo
+
+      console.warn(res); // TODO: remove
+      // this.store.context = res.context
+      // this.store.discussions = res.discussions
+      return {}
     } catch (e) {
       console.warn('get history error', e)
     }
@@ -213,7 +269,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('upload file error', e); // TODO: remove
+      console.warn('upload file error', e)
     }
     return null
   }

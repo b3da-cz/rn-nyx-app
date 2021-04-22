@@ -1,17 +1,16 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList } from 'react-native'
 import { PostComponent } from '../component'
-import { Nyx, Styling, getDistinctPosts } from '../lib'
+import { Context, Styling, getDistinctPosts } from '../lib'
 
 type Props = {
   id: number,
   postId?: number,
-  isDarkMode: boolean,
-  nyx: Nyx,
   onDiscussionFetched: Function,
   onImages: Function,
 }
 export class DiscussionView extends Component<Props> {
+  static contextType = Context
   constructor(props) {
     super(props)
     this.state = {
@@ -24,6 +23,8 @@ export class DiscussionView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.nyx = this.context.nyx
+    this.isDarkMode = this.context.theme === 'dark'
     if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
     } else {
@@ -65,7 +66,7 @@ export class DiscussionView extends Component<Props> {
   async fetchDiscussion(idOrQueryString) {
     // console.warn('fetch ', idOrQueryString); // TODO: remove
     this.setState({ isFetching: true })
-    const res = await this.props.nyx.getDiscussion(idOrQueryString)
+    const res = await this.nyx.getDiscussion(idOrQueryString)
     const newPosts = getDistinctPosts(res.posts, this.state.posts)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
@@ -77,6 +78,7 @@ export class DiscussionView extends Component<Props> {
       isFetching: false,
     })
     this.props.onDiscussionFetched({ title, uploadedFiles })
+    this.nyx.store.activeDiscussionId = this.props.id
     return newPosts
   }
 
@@ -93,10 +95,10 @@ export class DiscussionView extends Component<Props> {
             animated,
           })
           this.setState({ isFetching: false })
-        }, 100)
+        }, 300) // todo .. get onListUpdated
       }
     } catch (e) {
-      console.warn(e);
+      console.warn(e)
     }
   }
 
@@ -120,6 +122,10 @@ export class DiscussionView extends Component<Props> {
         onRefresh={() => this.loadDiscussionTop()}
         onEndReached={() => this.loadDiscussionBottom()}
         onEndReachedThreshold={0.01}
+        style={{
+          height: '100%',
+          backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+        }}
         ListFooterComponent={() =>
           this.state.isFetching &&
           this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
@@ -128,8 +134,8 @@ export class DiscussionView extends Component<Props> {
           <PostComponent
             key={item.id}
             post={item}
-            nyx={this.props.nyx}
-            isDarkMode={this.props.isDarkMode}
+            nyx={this.nyx}
+            isDarkMode={this.isDarkMode}
             isHeaderInteractive={true}
             onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
             onImages={(images, i) => this.showImages(images, i)}
