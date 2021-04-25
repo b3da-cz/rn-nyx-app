@@ -13,6 +13,7 @@ type Props = {
   uploadedFiles: Array,
   discussionId?: number,
   postId?: number,
+  replyTo?: string,
   username?: string,
   onSend: Function,
 }
@@ -39,7 +40,8 @@ export class ComposePostView extends Component<Props> {
 
   prepareForm() {
     const { username, uploadedFiles } = this.props
-    this.setState({ username, uploadedFiles })
+    const message = this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}:` : ''
+    this.setState({ username, uploadedFiles, message })
   }
 
   async searchUsername(searchPhrase) {

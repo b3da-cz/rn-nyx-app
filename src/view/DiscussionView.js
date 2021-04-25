@@ -149,6 +149,14 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
+  onReply(discussionId, postId, username) {
+    this.props.navigation.push('composePost', {
+      discussionId,
+      postId,
+      replyTo: username,
+    })
+  }
+
   onVoteCast(updatedPost) {
     if (updatedPost?.error) {
       return
@@ -221,6 +229,7 @@ export class DiscussionView extends Component<Props> {
               onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
               onImage={image => this.showImages(image)}
               onDelete={postId => this.onPostDelete(postId)}
+              onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
             />
           )}

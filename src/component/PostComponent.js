@@ -20,6 +20,7 @@ type Props = {
   isHeaderPressable: boolean,
   onHeaderPress?: Function,
   onDiscussionDetailShow: Function,
+  onReply?: Function,
   onImage: Function,
   onDelete: Function,
   onVoteCast?: Function,
@@ -171,7 +172,12 @@ export class PostComponent extends Component<Props> {
           isUnread={this.props.isUnread}
           isInteractive={this.props.isHeaderInteractive}
           isPressable={this.props.isHeaderPressable}
-          onPress={(discussionId, postId) => this.props.onHeaderPress(discussionId, postId)}
+          onPress={(discussionId, postId) =>
+            typeof this.props.onHeaderPress === 'function' ? this.props.onHeaderPress(discussionId, postId) : null
+          }
+          onReply={(discussionId, postId, username) =>
+            typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
+          }
           onDelete={postId => this.props.onDelete(postId)}
           onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
         />

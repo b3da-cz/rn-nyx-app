@@ -91,7 +91,8 @@ export const Styling = {
       backgroundColor: 'red',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 5,
+      borderTopWidth: 1,
+      borderTopColor: '#444',
     },
     flexCentered: {
       alignItems: 'center',

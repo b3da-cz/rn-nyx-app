@@ -187,6 +187,7 @@ export const Router = ({ nyx, refs }) => {
         username={route?.params?.username}
         discussionId={discussionId}
         postId={postId}
+        replyTo={route?.params?.replyTo}
         onSend={() => {
           navigation.goBack()
           refs?.DiscussionView?.reloadDiscussionLatest()
@@ -245,10 +246,10 @@ export const Router = ({ nyx, refs }) => {
           options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" style={{ marginLeft: '75%' }} /> }}
         />
         <Tab.Screen name={'historyStack'} component={HistoryStackContainer} options={{ title: 'History' }} />
-        <Tab.Screen name={'searchStack'} component={SearchStackContainer} />
-        <Tab.Screen name={'mailStack'} component={MailStackContainer} />
-        <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} />
-        <Tab.Screen name={'profile'} component={HistoryStackContainer} />
+        <Tab.Screen name={'searchStack'} component={SearchStackContainer} options={{ title: 'search' }} />
+        <Tab.Screen name={'mailStack'} component={MailStackContainer} options={{ title: 'mail' }} />
+        <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} options={{ title: 'last' }} />
+        <Tab.Screen name={'profile'} component={HistoryStackContainer} options={{ title: 'profile' }} />
       </Tab.Navigator>
     )
   }
