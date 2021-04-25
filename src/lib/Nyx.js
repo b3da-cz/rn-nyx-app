@@ -1,4 +1,5 @@
 import DeviceInfo from 'react-native-device-info'
+import { confirm } from '../component'
 import { Storage } from '../lib'
 
 export class Nyx {
@@ -36,9 +37,9 @@ export class Nyx {
 
   getHeaders(contentType = 'application/json') {
     return {
-      'Accept': contentType,
+      Accept: contentType,
       'Content-Type': contentType,
-      'Authorization': `Bearer ${this.auth.token}`,
+      Authorization: `Bearer ${this.auth.token}`,
       'User-Agent': this.userAgent,
     }
   }
@@ -61,7 +62,7 @@ export class Nyx {
       //   `Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`,
       // )
       // if (isAuthConfirmed) {
-        return true
+      return true
       // }
     } catch (e) {
       console.warn('create token error', e)
@@ -71,7 +72,7 @@ export class Nyx {
 
   async getHistory() {
     try {
-      const res = await fetch(`https://nyx.cz/api/bookmarks/history/more`, {
+      const res = await fetch('https://nyx.cz/api/bookmarks/history/more', {
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
@@ -86,7 +87,8 @@ export class Nyx {
   }
 
   async getLastPosts(isRatedByFriends?) {
-    try { // todo nope, why?
+    try {
+      // todo nope, why?
       const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
         method: 'GET',
         referrerPolicy: 'no-referrer',
@@ -102,7 +104,8 @@ export class Nyx {
 
   async getLastDiscussions() {
     try {
-      const res = await fetch('https://nyx.cz/api/last/discussions', { // todo nope, why ? in browser ok
+      const res = await fetch('https://nyx.cz/api/last/discussions', {
+        // todo nope, why ? in browser ok
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
@@ -118,20 +121,23 @@ export class Nyx {
     return null
   }
 
-  async search(phrase) {
+  async search({ phrase, isUnified = false, isUsername = false, limit = 20 }) {
     try {
-      const res = await fetch(`/api/search/unified?search=${phrase}&limit=20`, {
-        method: 'GET',
-        referrerPolicy: 'no-referrer',
-        headers: this.getHeaders(),
-      }).then(resp => resp.text()) // todo
-
-      console.warn(res); // TODO: remove
-      // this.store.context = res.context
-      // this.store.discussions = res.discussions
-      return {}
+      const res = await fetch(
+        `https://nyx.cz/api/search${isUnified ? '/unified' : isUsername ? '/username/' : ''}${isUsername ? phrase : `?search=${phrase}&limit=${limit}`}`,
+        {
+          method: 'GET',
+          referrerPolicy: 'no-referrer',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
+      if (!isUnified) {
+        this.store.context = res.context
+      }
+      return res
     } catch (e) {
       console.warn('get history error', e)
+      console.warn(e.message); // TODO: remove
     }
     return null
   }
@@ -177,7 +183,7 @@ export class Nyx {
 
   async getNotifications() {
     try {
-      const res = await fetch(`https://nyx.cz/api/notifications`, {
+      const res = await fetch('https://nyx.cz/api/notifications', {
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
@@ -211,10 +217,47 @@ export class Nyx {
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      console.warn(res, this.auth); // TODO: remove
+      if (res.error && res.code === 'NeedsConfirmation') {
+        const isConfirmed = await confirm('Confirm vote', res.message)
+        if (isConfirmed) {
+          return this.castVote(post, 'negative_visible')
+        }
+      }
       return res
     } catch (e) {
-      console.warn('get notifications error', e)
+      console.warn('cast vote error', e)
+    }
+    return null
+  }
+
+  async sendPrivateMessage(recipient, message) {
+    const data = { recipient, message }
+    try {
+      const res = await fetch(`https://nyx.cz/api/mail/send`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders('application/x-www-form-urlencoded'),
+        body: Object.keys(data)
+          .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+          .join('&'),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('send private message error', e)
+    }
+    return null
+  }
+
+  async bookmarkDiscussion(discussionId, isBooked) {
+    try {
+      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/bookmark?new_state=${isBooked}`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('bookmark discussion error', e)
     }
     return null
   }
@@ -251,17 +294,17 @@ export class Nyx {
     return null
   }
 
-  async uploadFile(discussionId, file) {
+  async uploadFile(file, discussionId?) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('file_type', 'discussion_attachment') // free_file | discussion_attachment | mail_attachment
-      formData.append('id_specific', discussionId)
-      const res = await fetch(`https://nyx.cz/api/file/upload`, {
+      formData.append('file_type', discussionId ? 'discussion_attachment' : 'mail_attachment') // free_file | discussion_attachment | mail_attachment
+      formData.append('id_specific', discussionId || 0)
+      const res = await fetch('https://nyx.cz/api/file/upload', {
         method: 'PUT',
         referrerPolicy: 'no-referrer',
         headers: {
-          'Authorization': `Bearer ${this.auth.token}`,
+          Authorization: `Bearer ${this.auth.token}`,
         },
         body: formData,
       }).then(resp => resp.json())
@@ -286,11 +329,12 @@ export class Nyx {
     return null
   }
 
-  async setVisibility(isVisible) { // todo nope
+  async setVisibility(isVisible) {
+    // todo nope
     const status = isVisible ? 20 : 10
     console.warn('set visibility ', this.auth, isVisible); // TODO: remove
     try {
-      const res = await fetch(`https://nyx.cz/api/header`, {
+      const res = await fetch('https://nyx.cz/api/header', {
         method: 'POST',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),

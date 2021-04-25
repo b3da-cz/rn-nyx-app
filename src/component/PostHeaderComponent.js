@@ -10,10 +10,13 @@ type Props = {
   post: Object,
   nyx: Nyx,
   isDarkMode: boolean,
+  isReply: boolean,
+  isUnread: boolean,
   isInteractive: boolean,
   isPressable: boolean,
   onPress?: Function,
   onDelete: Function,
+  onVoteCast?: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
   constructor(props) {
@@ -61,10 +64,11 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async castVote(post, vote) {
-    await this.props.nyx.castVote(post, vote > 0 ? 'positive' : 'negative')
+    const res = await this.props.nyx.castVote(post, vote > 0 ? 'positive' : 'negative')
     if (this.refSwipeable) {
       this.refSwipeable.recenter()
     }
+    this.props.onVoteCast(res)
   }
 
   async deletePost(post) {
@@ -166,18 +170,26 @@ export class PostHeaderComponent extends Component<Props> {
               borderTopWidth: 1,
               // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
               borderColor: Styling.colors.primary,
-              borderBottomWidth: post.new ? 1 : 0,
+              borderBottomWidth: this.props.isUnread ? 1 : 0,
             }}>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
+              {this.props.isReply && (
+                <Icon
+                  name={'corner-down-right'}
+                  size={20}
+                  color={this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+                  style={{ marginRight: Styling.metrics.block.small }}
+                />
+              )}
               <UserIconComponent username={post.username} marginRight={10} />
               <View>
                 <Text style={Styling.groups.link()} numberOfLines={1}>
                   {post.username}{' '}
                   <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
                     {post.activity &&
-                    `[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}] ${
-                      post.activity.location
-                    }`}
+                      `[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}] ${
+                        post.activity.location
+                      }`}
                   </Text>
                 </Text>
                 <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>{this.formatDate(post.inserted_at)}</Text>
@@ -190,7 +202,7 @@ export class PostHeaderComponent extends Component<Props> {
                   color:
                     post.my_rating === 'positive'
                       ? 'green'
-                      : post.my_rating === 'negative'
+                      : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
                       ? 'red'
                       : Styling.colors.lighter,
                   textAlign: 'right',

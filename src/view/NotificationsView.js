@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import { FlatList, Image, View } from 'react-native'
-import { PostComponent } from '../component'
+import { TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
+import { PostComponent, UserIconComponent } from '../component'
 import { Context, parseNotificationsContent, Styling } from '../lib'
 
 type Props = {
@@ -56,13 +58,6 @@ export class NotificationsView extends Component<Props> {
           Styling.groups.themeView(this.isDarkMode),
           { borderBottomWidth: 2, borderColor: Styling.colors.primary },
         ]}>
-        {/*// <TouchableOpacity*/}
-        {/*//   style={[*/}
-        {/*//     Styling.groups.themeView(this.isDarkMode),*/}
-        {/*//     { borderBottomWidth: 2, borderColor: Styling.colors.primary },*/}
-        {/*//   ]}*/}
-        {/*//   accessibilityRole="button"*/}
-        {/*//   onPress={() => this.showPost(item.data.discussion_id, item.data.id)}>*/}
         <PostComponent
           key={item.data.id}
           post={item.data}
@@ -85,25 +80,47 @@ export class NotificationsView extends Component<Props> {
               minHeight: 25,
               // maxHeight: 75,
             }}>
-            {thumbs_up.map(r => this.renderRating(r))}
+            <Icon
+              name={'thumbs-up'}
+              size={20}
+              color={this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+              style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.medium }}
+            />
+            {thumbs_up.map(r => (
+              <UserIconComponent
+                key={`${r.username}${item.data.id}`}
+                username={r.username}
+                marginRight={2}
+                marginBottom={2}
+              />
+            ))}
           </View>
         )}
         {replies && replies.length > 0 && replies.map(r => this.renderReply(r))}
       </View>
-      // </TouchableOpacity>
     )
   }
 
   renderReply(post) {
     return (
       <View style={{ flexDirection: 'row' }} key={`${post.id}${post.discussionId}`}>
-        <View
+        <TouchableRipple
+          disabled={false}
+          onPress={() => this.showPost(post.discussion_id, post.id)}
+          rippleColor={'rgba(18,146,180, 0.73)'}
           style={{
             flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white,
             zIndex: 1,
-          }}
-        />
+          }}>
+          <Icon
+            name={'corner-down-right'}
+            size={20}
+            color={this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+          />
+        </TouchableRipple>
         <View style={{ flex: 5 }}>
           <PostComponent
             key={post.id}
@@ -145,7 +162,6 @@ export class NotificationsView extends Component<Props> {
   }
 
   render() {
-    // todo undefined keys in list ?
     return (
       <FlatList
         style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}

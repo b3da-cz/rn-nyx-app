@@ -1,9 +1,11 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList } from 'react-native'
+import { ActivityIndicator, FlatList, View } from 'react-native'
+import { FAB, Portal } from 'react-native-paper'
 import { PostComponent } from '../component'
 import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
 
 type Props = {
+  navigation: any,
   id: number,
   postId?: number,
   onDiscussionFetched: Function,
@@ -18,19 +20,44 @@ export class DiscussionView extends Component<Props> {
       discussionId: null,
       posts: [],
       images: [],
+      isBooked: null,
+      isSubmenuVisible: false,
+      isSubmenuOpen: false,
       isFetching: false,
     }
     this.refScroll = null
+    this.navFocusListener = null
+    this.navBlurListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.setState({ isSubmenuVisible: true })
+    })
+    this.navBlurListener = this.props.navigation.addListener('blur', () => {
+      this.setState({ isSubmenuVisible: false })
+    })
+    this.setFocusOnStart()
     if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
     } else {
       this.reloadDiscussionLatest()
     }
+  }
+
+  componentWillUnmount() {
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
+    if (this.navBlurListener) {
+      this.navBlurListener()
+    }
+  }
+
+  setFocusOnStart() {
+    this.setState({ isSubmenuVisible: this.props.navigation.isFocused() })
   }
 
   async reloadDiscussionLatest() {
@@ -77,10 +104,12 @@ export class DiscussionView extends Component<Props> {
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
     const uploadedFiles = res.discussion_common.waiting_files || []
+    const isBooked = res?.discussion_common?.bookmark?.bookmark
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
       title,
       images,
+      isBooked,
       posts: parsedPosts,
       isFetching: false,
     })
@@ -90,7 +119,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   getStoredPostById(postId) {
-    return this.state && this.state.posts && this.state.posts.filter(p => p.id == postId)[0] // this.state check needed for navigating from notification
+    return this.state?.posts?.filter(p => p.id == postId)[0]
   }
 
   scrollToPost(post, animated = false) {
@@ -120,38 +149,83 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
+  onVoteCast(updatedPost) {
+    if (updatedPost?.error) {
+      return
+    }
+    const posts = getDistinctPosts([updatedPost], this.state.posts);
+    this.setState({ posts })
+  }
+
+  async bookmarkDiscussion() {
+    const newIsBooked = !this.state.isBooked
+    this.setState({ isBooked: newIsBooked, isFetching: true })
+    await this.nyx.bookmarkDiscussion(this.props.id, newIsBooked)
+    this.setState({ isFetching: false })
+  }
+
   render() {
     return (
-      <FlatList
-        ref={r => (this.refScroll = r)}
-        data={this.state.posts}
-        extraData={this.state}
-        keyExtractor={(item, index) => `${item.uuid}`}
-        refreshing={this.state.isFetching}
-        onRefresh={() => this.loadDiscussionTop()}
-        onEndReached={() => this.loadDiscussionBottom()}
-        onEndReachedThreshold={0.01}
-        style={{
-          height: '100%',
-          backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-        }}
-        ListFooterComponent={() =>
-          this.state.isFetching &&
-          this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
-        }
-        renderItem={({ item }) => (
-          <PostComponent
-            key={item.id}
-            post={item}
-            nyx={this.nyx}
-            isDarkMode={this.isDarkMode}
-            isHeaderInteractive={true}
-            onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
-            onImage={image => this.showImages(image)}
-            onDelete={postId => this.onPostDelete(postId)}
+      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+        <Portal>
+          <FAB.Group
+            visible={this.state.isSubmenuVisible}
+            open={this.state.isSubmenuOpen}
+            icon={this.state.isSubmenuOpen ? 'email' : 'plus'}
+            fabStyle={{ backgroundColor: Styling.colors.primary }}
+            actions={[
+              {
+                icon: 'bookmark',
+                label: this.state.isBooked ? 'unbook' : 'book',
+                onPress: () => this.bookmarkDiscussion(),
+              },
+            ]}
+            onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
+            onPress={() => {
+              if (this.state.isSubmenuOpen) {
+                this.setState({ isSubmenuOpen: false })
+                this.props.navigation.push('composePost', {
+                  discussionId: this.props.id,
+                })
+              }
+            }}
+            style={{ marginBottom: 50 }}
           />
-        )}
-      />
+        </Portal>
+        <FlatList
+          ref={r => (this.refScroll = r)}
+          data={this.state.posts}
+          extraData={this.state}
+          keyExtractor={(item, index) => `${item.uuid}`}
+          refreshing={this.state.isFetching}
+          onRefresh={() => this.loadDiscussionTop()}
+          onEndReached={() => this.loadDiscussionBottom()}
+          onEndReachedThreshold={0.01}
+          style={{
+            height: '100%',
+            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+          }}
+          ListFooterComponent={() =>
+            this.state.isFetching &&
+            this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
+          }
+          renderItem={({ item }) => (
+            <PostComponent
+              key={item.id}
+              post={item}
+              nyx={this.nyx}
+              isDarkMode={this.isDarkMode}
+              isHeaderInteractive={true}
+              isReply={false}
+              isUnread={item.new}
+              onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
+              onImage={image => this.showImages(image)}
+              onDelete={postId => this.onPostDelete(postId)}
+              onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
+            />
+          )}
+        />
+      </View>
     )
   }
 }

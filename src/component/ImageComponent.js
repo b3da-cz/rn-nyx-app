@@ -1,13 +1,11 @@
 import React from 'react'
-import { Image, TouchableOpacity } from 'react-native'
+import { Image } from 'react-native'
+import { TouchableRipple } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const ImageComponent = ({ src, backgroundColor, width, height, onPress }) => {
   return (
-    <TouchableOpacity
-      // style={{borderWidth: 1, borderColor: 'green'}}
-      accessibilityRole="button"
-      onPress={() => onPress()}>
+    <TouchableRipple rippleColor={'rgba(18,146,180, 0.3)'} onPress={() => onPress()}>
       <Image
         style={{
           backgroundColor,
@@ -21,6 +19,6 @@ export const ImageComponent = ({ src, backgroundColor, width, height, onPress })
         // resizeMode={'center'}
         source={{ uri: src }}
       />
-    </TouchableOpacity>
+    </TouchableRipple>
   )
 }

@@ -91,6 +91,7 @@ export class Parser {
       .filter(
         a =>
           !a.hasAttribute('data-discussion-id') &&
+          a.getAttribute('href') &&
           !a.getAttribute('href').includes('youtube') &&
           !a.getAttribute('href').includes('youtu.be'),
       )
@@ -121,15 +122,15 @@ export class Parser {
   getVideosYoutube() {
     return this.html
       .querySelectorAll('a')
-      .filter(a => a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be'))
+      .filter(a => a.getAttribute('href') && (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')))
       .map(a => ({
         id: generateUuidV4(),
         raw: a.toString(),
         text: a.innerText,
         link: a.getAttribute('href'),
-        videoId: a.getAttribute('href').includes('youtube')
+        videoId: a.getAttribute('href') && a.getAttribute('href').includes('youtube')
           ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
-          : a.getAttribute('href').replace('https://youtu.be/', ''),
+          : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be') ? a.getAttribute('href').replace('https://youtu.be/', '') : 'error',
       }))
   }
 

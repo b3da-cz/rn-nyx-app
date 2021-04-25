@@ -19,6 +19,7 @@ import {
   ComposePostView,
   NotificationsView,
   LastPostsView,
+  SearchView,
 } from './view'
 
 export const Router = ({ nyx, refs }) => {
@@ -31,15 +32,22 @@ export const Router = ({ nyx, refs }) => {
           RNNotificationBanner.Show({
             title: message.title,
             subTitle: message.body,
-            tintColor: Styling.colors.primary,
-            duration: 10000,
+            titleColor: Styling.colors.white,
+            subTitleColor: Styling.colors.white,
+            tintColor: Styling.colors.secondary,
+            duration: 5000,
+            enableProgress: false,
             withIcon: true,
-            icon: <Icon name="mail" size={24} color="#FFFFFF" />,
-            onClick: () => refs?.MailView?.getMessages(),
+            dismissable: true,
+            icon: <Icon name="mail" size={20} color="#FFFFFF" family={'Feather'} />,
+            onClick: () => {
+              refs?.MailView?.getLatestMessages()
+              RNNotificationBanner.Dismiss()
+            },
           })
 
           // if (message.isForegroundMsg && refs?.MailView) {
-          //   refs.MailView.getMessages()
+          //   refs.MailView.getLatestMessages()
           // } else {
           //   // setTimeout(() => this.switchView('mail'), 100)
           // }
@@ -52,11 +60,18 @@ export const Router = ({ nyx, refs }) => {
             RNNotificationBanner.Show({
               title: message.title,
               subTitle: message.body,
-              tintColor: Styling.colors.secondary,
-              duration: 10000,
+              titleColor: Styling.colors.white,
+              subTitleColor: Styling.colors.white,
+              tintColor: Styling.colors.primary,
+              duration: 5000,
+              enableProgress: false,
               withIcon: true,
-              icon: <Icon name="mail" size={24} color="#FFFFFF" />,
-              onClick: () => nav.navigate('notifications'),
+              dismissable: true,
+              icon: <Icon name="mail" size={20} color="#FFFFFF" family={'Feather'} />,
+              onClick: () => {
+                nav.navigate('notifications')
+                RNNotificationBanner.Dismiss()
+              },
             })
             // refs.DiscussionView.reloadDiscussionLatest()
             // refs.DiscussionView.jumpToPost(message.discussionId, message.postId)
@@ -93,15 +108,18 @@ export const Router = ({ nyx, refs }) => {
   const RootStack = createStackNavigator()
   const NotificationsStack = createStackNavigator()
   const HistoryStack = createStackNavigator()
-  const SearchStack = createStackNavigator() // todo
-  const MailStack = createStackNavigator() // todo
+  const SearchStack = createStackNavigator()
+  const LastPostsStack = createStackNavigator()
+  const MailStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
+  const discussionOptions = { headerShown: true }
 
   const Discussion = ({ navigation, route }) => {
     const { discussionId, postId } = route.params
     return (
       <DiscussionView
         ref={r => setRef('DiscussionView', r)}
+        navigation={navigation}
         id={discussionId}
         postId={postId}
         onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })}
@@ -113,9 +131,9 @@ export const Router = ({ nyx, refs }) => {
   const Mail = ({ navigation }) => (
     <MailView
       ref={r => setRef('MailView', r)}
+      navigation={navigation}
       onImages={(images, i) => showImages(navigation, images, i)}
-      onNavigation={({ discussionId, postId }) => navigation.navigate('discussion', { discussionId, postId })}
-      // onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })} // todo mail nav stack
+      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
     />
   )
 
@@ -130,10 +148,17 @@ export const Router = ({ nyx, refs }) => {
     />
   )
 
-  const Last = ({ navigation }) => (
+  const LastPosts = ({ navigation }) => (
     <LastPostsView
       onImages={(images, i) => showImages(navigation, images, i)}
       onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
+    />
+  )
+
+  const Search = ({ navigation }) => (
+    <SearchView
+      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
+      onUserSelected={username => navigation.push('composePost', { isMailPost: true, username })}
     />
   )
 
@@ -142,20 +167,30 @@ export const Router = ({ nyx, refs }) => {
     return <ImageModal images={images} imgIndex={imgIndex} isShowing={true} onExit={() => navigation.goBack()} />
   }
 
-  const ComposePost = ({ navigation }) => {
-    const discussion = nyx.store.discussions.filter(
-      d => Number(d.discussion_id) === Number(nyx.store.activeDiscussionId),
-    )[0]
-    const title = discussion?.full_name
-    const uploadedFiles = discussion?.detail?.discussion_common?.waiting_files
+  const ComposePost = ({ navigation, route }) => {
+    const isMailPost = route?.params?.isMailPost
+    const discussionId = isMailPost ? null : route.params.discussionId
+    const postId = isMailPost ? null : route.params.postId
+    let title = isMailPost ? route.params.username : ''
+    const discussion = isMailPost
+      ? null
+      : nyx.store.discussions.filter(d => Number(d.discussion_id) === Number(discussionId))[0]
+    if (discussion) {
+      title = discussion?.full_name
+    }
+    const uploadedFiles = isMailPost ? [] : discussion?.detail?.discussion_common?.waiting_files
     return (
       <ComposePostView
         title={title}
+        isMailPost={isMailPost}
         uploadedFiles={uploadedFiles}
-        activeDiscussionId={nyx.store.activeDiscussionId}
+        username={route?.params?.username}
+        discussionId={discussionId}
+        postId={postId}
         onSend={() => {
           navigation.goBack()
           refs?.DiscussionView?.reloadDiscussionLatest()
+          refs?.MailView?.getLatestMessages()
         }}
       />
     )
@@ -163,65 +198,37 @@ export const Router = ({ nyx, refs }) => {
 
   const NotificationsStackContainer = ({ navigation, route }) => (
     <NotificationsStack.Navigator initialRouteName={'notifications'} screenOptions={NavOptions.screenOptions}>
-      <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false }} />
-      <NotificationsStack.Screen
-        name={'discussion'}
-        component={Discussion}
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <TouchableOpacity
-              style={{ paddingRight: Styling.metrics.block.medium }}
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('composePost', route.params)}>
-              <Icon name="plus" size={28} color="#ccc" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false}} />
+      <NotificationsStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
     </NotificationsStack.Navigator>
   )
 
   const HistoryStackContainer = ({ navigation, route }) => (
     <HistoryStack.Navigator initialRouteName={'history'} screenOptions={NavOptions.screenOptions}>
       <HistoryStack.Screen name={'history'} component={History} options={{ headerShown: false }} />
-      <HistoryStack.Screen
-        name={'discussion'}
-        component={Discussion}
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <TouchableOpacity
-              style={{ paddingRight: Styling.metrics.block.medium }}
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('composePost', route.params)}>
-              <Icon name="plus" size={28} color="#ccc" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <HistoryStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
     </HistoryStack.Navigator>
   )
 
+  const MailStackContainer = ({ navigation, route }) => (
+    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions}>
+      <MailStack.Screen name={'mail'} component={Mail} options={{ headerShown: false }} />
+      <MailStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
+    </MailStack.Navigator>
+  )
+
   const LastPostsStackContainer = ({ navigation, route }) => (
-    <HistoryStack.Navigator initialRouteName={'last'} screenOptions={NavOptions.screenOptions}>
-      <HistoryStack.Screen name={'last'} component={Last} options={{ headerShown: false }} />
-      <HistoryStack.Screen
-        name={'discussion'}
-        component={Discussion}
-        options={{
-          headerShown: true,
-          headerRight: () => (
-            <TouchableOpacity
-              style={{ paddingRight: Styling.metrics.block.medium }}
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('composePost', route.params)}>
-              <Icon name="plus" size={28} color="#ccc" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-    </HistoryStack.Navigator>
+    <LastPostsStack.Navigator initialRouteName={'last'} screenOptions={NavOptions.screenOptions}>
+      <LastPostsStack.Screen name={'last'} component={LastPosts} options={{ headerShown: false }} />
+      <LastPostsStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
+    </LastPostsStack.Navigator>
+  )
+
+  const SearchStackContainer = ({ navigation, route }) => (
+    <SearchStack.Navigator initialRouteName={'search'} screenOptions={NavOptions.screenOptions}>
+      <SearchStack.Screen name={'search'} component={Search} options={{ headerShown: false }} />
+      <SearchStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
+    </SearchStack.Navigator>
   )
 
   const TabContainer = ({ navigation }) => {
@@ -238,9 +245,9 @@ export const Router = ({ nyx, refs }) => {
           options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" style={{ marginLeft: '75%' }} /> }}
         />
         <Tab.Screen name={'historyStack'} component={HistoryStackContainer} options={{ title: 'History' }} />
-        <Tab.Screen name={'last'} component={LastPostsStackContainer} />
-        <Tab.Screen name={'mail'} component={Mail} />
-        <Tab.Screen name={'search'} component={HistoryStackContainer} />
+        <Tab.Screen name={'searchStack'} component={SearchStackContainer} />
+        <Tab.Screen name={'mailStack'} component={MailStackContainer} />
+        <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} />
         <Tab.Screen name={'profile'} component={HistoryStackContainer} />
       </Tab.Navigator>
     )
@@ -249,7 +256,6 @@ export const Router = ({ nyx, refs }) => {
     <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: 'New post' }} />
-      {/*<RootStack.Screen name={'notifications'} component={Notifications} options={{ title: 'Notifications' }} />*/}
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
   )

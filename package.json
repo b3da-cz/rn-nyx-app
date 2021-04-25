@@ -1,6 +1,6 @@
 {
   "name": "nnn",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -28,6 +28,7 @@
     "react-native-document-picker": "^5.0.3",
     "react-native-gesture-handler": "^1.10.3",
     "react-native-image-helper": "^0.0.3",
+    "react-native-image-resizer": "^1.4.4",
     "react-native-image-viewing": "^0.2.0",
     "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-notification-banner": "^2.0.0",

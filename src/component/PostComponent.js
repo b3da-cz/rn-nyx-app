@@ -8,18 +8,21 @@ import {
   SpoilerComponent,
   VideoYoutubeComponent,
 } from '../component'
-import { Nyx, Parser, TOKEN, Styling } from '../lib'
+import { Nyx, TOKEN, Styling } from '../lib'
 
 type Props = {
   post: Object,
   nyx: Nyx,
   isDarkMode: boolean,
+  isReply?: boolean,
+  isUnread?: boolean,
   isHeaderInteractive: boolean,
   isHeaderPressable: boolean,
   onHeaderPress?: Function,
   onDiscussionDetailShow: Function,
   onImage: Function,
   onDelete: Function,
+  onVoteCast?: Function,
 }
 export class PostComponent extends Component<Props> {
   constructor(props) {
@@ -35,7 +38,7 @@ export class PostComponent extends Component<Props> {
   renderReply(reply) {
     return (
       <LinkComponent
-        key={reply.raw}
+        key={reply.id}
         color={Styling.colors.primary}
         fontSize={Styling.metrics.fontSize.large}
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
@@ -49,12 +52,14 @@ export class PostComponent extends Component<Props> {
   renderLink(link) {
     return (
       <LinkComponent
-        key={link.raw}
+        key={link.id}
         onPress={() => {
           Linking.openURL(link.url).catch(() => {
             if (link.url.startsWith('/discussion/')) {
               const parts = link.url.split('/')
               this.props.onDiscussionDetailShow(parts[2], parts.length > 3 ? parts[4] : null)
+            } else if (link.url.startsWith('/')) {
+              Linking.openURL(`https://nyx.cz${link.url}`)
             } else {
               console.warn('failed to open ', link.url, link)
             }
@@ -68,7 +73,7 @@ export class PostComponent extends Component<Props> {
   renderSpoiler({ id, text }) {
     return (
       <SpoilerComponent
-        key={text}
+        key={id}
         text={text}
         isVisible={this.state.visibleSpoilers[id]}
         onPress={() => this.setState({ visibleSpoilers: { ...this.state.visibleSpoilers, ...{ [id]: true } } })}
@@ -76,34 +81,32 @@ export class PostComponent extends Component<Props> {
     )
   }
 
-  renderImage(img, images) {
+  renderImage(img) {
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
       let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       return (
         <ImageComponent
-          key={img.src}
+          key={img.id}
           src={img.src}
           width={w}
           height={h / 2.5}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
-          onPress={() =>
-            this.props.onImage(img)
-          }
+          onPress={() => this.props.onImage(img)}
         />
       )
     }
   }
 
   renderCodeBlock(codeBlock) {
-    return <CodeBlockComponent html={codeBlock.raw} />;
+    return <CodeBlockComponent key={codeBlock.id} html={codeBlock.raw} />;
   }
 
   renderYtBlock(ytBlock, images) {
     const img = images.filter(i => i.src.includes(ytBlock.videoId))[0]
     return (
       <VideoYoutubeComponent
-        key={ytBlock.videoId}
+        key={ytBlock.id}
         videoId={ytBlock.videoId}
         videoLink={ytBlock.link}
         previewSrc={img && img.src}
@@ -154,9 +157,9 @@ export class PostComponent extends Component<Props> {
         <View>
           <Text>error: not parsed</Text>
         </View>
-      );
+      )
     }
-    const { post } = this.props;
+    const { post } = this.props
     const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = this.props.post.parsed
     return (
       <View>
@@ -164,10 +167,13 @@ export class PostComponent extends Component<Props> {
           post={post}
           nyx={this.props.nyx}
           isDarkMode={this.props.isDarkMode}
+          isReply={this.props.isReply}
+          isUnread={this.props.isUnread}
           isInteractive={this.props.isHeaderInteractive}
           isPressable={this.props.isHeaderPressable}
           onPress={(discussionId, postId) => this.props.onHeaderPress(discussionId, postId)}
           onDelete={postId => this.props.onDelete(postId)}
+          onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
         />
         <View
           style={[
@@ -188,7 +194,7 @@ export class PostComponent extends Component<Props> {
                 return this.renderSpoiler(spoiler)
               } else if (part.startsWith(TOKEN.IMG)) {
                 const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
-                return this.renderImage(img, images)
+                return this.renderImage(img)
               } else if (part.startsWith(TOKEN.CODE)) {
                 const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
                 return this.renderCodeBlock(codeBlock)

@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, ScrollView, RefreshControl, View } from 'react-native'
-import { Text, TouchableRipple } from 'react-native-paper'
-import Icon from 'react-native-vector-icons/Feather'
+import { DiscussionRowComponent } from '../component'
 import { Context, Styling } from '../lib'
 
 type Props = {
@@ -29,76 +28,25 @@ export class HistoryView extends Component<Props> {
     this.setState({ discussions: res.discussions, isFetching: false })
   }
 
-  showDiscussion(d) {
-    this.props.onDetailShow(d.discussion_id)
+  showDiscussion(id) {
+    this.props.onDetailShow(id)
   }
 
   render() {
-    const unreadRowColor = (unreads, replies) =>
-      replies > 0
-        ? Styling.colors.secondary
-        : unreads > 0
-        ? Styling.colors.primary
-        : this.isDarkMode
-        ? Styling.colors.light
-        : Styling.colors.dark
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}
         refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getHistory()} />}>
         <View>
-          {this.state.discussions &&
-            this.state.discussions.length > 0 &&
+          {this.state.discussions?.length > 0 &&
             this.state.discussions.map(d => (
-              <TouchableRipple
+              <DiscussionRowComponent
                 key={d.discussion_id}
-                rippleColor={'rgba(18,146,180, 0.3)'}
-                style={{
-                  backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-                  paddingVertical: Styling.metrics.block.medium,
-                  paddingHorizontal: Styling.metrics.block.small,
-                  marginBottom: Styling.metrics.block.small,
-                }}
-                onPress={() => this.showDiscussion(d)}>
-                <View style={{ flexDirection: 'row' }}>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      {
-                        width: '75%',
-                        fontSize: 14,
-                        color: unreadRowColor(d.new_posts_count, d.new_replies_count),
-                      },
-                    ]}>
-                    {d.full_name}
-                  </Text>
-                  <Text
-                    style={[
-                      {
-                        width: '25%',
-                        textAlign: 'right',
-                        fontSize: 14,
-                        color: unreadRowColor(d.new_posts_count, d.new_replies_count),
-                      },
-                    ]}>
-                    {d.new_posts_count}
-                    {`${d.new_replies_count > 0 ? `+${d.new_replies_count}` : ''}  `}
-                    {d.new_images_count > 0 ? (
-                      <Icon name="image" size={14} color={unreadRowColor(d.new_posts_count)} />
-                    ) : (
-                      ''
-                    )}
-                    {d.new_images_count > 0 ? `${d.new_images_count}` : ''}
-                    {d.new_links_count > 0 ? (
-                      <Icon name="link" size={14} color={unreadRowColor(d.new_posts_count)} />
-                    ) : (
-                      ''
-                    )}
-                    {d.new_links_count > 0 ? `${d.new_links_count}` : ''}
-                  </Text>
-                </View>
-              </TouchableRipple>
+                discussion={d}
+                isDarkMode={this.isDarkMode}
+                onPress={id => this.showDiscussion(id)}
+              />
             ))}
           {this.state.discussions && this.state.discussions.length === 0 && (
             <View
