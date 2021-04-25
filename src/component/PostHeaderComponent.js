@@ -94,20 +94,24 @@ export class PostHeaderComponent extends Component<Props> {
           leftButtonWidth={50}
           onLeftButtonsOpenRelease={() => !post.can_be_deleted && this.onReply()}
           rightButtonWidth={50}
-          rightButtons={[
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => this.castVote(post, 1)}
-              style={[Styling.groups.squareBtn, { backgroundColor: 'green' }]}>
-              <Icon name="thumbs-up" size={24} color={Styling.colors.lighter} />
-            </TouchableOpacity>,
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => this.castVote(post, -1)}
-              style={[Styling.groups.squareBtn]}>
-              <Icon name="thumbs-down" size={24} color={Styling.colors.lighter} />
-            </TouchableOpacity>,
-          ]}
+          rightButtons={
+            post.can_be_deleted
+              ? [<View />]
+              : [
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => this.castVote(post, 1)}
+                    style={[Styling.groups.squareBtn, { backgroundColor: 'green' }]}>
+                    <Icon name="thumbs-up" size={24} color={Styling.colors.lighter} />
+                  </TouchableOpacity>,
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => this.castVote(post, -1)}
+                    style={[Styling.groups.squareBtn]}>
+                    <Icon name="thumbs-down" size={24} color={Styling.colors.lighter} />
+                  </TouchableOpacity>,
+                ]
+          }
           onRightButtonsActivate={() => this.getRating(post)}
           rightButtonContainerStyle={{
             flexDirection: 'column',
