@@ -19,7 +19,7 @@ export class HistoryView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
-    this.getHistory()
+    setTimeout(() => this.getHistory(), 100)
   }
 
   async getHistory() {

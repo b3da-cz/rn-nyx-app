@@ -141,7 +141,7 @@ export const NavOptions = {
       backgroundColor: Styling.colors.black,
     },
     labelStyle: {
-      fontSize: 11,
+      fontSize: 8,
     },
     indicatorStyle: {
       backgroundColor: Styling.colors.primary,

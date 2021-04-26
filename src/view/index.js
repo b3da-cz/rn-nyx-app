@@ -1,3 +1,4 @@
+export * from './BookmarksView'
 export * from './ComposePostView'
 export * from './DiscussionView'
 export * from './HistoryView'

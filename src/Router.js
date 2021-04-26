@@ -3,15 +3,14 @@
  * @flow
  */
 import React, { useEffect, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
 import 'react-native-gesture-handler'
-import { useNavigation } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, NavOptions, subscribeFCM } from './lib'
+import {Styling, NavOptions, subscribeFCM, Storage} from './lib';
 import {
+  BookmarksView,
   HistoryView,
   ImageModal,
   MailView,
@@ -26,7 +25,20 @@ import {
 export const Router = ({ nyx, refs }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
+  // const [isBookmarksVisible, setIsBookmarksVisible] = useState(true)
+  // const [isHistoryVisible, setIsHistoryVisible] = useState(true)
   useEffect(() => {
+    // const getConfig = async () => {
+    //   const conf = await Storage.getConfig()
+    //   if (isBookmarksVisible !== conf.isBookmarksEnabled) {
+    //     setIsBookmarksVisible(conf.isBookmarksEnabled)
+    //   }
+    //   if (isHistoryVisible !== conf.isHistoryEnabled) {
+    //     setIsHistoryVisible(conf.isHistoryEnabled)
+    //   }
+    // }
+    // setTimeout(() => getConfig())
+
     const sub = subscribeFCM(message => {
       switch (message.type) {
         case 'new_mail':
@@ -108,6 +120,7 @@ export const Router = ({ nyx, refs }) => {
 
   const RootStack = createStackNavigator()
   const NotificationsStack = createStackNavigator()
+  const BookmarksStack = createStackNavigator()
   const HistoryStack = createStackNavigator()
   const SearchStack = createStackNavigator()
   const LastPostsStack = createStackNavigator()
@@ -138,6 +151,10 @@ export const Router = ({ nyx, refs }) => {
     />
   )
 
+  const Bookmarks = ({ navigation }) => (
+    <BookmarksView onDetailShow={discussionId => navigation.push('discussion', { discussionId })} />
+  )
+
   const History = ({ navigation }) => (
     <HistoryView onDetailShow={discussionId => navigation.push('discussion', { discussionId })} />
   )
@@ -164,7 +181,16 @@ export const Router = ({ nyx, refs }) => {
   )
 
   const Profile = ({ navigation }) => (
-    <ProfileView />
+    <ProfileView
+      onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled }) => {
+        if (isBookmarksEnabled !== isBookmarksVisible) {
+          setIsBookmarksVisible(isBookmarksEnabled)
+        }
+        if (isHistoryEnabled !== isHistoryVisible) {
+          setIsHistoryVisible(isHistoryEnabled)
+        }
+      }}
+    />
   )
 
   const Gallery = ({ navigation, route }) => {
@@ -204,9 +230,16 @@ export const Router = ({ nyx, refs }) => {
 
   const NotificationsStackContainer = ({ navigation, route }) => (
     <NotificationsStack.Navigator initialRouteName={'notifications'} screenOptions={NavOptions.screenOptions}>
-      <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false}} />
+      <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false }} />
       <NotificationsStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
     </NotificationsStack.Navigator>
+  )
+
+  const BookmarksStackContainer = ({ navigation, route }) => (
+    <BookmarksStack.Navigator initialRouteName={'bookmarks'} screenOptions={NavOptions.screenOptions}>
+      <BookmarksStack.Screen name={'bookmarks'} component={Bookmarks} options={{ headerShown: false }} />
+      <BookmarksStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
+    </BookmarksStack.Navigator>
   )
 
   const HistoryStackContainer = ({ navigation, route }) => (
@@ -250,7 +283,12 @@ export const Router = ({ nyx, refs }) => {
           component={NotificationsStackContainer}
           options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" style={{ marginLeft: '75%' }} /> }}
         />
-        <Tab.Screen name={'historyStack'} component={HistoryStackContainer} options={{ title: 'History' }} />
+        {/*{isHistoryVisible && (*/}
+          <Tab.Screen name={'historyStack'} component={HistoryStackContainer} options={{ title: 'History' }} />
+        {/*)}*/}
+        {/*{isBookmarksVisible && (*/}
+          <Tab.Screen name={'bookmarksStack'} component={BookmarksStackContainer} options={{ title: 'Bookmarks' }} />
+        {/*)}*/}
         <Tab.Screen name={'searchStack'} component={SearchStackContainer} options={{ title: 'search' }} />
         <Tab.Screen name={'mailStack'} component={MailStackContainer} options={{ title: 'mail' }} />
         <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} options={{ title: 'last' }} />

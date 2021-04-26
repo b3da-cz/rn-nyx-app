@@ -164,7 +164,10 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                 </View>
               </View>
-              <TouchableRipple rippleColor={'rgba(18,146,180, 0.73)'} onPress={() => this.getRating(post, true)}>
+              <TouchableRipple
+                disabled={!this.props.isInteractive}
+                rippleColor={'rgba(18,146,180, 0.73)'}
+                onPress={() => this.getRating(post, true)}>
                 <Text
                   style={[
                     {

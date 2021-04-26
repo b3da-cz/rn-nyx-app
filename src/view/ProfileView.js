@@ -1,15 +1,19 @@
 import React, { Component } from 'react'
-import { ScrollView, RefreshControl, Text, View } from 'react-native'
+import { ScrollView, Switch, Text, View } from 'react-native'
 import { ButtonComponent, confirm, UserIconComponent } from '../component'
 import { Context, Styling, Storage, initFCM, unregisterFCM } from '../lib'
 
-type Props = {}
+type Props = {
+  onSettingsChange: Function,
+}
 export class ProfileView extends Component<Props> {
   static contextType = Context
   constructor(props) {
     super(props)
     this.state = {
       isFetching: false,
+      isBookmarksEnabled: true,
+      isHistoryEnabled: true,
       username: '',
     }
   }
@@ -21,7 +25,35 @@ export class ProfileView extends Component<Props> {
   }
 
   getUsername() {
-    this.setState({ username: this.nyx.auth.username })
+    // const conf = await Storage.getConfig()
+    // const { isBookmarksEnabled, isHistoryEnabled } = conf
+    this.setState({
+      username: this.nyx.auth.username,
+      // isBookmarksEnabled: !!isBookmarksEnabled,
+      // isHistoryEnabled: !!isHistoryEnabled,
+    })
+  }
+
+  async setBookmarksEnabled(isBookmarksEnabled) {
+    const conf = await Storage.getConfig()
+    conf.isBookmarksEnabled = isBookmarksEnabled
+    await Storage.setConfig(conf)
+    this.setState({ isBookmarksEnabled })
+    this.props.onSettingsChange({
+      isBookmarksEnabled,
+      isHistoryEnabled: this.state.isHistoryEnabled,
+    })
+  }
+
+  async setHistoryEnabled(isHistoryEnabled) {
+    const conf = await Storage.getConfig()
+    conf.isHistoryEnabled = isHistoryEnabled
+    await Storage.setConfig(conf)
+    this.setState({ isHistoryEnabled })
+    this.props.onSettingsChange({
+      isBookmarksEnabled: this.state.isBookmarksEnabled,
+      isHistoryEnabled,
+    })
   }
 
   async subscribeFCM() {
@@ -70,6 +102,34 @@ export class ProfileView extends Component<Props> {
             {username}
           </Text>
         </View>
+        {/*<View*/}
+        {/*  style={{*/}
+        {/*    flexDirection: 'row',*/}
+        {/*    alignItems: 'center',*/}
+        {/*    justifyContent: 'space-between',*/}
+        {/*    paddingVertical: Styling.metrics.block.large,*/}
+        {/*  }}>*/}
+        {/*  <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show bookmarks</Text>*/}
+        {/*  <Switch*/}
+        {/*    thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}*/}
+        {/*    onValueChange={val => this.setBookmarksEnabled(val)}*/}
+        {/*    value={this.state.isBookmarksEnabled}*/}
+        {/*  />*/}
+        {/*</View>*/}
+        {/*<View*/}
+        {/*  style={{*/}
+        {/*    flexDirection: 'row',*/}
+        {/*    alignItems: 'center',*/}
+        {/*    justifyContent: 'space-between',*/}
+        {/*    paddingVertical: Styling.metrics.block.large,*/}
+        {/*  }}>*/}
+        {/*  <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show history</Text>*/}
+        {/*  <Switch*/}
+        {/*    thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}*/}
+        {/*    onValueChange={val => this.setHistoryEnabled(val)}*/}
+        {/*    value={this.state.isHistoryEnabled}*/}
+        {/*  />*/}
+        {/*</View>*/}
         <ButtonComponent
           label={'subscribe FCM'}
           icon={'mail'}

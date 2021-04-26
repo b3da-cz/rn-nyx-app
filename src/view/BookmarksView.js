@@ -1,0 +1,75 @@
+import React, { Component } from 'react'
+import { SectionList, Text } from 'react-native'
+import { DiscussionRowComponent } from '../component'
+import { Context, Styling } from '../lib'
+
+type Props = {
+  onDetailShow: Function,
+}
+export class BookmarksView extends Component<Props> {
+  static contextType = Context
+  constructor(props) {
+    super(props)
+    this.state = {
+      reminderCount: 0,
+      sectionedBookmarks: [],
+      isFetching: false,
+    }
+  }
+
+  componentDidMount() {
+    this.nyx = this.context.nyx
+    this.isDarkMode = this.context.theme === 'dark'
+    this.getBookmarks()
+  }
+
+  async getBookmarks() {
+    this.setState({ isFetching: true })
+    const res = await this.nyx.getBookmarks()
+    if (res.bookmarks) {
+      const reminderCount = res.reminder_count || 0
+      const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
+      this.setState({ reminderCount, sectionedBookmarks, isFetching: false })
+    } else {
+      this.setState({ isFetching: false })
+    }
+  }
+
+  showDiscussion(id) {
+    this.props.onDetailShow(id)
+  }
+
+  render() {
+    return (
+      <SectionList
+        sections={this.state.sectionedBookmarks}
+        stickySectionHeadersEnabled={true}
+        keyExtractor={(item, index) => item.discussion_id}
+        refreshing={this.state.isFetching}
+        onRefresh={() => this.getBookmarks()}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text
+            style={{
+              fontSize: Styling.metrics.fontSize.medium,
+              color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+              backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
+              textAlign: 'right',
+              paddingVertical: Styling.metrics.block.medium,
+              paddingHorizontal: Styling.metrics.block.small,
+              marginBottom: Styling.metrics.block.small,
+            }}>
+            {title}
+          </Text>
+        )}
+        renderItem={({ item }) => (
+          <DiscussionRowComponent
+            key={item.discussion_id}
+            discussion={item}
+            isDarkMode={this.isDarkMode}
+            onPress={id => this.showDiscussion(id)}
+          />
+        )}
+      />
+    )
+  }
+}

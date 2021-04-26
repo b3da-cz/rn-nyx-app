@@ -36,7 +36,6 @@ export class Nyx {
 
   logout() {
     Storage.removeAll()
-    console.warn('onlogout'); // TODO: remove
     if (this.onLogout && typeof this.onLogout === 'function') {
       this.onLogout()
     }
@@ -69,6 +68,22 @@ export class Nyx {
     }
   }
 
+  async getBookmarks(includingSeen = true) {
+    try {
+      const res = await fetch(`https://nyx.cz/api/bookmarks${includingSeen ? '/all' : ''}`, {
+        method: 'GET',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      this.store.context = res.context
+      // this.store.discussions = res.discussions
+      return res
+    } catch (e) {
+      console.warn('get history error', e)
+    }
+    return null
+  }
+
   async getHistory() {
     try {
       const res = await fetch('https://nyx.cz/api/bookmarks/history/more', {
@@ -87,7 +102,6 @@ export class Nyx {
 
   async getLastPosts(isRatedByFriends?) {
     try {
-      // todo nope, why?
       const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
         method: 'GET',
         referrerPolicy: 'no-referrer',
@@ -104,16 +118,12 @@ export class Nyx {
   async getLastDiscussions() {
     try {
       const res = await fetch('https://nyx.cz/api/last/discussions', {
-        // todo nope, why ? in browser ok
         method: 'GET',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
-      }).then(resp => resp.text()) // todo
-
-      console.warn(res); // TODO: remove
+      }).then(resp => resp.json())
       // this.store.context = res.context
-      // this.store.discussions = res.discussions
-      return []
+      return res
     } catch (e) {
       console.warn('get history error', e)
     }
@@ -123,7 +133,9 @@ export class Nyx {
   async search({ phrase, isUnified = false, isUsername = false, limit = 20 }) {
     try {
       const res = await fetch(
-        `https://nyx.cz/api/search${isUnified ? '/unified' : isUsername ? '/username/' : ''}${isUsername ? phrase : `?search=${phrase}&limit=${limit}`}`,
+        `https://nyx.cz/api/search${isUnified ? '/unified' : isUsername ? '/username/' : ''}${
+          isUsername ? phrase : `?search=${phrase}&limit=${limit}`
+        }`,
         {
           method: 'GET',
           referrerPolicy: 'no-referrer',
@@ -136,7 +148,6 @@ export class Nyx {
       return res
     } catch (e) {
       console.warn('get history error', e)
-      console.warn(e.message); // TODO: remove
     }
     return null
   }
@@ -232,7 +243,7 @@ export class Nyx {
   async sendPrivateMessage(recipient, message) {
     const data = { recipient, message }
     try {
-      const res = await fetch(`https://nyx.cz/api/mail/send`, {
+      const res = await fetch('https://nyx.cz/api/mail/send', {
         method: 'POST',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders('application/x-www-form-urlencoded'),
@@ -247,12 +258,19 @@ export class Nyx {
     return null
   }
 
-  async bookmarkDiscussion(discussionId, isBooked) {
+  async bookmarkDiscussion(discussionId, isBooked, categoryId?) {
+    const data = { discussion_id: discussionId, new_state: isBooked ? 'true' : 'false' }
+    if (categoryId > 0) {
+      data.category = categoryId
+    }
     try {
       const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/bookmark?new_state=${isBooked}`, {
         method: 'POST',
         referrerPolicy: 'no-referrer',
-        headers: this.getHeaders(),
+        headers: this.getHeaders('application/x-www-form-urlencoded'),
+        body: Object.keys(data)
+          .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+          .join('&'),
       }).then(resp => resp.json())
       return res
     } catch (e) {

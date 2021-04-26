@@ -59,3 +59,6 @@ buck-out/
 /ios/Pods/
 
 /android/app/google-services.json
+/android/app/nnn-signing.keystore
+
+/android/*.hprof
