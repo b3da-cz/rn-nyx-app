@@ -92,13 +92,11 @@ export class PostComponent extends Component<Props> {
     }
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
       let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
-      let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       return (
         <ImageComponent
           key={img.id}
           src={img.src}
           width={w}
-          height={h / 2.5}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() => this.props.onImage(img)}
         />
