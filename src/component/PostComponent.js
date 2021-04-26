@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Text, Linking, View } from 'react-native'
 import {
   CodeBlockComponent,
+  DiceComponent,
   PostHeaderComponent,
   ImageComponent,
   LinkComponent,
@@ -24,6 +25,7 @@ type Props = {
   onImage: Function,
   onDelete: Function,
   onVoteCast?: Function,
+  onDiceRoll?: Function,
 }
 export class PostComponent extends Component<Props> {
   constructor(props) {
@@ -83,6 +85,9 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
+    if (this.props.post?.content_raw) {
+      return
+    }
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
       let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
@@ -123,8 +128,11 @@ export class PostComponent extends Component<Props> {
   }
 
   renderTextNode(text) {
+    if (this.props.post?.content_raw) {
+      return
+    }
     if (text.startsWith(':')) {
-      text = text.substring(1)
+      text = text.substring(1);
     }
     if (text.startsWith('<br>')) {
       text = text.substring(4)
@@ -149,7 +157,27 @@ export class PostComponent extends Component<Props> {
           .join('\n')
           .replace(/(<([^>]+)>)/gi, '')}
       </Text>
-    );
+    )
+  }
+
+  renderDice() {
+    const { post } = this.props
+    return (
+      <DiceComponent
+        isDarkMode={this.props.isDarkMode}
+        label={post?.content_raw?.data?.reason}
+        count={post?.content_raw?.data?.dice_count}
+        sides={post?.content_raw?.data?.dice_sides}
+        rolls={post?.content_raw?.data?.rolls}
+        canRoll={!post?.content_raw?.data?.computed_values?.user_did_roll}
+        onRoll={() => this.rollDice()}
+      />
+    )
+  }
+
+  async rollDice() {
+    const res = await this.props.nyx.rollDice(this.props.post.discussion_id, this.props.post.id)
+    this.props.onDiceRoll(res)
   }
 
   render() {
@@ -213,6 +241,8 @@ export class PostComponent extends Component<Props> {
                 return this.renderTextNode(part)
               }
             })}
+          {post?.content_raw?.type === 'dice' && this.renderDice()}
+          {post?.content_raw?.type === 'poll' && <Text style={{color: 'red'}}>POLL</Text>}
         </View>
       </View>
     )

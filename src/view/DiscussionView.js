@@ -165,6 +165,15 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
+  onDiceRoll(updatedPost) {
+    if (updatedPost?.error) {
+      return
+    }
+    const parsedPosts = parsePostsContent([updatedPost])
+    const posts = getDistinctPosts(parsedPosts, this.state.posts)
+    this.setState({ posts })
+  }
+
   async bookmarkDiscussion() {
     const newIsBooked = !this.state.isBooked
     this.setState({ isBooked: newIsBooked, isFetching: true })
@@ -231,6 +240,7 @@ export class DiscussionView extends Component<Props> {
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
+              onDiceRoll={updatedPost => this.onDiceRoll(updatedPost)}
             />
           )}
         />

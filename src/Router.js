@@ -183,12 +183,12 @@ export const Router = ({ nyx, refs }) => {
   const Profile = ({ navigation }) => (
     <ProfileView
       onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled }) => {
-        if (isBookmarksEnabled !== isBookmarksVisible) {
-          setIsBookmarksVisible(isBookmarksEnabled)
-        }
-        if (isHistoryEnabled !== isHistoryVisible) {
-          setIsHistoryVisible(isHistoryEnabled)
-        }
+        // if (isBookmarksEnabled !== isBookmarksVisible) {
+        //   setIsBookmarksVisible(isBookmarksEnabled)
+        // }
+        // if (isHistoryEnabled !== isHistoryVisible) {
+        //   setIsHistoryVisible(isHistoryEnabled)
+        // }
       }}
     />
   )

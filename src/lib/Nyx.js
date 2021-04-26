@@ -279,6 +279,20 @@ export class Nyx {
     return null
   }
 
+  async rollDice(discussionId, postId) {
+    try {
+      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/dice/${postId}/roll`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('post to discussion error', e)
+    }
+    return null
+  }
+
   async postToDiscussion(discussionId, text) {
     const data = { content: text }
     try {

@@ -1,6 +1,7 @@
 export * from './ButtonComponent'
 export * from './CodeBlockComponent'
 export * from './ConfirmationDialog'
+export * from './DiceComponent'
 export * from './DiscussionRowComponent'
 export * from './ImageComponent'
 export * from './LinkComponent'

@@ -130,7 +130,7 @@ export const CustomDarkTheme = {
   roundness: 4,
 }
 
-const tabBarItemCount = 5
+const tabBarItemCount = 6
 const tabBarWidth = Styling.metrics.window().width / tabBarItemCount
 const notificationsBarWidth = 30
 export const NavOptions = {

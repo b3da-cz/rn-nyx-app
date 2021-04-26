@@ -49,6 +49,7 @@ export class Parser {
     this.codeBlocks = this.getCodeBlocks()
     this.ytBlocks = this.getVideosYoutube()
     this.ytBlocksToDelete = this.getYtBlocksForCleanup()
+    this.pcBlocksToDelete = this.getPCBlocksForCleanup()
     this.isParsed = true
   }
 
@@ -62,6 +63,7 @@ export class Parser {
     this.codeBlocks.forEach(c => (content = content.split(c.raw).join(`${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
     this.ytBlocks.forEach(y => (content = content.split(y.raw).join(`${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
     this.ytBlocksToDelete.forEach(y => (content = content.split(y.raw).join('')))
+    this.pcBlocksToDelete.forEach(p => (content = content.split(p.raw).join('')))
     this.contentParts = content.split(T.SPLIT)
     this.contentTemplate = content
     this.isTokenized = true
@@ -139,6 +141,14 @@ export class Parser {
       id: generateUuidV4(),
       raw: a.toString(),
       videoId: a.getAttribute('data-embeded-type'),
+    }))
+  }
+
+  getPCBlocksForCleanup() {
+    // pc, pc-poll, pc-dice
+    return this.html.querySelectorAll('div.pc').map(a => ({
+      id: generateUuidV4(),
+      raw: a.toString(),
     }))
   }
 }

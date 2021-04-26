@@ -20,8 +20,8 @@ const App: () => Node = () => {
   const [confirmationCode, setConfirmationCode] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const refs = {}
-  const theme = useColorScheme()
-  // const theme = 'dark'
+  // const theme = useColorScheme()
+  const theme = 'dark'
   const initNyx = async (username?, isAutologin = true) => {
     if (!username) {
       const auth = await Storage.getAuth()
