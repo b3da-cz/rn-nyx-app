@@ -165,7 +165,7 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
-  onDiceRoll(updatedPost) {
+  onDiceRollOrPollVote(updatedPost) {
     if (updatedPost?.error) {
       return
     }
@@ -240,7 +240,8 @@ export class DiscussionView extends Component<Props> {
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
-              onDiceRoll={updatedPost => this.onDiceRoll(updatedPost)}
+              onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
+              onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
             />
           )}
         />

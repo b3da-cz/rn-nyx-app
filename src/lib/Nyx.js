@@ -293,6 +293,23 @@ export class Nyx {
     return null
   }
 
+  async voteInPoll(discussionId, postId, answers) {
+    try {
+      const res = await fetch(
+        `https://nyx.cz/api/discussion/${discussionId}/poll/${postId}/vote/${answers.toString()}`,
+        {
+          method: 'POST',
+          referrerPolicy: 'no-referrer',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('post to discussion error', e)
+    }
+    return null
+  }
+
   async postToDiscussion(discussionId, text) {
     const data = { content: text }
     try {

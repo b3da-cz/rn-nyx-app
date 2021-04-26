@@ -4,7 +4,15 @@ import { Text, TouchableRipple } from 'react-native-paper'
 import { UserIconComponent } from '../component'
 import { Styling } from '../lib'
 
-export const UserRowComponent = ({ user, isDarkMode, extraText, isPressable = true, onPress }) => {
+export const UserRowComponent = ({
+  user,
+  isDarkMode,
+  extraText,
+  marginBottom = Styling.metrics.block.small,
+  marginTop = 0,
+  isPressable = true,
+  onPress,
+}) => {
   return (
     <TouchableRipple
       disabled={!isPressable}
@@ -14,7 +22,8 @@ export const UserRowComponent = ({ user, isDarkMode, extraText, isPressable = tr
         backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         paddingVertical: Styling.metrics.block.small,
         paddingHorizontal: Styling.metrics.block.small,
-        marginBottom: Styling.metrics.block.small,
+        marginBottom,
+        marginTop,
       }}
       onPress={() => onPress()}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

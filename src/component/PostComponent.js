@@ -3,6 +3,7 @@ import { Text, Linking, View } from 'react-native'
 import {
   CodeBlockComponent,
   DiceComponent,
+  PollComponent,
   PostHeaderComponent,
   ImageComponent,
   LinkComponent,
@@ -26,6 +27,7 @@ type Props = {
   onDelete: Function,
   onVoteCast?: Function,
   onDiceRoll?: Function,
+  onPollVote?: Function,
 }
 export class PostComponent extends Component<Props> {
   constructor(props) {
@@ -175,9 +177,32 @@ export class PostComponent extends Component<Props> {
     )
   }
 
+  renderPoll() {
+    const { post } = this.props
+    return (
+      <PollComponent
+        isDarkMode={this.props.isDarkMode}
+        label={post?.content_raw?.data?.question}
+        instructions={post?.content_raw?.data?.instructions}
+        answers={post?.content_raw?.data?.answers}
+        totalRespondents={post?.content_raw?.data?.computed_values?.total_respondents}
+        totalVotes={post?.content_raw?.data?.computed_values?.total_votes}
+        allowedAnswers={post?.content_raw?.data?.allowed_votes}
+        votes={post?.content_raw?.data?.votes}
+        canVote={!post?.content_raw?.data?.computed_values?.user_did_vote}
+        onVote={answer => this.voteInPoll(answer)}
+      />
+    )
+  }
+
   async rollDice() {
     const res = await this.props.nyx.rollDice(this.props.post.discussion_id, this.props.post.id)
     this.props.onDiceRoll(res)
+  }
+
+  async voteInPoll(answers) {
+    const res = await this.props.nyx.voteInPoll(this.props.post.discussion_id, this.props.post.id, answers)
+    this.props.onPollVote(res)
   }
 
   render() {
@@ -242,7 +267,7 @@ export class PostComponent extends Component<Props> {
               }
             })}
           {post?.content_raw?.type === 'dice' && this.renderDice()}
-          {post?.content_raw?.type === 'poll' && <Text style={{color: 'red'}}>POLL</Text>}
+          {post?.content_raw?.type === 'poll' && this.renderPoll()}
         </View>
       </View>
     )

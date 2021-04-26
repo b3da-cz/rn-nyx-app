@@ -6,18 +6,25 @@ import { Styling } from '../lib'
 
 export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls, canRoll, onRoll }) => {
   return (
-    <View>
+    <View style={{ borderColor: Styling.colors.darker, borderWidth: Styling.metrics.block.small }}>
       <Text
         style={{
           padding: Styling.metrics.block.medium,
-          fontSize: Styling.metrics.fontSize.medium,
+          fontSize: Styling.metrics.fontSize.large,
           color: Styling.colors.secondary,
         }}>
         {label}
       </Text>
       {rolls?.length > 0 &&
         rolls.map(r => (
-          <UserRowComponent user={r.user} isDarkMode={isDarkMode} isPressable={false} extraText={r.rolls?.toString()} />
+          <UserRowComponent
+            user={r.user}
+            isDarkMode={isDarkMode}
+            isPressable={false}
+            extraText={r.rolls?.toString()}
+            marginBottom={0}
+            marginTop={Styling.metrics.block.small}
+          />
         ))}
       {canRoll && (
         <TouchableRipple
