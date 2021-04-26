@@ -19,6 +19,7 @@ import {
   ComposePostView,
   NotificationsView,
   LastPostsView,
+  ProfileView,
   SearchView,
 } from './view'
 
@@ -162,6 +163,10 @@ export const Router = ({ nyx, refs }) => {
     />
   )
 
+  const Profile = ({ navigation }) => (
+    <ProfileView />
+  )
+
   const Gallery = ({ navigation, route }) => {
     const { images, imgIndex } = route.params
     return <ImageModal images={images} imgIndex={imgIndex} isShowing={true} onExit={() => navigation.goBack()} />
@@ -249,7 +254,7 @@ export const Router = ({ nyx, refs }) => {
         <Tab.Screen name={'searchStack'} component={SearchStackContainer} options={{ title: 'search' }} />
         <Tab.Screen name={'mailStack'} component={MailStackContainer} options={{ title: 'mail' }} />
         <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} options={{ title: 'last' }} />
-        <Tab.Screen name={'profile'} component={HistoryStackContainer} options={{ title: 'profile' }} />
+        <Tab.Screen name={'profile'} component={Profile} options={{ title: 'profile' }} />
       </Tab.Navigator>
     )
   }

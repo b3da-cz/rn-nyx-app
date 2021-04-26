@@ -22,7 +22,7 @@ const App: () => Node = () => {
   const refs = {}
   const theme = useColorScheme()
   // const theme = 'dark'
-  const initNyx = async (username?) => {
+  const initNyx = async (username?, isAutologin = true) => {
     if (!username) {
       const auth = await Storage.getAuth()
       if (!auth || (auth && !auth.username)) {
@@ -31,14 +31,30 @@ const App: () => Node = () => {
       }
       username = auth.username
     }
-    const isAuthConfirmed = await nyx.init(username)
+    const res = await nyx.init(username)
+    nyx.onLogout = () => {
+      setConfirmationCode(null)
+      setIsAuthenticated(false)
+    }
     setNyx(nyx)
-    setIsAuthenticated(isAuthConfirmed) // todo test
-    setConfirmationCode(nyx.auth.confirmationCode)
-    return isAuthConfirmed
+    if (isAutologin) {
+      setIsAuthenticated(res.isConfirmed)
+    } else {
+      setConfirmationCode(nyx.auth.confirmationCode)
+    }
+    return res.isConfirmed
   }
 
-  initNyx().then(isAuth => (isAuth ? initFCM() : null))
+  const onLogin = async () => {
+    const auth = await Storage.getAuth()
+    if (auth) {
+      auth.isConfirmed = true;
+      await Storage.setAuth(auth)
+    }
+    setIsAuthenticated(true)
+  }
+
+  initNyx().then(isAuth => (isAuth ? initFCM(nyx, isAuth) : null))
 
   return (
     <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
@@ -51,8 +67,8 @@ const App: () => Node = () => {
         <LoginView
           isDarkMode={theme === 'dark'}
           confirmationCode={confirmationCode}
-          onUsername={username => initNyx(username)}
-          onLogin={() => setIsAuthenticated(true)}
+          onUsername={username => initNyx(username, false)}
+          onLogin={() => onLogin()}
         />
       </Modal>
     </PaperProvider>

@@ -1,3 +1,4 @@
+export * from './ButtonComponent'
 export * from './CodeBlockComponent'
 export * from './ConfirmationDialog'
 export * from './DiscussionRowComponent'

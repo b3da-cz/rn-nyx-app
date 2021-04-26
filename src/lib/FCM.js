@@ -21,6 +21,24 @@ export const initFCM = async (nyx, isAuthenticated) => {
   }
 }
 
+export const unregisterFCM = async (nyx, isAuthenticated) => {
+  if (!isAuthenticated) {
+    return
+  }
+  try {
+    const fcmToken = await messaging().getToken()
+    const unsubFCMRes = await nyx.unregisterFromFCM(fcmToken)
+    const config = {
+      fcmToken,
+      isFCMSubscribed: false,
+    }
+    await Storage.setConfig(config)
+    return unsubFCMRes
+  } catch (e) {
+    console.warn(e)
+  }
+}
+
 export const subscribeFCM = async onMessage => {
   try {
     const processMessage = (message, isForegroundMsg = false) => {

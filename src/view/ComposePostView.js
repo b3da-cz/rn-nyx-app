@@ -3,8 +3,9 @@ import { ActivityIndicator, Text, TouchableOpacity, FlatList, View } from 'react
 import { TextInput, TouchableRipple } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
+import { Picker } from '@react-native-picker/picker'
 import Icon from 'react-native-vector-icons/Feather'
-import { confirm, UserRowComponent } from '../component'
+import { ButtonComponent, confirm, UserRowComponent } from '../component'
 import { Context, Styling } from '../lib'
 
 type Props = {
@@ -28,6 +29,7 @@ export class ComposePostView extends Component<Props> {
       searchResults: [],
       username: '',
       files: [],
+      jpegSize: 1920,
     }
     this.isDarkMode = true
   }
@@ -67,9 +69,19 @@ export class ComposePostView extends Component<Props> {
       // console.warn(`original ${Math.floor(file.size / 1024)}Kb`); // TODO: remove
       let resized = null
       if (file.type === 'image/jpeg') {
-        resized = await ImageResizer.createResizedImage(file.uri, 1920, 1920, 'JPEG', 80, undefined, undefined, false, {
-          onlyScaleDown: true,
-        })
+        resized = await ImageResizer.createResizedImage(
+          file.uri,
+          this.state.jpegSize,
+          this.state.jpegSize,
+          'JPEG',
+          80,
+          undefined,
+          undefined,
+          false,
+          {
+            onlyScaleDown: true,
+          },
+        )
         // console.warn(`resized ${Math.floor(resized.size / 1024)}Kb`); // TODO: remove
       }
       const res = await this.nyx.uploadFile(
@@ -186,6 +198,19 @@ export class ComposePostView extends Component<Props> {
               style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small }}
             />
           )}
+          <Picker
+            mode={'dropdown'}
+            style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
+            prompt={'Recipient'}
+            selectedValue={this.state.jpegSize}
+            onValueChange={size => this.setState({ jpegSize: size })}>
+            <Picker.Item key={'original'} label={'Original'} value={20000} color={Styling.colors.primary} />
+            <Picker.Item key={'1920x'} label={'1920x'} value={1920} color={Styling.colors.primary} />
+            <Picker.Item key={'1366x'} label={'1366x'} value={1366} color={Styling.colors.primary} />
+            <Picker.Item key={'900x'} label={'900x'} value={900} color={Styling.colors.primary} />
+            <Picker.Item key={'600x'} label={'600x'} value={600} color={Styling.colors.primary} />
+            <Picker.Item key={'600x'} label={'400x'} value={400} color={Styling.colors.primary} />
+          </Picker>
         </View>
         {searchResults.length === 0 && (
           <View>
@@ -195,66 +220,32 @@ export class ComposePostView extends Component<Props> {
               )}
               {uploadedFiles?.length > 0 &&
                 uploadedFiles.map(f => (
-                  <TouchableOpacity
+                  <ButtonComponent
                     key={f.filename}
-                    style={[
-                      Styling.groups.themeComponent(this.isDarkMode),
-                      { width: '100%', fontSize: 24, lineHeight: 60 },
-                    ]}
-                    accessibilityRole="button"
-                    onPress={() => this.deleteFile(f.id)}>
-                    <Text
-                      style={{
-                        color: this.isDarkMode ? Styling.colors.light : Styling.colors.dark,
-                        fontSize: 16,
-                        lineHeight: 60,
-                        paddingHorizontal: 5,
-                      }}>
-                      <Icon name="trash-2" size={24} color="#ccc" />
-                      {` ${f.filename}`}
-                    </Text>
-                  </TouchableOpacity>
+                    label={f.filename}
+                    icon={'trash-2'}
+                    textAlign={'left'}
+                    color={Styling.colors.secondary}
+                    fontSize={Styling.metrics.fontSize.medium}
+                    marginBottom={Styling.metrics.block.small}
+                    isDarkMode={this.isDarkMode}
+                    onPress={() => this.deleteFile(f.id)}
+                  />
                 ))}
             </View>
             <View>
-              <TouchableRipple
-                rippleColor={'rgba(18,146,180, 0.3)'}
-                style={[
-                  Styling.groups.themeComponent(this.isDarkMode),
-                  { width: '100%', fontSize: 24, lineHeight: 60 },
-                ]}
-                onPress={() => this.pickFile()}>
-                <Text
-                  style={{
-                    color: Styling.colors.primary,
-                    fontSize: 24,
-                    lineHeight: 60,
-                    paddingHorizontal: 5,
-                    textAlign: 'center',
-                  }}>
-                  <Icon name="image" size={24} color="#ccc" />
-                  {` Append file ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
-                </Text>
-              </TouchableRipple>
-              <TouchableRipple
-                rippleColor={'rgba(18,146,180, 0.3)'}
-                style={[
-                  Styling.groups.themeComponent(this.isDarkMode),
-                  { width: '100%', fontSize: 24, lineHeight: 60 },
-                ]}
-                onPress={() => this.sendPost()}>
-                <Text
-                  style={{
-                    color: Styling.colors.primary,
-                    fontSize: 24,
-                    lineHeight: 60,
-                    paddingHorizontal: 5,
-                    textAlign: 'center',
-                  }}>
-                  <Icon name="send" size={24} color="#ccc" />
-                  {' Send'}
-                </Text>
-              </TouchableRipple>
+              <ButtonComponent
+                label={`Append file ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
+                icon={'image'}
+                isDarkMode={this.isDarkMode}
+                onPress={() => this.pickFile()}
+              />
+              <ButtonComponent
+                label={'Send'}
+                icon={'send'}
+                isDarkMode={this.isDarkMode}
+                onPress={() => this.sendPost()}
+              />
             </View>
           </View>
         )}

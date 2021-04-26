@@ -8,6 +8,7 @@ export class Nyx {
     this.auth = {}
     this.store = {}
     this.userAgent = `Nnn v${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
+    this.onLogout = null
   }
 
   async init(username?) {
@@ -16,23 +17,29 @@ export class Nyx {
     }
     let auth = await Storage.getAuth()
     // console.warn(auth); // TODO: remove
-    let isAuthConfirmed = true
     if (!auth) {
       auth = {
         username: this.username,
         token: null,
         confirmationCode: null,
+        isConfirmed: false,
       }
     }
     this.auth = auth
 
     if (!this.auth.token || this.auth.token === 'undefined') {
-      isAuthConfirmed = await this.createAuthToken()
-      if (isAuthConfirmed) {
-        await Storage.setAuth(this.auth)
-      }
+      await this.createAuthToken()
+      await Storage.setAuth(this.auth)
     }
-    return isAuthConfirmed
+    return this.auth
+  }
+
+  logout() {
+    Storage.removeAll()
+    console.warn('onlogout'); // TODO: remove
+    if (this.onLogout && typeof this.onLogout === 'function') {
+      this.onLogout()
+    }
   }
 
   getHeaders(contentType = 'application/json') {
@@ -57,17 +64,9 @@ export class Nyx {
         token: res.token,
         confirmationCode: res.confirmation_code,
       }
-      // const isAuthConfirmed = await confirm(
-      //   'Confirm auth in Nyx settings',
-      //   `Open nyx.cz -> user settings -> auth -> update confirmation code for app: "${this.auth.confirmationCode}"\nTHEN press OK`,
-      // )
-      // if (isAuthConfirmed) {
-      return true
-      // }
     } catch (e) {
       console.warn('create token error', e)
     }
-    return false
   }
 
   async getHistory() {
@@ -351,6 +350,20 @@ export class Nyx {
   async subscribeForFCM(fcmToken) {
     try {
       const res = await fetch(`https://nyx.cz/api/register_for_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      console.warn('fcm sub error', e)
+    }
+    return null
+  }
+
+  async unregisterFromFCM(fcmToken) {
+    try {
+      const res = await fetch(`https://nyx.cz/api/deregister_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
         method: 'POST',
         referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
