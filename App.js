@@ -4,10 +4,11 @@
  */
 import React, { useState } from 'react'
 import type { Node } from 'react'
-import { LogBox, Modal, useColorScheme } from 'react-native'
+import { LogBox, Modal } from 'react-native'
 import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
+import RNBootSplash from 'react-native-bootsplash'
 import { LoaderComponent } from './src/component'
 import { Nyx, Storage, initFCM, Context, CustomDarkTheme, CombinedDefaultTheme } from './src/lib'
 import { Router } from './src/Router'
@@ -58,7 +59,10 @@ const App: () => Node = () => {
 
   initNyx().then(isAuth => {
     isAuth ? initFCM(nyx, isAuth) : null
-    setTimeout(() => setIsAppLoaded(true), 100)
+    setIsAppLoaded(true)
+    setTimeout(() => {
+      RNBootSplash.hide({ fade: true })
+    }, 500)
   })
 
   return (
