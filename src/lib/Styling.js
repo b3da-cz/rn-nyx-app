@@ -130,14 +130,10 @@ export const CustomDarkTheme = {
   roundness: 4,
 }
 
-const tabBarItemCount = 6
-const tabBarWidth = Styling.metrics.window().width / tabBarItemCount
-const notificationsBarWidth = 30
 export const NavOptions = {
   tabBarOptions: {
     style: {
       height: 50,
-      marginLeft: notificationsBarWidth - tabBarWidth,
       backgroundColor: Styling.colors.black,
     },
     labelStyle: {
@@ -147,7 +143,7 @@ export const NavOptions = {
       backgroundColor: Styling.colors.primary,
       height: 3,
     },
-    tabStyle: { width: tabBarWidth - (notificationsBarWidth / tabBarItemCount) },
+    // tabStyle: { width: tabBarWidth - (notificationsBarWidth / tabBarItemCount) },
     pressColor: Styling.colors.primary,
     activeTintColor: Styling.colors.primary,
   },
@@ -157,4 +153,5 @@ export const NavOptions = {
     },
     headerTintColor: '#fff',
   },
+  cardStyle: { backgroundColor: '#000' },
 }

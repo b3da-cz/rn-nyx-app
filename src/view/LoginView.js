@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, ScrollView, Text, TextInput, RefreshControl, TouchableOpacity, View } from 'react-native'
+import { Text, View } from 'react-native'
+import { TextInput } from 'react-native-paper'
+import { ButtonComponent } from '../component'
 import { Styling } from '../lib'
 
 type Props = {
@@ -13,7 +15,6 @@ export class LoginView extends Component<Props> {
     super(props)
     this.state = {
       username: '',
-      isUsernameConfirmed: false,
     }
   }
 
@@ -23,88 +24,89 @@ export class LoginView extends Component<Props> {
   }
 
   confirmUsername() {
-    this.setState({ isUsernameConfirmed: true })
     this.props.onUsername(this.state.username)
   }
 
   render() {
+    const { username } = this.state
+    const { confirmationCode, isDarkMode } = this.props
+    const isUsernameFilledIn = username && username.length > 0
     return (
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={[
-          Styling.groups.themeView(this.props.isDarkMode),
-          { maxHeight: Math.max(Styling.metrics.window().height, Styling.metrics.window().width) - 60 },
-        ]}>
-        {this.props.confirmationCode && this.props.confirmationCode.length > 0 ? (
+      <View style={[Styling.groups.themeView(isDarkMode), { flex: 1 }]}>
+        {confirmationCode?.length > 0 ? (
           <View>
             <Text
               style={[
                 Styling.groups.sectionTitle,
-                Styling.groups.themeComponent(this.props.isDarkMode),
-                { padding: 20, paddingTop: 40 },
+                Styling.groups.themeComponent(isDarkMode),
+                { padding: Styling.metrics.block.medium },
               ]}>
-              {`Confirm auth in Nyx settings:\n\nOpen nyx.cz -> user settings -> auth -> enter confirmation code for app: \n\n"${this.props.confirmationCode}"\n\nTHEN press continue`}
+              {`Confirm auth in Nyx settings:`}
             </Text>
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={{
-                flexDirection: 'row',
-                marginTop: 10,
-                backgroundColor: this.props.isDarkMode ? Styling.colors.black : Styling.colors.white,
-              }}
-              onPress={() => this.login()}>
-              <Text
-                style={{
-                  color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                  fontSize: 24,
-                  padding: 20,
-                  textAlign: 'center',
-                  width: '100%',
-                }}>
-                Continue to app
-              </Text>
-            </TouchableOpacity>
+            <Text
+              style={[
+                Styling.groups.themeComponent(isDarkMode),
+                { padding: Styling.metrics.block.medium, fontSize: Styling.metrics.fontSize.large },
+              ]}>
+              {`Open nyx.cz -> user settings -> auth -> enter confirmation code for app:`}
+            </Text>
+            <Text
+              style={[
+                Styling.groups.sectionTitle,
+                Styling.groups.themeComponent(isDarkMode),
+                { padding: Styling.metrics.block.medium },
+              ]}>
+              {`"${confirmationCode}"\n\nTHEN press continue`}
+            </Text>
+            <ButtonComponent
+              label={'continue to app'}
+              textAlign={'center'}
+              borderWidth={1}
+              borderColor={Styling.colors.primary}
+              backgroundColor={Styling.colors.black}
+              color={Styling.colors.primary}
+              fontSize={Styling.metrics.fontSize.xlarge}
+              marginTop={Styling.metrics.block.large}
+              marginBottom={0}
+              isDarkMode={isDarkMode}
+              onPress={() => this.login()}
+            />
           </View>
         ) : (
           <View>
             <Text
               style={[
                 Styling.groups.sectionTitle,
-                Styling.groups.themeComponent(this.props.isDarkMode),
+                Styling.groups.themeComponent(isDarkMode),
                 { padding: 20, paddingTop: 40 },
               ]}>
               Enter your nyx username
             </Text>
             <TextInput
               style={{
-                backgroundColor: this.props.isDarkMode ? Styling.colors.dark : Styling.colors.light,
-                color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
+                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
               }}
-              onChangeText={username => this.setState({ username })}
-              value={`${this.state.username}`}
+              onChangeText={val => this.setState({ username: val })}
+              value={`${username}`}
             />
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={{
-                flexDirection: 'row',
-                marginTop: 10,
-                backgroundColor: this.props.isDarkMode ? Styling.colors.black : Styling.colors.white,
-              }}
-              onPress={() => this.confirmUsername()}>
-              <Text
-                style={{
-                  color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                  fontSize: 24,
-                  padding: 20,
-                  textAlign: 'center',
-                  width: '100%',
-                }}>
-                Confirm username
-              </Text>
-            </TouchableOpacity>
+            <ButtonComponent
+              isDisabled={!isUsernameFilledIn}
+              label={'continue'}
+              textAlign={'center'}
+              borderWidth={1}
+              borderColor={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.black}
+              backgroundColor={Styling.colors.black}
+              color={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.darker}
+              fontSize={Styling.metrics.fontSize.xlarge}
+              marginTop={Styling.metrics.block.large}
+              marginBottom={0}
+              isDarkMode={isDarkMode}
+              onPress={() => this.confirmUsername()}
+            />
           </View>
         )}
-      </ScrollView>
+      </View>
     )
   }
 }

@@ -8,7 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import {Styling, NavOptions, subscribeFCM, Storage} from './lib';
+import { Styling, NavOptions, subscribeFCM, Storage } from './lib';
 import {
   BookmarksView,
   HistoryView,
@@ -25,19 +25,19 @@ import {
 export const Router = ({ nyx, refs }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
-  // const [isBookmarksVisible, setIsBookmarksVisible] = useState(true)
-  // const [isHistoryVisible, setIsHistoryVisible] = useState(true)
+  const [isBookmarksVisible, setIsBookmarksVisible] = useState(true)
+  const [isHistoryVisible, setIsHistoryVisible] = useState(true)
   useEffect(() => {
-    // const getConfig = async () => {
-    //   const conf = await Storage.getConfig()
-    //   if (isBookmarksVisible !== conf.isBookmarksEnabled) {
-    //     setIsBookmarksVisible(conf.isBookmarksEnabled)
-    //   }
-    //   if (isHistoryVisible !== conf.isHistoryEnabled) {
-    //     setIsHistoryVisible(conf.isHistoryEnabled)
-    //   }
-    // }
-    // setTimeout(() => getConfig())
+    const getConfig = async () => {
+      const conf = await Storage.getConfig()
+      if (isBookmarksVisible !== conf.isBookmarksEnabled) {
+        setIsBookmarksVisible(conf.isBookmarksEnabled)
+      }
+      if (isHistoryVisible !== conf.isHistoryEnabled) {
+        setIsHistoryVisible(conf.isHistoryEnabled)
+      }
+    }
+    setTimeout(() => getConfig())
 
     const sub = subscribeFCM(message => {
       switch (message.type) {
@@ -183,12 +183,12 @@ export const Router = ({ nyx, refs }) => {
   const Profile = ({ navigation }) => (
     <ProfileView
       onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled }) => {
-        // if (isBookmarksEnabled !== isBookmarksVisible) {
-        //   setIsBookmarksVisible(isBookmarksEnabled)
-        // }
-        // if (isHistoryEnabled !== isHistoryVisible) {
-        //   setIsHistoryVisible(isHistoryEnabled)
-        // }
+        if (isBookmarksEnabled !== isBookmarksVisible) {
+          setIsBookmarksVisible(isBookmarksEnabled)
+        }
+        if (isHistoryEnabled !== isHistoryVisible) {
+          setIsHistoryVisible(isHistoryEnabled)
+        }
       }}
     />
   )
@@ -278,26 +278,50 @@ export const Router = ({ nyx, refs }) => {
         tabBarPosition={'bottom'}
         lazy={true}
         tabBarOptions={NavOptions.tabBarOptions}>
+        {isHistoryVisible && (
+        <Tab.Screen
+          name={'historyStack'}
+          component={HistoryStackContainer}
+          options={{ tabBarLabel: () => <Icon name="book-open" size={14} color="#ccc" /> }}
+        />
+        )}
+        {isBookmarksVisible && (
+        <Tab.Screen
+          name={'bookmarksStack'}
+          component={BookmarksStackContainer}
+          options={{ tabBarLabel: () => <Icon name="bookmark" size={14} color="#ccc" /> }}
+        />
+        )}
+        <Tab.Screen
+          name={'searchStack'}
+          component={SearchStackContainer}
+          options={{ tabBarLabel: () => <Icon name="search" size={14} color="#ccc" /> }}
+        />
+        <Tab.Screen
+          name={'mailStack'}
+          component={MailStackContainer}
+          options={{ tabBarLabel: () => <Icon name="mail" size={14} color="#ccc" /> }}
+        />
+        <Tab.Screen
+          name={'lastPostsStack'}
+          component={LastPostsStackContainer}
+          options={{ tabBarLabel: () => <Icon name="inbox" size={14} color="#ccc" /> }}
+        />
         <Tab.Screen
           name={'notificationsStack'}
           component={NotificationsStackContainer}
-          options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" style={{ marginLeft: '75%' }} /> }}
+          options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" /> }}
         />
-        {/*{isHistoryVisible && (*/}
-          <Tab.Screen name={'historyStack'} component={HistoryStackContainer} options={{ title: 'History' }} />
-        {/*)}*/}
-        {/*{isBookmarksVisible && (*/}
-          <Tab.Screen name={'bookmarksStack'} component={BookmarksStackContainer} options={{ title: 'Bookmarks' }} />
-        {/*)}*/}
-        <Tab.Screen name={'searchStack'} component={SearchStackContainer} options={{ title: 'search' }} />
-        <Tab.Screen name={'mailStack'} component={MailStackContainer} options={{ title: 'mail' }} />
-        <Tab.Screen name={'lastPostsStack'} component={LastPostsStackContainer} options={{ title: 'last' }} />
-        <Tab.Screen name={'profile'} component={Profile} options={{ title: 'profile' }} />
+        <Tab.Screen
+          name={'profile'}
+          component={Profile}
+          options={{ tabBarLabel: () => <Icon name="settings" size={14} color="#ccc" /> }}
+        />
       </Tab.Navigator>
     )
   }
   return (
-    <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'}>
+    <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} options={{ cardStyle: { backgroundColor: '#000' } }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: 'New post' }} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />

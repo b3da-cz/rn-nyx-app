@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, TouchableOpacity, Image, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'

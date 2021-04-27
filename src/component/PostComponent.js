@@ -87,16 +87,19 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
-    if (this.props.post?.content_raw) {
+    // console.warn(img, this.props.post?.content_raw); // TODO: remove
+    if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
       let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
+      let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       return (
         <ImageComponent
           key={img.id}
           src={img.src}
           width={w}
+          // height={this.props.isHeaderInteractive ? undefined : h / 2.5}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() => this.props.onImage(img)}
         />

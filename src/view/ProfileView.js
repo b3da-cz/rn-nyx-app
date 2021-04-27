@@ -24,13 +24,13 @@ export class ProfileView extends Component<Props> {
     this.getUsername()
   }
 
-  getUsername() {
-    // const conf = await Storage.getConfig()
-    // const { isBookmarksEnabled, isHistoryEnabled } = conf
+  async getUsername() {
+    const conf = await Storage.getConfig()
+    const { isBookmarksEnabled, isHistoryEnabled } = conf
     this.setState({
       username: this.nyx.auth.username,
-      // isBookmarksEnabled: !!isBookmarksEnabled,
-      // isHistoryEnabled: !!isHistoryEnabled,
+      isBookmarksEnabled: !!isBookmarksEnabled,
+      isHistoryEnabled: !!isHistoryEnabled,
     })
   }
 
@@ -102,34 +102,34 @@ export class ProfileView extends Component<Props> {
             {username}
           </Text>
         </View>
-        {/*<View*/}
-        {/*  style={{*/}
-        {/*    flexDirection: 'row',*/}
-        {/*    alignItems: 'center',*/}
-        {/*    justifyContent: 'space-between',*/}
-        {/*    paddingVertical: Styling.metrics.block.large,*/}
-        {/*  }}>*/}
-        {/*  <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show bookmarks</Text>*/}
-        {/*  <Switch*/}
-        {/*    thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}*/}
-        {/*    onValueChange={val => this.setBookmarksEnabled(val)}*/}
-        {/*    value={this.state.isBookmarksEnabled}*/}
-        {/*  />*/}
-        {/*</View>*/}
-        {/*<View*/}
-        {/*  style={{*/}
-        {/*    flexDirection: 'row',*/}
-        {/*    alignItems: 'center',*/}
-        {/*    justifyContent: 'space-between',*/}
-        {/*    paddingVertical: Styling.metrics.block.large,*/}
-        {/*  }}>*/}
-        {/*  <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show history</Text>*/}
-        {/*  <Switch*/}
-        {/*    thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}*/}
-        {/*    onValueChange={val => this.setHistoryEnabled(val)}*/}
-        {/*    value={this.state.isHistoryEnabled}*/}
-        {/*  />*/}
-        {/*</View>*/}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: Styling.metrics.block.large,
+          }}>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show bookmarks</Text>
+          <Switch
+            thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}
+            onValueChange={val => this.setBookmarksEnabled(val)}
+            value={this.state.isBookmarksEnabled}
+          />
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: Styling.metrics.block.large,
+          }}>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show history</Text>
+          <Switch
+            thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}
+            onValueChange={val => this.setHistoryEnabled(val)}
+            value={this.state.isHistoryEnabled}
+          />
+        </View>
         <ButtonComponent
           label={'subscribe FCM'}
           icon={'mail'}

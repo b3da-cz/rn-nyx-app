@@ -8,6 +8,7 @@ import { LogBox, Modal, useColorScheme } from 'react-native'
 import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
+import { LoaderComponent } from './src/component'
 import { Nyx, Storage, initFCM, Context, CustomDarkTheme, CombinedDefaultTheme } from './src/lib'
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
@@ -19,6 +20,7 @@ const App: () => Node = () => {
   const [nyx, setNyx] = useState(n)
   const [confirmationCode, setConfirmationCode] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAppLoaded, setIsAppLoaded] = useState(false)
   const refs = {}
   // const theme = useColorScheme()
   const theme = 'dark'
@@ -54,23 +56,31 @@ const App: () => Node = () => {
     setIsAuthenticated(true)
   }
 
-  initNyx().then(isAuth => (isAuth ? initFCM(nyx, isAuth) : null))
+  initNyx().then(isAuth => {
+    isAuth ? initFCM(nyx, isAuth) : null
+    setTimeout(() => setIsAppLoaded(true), 100)
+  })
 
   return (
     <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
-      <Context.Provider value={{ nyx, theme, refs }}>
-        <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
-          <Router nyx={nyx} refs={refs} />
-        </NavigationContainer>
-      </Context.Provider>
-      <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
-        <LoginView
-          isDarkMode={theme === 'dark'}
-          confirmationCode={confirmationCode}
-          onUsername={username => initNyx(username, false)}
-          onLogin={() => onLogin()}
-        />
-      </Modal>
+      {!isAppLoaded && <LoaderComponent />}
+      {isAuthenticated && (
+        <Context.Provider value={{ nyx, theme, refs }}>
+          <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
+            <Router nyx={nyx} refs={refs} />
+          </NavigationContainer>
+        </Context.Provider>
+      )}
+      {isAppLoaded && (
+        <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
+          <LoginView
+            isDarkMode={theme === 'dark'}
+            confirmationCode={confirmationCode}
+            onUsername={username => initNyx(username, false)}
+            onLogin={() => onLogin()}
+          />
+        </Modal>
+      )}
     </PaperProvider>
   )
 }
