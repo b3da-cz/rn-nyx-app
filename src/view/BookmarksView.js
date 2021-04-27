@@ -4,6 +4,7 @@ import { DiscussionRowComponent } from '../component'
 import { Context, Styling } from '../lib'
 
 type Props = {
+  navigation: any,
   onDetailShow: Function,
 }
 export class BookmarksView extends Component<Props> {
@@ -15,12 +16,22 @@ export class BookmarksView extends Component<Props> {
       sectionedBookmarks: [],
       isFetching: false,
     }
+    this.navFocusListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.getBookmarks()
+    })
     this.getBookmarks()
+  }
+
+  componentWillUnmount() {
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
   }
 
   async getBookmarks() {

@@ -152,11 +152,17 @@ export const Router = ({ nyx, refs }) => {
   )
 
   const Bookmarks = ({ navigation }) => (
-    <BookmarksView onDetailShow={discussionId => navigation.push('discussion', { discussionId })} />
+    <BookmarksView
+      navigation={navigation}
+      onDetailShow={discussionId => navigation.push('discussion', { discussionId })}
+    />
   )
 
   const History = ({ navigation }) => (
-    <HistoryView onDetailShow={discussionId => navigation.push('discussion', { discussionId })} />
+    <HistoryView
+      navigation={navigation}
+      onDetailShow={discussionId => navigation.push('discussion', { discussionId })}
+    />
   )
 
   const Notifications = ({ navigation }) => (
@@ -274,23 +280,23 @@ export const Router = ({ nyx, refs }) => {
     nav = navigation
     return (
       <Tab.Navigator
-        initialRouteName={'historyStack'}
+        // initialRouteName={'historyStack'}
         tabBarPosition={'bottom'}
         lazy={true}
         tabBarOptions={NavOptions.tabBarOptions}>
         {isHistoryVisible && (
-        <Tab.Screen
-          name={'historyStack'}
-          component={HistoryStackContainer}
-          options={{ tabBarLabel: () => <Icon name="book-open" size={14} color="#ccc" /> }}
-        />
+          <Tab.Screen
+            name={'historyStack'}
+            component={HistoryStackContainer}
+            options={{ tabBarLabel: () => <Icon name="book-open" size={14} color="#ccc" /> }}
+          />
         )}
         {isBookmarksVisible && (
-        <Tab.Screen
-          name={'bookmarksStack'}
-          component={BookmarksStackContainer}
-          options={{ tabBarLabel: () => <Icon name="bookmark" size={14} color="#ccc" /> }}
-        />
+          <Tab.Screen
+            name={'bookmarksStack'}
+            component={BookmarksStackContainer}
+            options={{ tabBarLabel: () => <Icon name="bookmark" size={14} color="#ccc" /> }}
+          />
         )}
         <Tab.Screen
           name={'searchStack'}

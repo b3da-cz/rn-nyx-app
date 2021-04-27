@@ -4,6 +4,7 @@ import { DiscussionRowComponent } from '../component'
 import { Context, Styling } from '../lib'
 
 type Props = {
+  navigation: any,
   onDetailShow: Function,
 }
 export class HistoryView extends Component<Props> {
@@ -14,12 +15,22 @@ export class HistoryView extends Component<Props> {
       discussions: [],
       isFetching: false,
     }
+    this.navFocusListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.getHistory()
+    })
     setTimeout(() => this.getHistory(), 100)
+  }
+
+  componentWillUnmount() {
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
   }
 
   async getHistory() {
