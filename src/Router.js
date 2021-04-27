@@ -27,6 +27,7 @@ export const Router = ({ nyx, refs }) => {
   const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
   const [isBookmarksVisible, setIsBookmarksVisible] = useState(true)
   const [isHistoryVisible, setIsHistoryVisible] = useState(true)
+  const [isTabsOnBottom, setIsTabsOnBottom] = useState(true)
   useEffect(() => {
     const getConfig = async () => {
       const conf = await Storage.getConfig()
@@ -35,6 +36,9 @@ export const Router = ({ nyx, refs }) => {
       }
       if (isHistoryVisible !== conf.isHistoryEnabled) {
         setIsHistoryVisible(conf.isHistoryEnabled)
+      }
+      if (isTabsOnBottom !== conf.isBottomTabs) {
+        setIsTabsOnBottom(conf.isBottomTabs)
       }
     }
     setTimeout(() => getConfig())
@@ -188,12 +192,15 @@ export const Router = ({ nyx, refs }) => {
 
   const Profile = ({ navigation }) => (
     <ProfileView
-      onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled }) => {
+      onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled, isBottomTabs }) => {
         if (isBookmarksEnabled !== isBookmarksVisible) {
           setIsBookmarksVisible(isBookmarksEnabled)
         }
         if (isHistoryEnabled !== isHistoryVisible) {
           setIsHistoryVisible(isHistoryEnabled)
+        }
+        if (isBottomTabs !== isTabsOnBottom) {
+          setIsTabsOnBottom(isBottomTabs)
         }
       }}
     />
@@ -281,7 +288,7 @@ export const Router = ({ nyx, refs }) => {
     return (
       <Tab.Navigator
         // initialRouteName={'historyStack'}
-        tabBarPosition={'bottom'}
+        tabBarPosition={isTabsOnBottom ? 'bottom' : 'top'}
         lazy={true}
         tabBarOptions={NavOptions.tabBarOptions}>
         {isHistoryVisible && (

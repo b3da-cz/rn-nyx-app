@@ -13,6 +13,9 @@ export const initFCM = async (nyx, isAuthenticated) => {
       config = {
         fcmToken,
         isFCMSubscribed: !subFCMRes.error,
+        isBottomTabs: true,
+        isBookmarksEnabled: true,
+        isHistoryEnabled: true,
       }
       await Storage.setConfig(config)
     }
@@ -28,10 +31,8 @@ export const unregisterFCM = async (nyx, isAuthenticated) => {
   try {
     const fcmToken = await messaging().getToken()
     const unsubFCMRes = await nyx.unregisterFromFCM(fcmToken)
-    const config = {
-      fcmToken,
-      isFCMSubscribed: false,
-    }
+    const config = await Storage.getConfig()
+    config.isFCMSubscribed = false
     await Storage.setConfig(config)
     return unsubFCMRes
   } catch (e) {

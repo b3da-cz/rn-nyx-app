@@ -12,6 +12,7 @@ export class ProfileView extends Component<Props> {
     super(props)
     this.state = {
       isFetching: false,
+      isBottomTabs: true,
       isBookmarksEnabled: true,
       isHistoryEnabled: true,
       username: '',
@@ -26,31 +27,46 @@ export class ProfileView extends Component<Props> {
 
   async getUsername() {
     const conf = await Storage.getConfig()
-    const { isBookmarksEnabled, isHistoryEnabled } = conf
+    const { isBookmarksEnabled, isHistoryEnabled, isBottomTabs } = conf
     this.setState({
       username: this.nyx.auth.username,
-      isBookmarksEnabled: !!isBookmarksEnabled,
-      isHistoryEnabled: !!isHistoryEnabled,
+      isBottomTabs: isBottomTabs === undefined ? true : !!isBottomTabs,
+      isBookmarksEnabled: isBookmarksEnabled === undefined ? true : !!isBookmarksEnabled,
+      isHistoryEnabled: isHistoryEnabled === undefined ? true : !!isHistoryEnabled,
+    })
+  }
+
+  async setBottomTabs(isBottomTabs) {
+    this.setState({ isBottomTabs })
+    const conf = await Storage.getConfig()
+    conf.isBottomTabs = isBottomTabs
+    await Storage.setConfig(conf)
+    this.props.onSettingsChange({
+      isBottomTabs,
+      isBookmarksEnabled: this.state.isBookmarksEnabled,
+      isHistoryEnabled: this.state.isHistoryEnabled,
     })
   }
 
   async setBookmarksEnabled(isBookmarksEnabled) {
+    this.setState({ isBookmarksEnabled })
     const conf = await Storage.getConfig()
     conf.isBookmarksEnabled = isBookmarksEnabled
     await Storage.setConfig(conf)
-    this.setState({ isBookmarksEnabled })
     this.props.onSettingsChange({
+      isBottomTabs: this.state.isBottomTabs,
       isBookmarksEnabled,
       isHistoryEnabled: this.state.isHistoryEnabled,
     })
   }
 
   async setHistoryEnabled(isHistoryEnabled) {
+    this.setState({ isHistoryEnabled })
     const conf = await Storage.getConfig()
     conf.isHistoryEnabled = isHistoryEnabled
     await Storage.setConfig(conf)
-    this.setState({ isHistoryEnabled })
     this.props.onSettingsChange({
+      isBottomTabs: this.state.isBottomTabs,
       isBookmarksEnabled: this.state.isBookmarksEnabled,
       isHistoryEnabled,
     })
@@ -101,6 +117,20 @@ export class ProfileView extends Component<Props> {
             style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.xxlarge }]}>
             {username}
           </Text>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: Styling.metrics.block.large,
+          }}>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Tabs on bottom</Text>
+          <Switch
+            thumbColor={this.state.isBottomTabs ? Styling.colors.primary : Styling.colors.lighter}
+            onValueChange={val => this.setBottomTabs(val)}
+            value={this.state.isBottomTabs}
+          />
         </View>
         <View
           style={{
