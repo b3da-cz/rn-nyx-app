@@ -24,9 +24,11 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
         })
       }
     } catch (e) {
-      console.warn(e)
+      // console.warn(e)
+      setImgWidth(width)
+      setImgHeight(width / 2.5)
     }
-  }, [height, src, width])
+  }, [height, src, useExactSize, width])
   return (
     <TouchableRipple rippleColor={'rgba(18,146,180, 0.3)'} onPress={() => onPress()}>
       <Image

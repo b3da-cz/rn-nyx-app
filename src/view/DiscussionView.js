@@ -138,6 +138,10 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
+  showPost(discussionId, postId) {
+    this.props.navigation.push('discussion', { discussionId, postId })
+  }
+
   showImages(image) {
     const imgIndex = this.state.images.indexOf(image)
     const images = this.state.images.map(img => ({ url: img.src }))
@@ -235,7 +239,7 @@ export class DiscussionView extends Component<Props> {
               isHeaderInteractive={true}
               isReply={false}
               isUnread={item.new}
-              onDiscussionDetailShow={(discussionId, postId) => this.jumpToPost(discussionId, postId)}
+              onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
               onImage={image => this.showImages(image)}
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}

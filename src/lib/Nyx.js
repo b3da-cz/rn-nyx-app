@@ -7,7 +7,10 @@ export class Nyx {
     this.username = username
     this.auth = {}
     this.store = {}
-    this.userAgent = `Nnn v${DeviceInfo.getVersion()} | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
+    this.appVersion = DeviceInfo.getVersion()
+    this.userAgent = `Nnn v${
+      this.appVersion
+    } | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
     this.onLogout = null
   }
 

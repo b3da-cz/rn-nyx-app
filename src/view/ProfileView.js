@@ -113,10 +113,16 @@ export class ProfileView extends Component<Props> {
         style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%', padding: 5 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: Styling.metrics.block.large }}>
           <UserIconComponent username={username} marginRight={10} />
-          <Text
-            style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.xxlarge }]}>
-            {username}
-          </Text>
+          <View>
+            <Text
+              style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.xxlarge }]}>
+              {username}
+            </Text>
+            <Text
+              style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.small }]}>
+              {`v${this.nyx?.appVersion}`}
+            </Text>
+          </View>
         </View>
         <View
           style={{

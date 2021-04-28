@@ -87,7 +87,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
-    // console.warn(img, this.props.post?.content_raw); // TODO: remove
+    // console.warn(img.raw, this.props.post?.content_raw); // TODO: remove
     if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }

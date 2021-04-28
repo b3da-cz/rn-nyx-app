@@ -119,8 +119,10 @@ export class MailView extends Component<Props> {
     console.warn('todo'); // TODO: remove
   }
 
-  getPickerItemColor(val) {
-    return this.state.activeRecipient === val
+  getPickerItemColor(val, hasUnreadMail) {
+    return hasUnreadMail
+      ? Styling.colors.secondary
+      : this.state.activeRecipient === val
       ? Styling.colors.primary
       : this.isDarkMode
       ? Styling.colors.lighter
@@ -165,9 +167,9 @@ export class MailView extends Component<Props> {
             {this.state.conversations.map(c => (
               <Picker.Item
                 key={c.username}
-                label={`${c.username}${c.has_unread_mail ? ' [unread]' : ''}`}
+                label={`${c.username}`}
                 value={c.username}
-                color={this.getPickerItemColor(c.username)}
+                color={this.getPickerItemColor(c.username, c.has_unread_mail)}
               />
             ))}
           </Picker>
