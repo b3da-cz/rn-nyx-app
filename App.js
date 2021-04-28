@@ -9,6 +9,7 @@ import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
+import Bugfender from '@bugfender/rn-bugfender'
 import { LoaderComponent } from './src/component'
 import { Nyx, Storage, initFCM, Context, CustomDarkTheme, CombinedDefaultTheme } from './src/lib'
 import { Router } from './src/Router'
@@ -39,6 +40,7 @@ const App: () => Node = () => {
       setConfirmationCode(null)
       setIsAuthenticated(false)
     }
+    Bugfender.d('Nnn', 'App: Nyx initialized for ' + username)
     setNyx(nyx)
     if (isAutologin) {
       setIsAuthenticated(res.isConfirmed)

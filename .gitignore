@@ -62,3 +62,5 @@ buck-out/
 /android/app/nnn-signing.keystore
 
 /android/*.hprof
+
+keys.json

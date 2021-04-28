@@ -1,3 +1,4 @@
+import Bugfender from '@bugfender/rn-bugfender'
 import { parse } from 'node-html-parser'
 import { generateUuidV4 } from '../lib'
 
@@ -154,21 +155,29 @@ export class Parser {
 }
 
 export const parsePostsContent = posts => {
-  for (const post of posts) {
-    if (!post.parsed) {
-      const parser = new Parser(post.content)
-      post.parsed = parser.parse()
+  try {
+    for (const post of posts) {
+      if (!post.parsed) {
+        const parser = new Parser(post.content)
+        post.parsed = parser.parse()
+      }
     }
+  } catch (e) {
+    Bugfender.e('ERROR_PARSER', e.stack)
   }
   return posts
 }
 
 export const parseNotificationsContent = notifications => {
-  for (const notification of notifications) {
-    notification.data = parsePostsContent([notification.data])[0]
-    if (notification?.details?.replies?.length) {
-      notification.details.replies = parsePostsContent(notification.details.replies)
+  try {
+    for (const notification of notifications) {
+      notification.data = parsePostsContent([notification.data])[0]
+      if (notification?.details?.replies?.length) {
+        notification.details.replies = parsePostsContent(notification.details.replies)
+      }
     }
+  } catch (e) {
+    Bugfender.e('ERROR_PARSER', e.stack)
   }
   return notifications
 }

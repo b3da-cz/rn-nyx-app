@@ -12,6 +12,8 @@ target 'Nnn' do
     :hermes_enabled => false
   )
 
+  pod 'RNBugfender', :path => '../node_modules/@bugfender/rn-bugfender'
+
   target 'NnnTests' do
     inherit! :complete
     # Pods for testing

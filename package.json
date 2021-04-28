@@ -11,6 +11,7 @@
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
   },
   "dependencies": {
+    "@bugfender/rn-bugfender": "^1.1.4",
     "@react-native-async-storage/async-storage": "^1.15.2",
     "@react-native-community/masked-view": "^0.1.10",
     "@react-native-firebase/app": "^11.3.0",
@@ -27,6 +28,7 @@
     "react-native-bootsplash": "^3.2.1",
     "react-native-device-info": "^8.1.0",
     "react-native-document-picker": "^5.0.3",
+    "react-native-exception-handler": "^2.10.10",
     "react-native-gesture-handler": "^1.10.3",
     "react-native-image-helper": "^0.0.3",
     "react-native-image-resizer": "^1.4.4",

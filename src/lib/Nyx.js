@@ -1,4 +1,5 @@
 import DeviceInfo from 'react-native-device-info'
+import Bugfender from '@bugfender/rn-bugfender'
 import { confirm } from '../component'
 import { Storage } from '../lib'
 
@@ -67,7 +68,7 @@ export class Nyx {
         confirmationCode: res.confirmation_code,
       }
     } catch (e) {
-      console.warn('create token error', e)
+      this.logError('create token', e)
     }
   }
 
@@ -82,7 +83,7 @@ export class Nyx {
       // this.store.discussions = res.discussions
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      this.logError('get history', e)
     }
     return null
   }
@@ -98,7 +99,7 @@ export class Nyx {
       this.store.discussions = res.discussions
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      this.logError('get history', e)
     }
     return null
   }
@@ -113,7 +114,7 @@ export class Nyx {
       this.store.context = res.context
       return res
     } catch (e) {
-      console.warn('get last posts error', e)
+      this.logError('get last posts', e)
     }
     return null
   }
@@ -128,7 +129,7 @@ export class Nyx {
       // this.store.context = res.context
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      this.logError('get history', e)
     }
     return null
   }
@@ -150,7 +151,7 @@ export class Nyx {
       }
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      this.logError('get history', e)
     }
     return null
   }
@@ -175,7 +176,7 @@ export class Nyx {
       })
       return res
     } catch (e) {
-      console.warn('get history error', e)
+      this.logError('get history', e)
     }
     return null
   }
@@ -189,7 +190,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('get mail error', e)
+      this.logError('get mail', e)
     }
     return null
   }
@@ -203,7 +204,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('get notifications error', e)
+      this.logError('get notifications', e)
     }
     return null
   }
@@ -217,7 +218,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('get rating error', e)
+      this.logError('get rating', e)
     }
     return null
   }
@@ -238,7 +239,7 @@ export class Nyx {
       }
       return res
     } catch (e) {
-      console.warn('cast vote error', e)
+      this.logError('cast vote', e)
     }
     return null
   }
@@ -256,7 +257,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('send private message error', e)
+      this.logError('send private message', e)
     }
     return null
   }
@@ -277,7 +278,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('bookmark discussion error', e)
+      this.logError('bookmark discussion', e)
     }
     return null
   }
@@ -291,7 +292,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('post to discussion error', e)
+      this.logError('post to discussion', e)
     }
     return null
   }
@@ -308,7 +309,7 @@ export class Nyx {
       ).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('post to discussion error', e)
+      this.logError('post to discussion', e)
     }
     return null
   }
@@ -326,7 +327,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('post to discussion error', e)
+      this.logError('post to discussion', e)
     }
     return null
   }
@@ -340,7 +341,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('delete post error', e)
+      this.logError('delete post', e)
     }
     return null
   }
@@ -361,7 +362,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('upload file error', e)
+      this.logError('upload file', e)
     }
     return null
   }
@@ -375,7 +376,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('delete file error', e)
+      this.logError('delete file', e)
     }
     return null
   }
@@ -394,7 +395,7 @@ export class Nyx {
       console.warn(res, this.auth); // TODO: remove
       return res
     } catch (e) {
-      console.warn('set visibility error', e)
+      this.logError('set visibility', e)
     }
     return null
   }
@@ -408,7 +409,7 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('fcm sub error', e)
+      this.logError('fcm sub', e)
     }
     return null
   }
@@ -422,8 +423,12 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      console.warn('fcm sub error', e)
+      this.logError('fcm sub', e)
     }
     return null
+  }
+
+  logError(method, error) {
+    Bugfender.e('ERROR_NYX', method + ' | ' + error.stack)
   }
 }
