@@ -55,6 +55,7 @@ export class BookmarksView extends Component<Props> {
       <SectionList
         sections={this.state.sectionedBookmarks}
         stickySectionHeadersEnabled={true}
+        initialNumToRender={20}
         keyExtractor={(item, index) => item.discussion_id}
         refreshing={this.state.isFetching}
         onRefresh={() => this.getBookmarks()}
