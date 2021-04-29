@@ -131,7 +131,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderTextNode(text) {
-    if (this.props.post?.content_raw) {
+    if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
     if (text.startsWith(':')) {
