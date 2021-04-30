@@ -60,8 +60,11 @@ export class DiscussionView extends Component<Props> {
     this.setState({ isSubmenuVisible: this.props.navigation.isFocused() })
   }
 
-  async reloadDiscussionLatest() {
+  async reloadDiscussionLatest(andScrollToTop = false) {
     await this.fetchDiscussion(this.state.discussionId ? this.state.discussionId : this.props.id)
+    if (andScrollToTop) {
+      this.scrollToTop(true)
+    }
   }
 
   async loadDiscussionTop() {
@@ -87,7 +90,7 @@ export class DiscussionView extends Component<Props> {
       if (this.state.discussionId !== discussionId) {
         this.setState({ discussionId })
       }
-      const queryString = `${discussionId}?order=older_than&from_id=${Number(postId) + 1}`;
+      const queryString = `${discussionId}?order=older_than&from_id=${Number(postId) + 1}`
       await this.fetchDiscussion(queryString)
       post = this.getStoredPostById(postId)
     }
@@ -136,6 +139,13 @@ export class DiscussionView extends Component<Props> {
     } catch (e) {
       console.warn(e)
     }
+  }
+
+  scrollToTop(animated = false) {
+    this.refScroll.scrollToOffset({
+      index: 0,
+      animated,
+    })
   }
 
   showPost(discussionId, postId) {
@@ -230,6 +240,7 @@ export class DiscussionView extends Component<Props> {
             this.state.isFetching &&
             this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
           }
+          // getItemLayout={} // todo calc item height in Parser?
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}

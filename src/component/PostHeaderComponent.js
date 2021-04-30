@@ -78,22 +78,24 @@ export class PostHeaderComponent extends Component<Props> {
       <View>
         <Swipeable
           leftButtons={[
-            post.can_be_deleted ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => this.onReply()}
+              style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
+              <Icon name="corner-down-right" size={24} color={Styling.colors.lighter} />
+            </TouchableOpacity>,
+            post.can_be_deleted && (
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => this.deletePost(post)}
                 style={[Styling.groups.squareBtn]}>
                 <Icon name="trash-2" size={24} color={Styling.colors.lighter} />
               </TouchableOpacity>
-            ) : (
-              <View style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
-                <Icon name="corner-down-right" size={24} color={Styling.colors.lighter} />
-              </View>
             ),
           ]}
           leftButtonContainerStyle={{ alignItems: 'flex-end' }}
           leftButtonWidth={50}
-          onLeftButtonsOpenRelease={() => !post.can_be_deleted && this.onReply()}
+          // onLeftButtonsOpenRelease={() => this.onReply()}
           rightButtonWidth={50}
           rightButtons={
             post.can_be_rated
@@ -153,12 +155,17 @@ export class PostHeaderComponent extends Component<Props> {
                 <View>
                   <Text style={Styling.groups.link()} numberOfLines={1}>
                     {post.username}{' '}
-                    <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
-                      {post.activity &&
-                        `[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}] ${
-                          post.activity.location
-                        }`}
-                    </Text>
+                    {post.discussion_name?.length > 0 && (
+                      <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>
+                        - {post.discussion_name}
+                      </Text>
+                    )}
+                    {post.activity && (
+                      <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
+                        {`[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}]`}
+                        {post.activity.location}`
+                      </Text>
+                    )}
                   </Text>
                   <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>
                     {this.formatDate(post.inserted_at)}

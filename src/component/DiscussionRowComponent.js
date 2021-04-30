@@ -15,8 +15,12 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, onPress }) => {
       : isDarkMode
       ? Styling.colors.light
       : Styling.colors.dark
-  const unreadPostCount =
-    Math.max(discussion.new_posts_count, discussion.new_images_count, discussion.new_links_count) || 0 // new_posts_count is weird sometimes
+  const unreadPostCount = Math.max(
+    discussion.new_posts_count || 0,
+    discussion.new_replies_count || 0,
+    discussion.new_images_count || 0,
+    discussion.new_links_count || 0,
+  ) // new_posts_count is weird sometimes
   return (
     <TouchableRipple
       key={id}

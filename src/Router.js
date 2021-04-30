@@ -234,7 +234,7 @@ export const Router = ({ nyx, refs }) => {
         replyTo={route?.params?.replyTo}
         onSend={() => {
           navigation.goBack()
-          refs?.DiscussionView?.reloadDiscussionLatest()
+          refs?.DiscussionView?.reloadDiscussionLatest(true)
           refs?.MailView?.getLatestMessages()
         }}
       />

@@ -4,10 +4,9 @@ import { TextInput, TouchableRipple } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
 import { Picker } from '@react-native-picker/picker'
-import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
 import { Context, Styling } from '../lib'
-import Bugfender from '@bugfender/rn-bugfender';
+import Bugfender from '@bugfender/rn-bugfender'
 
 type Props = {
   title: string,
@@ -43,17 +42,18 @@ export class ComposePostView extends Component<Props> {
 
   prepareForm() {
     const { username, uploadedFiles } = this.props
-    const message = this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}: ` : ''
+    const message =
+      this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}: ` : ''
     this.setState({ username, uploadedFiles, message })
   }
 
   async searchUsername(searchPhrase) {
     this.setState({ searchPhrase, isFetching: true })
     const res = await this.nyx.search({ phrase: searchPhrase, isUsername: true })
-    // console.warn(res); // TODO: remove
+    // console.warn(res) // TODO: remove
     if (res && res.exact) {
       const searchResults = [...res.exact, ...res.friends, ...res.others]
-      // console.warn(searchResults); // TODO: remove
+      // console.warn(searchResults) // TODO: remove
       this.setState({ isFetching: false, searchResults })
     } else {
       this.setState({ isFetching: false })
@@ -66,8 +66,7 @@ export class ComposePostView extends Component<Props> {
         type: [DocumentPicker.types.images],
       })
       this.setState({ isFetching: true })
-      // console.warn(file.type, file); // TODO: configurable resizing (in profile | here | stored?)
-      // console.warn(`original ${Math.floor(file.size / 1024)}Kb`); // TODO: remove
+      // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
       let resized = null
       if (file.type === 'image/jpeg') {
         resized = await ImageResizer.createResizedImage(
@@ -83,7 +82,7 @@ export class ComposePostView extends Component<Props> {
             onlyScaleDown: true,
           },
         )
-        // console.warn(`resized ${Math.floor(resized.size / 1024)}Kb`); // TODO: remove
+        // console.warn(`resized ${Math.floor(resized.size / 1024)}Kb`) // TODO: remove
       }
       const res = await this.nyx.uploadFile(
         {
@@ -127,9 +126,9 @@ export class ComposePostView extends Component<Props> {
     this.setState({ isFetching: true })
     let res
     if (this.props.isMailPost) {
-      res = await this.nyx.sendPrivateMessage(this.state.username, this.state.message);
+      res = await this.nyx.sendPrivateMessage(this.state.username, this.state.message)
     } else {
-      res = await this.nyx.postToDiscussion(this.props.discussionId, this.state.message);
+      res = await this.nyx.postToDiscussion(this.props.discussionId, this.state.message)
     }
     if (res.error) {
       console.warn(res)
