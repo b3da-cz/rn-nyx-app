@@ -20,7 +20,9 @@ export class DiscussionView extends Component<Props> {
       discussionId: null,
       posts: [],
       images: [],
+      header: [],
       isBooked: null,
+      isHeaderVisible: false,
       isSubmenuVisible: false,
       isSubmenuOpen: false,
       isFetching: false,
@@ -75,10 +77,10 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadDiscussionBottom() {
-    if (this.state.posts.length < 20) {
+    if (this.state.posts.length < 20 || this.state.isHeaderVisible) {
       return // prevent reloading of new discussion, todo variable min len
     }
-    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id;
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const bottomPostId = this.state.posts.length > 0 && this.state.posts[this.state.posts.length - 1].id
     const queryString = `${discussionId}?order=older_than&from_id=${bottomPostId}`
     await this.fetchDiscussion(queryString)
@@ -98,7 +100,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   async fetchDiscussion(idOrQueryString) {
-    // console.warn('fetch ', idOrQueryString); // TODO: remove
+    // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
     const res = await this.nyx.getDiscussion(idOrQueryString)
     const newPosts = getDistinctPosts(res.posts, this.state.posts)
@@ -106,13 +108,18 @@ export class DiscussionView extends Component<Props> {
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
-    const uploadedFiles = res.discussion_common.waiting_files || []
+    let header = res?.discussion_common?.discussion_specific_data?.header
+    if (header?.length > 0) {
+      header = parsePostsContent(header)
+    }
+    const uploadedFiles = res?.discussion_common.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
       title,
       images,
       isBooked,
+      header,
       posts: parsedPosts,
       isFetching: false,
     })
@@ -175,7 +182,7 @@ export class DiscussionView extends Component<Props> {
     if (updatedPost?.error) {
       return
     }
-    const posts = getDistinctPosts([updatedPost], this.state.posts);
+    const posts = getDistinctPosts([updatedPost], this.state.posts)
     this.setState({ posts })
   }
 
@@ -183,9 +190,14 @@ export class DiscussionView extends Component<Props> {
     if (updatedPost?.error) {
       return
     }
-    const parsedPosts = parsePostsContent([updatedPost])
-    const posts = getDistinctPosts(parsedPosts, this.state.posts)
-    this.setState({ posts })
+    if (updatedPost?.location === 'header') {
+      const header = parsePostsContent([updatedPost])
+      this.setState({ header })
+    } else {
+      const parsedPosts = parsePostsContent([updatedPost])
+      const posts = getDistinctPosts(parsedPosts, this.state.posts)
+      this.setState({ posts })
+    }
   }
 
   async bookmarkDiscussion() {
@@ -210,6 +222,11 @@ export class DiscussionView extends Component<Props> {
                 label: this.state.isBooked ? 'unbook' : 'book',
                 onPress: () => this.bookmarkDiscussion(),
               },
+              {
+                icon: 'book',
+                label: this.state.isHeaderVisible ? 'hide header' : 'show header',
+                onPress: () => this.setState({ isHeaderVisible: !this.state.isHeaderVisible }),
+              },
             ]}
             onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
             onPress={() => {
@@ -225,7 +242,7 @@ export class DiscussionView extends Component<Props> {
         </Portal>
         <FlatList
           ref={r => (this.refScroll = r)}
-          data={this.state.posts}
+          data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
           extraData={this.state}
           keyExtractor={(item, index) => `${item.uuid}`}
           refreshing={this.state.isFetching}

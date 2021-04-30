@@ -177,10 +177,10 @@ export class PostHeaderComponent extends Component<Props> {
                     style={{ marginRight: Styling.metrics.block.small }}
                   />
                 )}
-                <UserIconComponent username={post.username} marginRight={10} />
+                {post.username?.length > 0 && <UserIconComponent username={post.username} marginRight={10} />}
                 <View>
                   <Text style={Styling.groups.link()} numberOfLines={1}>
-                    {post.username}{' '}
+                    {post.username?.length > 0 ? post.username : post.location?.length > 0 ? post.location : ''}{' '}
                     {post.discussion_name?.length > 0 && (
                       <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
                     )}
@@ -192,7 +192,7 @@ export class PostHeaderComponent extends Component<Props> {
                     )}
                   </Text>
                   <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>
-                    {this.formatDate(post.inserted_at)}
+                    {post?.inserted_at?.length > 0 && this.formatDate(post.inserted_at)}
                   </Text>
                 </View>
               </View>

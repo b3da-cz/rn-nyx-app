@@ -87,7 +87,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
-    // console.warn(img.raw, this.props.post?.content_raw); // TODO: remove
+    // console.warn(img.raw, this.props.post?.content_raw) // TODO: remove
     if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
@@ -185,12 +185,22 @@ export class PostComponent extends Component<Props> {
   }
 
   async rollDice() {
-    const res = await this.props.nyx.rollDice(this.props.post.discussion_id, this.props.post.id)
+    let res = null
+    if (this.props.post.location === 'header') {
+      res = await this.props.nyx.rollDiceInHeader(this.props.post.discussion_id, this.props.post.id)
+    } else {
+      res = await this.props.nyx.rollDice(this.props.post.discussion_id, this.props.post.id)
+    }
     this.props.onDiceRoll(res)
   }
 
   async voteInPoll(answers) {
-    const res = await this.props.nyx.voteInPoll(this.props.post.discussion_id, this.props.post.id, answers)
+    let res = null
+    if (this.props.post.location === 'header') {
+      res = await this.props.nyx.voteInHeaderPoll(this.props.post.discussion_id, this.props.post.id, answers)
+    } else {
+      res = await this.props.nyx.voteInPoll(this.props.post.discussion_id, this.props.post.id, answers)
+    }
     this.props.onPollVote(res)
   }
 

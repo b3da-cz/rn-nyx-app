@@ -292,7 +292,21 @@ export class Nyx {
       }).then(resp => resp.json())
       return res
     } catch (e) {
-      this.logError('post to discussion', e)
+      this.logError('roll dice', e)
+    }
+    return null
+  }
+
+  async rollDiceInHeader(discussionId, contentId) {
+    try {
+      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/content/dice/${contentId}/roll`, {
+        method: 'POST',
+        referrerPolicy: 'no-referrer',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      return res
+    } catch (e) {
+      this.logError('roll dice in header', e)
     }
     return null
   }
@@ -309,7 +323,24 @@ export class Nyx {
       ).then(resp => resp.json())
       return res
     } catch (e) {
-      this.logError('post to discussion', e)
+      this.logError('vote in poll', e)
+    }
+    return null
+  }
+
+  async voteInHeaderPoll(discussionId, contentId, answers) {
+    try {
+      const res = await fetch(
+        `https://nyx.cz/api/discussion/${discussionId}/content/poll/${contentId}/vote/${answers.toString()}`,
+        {
+          method: 'POST',
+          referrerPolicy: 'no-referrer',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
+      return res
+    } catch (e) {
+      this.logError('vote in header poll', e)
     }
     return null
   }
