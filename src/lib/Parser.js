@@ -18,6 +18,7 @@ export class Parser {
     this.contentRaw = htmlString
     this.contentTemplate = null
     this.contentParts = []
+    this.clearText = ''
     this.isParsed = false
     this.isTokenized = false
     this.html = parse(`<div>${htmlString}</div>`)
@@ -39,6 +40,7 @@ export class Parser {
       images: this.images,
       codeBlocks: this.codeBlocks,
       ytBlocks: this.ytBlocks,
+      clearText: this.clearText,
     }
   }
 
@@ -66,6 +68,7 @@ export class Parser {
     this.ytBlocksToDelete.forEach(y => (content = content.split(y.raw).join('')))
     this.pcBlocksToDelete.forEach(p => (content = content.split(p.raw).join('')))
     this.contentParts = content.split(T.SPLIT)
+    this.finalizeText()
     this.contentTemplate = content
     this.isTokenized = true
   }
@@ -85,6 +88,7 @@ export class Parser {
       text: a.innerText,
       discussionId: a.getAttribute('data-discussion-id'),
       postId: a.getAttribute('data-id'),
+      url: a.getAttribute('href'),
     }))
   }
 
@@ -151,6 +155,49 @@ export class Parser {
       id: generateUuidV4(),
       raw: a.toString(),
     }))
+  }
+
+  finalizeText() {
+    this.clearText = ''
+    this.contentParts.forEach((p, i) => {
+      if (p?.length > 3 && !p.startsWith('###')) {
+        if (p.startsWith(':')) {
+          p = p.substring(1)
+        }
+        if (p.startsWith('<br>')) {
+          p = p.substring(4)
+        }
+        p = p.trim()
+        if (!p || (p && (p.length === 0 || p === ' '))) {
+          this.contentParts.splice(i)
+        } else {
+          this.contentParts[i] = p
+            .split('<br>')
+            .join('\n')
+            .split('<br />')
+            .join('\n')
+            .split('\n\n')
+            .join('\n')
+            .split('&lt;')
+            .join('<')
+            .split('&gt;')
+            .join('>')
+            .split('&amp;')
+            .join('&')
+            .replace(/(<([^>]+)>)/gi, '')
+          this.clearText += this.contentParts[i]
+        }
+      } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
+        const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+      } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
+        const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+      } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
+        const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
+        this.clearText += `${img.src.startsWith('/files/') ? '//nyx.cz' : ''}${img.url}`
+      }
+    })
   }
 }
 

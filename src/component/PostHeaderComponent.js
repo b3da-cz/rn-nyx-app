@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
+import Share from 'react-native-share'
 import { confirm, UserIconComponent } from '../component'
 import { Nyx, Styling } from '../lib'
 
@@ -38,13 +39,32 @@ export class PostHeaderComponent extends Component<Props> {
     setTimeout(() => this.refSwipeable.recenter(), 300)
   }
 
+  onShare(isContent = false) {
+    try {
+      if (isContent) {
+        Share.open({
+          title: 'Content',
+          message: this.props.post.parsed.clearText,
+        })
+      } else {
+        Share.open({
+          title: 'Link',
+          message: `//nyx.cz/discussion/${this.props.post.discussion_id}/id/${this.props.post.id}`,
+        })
+      }
+      setTimeout(() => this.refSwipeable.recenter(), 300)
+    } catch (e) {
+      console.warn(e)
+    }
+  }
+
   async getRating(post, bounceRight = false) {
     if (bounceRight && this.state.ratings?.length > 0) {
       this.setState({ ratings: [] })
       return
     }
     if (bounceRight) {
-      this.refSwipeable?.bounceRight();
+      this.refSwipeable?.bounceRight()
     }
     const ratings = await this.props.nyx.getRating(post)
     this.setState({ ratings })
@@ -84,6 +104,13 @@ export class PostHeaderComponent extends Component<Props> {
               style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
               <Icon name="corner-down-right" size={24} color={Styling.colors.lighter} />
             </TouchableOpacity>,
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => this.onShare()}
+              onLongPress={() => this.onShare(true)}
+              style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
+              <Icon name="share" size={24} color={Styling.colors.lighter} />
+            </TouchableOpacity>,
             post.can_be_deleted && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -95,7 +122,6 @@ export class PostHeaderComponent extends Component<Props> {
           ]}
           leftButtonContainerStyle={{ alignItems: 'flex-end' }}
           leftButtonWidth={50}
-          // onLeftButtonsOpenRelease={() => this.onReply()}
           rightButtonWidth={50}
           rightButtons={
             post.can_be_rated
@@ -156,9 +182,7 @@ export class PostHeaderComponent extends Component<Props> {
                   <Text style={Styling.groups.link()} numberOfLines={1}>
                     {post.username}{' '}
                     {post.discussion_name?.length > 0 && (
-                      <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>
-                        - {post.discussion_name}
-                      </Text>
+                      <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
                     )}
                     {post.activity && (
                       <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>

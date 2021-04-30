@@ -108,7 +108,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderCodeBlock(codeBlock) {
-    return <CodeBlockComponent key={codeBlock.id} html={codeBlock.raw} />;
+    return <CodeBlockComponent key={codeBlock.id} html={codeBlock.raw} />
   }
 
   renderYtBlock(ytBlock, images) {
@@ -131,18 +131,13 @@ export class PostComponent extends Component<Props> {
   }
 
   renderTextNode(text) {
-    if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
+    if (
+      this.props.post?.content_raw?.type === 'dice' ||
+      this.props.post?.content_raw?.type === 'poll' ||
+      !text ||
+      (text && (text.length === 0 || text === ' '))
+    ) {
       return
-    }
-    if (text.startsWith(':')) {
-      text = text.substring(1);
-    }
-    if (text.startsWith('<br>')) {
-      text = text.substring(4)
-    }
-    text = text.trim()
-    if (!text || (text && (text.length === 0 || text === ' '))) {
-      return null
     }
     return (
       <Text
@@ -151,20 +146,7 @@ export class PostComponent extends Component<Props> {
           Styling.groups.themeComponent(this.props.isDarkMode),
           { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
         ]}>
-        {text
-          .split('<br>')
-          .join('\n')
-          .split('<br />')
-          .join('\n')
-          .split('\n\n')
-          .join('\n')
-          .split('&lt;')
-          .join('<')
-          .split('&gt;')
-          .join('>')
-          .split('&amp;')
-          .join('&')
-          .replace(/(<([^>]+)>)/gi, '')}
+        {text}
       </Text>
     )
   }

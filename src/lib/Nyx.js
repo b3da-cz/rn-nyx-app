@@ -80,7 +80,7 @@ export class Nyx {
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       this.store.context = res.context
-      // this.store.discussions = res.discussions
+      this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
       return res
     } catch (e) {
       this.logError('get history', e)
@@ -129,7 +129,7 @@ export class Nyx {
       // this.store.context = res.context
       return res
     } catch (e) {
-      this.logError('get history', e)
+      this.logError('get last discussions', e)
     }
     return null
   }
@@ -151,7 +151,7 @@ export class Nyx {
       }
       return res
     } catch (e) {
-      this.logError('get history', e)
+      this.logError('search', e)
     }
     return null
   }
@@ -176,7 +176,7 @@ export class Nyx {
       })
       return res
     } catch (e) {
-      this.logError('get history', e)
+      this.logError('get discussion', e)
     }
     return null
   }
