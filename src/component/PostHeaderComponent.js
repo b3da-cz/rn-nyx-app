@@ -4,7 +4,7 @@ import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
-import { confirm, UserIconComponent } from '../component'
+import { confirm, RatingDetailComponent, UserIconComponent } from '../component'
 import { Nyx, Styling } from '../lib'
 
 type Props = {
@@ -66,7 +66,11 @@ export class PostHeaderComponent extends Component<Props> {
     if (bounceRight) {
       this.refSwipeable?.bounceRight()
     }
-    const ratings = await this.props.nyx.getRating(post)
+    const ratingsMixed = await this.props.nyx.getRating(post)
+    const ratings = {
+      positive: ratingsMixed.filter(r => r.tag === 'positive'),
+      negative: ratingsMixed.filter(r => r.tag !== 'positive'),
+    }
     this.setState({ ratings })
   }
 
@@ -165,7 +169,7 @@ export class PostHeaderComponent extends Component<Props> {
                 borderTopColor: Styling.colors.dark,
                 borderTopWidth: 1,
                 // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-                borderColor: Styling.colors.primary,
+                borderBottomColor: Styling.colors.accent,
                 borderBottomWidth: this.props.isUnread ? 1 : 0,
               }}>
               <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
@@ -179,7 +183,7 @@ export class PostHeaderComponent extends Component<Props> {
                 )}
                 {post.username?.length > 0 && <UserIconComponent username={post.username} marginRight={10} />}
                 <View>
-                  <Text style={Styling.groups.link()} numberOfLines={1}>
+                  <Text style={[Styling.groups.link(), { color: this.props.isUnread ? Styling.colors.accent : Styling.colors.primary}]} numberOfLines={1}>
                     {post.username?.length > 0 ? post.username : post.location?.length > 0 ? post.location : ''}{' '}
                     {post.discussion_name?.length > 0 && (
                       <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
@@ -191,7 +195,11 @@ export class PostHeaderComponent extends Component<Props> {
                       </Text>
                     )}
                   </Text>
-                  <Text style={{ color: Styling.colors.lighter, fontSize: 10 }}>
+                  <Text
+                    style={{
+                      color: this.props.isUnread ? Styling.colors.accent : Styling.colors.lighter,
+                      fontSize: 10,
+                    }}>
                     {post?.inserted_at?.length > 0 && this.formatDate(post.inserted_at)}
                   </Text>
                 </View>
@@ -219,25 +227,23 @@ export class PostHeaderComponent extends Component<Props> {
             </View>
           </TouchableRipple>
         </Swipeable>
-        {this.state.ratings && this.state.ratings.length > 0 && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              justifyContent: 'flex-start',
-              flexWrap: 'wrap',
-            }}>
-            {this.state.ratings.map(r => (
-              <UserIconComponent
-                key={`${r.username}${r.tag}`}
-                username={r.username}
-                width={this.state.ratingWidth}
-                height={this.state.ratingHeight}
-                borderWidth={1}
-                marginRight={1}
-              />
-            ))}
-          </View>
+        {this.state.ratings?.positive?.length > 0 && (
+          <RatingDetailComponent
+            ratings={this.state.ratings.positive}
+            ratingWidth={this.state.ratingWidth}
+            ratingHeight={this.state.ratingHeight}
+            isDarkMode={this.props.isDarkMode}
+            isPositive={true}
+          />
+        )}
+        {this.state.ratings?.negative?.length > 0 && (
+          <RatingDetailComponent
+            ratings={this.state.ratings.negative}
+            ratingWidth={this.state.ratingWidth}
+            ratingHeight={this.state.ratingHeight}
+            isDarkMode={this.props.isDarkMode}
+            isPositive={false}
+          />
         )}
       </View>
     )
