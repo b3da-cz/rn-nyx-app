@@ -17,21 +17,23 @@ import { LoginView } from './src/view'
 
 LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWillMount has', 'Reanimated 2']) // Ignore log notifications from Swipeable todo
 
+const initialConfig = {
+  isLoaded: false,
+  isBookmarksEnabled: true,
+  isHistoryEnabled: true,
+  isBottomTabs: true,
+  initialRouteName: 'historyStack',
+  fcmToken: null,
+  isFCMSubscribed: false,
+}
+
 const App: () => Node = () => {
   const n = new Nyx()
   const [nyx, setNyx] = useState(n)
   const [confirmationCode, setConfirmationCode] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAppLoaded, setIsAppLoaded] = useState(false)
-  const [config, setConfig] = useState({
-    isLoaded: false,
-    isBookmarksEnabled: true,
-    isHistoryEnabled: true,
-    isBottomTabs: true,
-    initialRouteName: 'historyStack',
-    fcmToken: null,
-    isFCMSubscribed: false,
-  })
+  const [config, setConfig] = useState(initialConfig)
   const refs = {}
   // const theme = useColorScheme()
   const theme = 'dark'
@@ -69,7 +71,7 @@ const App: () => Node = () => {
   }
 
   const loadConfig = async () => {
-    const conf = await Storage.getConfig()
+    const conf = (await Storage.getConfig()) || initialConfig
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,

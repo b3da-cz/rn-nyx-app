@@ -12,7 +12,20 @@ export class ProfileView extends Component<Props> {
   static contextType = Context
   constructor(props) {
     super(props)
-    const { config } = this.props
+    this.loadSettings()
+  }
+
+  componentDidMount() {
+    this.nyx = this.context.nyx
+    this.isDarkMode = this.context.theme === 'dark'
+    this.getUsername()
+  }
+
+  async loadSettings() {
+    let { config } = this.props
+    if (!config) {
+      config = await Storage.getConfig()
+    }
     this.state = {
       isFetching: false,
       isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
@@ -21,12 +34,6 @@ export class ProfileView extends Component<Props> {
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
     }
-  }
-
-  componentDidMount() {
-    this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
-    this.getUsername()
   }
 
   getUsername() {
