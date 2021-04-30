@@ -8,7 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, NavOptions, subscribeFCM, Storage } from './lib';
+import { Styling, NavOptions, subscribeFCM } from './lib'
 import {
   BookmarksView,
   HistoryView,
@@ -22,27 +22,10 @@ import {
   SearchView,
 } from './view'
 
-export const Router = ({ nyx, refs }) => {
+export const Router = ({ config, nyx, refs, onConfigReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
-  const [isBookmarksVisible, setIsBookmarksVisible] = useState(true)
-  const [isHistoryVisible, setIsHistoryVisible] = useState(true)
-  const [isTabsOnBottom, setIsTabsOnBottom] = useState(true)
   useEffect(() => {
-    const getConfig = async () => {
-      const conf = await Storage.getConfig()
-      if (isBookmarksVisible !== conf.isBookmarksEnabled) {
-        setIsBookmarksVisible(conf.isBookmarksEnabled)
-      }
-      if (isHistoryVisible !== conf.isHistoryEnabled) {
-        setIsHistoryVisible(conf.isHistoryEnabled)
-      }
-      if (isTabsOnBottom !== conf.isBottomTabs) {
-        setIsTabsOnBottom(conf.isBottomTabs)
-      }
-    }
-    setTimeout(() => getConfig())
-
     const sub = subscribeFCM(message => {
       switch (message.type) {
         case 'new_mail':
@@ -192,17 +175,8 @@ export const Router = ({ nyx, refs }) => {
 
   const Profile = ({ navigation }) => (
     <ProfileView
-      onSettingsChange={({ isBookmarksEnabled, isHistoryEnabled, isBottomTabs }) => {
-        if (isBookmarksEnabled !== isBookmarksVisible) {
-          setIsBookmarksVisible(isBookmarksEnabled)
-        }
-        if (isHistoryEnabled !== isHistoryVisible) {
-          setIsHistoryVisible(isHistoryEnabled)
-        }
-        if (isBottomTabs !== isTabsOnBottom) {
-          setIsTabsOnBottom(isBottomTabs)
-        }
-      }}
+      config={config}
+      onConfigChange={() => onConfigReload()}
     />
   )
 
@@ -287,18 +261,18 @@ export const Router = ({ nyx, refs }) => {
     nav = navigation
     return (
       <Tab.Navigator
-        // initialRouteName={'historyStack'}
-        tabBarPosition={isTabsOnBottom ? 'bottom' : 'top'}
+        initialRouteName={config.initialRouteName}
+        tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
         lazy={true}
         tabBarOptions={NavOptions.tabBarOptions}>
-        {isHistoryVisible && (
+        {config.isHistoryEnabled && (
           <Tab.Screen
             name={'historyStack'}
             component={HistoryStackContainer}
             options={{ tabBarLabel: () => <Icon name="book-open" size={14} color="#ccc" /> }}
           />
         )}
-        {isBookmarksVisible && (
+        {config.isBookmarksEnabled && (
           <Tab.Screen
             name={'bookmarksStack'}
             component={BookmarksStackContainer}

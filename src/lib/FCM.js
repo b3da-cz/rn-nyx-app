@@ -1,22 +1,16 @@
 import messaging from '@react-native-firebase/messaging'
 import { Storage } from '../lib'
 
-export const initFCM = async (nyx, isAuthenticated) => {
+export const initFCM = async (nyx, config, isAuthenticated) => {
   if (!isAuthenticated) {
     return
   }
   try {
-    let config = await Storage.getConfig()
-    if (!config || (config && !config.isFCMSubscribed)) {
+    if (!config.isFCMSubscribed) {
       const fcmToken = await messaging().getToken()
       const subFCMRes = await nyx.subscribeForFCM(fcmToken)
-      config = {
-        fcmToken,
-        isFCMSubscribed: !subFCMRes.error,
-        isBottomTabs: true,
-        isBookmarksEnabled: true,
-        isHistoryEnabled: true,
-      }
+      config.fcmToken = fcmToken
+      config.isFCMSubscribed = !subFCMRes.error
       await Storage.setConfig(config)
     }
   } catch (e) {
@@ -24,14 +18,13 @@ export const initFCM = async (nyx, isAuthenticated) => {
   }
 }
 
-export const unregisterFCM = async (nyx, isAuthenticated) => {
+export const unregisterFCM = async (nyx, config, isAuthenticated) => {
   if (!isAuthenticated) {
     return
   }
   try {
     const fcmToken = await messaging().getToken()
     const unsubFCMRes = await nyx.unregisterFromFCM(fcmToken)
-    const config = await Storage.getConfig()
     config.isFCMSubscribed = false
     await Storage.setConfig(config)
     return unsubFCMRes

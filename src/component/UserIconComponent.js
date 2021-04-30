@@ -14,6 +14,9 @@ export const UserIconComponent = ({
   marginLeft = 0,
   onPress,
 }) => {
+  if (!username) {
+    username = 'B3DA_API_TEST' // default icon, todo
+  }
   return (
     <Image
       style={{
@@ -30,5 +33,5 @@ export const UserIconComponent = ({
       resizeMode={'contain'}
       source={{ uri: `https://nyx.cz/${username[0]}/${username}.gif` }}
     />
-  )
+  );
 }

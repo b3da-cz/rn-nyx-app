@@ -30,13 +30,13 @@ export class MailView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
-    this.getLatestMessages()
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       this.setState({ isSubmenuVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false })
     })
+    setTimeout(() => this.getLatestMessages(), 100)
   }
 
   componentWillUnmount() {

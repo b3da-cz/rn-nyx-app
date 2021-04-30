@@ -23,6 +23,15 @@ const App: () => Node = () => {
   const [confirmationCode, setConfirmationCode] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAppLoaded, setIsAppLoaded] = useState(false)
+  const [config, setConfig] = useState({
+    isLoaded: false,
+    isBookmarksEnabled: true,
+    isHistoryEnabled: true,
+    isBottomTabs: true,
+    initialRouteName: 'historyStack',
+    fcmToken: null,
+    isFCMSubscribed: false,
+  })
   const refs = {}
   // const theme = useColorScheme()
   const theme = 'dark'
@@ -53,19 +62,40 @@ const App: () => Node = () => {
   const onLogin = async () => {
     const auth = await Storage.getAuth()
     if (auth) {
-      auth.isConfirmed = true;
+      auth.isConfirmed = true
       await Storage.setAuth(auth)
     }
     setIsAuthenticated(true)
   }
 
-  initNyx().then(isAuth => {
-    isAuth ? initFCM(nyx, isAuth) : null
+  const loadConfig = async () => {
+    const conf = await Storage.getConfig()
+    setConfig({
+      isLoaded: true,
+      isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
+      isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
+      isBottomTabs: conf.isBottomTabs === undefined ? true : !!conf.isBottomTabs,
+      initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
+      fcmToken: conf.fcmToken || null,
+      isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
+    })
+    return conf
+  }
+
+  const init = async () => {
+    const conf = await loadConfig()
+    const isAuth = await initNyx()
+    if (isAuth) {
+      await initFCM(nyx, conf, isAuth)
+    }
     setIsAppLoaded(true)
     setTimeout(() => {
       RNBootSplash.hide({ fade: true })
     }, 500)
-  })
+  }
+  if (!config.isLoaded) {
+    init()
+  }
 
   return (
     <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
@@ -73,7 +103,7 @@ const App: () => Node = () => {
       {isAuthenticated && (
         <Context.Provider value={{ nyx, theme, refs }}>
           <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
-            <Router nyx={nyx} refs={refs} />
+            <Router config={config} nyx={nyx} refs={refs} onConfigReload={() => loadConfig()} />
           </NavigationContainer>
         </Context.Provider>
       )}

@@ -1,20 +1,24 @@
 import React, { Component } from 'react'
 import { ScrollView, Switch, Text, View } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, UserIconComponent } from '../component'
 import { Context, Styling, Storage, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
-  onSettingsChange: Function,
+  config: any,
+  onConfigChange: Function,
 }
 export class ProfileView extends Component<Props> {
   static contextType = Context
   constructor(props) {
     super(props)
+    const { config } = this.props
     this.state = {
       isFetching: false,
-      isBottomTabs: true,
-      isBookmarksEnabled: true,
-      isHistoryEnabled: true,
+      isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
+      isBookmarksEnabled: config?.isBookmarksEnabled !== undefined ? !!config.isBookmarksEnabled : true,
+      isHistoryEnabled: config?.isHistoryEnabled !== undefined ? !!config.isHistoryEnabled : true,
+      initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
     }
   }
@@ -25,15 +29,8 @@ export class ProfileView extends Component<Props> {
     this.getUsername()
   }
 
-  async getUsername() {
-    const conf = await Storage.getConfig()
-    const { isBookmarksEnabled, isHistoryEnabled, isBottomTabs } = conf
-    this.setState({
-      username: this.nyx.auth.username,
-      isBottomTabs: isBottomTabs === undefined ? true : !!isBottomTabs,
-      isBookmarksEnabled: isBookmarksEnabled === undefined ? true : !!isBookmarksEnabled,
-      isHistoryEnabled: isHistoryEnabled === undefined ? true : !!isHistoryEnabled,
-    })
+  getUsername() {
+    this.setState({ username: this.nyx.auth.username })
   }
 
   async setBottomTabs(isBottomTabs) {
@@ -41,11 +38,7 @@ export class ProfileView extends Component<Props> {
     const conf = await Storage.getConfig()
     conf.isBottomTabs = isBottomTabs
     await Storage.setConfig(conf)
-    this.props.onSettingsChange({
-      isBottomTabs,
-      isBookmarksEnabled: this.state.isBookmarksEnabled,
-      isHistoryEnabled: this.state.isHistoryEnabled,
-    })
+    this.props.onConfigChange()
   }
 
   async setBookmarksEnabled(isBookmarksEnabled) {
@@ -53,11 +46,7 @@ export class ProfileView extends Component<Props> {
     const conf = await Storage.getConfig()
     conf.isBookmarksEnabled = isBookmarksEnabled
     await Storage.setConfig(conf)
-    this.props.onSettingsChange({
-      isBottomTabs: this.state.isBottomTabs,
-      isBookmarksEnabled,
-      isHistoryEnabled: this.state.isHistoryEnabled,
-    })
+    this.props.onConfigChange()
   }
 
   async setHistoryEnabled(isHistoryEnabled) {
@@ -65,37 +54,43 @@ export class ProfileView extends Component<Props> {
     const conf = await Storage.getConfig()
     conf.isHistoryEnabled = isHistoryEnabled
     await Storage.setConfig(conf)
-    this.props.onSettingsChange({
-      isBottomTabs: this.state.isBottomTabs,
-      isBookmarksEnabled: this.state.isBookmarksEnabled,
-      isHistoryEnabled,
-    })
+    this.props.onConfigChange()
+  }
+
+  async setInitialRouteName(initialRouteName) {
+    this.setState({ initialRouteName })
+    const conf = await Storage.getConfig()
+    conf.initialRouteName = initialRouteName
+    await Storage.setConfig(conf)
+    this.props.onConfigChange()
   }
 
   async subscribeFCM() {
-    const isConfirmed = await confirm('Warning', 'You are about to subscribe to FCM. Are you sure?')
+    const isConfirmed = await confirm(
+      'Warning',
+      'Provede novou registraci k FCM notifikacím. K té obvykle dochází automaticky, použij jen v případě nechodících notifikací. Pokračovat?',
+    )
     if (!isConfirmed) {
       return
     }
     this.setState({ isFetching: true })
-    const res = await initFCM(this.nyx, true)
-    console.warn(res); // TODO: remove
+    await initFCM(this.nyx, this.props.config, true)
     this.setState({ isFetching: false })
   }
 
   async unsubscribeFCM() {
-    const isConfirmed = await confirm('Warning', 'You are about to unsubscribe from FCM. Are you sure?')
+    const isConfirmed = await confirm('Warning', 'Odhlásí zařízení z FCM notifikací. Pokračovat?')
     if (!isConfirmed) {
       return
     }
     this.setState({ isFetching: true })
-    const res = await unregisterFCM(this.nyx, true)
-    console.warn(res); // TODO: remove
+    const res = await unregisterFCM(this.nyx, this.props.config, true)
+    console.warn(res) // TODO: remove
     this.setState({ isFetching: false })
   }
 
   async logout() {
-    const isConfirmed = await confirm('Warning', 'You are about to logout from app. Are you sure?')
+    const isConfirmed = await confirm('Warning', 'Odhlásit?')
     if (!isConfirmed) {
       return
     }
@@ -165,6 +160,31 @@ export class ProfileView extends Component<Props> {
             onValueChange={val => this.setHistoryEnabled(val)}
             value={this.state.isHistoryEnabled}
           />
+        </View>
+        <View>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Initial view</Text>
+          <Picker
+            mode={'dropdown'}
+            style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
+            prompt={'Initial view'}
+            selectedValue={this.state.initialRouteName}
+            onValueChange={route => this.setInitialRouteName(route)}>
+            <Picker.Item
+              key={'historyStack'}
+              label={'History'}
+              value={'historyStack'}
+              enabled={this.state.isHistoryEnabled}
+              color={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.darker}
+            />
+            <Picker.Item
+              key={'bookmarksStack'}
+              label={'Bookmarks'}
+              value={'bookmarksStack'}
+              enabled={this.state.isBookmarksEnabled}
+              color={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.darker}
+            />
+            <Picker.Item key={'mailStack'} label={'Mail'} value={'mailStack'} color={Styling.colors.primary} />
+          </Picker>
         </View>
         <ButtonComponent
           label={'subscribe FCM'}

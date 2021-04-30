@@ -18,6 +18,7 @@ export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls
       {rolls?.length > 0 &&
         rolls.map(r => (
           <UserRowComponent
+            key={r.user.username}
             user={r.user}
             isDarkMode={isDarkMode}
             isPressable={false}

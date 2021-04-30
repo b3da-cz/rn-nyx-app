@@ -25,7 +25,7 @@ export class BookmarksView extends Component<Props> {
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       this.getBookmarks()
     })
-    this.getBookmarks()
+    setTimeout(() => this.getBookmarks(), 100)
   }
 
   componentWillUnmount() {
@@ -55,7 +55,7 @@ export class BookmarksView extends Component<Props> {
       <SectionList
         sections={this.state.sectionedBookmarks}
         stickySectionHeadersEnabled={true}
-        initialNumToRender={20}
+        initialNumToRender={100}
         keyExtractor={(item, index) => item.discussion_id}
         refreshing={this.state.isFetching}
         onRefresh={() => this.getBookmarks()}
