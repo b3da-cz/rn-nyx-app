@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker'
 import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
 import { Context, Styling } from '../lib'
+import Bugfender from '@bugfender/rn-bugfender';
 
 type Props = {
   title: string,
@@ -42,7 +43,7 @@ export class ComposePostView extends Component<Props> {
 
   prepareForm() {
     const { username, uploadedFiles } = this.props
-    const message = this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}:` : ''
+    const message = this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}: ` : ''
     this.setState({ username, uploadedFiles, message })
   }
 
@@ -101,6 +102,7 @@ export class ComposePostView extends Component<Props> {
     } catch (e) {
       if (!DocumentPicker.isCancel(e)) {
         console.warn(e)
+        Bugfender.e('ERROR_COMPOSE_APPEND', e.message + ' | ' + e.stack)
       }
     }
   }
@@ -221,7 +223,7 @@ export class ComposePostView extends Component<Props> {
               {uploadedFiles?.length > 0 &&
                 uploadedFiles.map(f => (
                   <ButtonComponent
-                    key={f.filename}
+                    key={f.id}
                     label={f.filename}
                     icon={'trash-2'}
                     textAlign={'left'}

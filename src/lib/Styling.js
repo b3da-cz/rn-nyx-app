@@ -4,7 +4,7 @@ export const Styling = {
   colors: {
     primary: '#1292B4',
     secondary: '#b46612',
-    accent: '#c40000',
+    accent: '#43E6DD',
     white: '#FFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
@@ -23,7 +23,7 @@ export const Styling = {
     }),
     block: {
       xxsmall: 1,
-      xsmall: 2,
+      xsmall: 3,
       small: 5,
       medium: 10,
       large: 20,
@@ -133,7 +133,7 @@ export const CustomDarkTheme = {
 export const NavOptions = {
   tabBarOptions: {
     style: {
-      height: 50,
+      height: 45,
       backgroundColor: Styling.colors.black,
     },
     labelStyle: {

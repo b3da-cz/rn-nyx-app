@@ -9,55 +9,62 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, onPress }) => {
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
   const unreadRowColor = (unreads, replies) =>
     replies > 0
-      ? Styling.colors.secondary
+      ? Styling.colors.accent
       : unreads > 0
       ? Styling.colors.primary
       : isDarkMode
       ? Styling.colors.light
-      : Styling.colors.dark;
+      : Styling.colors.dark
+  const unreadPostCount =
+    Math.max(discussion.new_posts_count, discussion.new_images_count, discussion.new_links_count) || 0 // new_posts_count is weird sometimes
   return (
     <TouchableRipple
       key={id}
       rippleColor={'rgba(18,146,180, 0.3)'}
       style={{
         backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-        paddingVertical: Styling.metrics.block.medium,
+        paddingVertical: 6,
         paddingHorizontal: Styling.metrics.block.small,
-        marginBottom: Styling.metrics.block.small,
+        marginBottom: Styling.metrics.block.xsmall,
       }}
       onPress={() => onPress(id)}>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text
           numberOfLines={1}
           style={[
             {
-              width: isBookmarksResultType ? '75%' : '100%',
+              maxWidth: !(isBookmarksResultType && unreadPostCount > 0)
+                ? '100%'
+                : unreadPostCount > 1000
+                ? '65%'
+                : '75%',
               fontSize: 14,
-              color: unreadRowColor(discussion.new_posts_count, discussion.new_replies_count),
+              color: unreadRowColor(unreadPostCount, discussion.new_replies_count),
             },
           ]}>
           {isBookmarksResultType ? discussion.full_name : discussion.discussion_name}
         </Text>
-        {isBookmarksResultType && (
+        {isBookmarksResultType && unreadPostCount > 0 && (
           <Text
+            numberOfLines={1}
             style={[
               {
-                width: '25%',
+                // width: '25%',
                 textAlign: 'right',
                 fontSize: 14,
-                color: unreadRowColor(discussion.new_posts_count, discussion.new_replies_count),
+                color: unreadRowColor(unreadPostCount, discussion.new_replies_count),
               },
             ]}>
-            {discussion.new_posts_count}
+            {unreadPostCount}
             {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}  `}
             {discussion.new_images_count > 0 ? (
-              <Icon name="image" size={14} color={unreadRowColor(discussion.new_posts_count)} />
+              <Icon name="image" size={14} color={unreadRowColor(unreadPostCount)} />
             ) : (
               ''
             )}
-            {discussion.new_images_count > 0 ? `${discussion.new_images_count}` : ''}
+            {discussion.new_images_count > 0 ? `${discussion.new_images_count} ` : ''}
             {discussion.new_links_count > 0 ? (
-              <Icon name="link" size={14} color={unreadRowColor(discussion.new_posts_count)} />
+              <Icon name="link" size={14} color={unreadRowColor(unreadPostCount)} />
             ) : (
               ''
             )}

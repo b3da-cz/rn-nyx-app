@@ -39,11 +39,12 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async getRating(post, bounceRight = false) {
-    if (bounceRight) {
-      this.refSwipeable?.bounceRight()
+    if (bounceRight && this.state.ratings?.length > 0) {
+      this.setState({ ratings: [] })
+      return
     }
-    if (this.state.ratings && this.state.ratings.length > 0) {
-      return;
+    if (bounceRight) {
+      this.refSwipeable?.bounceRight();
     }
     const ratings = await this.props.nyx.getRating(post)
     this.setState({ ratings })
@@ -95,9 +96,8 @@ export class PostHeaderComponent extends Component<Props> {
           onLeftButtonsOpenRelease={() => !post.can_be_deleted && this.onReply()}
           rightButtonWidth={50}
           rightButtons={
-            post.can_be_deleted
-              ? [<View />]
-              : [
+            post.can_be_rated
+              ? [
                   <TouchableOpacity
                     accessibilityRole="button"
                     onPress={() => this.castVote(post, 1)}
@@ -111,6 +111,7 @@ export class PostHeaderComponent extends Component<Props> {
                     <Icon name="thumbs-down" size={24} color={Styling.colors.lighter} />
                   </TouchableOpacity>,
                 ]
+              : [<View />]
           }
           onRightButtonsActivate={() => this.getRating(post)}
           rightButtonContainerStyle={{

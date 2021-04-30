@@ -66,9 +66,9 @@ export class BookmarksView extends Component<Props> {
               color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
               backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
               textAlign: 'right',
-              paddingVertical: Styling.metrics.block.medium,
+              paddingVertical: 6,
               paddingHorizontal: Styling.metrics.block.small,
-              marginBottom: Styling.metrics.block.small,
+              marginBottom: Styling.metrics.block.xsmall,
             }}>
             {title}
           </Text>

@@ -158,6 +158,12 @@ export class PostComponent extends Component<Props> {
           .join('\n')
           .split('\n\n')
           .join('\n')
+          .split('&lt;')
+          .join('<')
+          .split('&gt;')
+          .join('>')
+          .split('&amp;')
+          .join('&')
           .replace(/(<([^>]+)>)/gi, '')}
       </Text>
     )
