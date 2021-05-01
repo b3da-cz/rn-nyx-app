@@ -113,16 +113,17 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
   const LastPostsStack = createStackNavigator()
   const MailStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
-  const discussionOptions = { headerShown: true }
+  const discussionOptions = { headerShown: true, title: '' }
 
   const Discussion = ({ navigation, route }) => {
-    const { discussionId, postId } = route.params
+    const { discussionId, postId, showHeader } = route.params
     return (
       <DiscussionView
         ref={r => setRef('DiscussionView', r)}
         navigation={navigation}
         id={discussionId}
         postId={postId}
+        showHeader={showHeader}
         onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })}
         onImages={(images, i) => showImages(navigation, images, i)}
       />

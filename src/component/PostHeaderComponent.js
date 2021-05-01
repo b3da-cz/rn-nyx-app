@@ -25,7 +25,10 @@ export class PostHeaderComponent extends Component<Props> {
     super(props)
     this.state = {
       isFetching: false,
-      ratings: [],
+      ratings: {
+        positive: [],
+        negative: [],
+      },
       ratingWidth: Styling.metrics.screen().width / 20,
       ratingHeight: (Styling.metrics.screen().width / 20) * 1.25,
     }
@@ -59,8 +62,13 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async getRating(post, bounceRight = false) {
-    if (bounceRight && this.state.ratings?.length > 0) {
-      this.setState({ ratings: [] })
+    if (bounceRight && (this.state.ratings?.positive?.length > 0 || this.state.ratings?.negative?.length > 0)) {
+      this.setState({
+        ratings: {
+          positive: [],
+          negative: [],
+        },
+      })
       return
     }
     if (bounceRight) {
@@ -98,6 +106,9 @@ export class PostHeaderComponent extends Component<Props> {
 
   render() {
     const { post } = this.props
+    if (post.location === 'header') {
+      return null
+    }
     return (
       <View>
         <Swipeable
@@ -183,8 +194,13 @@ export class PostHeaderComponent extends Component<Props> {
                 )}
                 {post.username?.length > 0 && <UserIconComponent username={post.username} marginRight={10} />}
                 <View>
-                  <Text style={[Styling.groups.link(), { color: this.props.isUnread ? Styling.colors.accent : Styling.colors.primary}]} numberOfLines={1}>
-                    {post.username?.length > 0 ? post.username : post.location?.length > 0 ? post.location : ''}{' '}
+                  <Text
+                    style={[
+                      Styling.groups.link(),
+                      { color: this.props.isUnread ? Styling.colors.accent : Styling.colors.primary },
+                    ]}
+                    numberOfLines={1}>
+                    {post.username?.length > 0 ? post.username : ''}{' '}
                     {post.discussion_name?.length > 0 && (
                       <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
                     )}
@@ -246,6 +262,6 @@ export class PostHeaderComponent extends Component<Props> {
           />
         )}
       </View>
-    )
+    );
   }
 }

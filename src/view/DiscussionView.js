@@ -8,6 +8,7 @@ type Props = {
   navigation: any,
   id: number,
   postId?: number,
+  showHeader?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
 }
@@ -45,7 +46,11 @@ export class DiscussionView extends Component<Props> {
     if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
     } else {
-      this.reloadDiscussionLatest()
+      this.reloadDiscussionLatest().then(() => {
+        if (this.props.showHeader) {
+          this.setHeaderVisible(true)
+        }
+      })
     }
   }
 
@@ -123,7 +128,7 @@ export class DiscussionView extends Component<Props> {
       posts: parsedPosts,
       isFetching: false,
     })
-    this.props.onDiscussionFetched({ title, uploadedFiles })
+    this.onDiscussionFetched(title, uploadedFiles)
     this.nyx.store.activeDiscussionId = this.props.id
     return newPosts
   }
@@ -191,8 +196,10 @@ export class DiscussionView extends Component<Props> {
       return
     }
     if (updatedPost?.location === 'header') {
-      const header = parsePostsContent([updatedPost])
-      this.setState({ header })
+      // const parsedHeader = parsePostsContent([updatedPost])
+      // const header = getDistinctPosts(parsedHeader, this.state.header)
+      // this.setState({ header }) // todo proper model
+      this.reloadDiscussionLatest()
     } else {
       const parsedPosts = parsePostsContent([updatedPost])
       const posts = getDistinctPosts(parsedPosts, this.state.posts)
@@ -205,6 +212,19 @@ export class DiscussionView extends Component<Props> {
     this.setState({ isBooked: newIsBooked, isFetching: true })
     await this.nyx.bookmarkDiscussion(this.props.id, newIsBooked)
     this.setState({ isFetching: false })
+  }
+
+  setHeaderVisible(isHeaderVisible) {
+    this.setState({ isHeaderVisible })
+    this.onDiscussionFetched(this.state.title)
+  }
+
+  showHeader() {
+    this.props.navigation.push('discussion', { discussionId: this.props.id, showHeader: true })
+  }
+
+  onDiscussionFetched(title, uploadedFiles = []) {
+    this.props.onDiscussionFetched({ title: this.state.isHeaderVisible ? `Záhlaví - ${title}` : title, uploadedFiles })
   }
 
   render() {
@@ -225,7 +245,7 @@ export class DiscussionView extends Component<Props> {
               {
                 icon: 'book',
                 label: this.state.isHeaderVisible ? 'hide header' : 'show header',
-                onPress: () => this.setState({ isHeaderVisible: !this.state.isHeaderVisible }),
+                onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
               },
             ]}
             onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}

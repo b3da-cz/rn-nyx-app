@@ -207,6 +207,7 @@ export const parsePostsContent = posts => {
       if (!post.parsed) {
         const parser = new Parser(post.content)
         post.parsed = parser.parse()
+        post.id = Number(post.id)
       }
     }
   } catch (e) {
