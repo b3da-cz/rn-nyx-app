@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList, Keyboard, View } from 'react-native'
+import { ActivityIndicator, FlatList, View } from 'react-native'
 import { TextInput } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
@@ -32,6 +32,7 @@ export class ComposePostView extends Component<Props> {
       files: [],
       jpegSize: 1920,
     }
+    this.refMsgBox = null
     this.isDarkMode = true
   }
 
@@ -40,23 +41,6 @@ export class ComposePostView extends Component<Props> {
     this.isDarkMode = this.context.theme === 'dark'
     this.prepareForm()
     this.props.onMount()
-    this.keyboardDidShowHandler = this.keyboardDidShow.bind(this)
-    this.keyboardDidHideHandler = this.keyboardDidHide.bind(this)
-    Keyboard.addListener('keyboardDidShow', this.keyboardDidShowHandler)
-    Keyboard.addListener('keyboardDidHide', this.keyboardDidHideHandler)
-  }
-
-  componentWillUnmount() {
-    Keyboard.removeListener('keyboardDidShow', this.keyboardDidShowHandler)
-    Keyboard.removeListener('keyboardDidHide', this.keyboardDidHideHandler)
-  }
-
-  keyboardDidShow() {
-    this.setState({ isKeyboardHidden: false })
-  }
-
-  keyboardDidHide() {
-    this.setState({ isKeyboardHidden: true })
   }
 
   prepareForm() {
@@ -64,6 +48,7 @@ export class ComposePostView extends Component<Props> {
     const message =
       this.props.postId && this.props.replyTo ? `{reply ${this.props.replyTo}|${this.props.postId}}: ` : ''
     this.setState({ username, uploadedFiles, message })
+    setTimeout(() => this.setMsgBoxCursorPosition(message.length, true), 100)
   }
 
   async searchUsername(searchPhrase) {
@@ -141,6 +126,18 @@ export class ComposePostView extends Component<Props> {
     })
   }
 
+  setMsgBoxCursorPosition(index, andFocus) {
+    this.refMsgBox.setNativeProps({
+      selection: {
+        start: index,
+        end: index,
+      },
+    })
+    if (andFocus) {
+      this.refMsgBox.focus()
+    }
+  }
+
   async sendPost() {
     if (!this.state.message || (this.state.message && this.state.message.length === 0)) {
       return
@@ -205,6 +202,7 @@ export class ComposePostView extends Component<Props> {
           ) : null}
           {searchResults.length === 0 && (
             <TextInput
+              ref={r => (this.refMsgBox = r)}
               multiline={true}
               numberOfLines={5}
               textAlignVertical={'top'}
@@ -212,7 +210,11 @@ export class ComposePostView extends Component<Props> {
               onChangeText={val => this.setState({ message: val })}
               value={`${message}`}
               placeholder={`${t('message')} ..`}
-              style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small, marginBottom: 50 }}
+              style={{
+                backgroundColor: Styling.colors.dark,
+                marginHorizontal: Styling.metrics.block.small,
+                marginBottom: 50,
+              }}
             />
           )}
           <Picker
@@ -250,24 +252,22 @@ export class ComposePostView extends Component<Props> {
                   />
                 ))}
             </View>
-            {this.state.isKeyboardHidden && (
-              <View style={{ flexDirection: 'row' }}>
-                <ButtonComponent
-                  label={`${t('appendFile')} ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
-                  icon={'image'}
-                  width={'50%'}
-                  isDarkMode={this.isDarkMode}
-                  onPress={() => this.pickFile()}
-                />
-                <ButtonComponent
-                  label={t('send')}
-                  icon={'send'}
-                  width={'50%'}
-                  isDarkMode={this.isDarkMode}
-                  onPress={() => this.sendPost()}
-                />
-              </View>
-            )}
+            <View style={{ flexDirection: 'row' }}>
+              <ButtonComponent
+                label={`${t('appendFile')} ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
+                icon={'image'}
+                width={'50%'}
+                isDarkMode={this.isDarkMode}
+                onPress={() => this.pickFile()}
+              />
+              <ButtonComponent
+                label={t('send')}
+                icon={'send'}
+                width={'50%'}
+                isDarkMode={this.isDarkMode}
+                onPress={() => this.sendPost()}
+              />
+            </View>
           </View>
         )}
       </View>

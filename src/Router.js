@@ -35,7 +35,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
           if (message.isForegroundMsg) {
             RNNotificationBanner.Show({
               title: message.title,
-              subTitle: message.body,
+              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               titleColor: Styling.colors.white,
               subTitleColor: Styling.colors.white,
               tintColor: Styling.colors.secondary,
@@ -59,7 +59,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
           if (message.isForegroundMsg) {
             RNNotificationBanner.Show({
               title: message.title,
-              subTitle: message.body,
+              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               titleColor: Styling.colors.white,
               subTitleColor: Styling.colors.white,
               tintColor: Styling.colors.primary,
