@@ -5,12 +5,12 @@ export const Styling = {
     primary: '#1292B4',
     secondary: '#b46612',
     accent: '#43E6DD',
-    white: '#FFF',
+    white: '#FFFFFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
-    dark: '#444',
-    darker: '#222',
-    black: '#000',
+    dark: '#444444',
+    darker: '#222222',
+    black: '#000000',
   },
   metrics: {
     window: () => ({

@@ -5,7 +5,7 @@ import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
 import { ButtonSquareComponent, confirm, RatingDetailComponent, UserIconComponent } from '../component'
-import { Nyx, Styling } from '../lib'
+import { Nyx, Styling, t } from '../lib'
 
 type Props = {
   post: Object,
@@ -89,7 +89,7 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async deletePost(post) {
-    const res = await confirm('Warning', 'Delete post?')
+    const res = await confirm(t('confirm'), `${t('delete.post')}?`)
     if (res) {
       await this.props.nyx.deletePost(post.discussion_id, post.id)
       if (this.refSwipeable) {
@@ -204,7 +204,7 @@ export class PostHeaderComponent extends Component<Props> {
                     {post.activity && (
                       <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
                         {`[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}]`}
-                        {post.activity.location}`
+                        {post.activity.location}
                       </Text>
                     )}
                   </Text>

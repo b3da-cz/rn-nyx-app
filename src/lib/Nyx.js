@@ -1,7 +1,7 @@
 import DeviceInfo from 'react-native-device-info'
 import Bugfender from '@bugfender/rn-bugfender'
 import { confirm } from '../component'
-import { Storage } from '../lib'
+import { Storage, t } from '../lib'
 
 export class Nyx {
   constructor(username?) {
@@ -20,7 +20,6 @@ export class Nyx {
       this.username = username
     }
     let auth = await Storage.getAuth()
-    // console.warn(auth); // TODO: remove
     if (!auth) {
       auth = {
         username: this.username,
@@ -232,7 +231,7 @@ export class Nyx {
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       if (res.error && res.code === 'NeedsConfirmation') {
-        const isConfirmed = await confirm('Confirm vote', res.message)
+        const isConfirmed = await confirm(t('confirm'), res.message)
         if (isConfirmed) {
           return this.castVote(post, 'negative_visible')
         }

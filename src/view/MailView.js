@@ -3,7 +3,7 @@ import { FlatList, View } from 'react-native'
 import { Portal, FAB } from 'react-native-paper'
 import { Picker } from '@react-native-picker/picker'
 import { PostComponent } from '../component'
-import { Context, getDistinctPosts, Styling, parsePostsContent } from '../lib'
+import { Context, getDistinctPosts, Styling, parsePostsContent, t } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -163,7 +163,7 @@ export class MailView extends Component<Props> {
             prompt={'Recipient'}
             selectedValue={this.state.activeRecipient}
             onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
-            <Picker.Item key={'all'} label={'All'} value={'all'} color={this.getPickerItemColor('all')} />
+            <Picker.Item key={'all'} label={t('all')} value={'all'} color={this.getPickerItemColor('all')} />
             {this.state.conversations.map(c => (
               <Picker.Item
                 key={c.username}
@@ -198,7 +198,7 @@ export class MailView extends Component<Props> {
                 : [
                     {
                       icon: 'bell',
-                      label: 'Reminders',
+                      label: t('reminders.title'),
                       onPress: () => this.getReminders(),
                     },
                   ]

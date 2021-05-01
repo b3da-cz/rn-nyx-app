@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, UserRowComponent } from '../component'
-import { Context, Styling } from '../lib'
+import { Context, Styling, t } from '../lib'
 
 type Props = {
   onNavigation: Function,
@@ -56,7 +56,7 @@ export class SearchView extends Component<Props> {
     return (
       <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}>
         <Searchbar
-          placeholder="Search .."
+          placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
           value={`${this.state.searchPhrase}`}
         />

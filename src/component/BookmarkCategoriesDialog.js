@@ -2,13 +2,13 @@ import React from 'react'
 import { ScrollView } from 'react-native'
 import { Dialog, Portal } from 'react-native-paper'
 import { ButtonComponent } from '../component'
-import { Styling } from '../lib'
+import { Styling, t } from '../lib'
 
-export const BookmarkCategoriesDialog = ({ isVisible, categories, onCategoryId, onCancel }) => {
+export const BookmarkCategoriesDialog = ({ isVisible, isDarkMode, categories, onCategoryId, onCancel }) => {
   return (
     <Portal>
       <Dialog visible={isVisible} onDismiss={() => onCancel()}>
-        <Dialog.Title>Kategorie</Dialog.Title>
+        <Dialog.Title>{t('categories')}</Dialog.Title>
         <Dialog.ScrollArea>
           <ScrollView style={{ marginBottom: Styling.metrics.block.large }}>
             {categories.length > 0 &&
@@ -19,6 +19,8 @@ export const BookmarkCategoriesDialog = ({ isVisible, categories, onCategoryId, 
                   lineHeight={30}
                   fontSize={Styling.metrics.fontSize.medium}
                   textAlign={'left'}
+                  color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+                  paddingHorizontal={0}
                   backgroundColor={null}
                   onPress={() => onCategoryId(c.id)}
                 />

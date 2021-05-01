@@ -1,0 +1,168 @@
+{
+  "app": {
+    "cs": "Nnn",
+    "en": "Nnn"
+  },
+  "all": {
+    "cs": "Vše",
+    "en": "All"
+  },
+  "bookmarks": {
+    "cs": "Záložky",
+    "en": "Boomarks"
+  },
+  "confirm": {
+    "cs": "Potvrdit",
+    "en": "Confirm"
+  },
+  "history": {
+    "cs": "Historie",
+    "en": "History"
+  },
+  "mail": {
+    "cs": "Pošta",
+    "en": "Mail"
+  },
+  "search": {
+    "title": {
+      "cs": "Hledání",
+      "en": "Search"
+    },
+    "do": {
+      "cs": "Hledat",
+      "en": "Search"
+    }
+  },
+  "reminders": {
+    "title": {
+      "cs": "Upomínky",
+      "en": "Reminders"
+    },
+    "add": {
+      "cs": "Přidat upomínku",
+      "en": "Add reminder"
+    },
+    "remove": {
+      "cs": "Odebrat upomínku",
+      "en": "Remove reminder"
+    }
+  },
+  "profile": {
+    "fcm": {
+      "subscribe": {
+        "title": {
+          "cs": "Registrovat k FCM notifikacím",
+          "en": "Subscribe FCM notifications"
+        },
+        "message": {
+          "cs": "Provede novou registraci k FCM notifikacím. K té obvykle dochází automaticky, použij jen v případě nechodících notifikací. Pokračovat?",
+          "en": "Resubscribe FCM notifications?"
+        }
+      },
+      "unsubscribe": {
+        "title": {
+          "cs": "Odhlásit FCM notifikace",
+          "en": "Unsubscribe FCM notifications"
+        },
+        "message": {
+          "cs": "Odhlásí zařízení z FCM notifikací. Pokračovat?",
+          "en": "Unsubscribe FCM notifications?"
+        }
+      }
+    },
+    "login": {
+      "title": {
+        "cs": "Přihlášení",
+        "en": "Login"
+      },
+      "do": {
+        "cs": "Přihlásit",
+        "en": "Login"
+      },
+      "message": {
+        "cs": "Otevří nyx.cz -> osobní nastavení -> autorizace -> zadej potvrzovací kód:",
+        "en": "Open nyx.cz -> user settings -> authorization -> enter confirmation code:"
+      }
+    },
+    "logout": {
+      "cs": "Odhlásit",
+      "en": "Logout"
+    },
+    "tabsOnBottom": {
+      "cs": "Navigační taby dole",
+      "en": "Tabs on bottom"
+    },
+    "initialView": {
+      "cs": "Start aplikace na",
+      "en": "Initial view"
+    }
+  },
+  "delete": {
+    "attachment": {
+      "cs": "Smazat přílohu",
+      "en": "Delete attachment"
+    },
+    "post": {
+      "cs": "Smazat příspěvek",
+      "en": "Delete post"
+    }
+  },
+  "ok": {
+    "cs": "Ok",
+    "en": "Ok"
+  },
+  "cancel": {
+    "cs": "Storno",
+    "en": "Cancel"
+  },
+  "new": {
+    "message": {
+      "cs": "Nová zpráva",
+      "en": "New message"
+    },
+    "post": {
+      "cs": "Nový příspěvek",
+      "en": "New post"
+    }
+  },
+  "appendFile": {
+    "cs": "Přiložit soubor",
+    "en": "Append file"
+  },
+  "send": {
+    "cs": "Odeslat",
+    "en": "Send"
+  },
+  "message": {
+    "cs": "Zpráva",
+    "en": "Message"
+  },
+  "categories": {
+    "cs": "Kategorie",
+    "en": "Categories"
+  },
+  "header": {
+    "cs": "Záhlaví",
+    "en": "Header"
+  },
+  "show": {
+    "cs": "Zobrazit",
+    "en": "Show"
+  },
+  "hide": {
+    "cs": "Skrýt",
+    "en": "Hide"
+  },
+  "book": {
+    "cs": "Sledovat",
+    "en": "Book"
+  },
+  "unbook": {
+    "cs": "Odebrat ze sledovaných",
+    "en": "Unbook"
+  },
+  "username": {
+    "cs": "Uživatelské jméno",
+    "en": "Username"
+  }
+}

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { FAB, Portal } from 'react-native-paper'
 import { BookmarkCategoriesDialog, PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
+import { Context, Styling, getDistinctPosts, parsePostsContent, t } from '../lib'
 
 type Props = {
   navigation: any,
@@ -235,7 +235,10 @@ export class DiscussionView extends Component<Props> {
   }
 
   onDiscussionFetched(title, uploadedFiles = []) {
-    this.props.onDiscussionFetched({ title: this.state.isHeaderVisible ? `Záhlaví - ${title}` : title, uploadedFiles })
+    this.props.onDiscussionFetched({
+      title: this.state.isHeaderVisible ? `${t('header')} - ${title}` : title,
+      uploadedFiles,
+    })
   }
 
   render() {
@@ -243,6 +246,7 @@ export class DiscussionView extends Component<Props> {
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         <BookmarkCategoriesDialog
           isVisible={this.state.isCategoryPickerVisible}
+          isDarkMode={this.isDarkMode}
           categories={this.state.bookmarkCategories || []}
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
@@ -256,14 +260,14 @@ export class DiscussionView extends Component<Props> {
             actions={[
               {
                 key: 'bookmark',
-                icon: 'bookmark',
-                label: this.state.isBooked ? 'unbook' : 'book',
+                icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
+                label: this.state.isBooked ? t('unbook') : t('book'),
                 onPress: () => this.bookmarkDiscussion(),
               },
               {
                 key: 'header',
-                icon: 'book',
-                label: this.state.isHeaderVisible ? 'hide header' : 'show header',
+                icon: 'file-table-box',
+                label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
                 onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
               },
             ]}

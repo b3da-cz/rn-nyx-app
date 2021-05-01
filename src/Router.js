@@ -8,7 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, NavOptions, subscribeFCM } from './lib'
+import { Styling, NavOptions, subscribeFCM, t } from './lib'
 import {
   BookmarksView,
   HistoryView,
@@ -29,34 +29,34 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
     const sub = subscribeFCM(message => {
       switch (message.type) {
         case 'new_mail':
-          RNNotificationBanner.Show({
-            title: message.title,
-            subTitle: message.body,
-            titleColor: Styling.colors.white,
-            subTitleColor: Styling.colors.white,
-            tintColor: Styling.colors.secondary,
-            duration: 5000,
-            enableProgress: false,
-            withIcon: true,
-            dismissable: true,
-            icon: <Icon name="mail" size={20} color="#FFFFFF" family={'Feather'} />,
-            onClick: () => {
-              refs?.MailView?.getLatestMessages()
-              RNNotificationBanner.Dismiss()
-            },
-          })
-
-          // if (message.isForegroundMsg && refs?.MailView) {
-          //   refs.MailView.getLatestMessages()
-          // } else {
-          //   // setTimeout(() => this.switchView('mail'), 100)
-          // }
+          if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
+            setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300) // todo setting
+          }
+          if (message.isForegroundMsg) {
+            RNNotificationBanner.Show({
+              title: message.title,
+              subTitle: message.body,
+              titleColor: Styling.colors.white,
+              subTitleColor: Styling.colors.white,
+              tintColor: Styling.colors.secondary,
+              duration: 5000,
+              enableProgress: false,
+              withIcon: true,
+              dismissable: true,
+              icon: <Icon name="mail" size={20} color={Styling.colors.white} family={'Feather'} />,
+              onClick: () => {
+                nav?.navigate('mailStack', { screen: 'mail' })
+                refs?.MailView?.getLatestMessages()
+                RNNotificationBanner.Dismiss()
+              },
+            })
+          }
           break
         case 'reply':
           if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
-            nav.navigate('notifications')
+            setTimeout(() => nav.navigate('notificationsStack', { screen: 'notifications' }), 300)
           }
-          if (message.isForegroundMsg && refs?.DiscussionView) {
+          if (message.isForegroundMsg) {
             RNNotificationBanner.Show({
               title: message.title,
               subTitle: message.body,
@@ -67,16 +67,19 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
               enableProgress: false,
               withIcon: true,
               dismissable: true,
-              icon: <Icon name="mail" size={20} color="#FFFFFF" family={'Feather'} />,
+              icon: <Icon name="corner-down-right" size={20} color={Styling.colors.white} family={'Feather'} />,
               onClick: () => {
-                nav.navigate('notifications')
+                if (message.discussionId > 0) {
+                  nav.navigate('notificationsStack', {
+                    screen: 'discussion',
+                    params: { discussionId: message.discussionId, postId: message.postId },
+                  })
+                } else {
+                  nav.navigate('notificationsStack', { screen: 'notifications' })
+                }
                 RNNotificationBanner.Dismiss()
               },
             })
-            // refs.DiscussionView.reloadDiscussionLatest()
-            // refs.DiscussionView.jumpToPost(message.discussionId, message.postId)
-          } else {
-            // setTimeout(() => this.switchView('mail'), 100)
           }
           break
       }
@@ -174,12 +177,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
     />
   )
 
-  const Profile = ({ navigation }) => (
-    <ProfileView
-      config={config}
-      onConfigChange={() => onConfigReload()}
-    />
-  )
+  const Profile = ({ navigation }) => <ProfileView config={config} onConfigChange={() => onConfigReload()} />
 
   const Gallery = ({ navigation, route }) => {
     const { images, imgIndex } = route.params
@@ -200,7 +198,6 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
     const uploadedFiles = isMailPost ? [] : discussion?.detail?.discussion_common?.waiting_files
     return (
       <ComposePostView
-        title={title}
         isMailPost={isMailPost}
         uploadedFiles={uploadedFiles}
         username={route?.params?.username}
@@ -212,6 +209,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
           refs?.DiscussionView?.reloadDiscussionLatest(true)
           refs?.MailView?.getLatestMessages()
         }}
+        onMount={() => navigation.setOptions({ title: isMailPost ? t('new.message') : `${t('new.post')}: ${title}` })}
       />
     )
   }
@@ -311,7 +309,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
   return (
     <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} options={{ cardStyle: { backgroundColor: '#000' } }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
-      <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: 'New post' }} />
+      <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: '' }} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
   )

@@ -1,15 +1,14 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, Text, TouchableOpacity, FlatList, View } from 'react-native'
-import { TextInput, TouchableRipple } from 'react-native-paper'
+import { ActivityIndicator, FlatList, Keyboard, View } from 'react-native'
+import { TextInput } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
 import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { Context, Styling } from '../lib'
+import { Context, Styling, t } from '../lib'
 import Bugfender from '@bugfender/rn-bugfender'
 
 type Props = {
-  title: string,
   isMailPost: boolean,
   uploadedFiles: Array,
   discussionId?: number,
@@ -17,6 +16,7 @@ type Props = {
   replyTo?: string,
   username?: string,
   onSend: Function,
+  onMount: Function,
 }
 export class ComposePostView extends Component<Props> {
   static contextType = Context
@@ -24,6 +24,7 @@ export class ComposePostView extends Component<Props> {
     super(props)
     this.state = {
       isFetching: false,
+      isKeyboardHidden: true,
       message: '',
       searchPhrase: '',
       searchResults: [],
@@ -38,6 +39,24 @@ export class ComposePostView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.prepareForm()
+    this.props.onMount()
+    this.keyboardDidShowHandler = this.keyboardDidShow.bind(this)
+    this.keyboardDidHideHandler = this.keyboardDidHide.bind(this)
+    Keyboard.addListener('keyboardDidShow', this.keyboardDidShowHandler)
+    Keyboard.addListener('keyboardDidHide', this.keyboardDidHideHandler)
+  }
+
+  componentWillUnmount() {
+    Keyboard.removeListener('keyboardDidShow', this.keyboardDidShowHandler)
+    Keyboard.removeListener('keyboardDidHide', this.keyboardDidHideHandler)
+  }
+
+  keyboardDidShow() {
+    this.setState({ isKeyboardHidden: false })
+  }
+
+  keyboardDidHide() {
+    this.setState({ isKeyboardHidden: true })
   }
 
   prepareForm() {
@@ -110,7 +129,7 @@ export class ComposePostView extends Component<Props> {
   }
 
   async deleteFile(fileId) {
-    const res = await confirm('Warning', 'Delete attachment?')
+    const res = await confirm(t('confirm'), `${t('delete.attachment')}?`)
     if (!res) {
       return
     }
@@ -145,16 +164,6 @@ export class ComposePostView extends Component<Props> {
     const { uploadedFiles, searchPhrase, searchResults, message, username } = this.state
     return (
       <View style={[Styling.groups.themeView(this.isDarkMode), { width: '100%', height: '100%' }]}>
-        {!this.props.isMailPost && (
-          <Text
-            numberOfLines={1}
-            style={[
-              Styling.groups.themeView(this.isDarkMode),
-              { width: '100%', fontSize: 24, lineHeight: 60, paddingHorizontal: Styling.metrics.block.small },
-            ]}>
-            {this.props.title}
-          </Text>
-        )}
         <View style={{ flex: 1 }}>
           {this.props.isMailPost ? (
             <View>
@@ -164,8 +173,12 @@ export class ComposePostView extends Component<Props> {
                 selectionColor={Styling.colors.primary}
                 onChangeText={val => this.searchUsername(val)}
                 value={`${searchPhrase}`}
-                placeholder={username || 'username ..'}
-                style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small }}
+                placeholder={username || `${t('username')} ..`}
+                style={{
+                  backgroundColor: Styling.colors.dark,
+                  marginHorizontal: Styling.metrics.block.small,
+                  height: 42,
+                }}
               />
               <FlatList
                 data={searchResults}
@@ -198,7 +211,7 @@ export class ComposePostView extends Component<Props> {
               selectionColor={Styling.colors.primary}
               onChangeText={val => this.setState({ message: val })}
               value={`${message}`}
-              placeholder={'message ...'}
+              placeholder={`${t('message')} ..`}
               style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small }}
             />
           )}
@@ -237,20 +250,24 @@ export class ComposePostView extends Component<Props> {
                   />
                 ))}
             </View>
-            <View>
-              <ButtonComponent
-                label={`Append file ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
-                icon={'image'}
-                isDarkMode={this.isDarkMode}
-                onPress={() => this.pickFile()}
-              />
-              <ButtonComponent
-                label={'Send'}
-                icon={'send'}
-                isDarkMode={this.isDarkMode}
-                onPress={() => this.sendPost()}
-              />
-            </View>
+            {this.state.isKeyboardHidden && (
+              <View style={{ flexDirection: 'row' }}>
+                <ButtonComponent
+                  label={`${t('appendFile')} ${uploadedFiles?.length > 0 ? `[${uploadedFiles?.length}]` : ''}`}
+                  icon={'image'}
+                  width={'50%'}
+                  isDarkMode={this.isDarkMode}
+                  onPress={() => this.pickFile()}
+                />
+                <ButtonComponent
+                  label={t('send')}
+                  icon={'send'}
+                  width={'50%'}
+                  isDarkMode={this.isDarkMode}
+                  onPress={() => this.sendPost()}
+                />
+              </View>
+            )}
           </View>
         )}
       </View>

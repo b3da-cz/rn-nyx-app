@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { ScrollView, Switch, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, UserIconComponent } from '../component'
-import { Context, Styling, Storage, initFCM, unregisterFCM } from '../lib'
+import { Context, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
   config: any,
@@ -73,10 +73,7 @@ export class ProfileView extends Component<Props> {
   }
 
   async subscribeFCM() {
-    const isConfirmed = await confirm(
-      'Warning',
-      'Provede novou registraci k FCM notifikacím. K té obvykle dochází automaticky, použij jen v případě nechodících notifikací. Pokračovat?',
-    )
+    const isConfirmed = await confirm(t('confirm'), t('profile.fcm.subscribe.message'))
     if (!isConfirmed) {
       return
     }
@@ -86,7 +83,7 @@ export class ProfileView extends Component<Props> {
   }
 
   async unsubscribeFCM() {
-    const isConfirmed = await confirm('Warning', 'Odhlásí zařízení z FCM notifikací. Pokračovat?')
+    const isConfirmed = await confirm(t('confirm'), t('profile.fcm.unsubscribe.message'))
     if (!isConfirmed) {
       return
     }
@@ -97,7 +94,7 @@ export class ProfileView extends Component<Props> {
   }
 
   async logout() {
-    const isConfirmed = await confirm('Warning', 'Odhlásit?')
+    const isConfirmed = await confirm(t('confirm'), `${t('profile.logout')}?`)
     if (!isConfirmed) {
       return
     }
@@ -133,7 +130,9 @@ export class ProfileView extends Component<Props> {
             justifyContent: 'space-between',
             paddingVertical: Styling.metrics.block.large,
           }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Tabs on bottom</Text>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
+            {t('profile.tabsOnBottom')}
+          </Text>
           <Switch
             thumbColor={this.state.isBottomTabs ? Styling.colors.primary : Styling.colors.lighter}
             onValueChange={val => this.setBottomTabs(val)}
@@ -147,7 +146,7 @@ export class ProfileView extends Component<Props> {
             justifyContent: 'space-between',
             paddingVertical: Styling.metrics.block.large,
           }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show bookmarks</Text>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('bookmarks')}</Text>
           <Switch
             thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}
             onValueChange={val => this.setBookmarksEnabled(val)}
@@ -161,7 +160,7 @@ export class ProfileView extends Component<Props> {
             justifyContent: 'space-between',
             paddingVertical: Styling.metrics.block.large,
           }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Show history</Text>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('history')}</Text>
           <Switch
             thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}
             onValueChange={val => this.setHistoryEnabled(val)}
@@ -169,32 +168,32 @@ export class ProfileView extends Component<Props> {
           />
         </View>
         <View>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>Initial view</Text>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('profile.initialView')}</Text>
           <Picker
             mode={'dropdown'}
             style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
-            prompt={'Initial view'}
+            prompt={t('profile.initialView')}
             selectedValue={this.state.initialRouteName}
             onValueChange={route => this.setInitialRouteName(route)}>
             <Picker.Item
               key={'historyStack'}
-              label={'History'}
+              label={t('history')}
               value={'historyStack'}
               enabled={this.state.isHistoryEnabled}
               color={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.darker}
             />
             <Picker.Item
               key={'bookmarksStack'}
-              label={'Bookmarks'}
+              label={t('bookmarks')}
               value={'bookmarksStack'}
               enabled={this.state.isBookmarksEnabled}
               color={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.darker}
             />
-            <Picker.Item key={'mailStack'} label={'Mail'} value={'mailStack'} color={Styling.colors.primary} />
+            <Picker.Item key={'mailStack'} label={t('mail')} value={'mailStack'} color={Styling.colors.primary} />
           </Picker>
         </View>
         <ButtonComponent
-          label={'subscribe FCM'}
+          label={t('profile.fcm.subscribe.title')}
           icon={'mail'}
           textAlign={'left'}
           color={Styling.colors.secondary}
@@ -204,7 +203,7 @@ export class ProfileView extends Component<Props> {
           onPress={() => this.subscribeFCM()}
         />
         <ButtonComponent
-          label={'unsubscribe FCM'}
+          label={t('profile.fcm.unsubscribe.title')}
           icon={'trash-2'}
           textAlign={'left'}
           color={Styling.colors.secondary}
@@ -214,7 +213,7 @@ export class ProfileView extends Component<Props> {
           onPress={() => this.unsubscribeFCM()}
         />
         <ButtonComponent
-          label={'logout'}
+          label={t('profile.logout')}
           icon={'lock'}
           textAlign={'left'}
           color={Styling.colors.secondary}

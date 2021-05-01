@@ -42,8 +42,8 @@ export const subscribeFCM = async onMessage => {
           ? onMessage({
               isForegroundMsg,
               type: message.data.type,
-              discussionId: message.data.discussionId,
-              postId: message.data.postId,
+              discussionId: message.data.discussion_id,
+              postId: message.data.post_id,
               title: message.notification.title,
               body: message.notification.body,
             })

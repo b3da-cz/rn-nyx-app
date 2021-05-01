@@ -1,8 +1,10 @@
 import React, { Component } from 'react'
-import { Text, View } from 'react-native'
-import { TextInput } from 'react-native-paper'
+import { Text, Image, View, Linking } from 'react-native'
+import { TextInput, TouchableRipple } from 'react-native-paper'
+import DeviceInfo from 'react-native-device-info'
 import { ButtonComponent } from '../component'
-import { Styling } from '../lib'
+import { Styling, t } from '../lib'
+import Share from 'react-native-share'
 
 type Props = {
   isDarkMode: boolean,
@@ -33,74 +35,113 @@ export class LoginView extends Component<Props> {
     const isUsernameFilledIn = username && username.length > 0
     return (
       <View style={[Styling.groups.themeView(isDarkMode), { flex: 1 }]}>
+        <View
+          style={[
+            Styling.groups.themeComponent(isDarkMode),
+            {
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: 5,
+              paddingBottom: 5,
+            },
+          ]}>
+          <TouchableRipple
+            rippleColor={'rgba(18,146,180, 0.3)'}
+            onPress={() => Linking.openURL('https://github.com/b3da-cz/rn-nyx-app').catch(() => null)}>
+            <View>
+              <Text style={[Styling.groups.sectionTitle, Styling.groups.themeComponent(isDarkMode)]}>{t('app')}</Text>
+              <Text style={Styling.groups.themeComponent(isDarkMode)}>{`v${DeviceInfo.getVersion()}`}</Text>
+            </View>
+          </TouchableRipple>
+          <TouchableRipple
+            rippleColor={'rgba(18,146,180, 0.3)'}
+            onPress={() => Linking.openURL('https://nyx.cz').catch(() => null)}>
+            <Image
+              style={{
+                width: 50,
+                height: 50,
+                margin: Styling.metrics.block.small,
+                opacity: 0.5,
+              }}
+              resizeMode={'contain'}
+              source={require('../../assets/nyx.png')}
+            />
+          </TouchableRipple>
+        </View>
         {confirmationCode?.length > 0 ? (
           <View>
-            <Text
-              style={[
-                Styling.groups.sectionTitle,
-                Styling.groups.themeComponent(isDarkMode),
-                { padding: Styling.metrics.block.medium },
-              ]}>
-              {`Confirm auth in Nyx settings:`}
-            </Text>
-            <Text
+            <View
               style={[
                 Styling.groups.themeComponent(isDarkMode),
-                { padding: Styling.metrics.block.medium, fontSize: Styling.metrics.fontSize.large },
+                {
+                  marginTop: Styling.metrics.block.small,
+                  marginHorizontal: Styling.metrics.block.small,
+                  fontSize: Styling.metrics.fontSize.large,
+                },
               ]}>
-              {`Open nyx.cz -> user settings -> auth -> enter confirmation code for app:`}
-            </Text>
-            <Text
-              style={[
-                Styling.groups.sectionTitle,
-                Styling.groups.themeComponent(isDarkMode),
-                { padding: Styling.metrics.block.medium },
-              ]}>
-              {`"${confirmationCode}"\n\nTHEN press continue`}
-            </Text>
+              <Text
+                onPress={() => Linking.openURL('https://nyx.cz').catch(() => null)}
+                style={[
+                  Styling.groups.themeComponent(isDarkMode),
+                  { padding: Styling.metrics.block.medium, fontSize: Styling.metrics.fontSize.large },
+                ]}>
+                {t('profile.login.message')}
+              </Text>
+              <Text
+                onPress={() =>
+                  Share.open({
+                    title: 'Confirmation code',
+                    message: confirmationCode,
+                  })
+                }
+                style={[
+                  Styling.groups.themeComponent(isDarkMode),
+                  Styling.groups.sectionTitle,
+                  { padding: Styling.metrics.block.medium },
+                ]}>
+                {`"${confirmationCode}"`}
+              </Text>
+            </View>
             <ButtonComponent
-              label={'continue to app'}
+              label={t('ok')}
               textAlign={'center'}
               borderWidth={1}
               borderColor={Styling.colors.primary}
               backgroundColor={Styling.colors.black}
               color={Styling.colors.primary}
-              fontSize={Styling.metrics.fontSize.xlarge}
-              marginTop={Styling.metrics.block.large}
-              marginBottom={0}
+              fontSize={Styling.metrics.fontSize.xxlarge}
+              marginTop={Styling.metrics.block.small}
+              marginHorizontal={Styling.metrics.block.small}
+              width={Styling.metrics.window().width - Styling.metrics.block.small * 2}
               isDarkMode={isDarkMode}
               onPress={() => this.login()}
             />
           </View>
         ) : (
           <View>
-            <Text
-              style={[
-                Styling.groups.sectionTitle,
-                Styling.groups.themeComponent(isDarkMode),
-                { padding: 20, paddingTop: 40 },
-              ]}>
-              Enter your nyx username
-            </Text>
             <TextInput
               style={{
                 backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                 color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                marginTop: Styling.metrics.block.small,
+                marginHorizontal: Styling.metrics.block.small,
               }}
               onChangeText={val => this.setState({ username: val })}
               value={`${username}`}
             />
             <ButtonComponent
               isDisabled={!isUsernameFilledIn}
-              label={'continue'}
+              label={t('profile.login.do')}
               textAlign={'center'}
               borderWidth={1}
               borderColor={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.black}
               backgroundColor={Styling.colors.black}
               color={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.darker}
-              fontSize={Styling.metrics.fontSize.xlarge}
-              marginTop={Styling.metrics.block.large}
-              marginBottom={0}
+              fontSize={Styling.metrics.fontSize.xxlarge}
+              marginTop={Styling.metrics.block.small}
+              marginHorizontal={Styling.metrics.block.small}
+              width={Styling.metrics.window().width - Styling.metrics.block.small * 2}
               isDarkMode={isDarkMode}
               onPress={() => this.confirmUsername()}
             />

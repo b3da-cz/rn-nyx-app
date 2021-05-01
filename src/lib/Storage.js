@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const StorageKeys = {
   auth: 'auth',
+  backgroundMessages: 'backgroundMessages',
   config: 'config',
   user: 'user',
 }
@@ -27,6 +28,10 @@ const getAuth = async () => get(StorageKeys.auth)
 
 const setAuth = async auth => set(StorageKeys.auth, auth)
 
+const getBackgroundMessages = async () => get(StorageKeys.backgroundMessages)
+
+const setBackgroundMessages = async messages => set(StorageKeys.backgroundMessages, messages)
+
 const getConfig = async () => get(StorageKeys.config)
 
 const setConfig = async conf => set(StorageKeys.config, conf)
@@ -43,6 +48,8 @@ const removeAll = async () =>
 export const Storage = {
   getAuth,
   setAuth,
+  getBackgroundMessages,
+  setBackgroundMessages,
   getConfig,
   setConfig,
   getUser,
