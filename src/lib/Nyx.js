@@ -263,19 +263,17 @@ export class Nyx {
   }
 
   async bookmarkDiscussion(discussionId, isBooked, categoryId?) {
-    const data = { discussion_id: discussionId, new_state: isBooked ? 'true' : 'false' }
-    if (categoryId > 0) {
-      data.category = categoryId
-    }
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/bookmark?new_state=${isBooked}`, {
-        method: 'POST',
-        referrerPolicy: 'no-referrer',
-        headers: this.getHeaders('application/x-www-form-urlencoded'),
-        body: Object.keys(data)
-          .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
-          .join('&'),
-      }).then(resp => resp.json())
+      const res = await fetch(
+        `https://nyx.cz/api/discussion/${discussionId}/bookmark?new_state=${isBooked}${
+          categoryId > 0 ? `&category=${categoryId}` : ''
+        }`,
+        {
+          method: 'POST',
+          referrerPolicy: 'no-referrer',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
       return res
     } catch (e) {
       this.logError('bookmark discussion', e)
@@ -415,7 +413,7 @@ export class Nyx {
   async setVisibility(isVisible) {
     // todo nope
     const status = isVisible ? 20 : 10
-    console.warn('set visibility ', this.auth, isVisible); // TODO: remove
+    console.warn('set visibility ', this.auth, isVisible) // TODO: remove
     try {
       const res = await fetch('https://nyx.cz/api/header', {
         method: 'POST',
@@ -423,7 +421,7 @@ export class Nyx {
         headers: this.getHeaders(),
         body: { status },
       }).then(resp => resp.json())
-      console.warn(res, this.auth); // TODO: remove
+      console.warn(res, this.auth) // TODO: remove
       return res
     } catch (e) {
       this.logError('set visibility', e)

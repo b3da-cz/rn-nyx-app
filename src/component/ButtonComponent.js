@@ -19,6 +19,7 @@ export const ButtonComponent = ({
   marginTop = 0,
   borderColor = Styling.colors.secondary,
   borderWidth = 0,
+  lineHeight = 50,
 }) => {
   return (
     <TouchableRipple
@@ -26,7 +27,7 @@ export const ButtonComponent = ({
       rippleColor={'rgba(18,146,180, 0.3)'}
       style={[
         Styling.groups.themeComponent(isDarkMode),
-        { width, fontSize, marginBottom, marginTop, borderColor, borderWidth, backgroundColor, lineHeight: 50 },
+        { width, fontSize, marginBottom, marginTop, borderColor, borderWidth, backgroundColor, lineHeight },
       ]}
       onPress={() => onPress()}>
       <Text
@@ -34,7 +35,7 @@ export const ButtonComponent = ({
           color,
           fontSize,
           textAlign,
-          lineHeight: 50,
+          lineHeight,
           paddingHorizontal: 5,
         }}>
         {icon?.length > 0 && <Icon name={icon} size={fontSize} color={color} />}

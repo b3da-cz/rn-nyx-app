@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { FAB, Portal } from 'react-native-paper'
-import { PostComponent } from '../component'
+import { BookmarkCategoriesDialog, PostComponent } from '../component'
 import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
 
 type Props = {
@@ -22,7 +22,9 @@ export class DiscussionView extends Component<Props> {
       posts: [],
       images: [],
       header: [],
+      bookmarkCategories: [],
       isBooked: null,
+      isCategoryPickerVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
       isSubmenuOpen: false,
@@ -207,11 +209,20 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
-  async bookmarkDiscussion() {
+  async bookmarkDiscussion(categoryId?) {
     const newIsBooked = !this.state.isBooked
+    if (newIsBooked && categoryId === undefined) {
+      if (!this.state.bookmarkCategories?.length) {
+        const bookmarksRes = await this.nyx.getBookmarks(false)
+        const categories = bookmarksRes?.bookmarks?.filter(c => c.category?.id > -2).map(c => c.category) || []
+        this.setState({ bookmarkCategories: categories })
+      }
+      this.setState({ isCategoryPickerVisible: true });
+      return
+    }
     this.setState({ isBooked: newIsBooked, isFetching: true })
-    await this.nyx.bookmarkDiscussion(this.props.id, newIsBooked)
-    this.setState({ isFetching: false })
+    await this.nyx.bookmarkDiscussion(this.props.id, newIsBooked, categoryId)
+    this.setState({ isFetching: false, isCategoryPickerVisible: false })
   }
 
   setHeaderVisible(isHeaderVisible) {
@@ -230,6 +241,12 @@ export class DiscussionView extends Component<Props> {
   render() {
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+        <BookmarkCategoriesDialog
+          isVisible={this.state.isCategoryPickerVisible}
+          categories={this.state.bookmarkCategories || []}
+          onCancel={() => this.setState({ isCategoryPickerVisible: false })}
+          onCategoryId={id => this.bookmarkDiscussion(id)}
+        />
         <Portal>
           <FAB.Group
             visible={this.state.isSubmenuVisible}
