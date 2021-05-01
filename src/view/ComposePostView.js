@@ -26,6 +26,10 @@ export class ComposePostView extends Component<Props> {
       isFetching: false,
       isKeyboardHidden: true,
       message: '',
+      msgBoxSelection: {
+        start: 0,
+        end: 0,
+      },
       searchPhrase: '',
       searchResults: [],
       username: '',
@@ -207,6 +211,8 @@ export class ComposePostView extends Component<Props> {
               numberOfLines={5}
               textAlignVertical={'top'}
               selectionColor={Styling.colors.primary}
+              selection={this.state.msgBoxSelection}
+              onSelectionChange={({ nativeEvent: { msgBoxSelection } }) => this.setState({ msgBoxSelection })}
               onChangeText={val => this.setState({ message: val })}
               value={`${message}`}
               placeholder={`${t('message')} ..`}
