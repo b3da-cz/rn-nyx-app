@@ -97,6 +97,9 @@ export class ComposePostView extends Component<Props> {
           isFetching: false,
           uploadedFiles: [...this.state.uploadedFiles, res],
         })
+        Bugfender.d('INFO', 'ComposePost: upload file ok')
+      } else {
+        Bugfender.w('WARNING', 'ComposePost: upload file not ok? ' + (res?.error ? res.error : ''))
       }
     } catch (e) {
       if (!DocumentPicker.isCancel(e)) {

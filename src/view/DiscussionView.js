@@ -217,7 +217,7 @@ export class DiscussionView extends Component<Props> {
         const categories = bookmarksRes?.bookmarks?.filter(c => c.category?.id > -2).map(c => c.category) || []
         this.setState({ bookmarkCategories: categories })
       }
-      this.setState({ isCategoryPickerVisible: true });
+      this.setState({ isCategoryPickerVisible: true })
       return
     }
     this.setState({ isBooked: newIsBooked, isFetching: true })

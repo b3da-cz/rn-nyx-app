@@ -51,7 +51,8 @@ const App: () => Node = () => {
       setConfirmationCode(null)
       setIsAuthenticated(false)
     }
-    Bugfender.d('Nnn', 'App: Nyx initialized for ' + username)
+    Bugfender.setDeviceString('@username', username)
+    Bugfender.d('INFO', 'App: Nyx initialized')
     setNyx(nyx)
     if (isAutologin) {
       setIsAuthenticated(res.isConfirmed)
