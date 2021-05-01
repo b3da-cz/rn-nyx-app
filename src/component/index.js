@@ -1,5 +1,6 @@
 export * from './BookmarkCategoriesDialog'
 export * from './ButtonComponent'
+export * from './ButtonSquareComponent'
 export * from './CodeBlockComponent'
 export * from './ConfirmationDialog'
 export * from './DiceComponent'

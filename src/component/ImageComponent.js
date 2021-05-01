@@ -4,15 +4,19 @@ import { TouchableRipple } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const ImageComponent = ({ src, backgroundColor, width, height, useExactSize, onPress }) => {
+  const [imgSrc, setImgSrc] = useState(src)
   const [imgWidth, setImgWidth] = useState(width)
   const [imgHeight, setImgHeight] = useState(height)
   useLayoutEffect(() => {
     try {
+      if (src.startsWith('/files/')) {
+        setImgSrc(`//nyx.cz${src}`)
+      }
       if (useExactSize) {
         setImgWidth(width)
         setImgHeight(height)
       } else {
-        Image.getSize(src, (w, h) => {
+        Image.getSize(imgSrc, (w, h) => {
           if (width && !height) {
             setImgHeight(h * (width / w))
           } else if (!width && height) {
@@ -24,11 +28,10 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
         })
       }
     } catch (e) {
-      // console.warn(e)
       setImgWidth(width)
       setImgHeight(width / 2.5)
     }
-  }, [height, src, useExactSize, width])
+  }, [height, imgSrc, src, useExactSize, width])
   return (
     <TouchableRipple rippleColor={'rgba(18,146,180, 0.3)'} onPress={() => onPress()}>
       <Image
@@ -42,7 +45,7 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
         // resizeMode={'cover'} for thumbs
         resizeMode={'contain'}
         // resizeMode={'center'}
-        source={{ uri: src }}
+        source={{ uri: imgSrc }}
       />
     </TouchableRipple>
   )

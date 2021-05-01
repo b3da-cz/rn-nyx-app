@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, Image, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { PostComponent, UserIconComponent } from '../component'
+import { PostComponent, RatingDetailComponent } from '../component'
 import { Context, parseNotificationsContent, Styling } from '../lib'
 
 type Props = {
@@ -47,13 +47,14 @@ export class NotificationsView extends Component<Props> {
   }
 
   onPostDelete() {
-    console.warn('nope, todo'); // TODO: remove
+    console.warn('nope, todo') // TODO: remove
   }
 
   renderItem(item) {
     const { replies, thumbs_up } = item.details
     return (
       <View
+        key={`${item.data.id}_container`}
         style={[
           Styling.groups.themeView(this.isDarkMode),
           { borderBottomWidth: 2, borderColor: Styling.colors.primary },
@@ -70,31 +71,15 @@ export class NotificationsView extends Component<Props> {
           onImage={image => this.showImages(image)}
           onDelete={postId => this.onPostDelete(postId)}
         />
-        {thumbs_up && thumbs_up.length > 0 && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              justifyContent: 'flex-start',
-              flexWrap: 'wrap',
-              minHeight: 25,
-              // maxHeight: 75,
-            }}>
-            <Icon
-              name={'thumbs-up'}
-              size={20}
-              color={this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
-              style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.medium }}
-            />
-            {thumbs_up.map(r => (
-              <UserIconComponent
-                key={`${r.username}${item.data.id}`}
-                username={r.username}
-                marginRight={2}
-                marginBottom={2}
-              />
-            ))}
-          </View>
+        {thumbs_up?.length > 0 && (
+          <RatingDetailComponent
+            postKey={item.data.id}
+            ratings={thumbs_up}
+            ratingWidth={32}
+            ratingHeight={40}
+            isDarkMode={this.props.isDarkMode}
+            isPositive={true}
+          />
         )}
         {replies && replies.length > 0 && replies.map(r => this.renderReply(r))}
       </View>
@@ -105,6 +90,7 @@ export class NotificationsView extends Component<Props> {
     return (
       <View style={{ flexDirection: 'row' }} key={`${post.id}${post.discussionId}`}>
         <TouchableRipple
+          key={post.id}
           disabled={false}
           onPress={() => this.showPost(post.discussion_id, post.id)}
           rippleColor={'rgba(18,146,180, 0.73)'}

@@ -4,7 +4,7 @@ import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
-import { confirm, RatingDetailComponent, UserIconComponent } from '../component'
+import { ButtonSquareComponent, confirm, RatingDetailComponent, UserIconComponent } from '../component'
 import { Nyx, Styling } from '../lib'
 
 type Props = {
@@ -113,26 +113,24 @@ export class PostHeaderComponent extends Component<Props> {
       <View>
         <Swipeable
           leftButtons={[
-            <TouchableOpacity
-              accessibilityRole="button"
+            <ButtonSquareComponent
+              key={`${post.id}_btn_reply`}
+              icon={'corner-down-right'}
               onPress={() => this.onReply()}
-              style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
-              <Icon name="corner-down-right" size={24} color={Styling.colors.lighter} />
-            </TouchableOpacity>,
-            <TouchableOpacity
-              accessibilityRole="button"
+            />,
+            <ButtonSquareComponent
+              key={`${post.id}_btn_share`}
+              icon={'share'}
               onPress={() => this.onShare()}
               onLongPress={() => this.onShare(true)}
-              style={[Styling.groups.squareBtn, { backgroundColor: Styling.colors.darker }]}>
-              <Icon name="share" size={24} color={Styling.colors.lighter} />
-            </TouchableOpacity>,
+            />,
             post.can_be_deleted && (
-              <TouchableOpacity
-                accessibilityRole="button"
+              <ButtonSquareComponent
+                key={`${post.id}_btn_delete`}
+                icon={'trash-2'}
+                color={'red'}
                 onPress={() => this.deletePost(post)}
-                style={[Styling.groups.squareBtn]}>
-                <Icon name="trash-2" size={24} color={Styling.colors.lighter} />
-              </TouchableOpacity>
+              />
             ),
           ]}
           leftButtonContainerStyle={{ alignItems: 'flex-end' }}
@@ -141,18 +139,18 @@ export class PostHeaderComponent extends Component<Props> {
           rightButtons={
             post.can_be_rated
               ? [
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    onPress={() => this.castVote(post, 1)}
-                    style={[Styling.groups.squareBtn, { backgroundColor: 'green' }]}>
-                    <Icon name="thumbs-up" size={24} color={Styling.colors.lighter} />
-                  </TouchableOpacity>,
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    onPress={() => this.castVote(post, -1)}
-                    style={[Styling.groups.squareBtn]}>
-                    <Icon name="thumbs-down" size={24} color={Styling.colors.lighter} />
-                  </TouchableOpacity>,
+                  <ButtonSquareComponent
+                    key={`${post.id}_btn_thumbs_up`}
+                    icon={'thumbs-up'}
+                    color={'green'}
+                    onPress={() => this.castVote(1)}
+                  />,
+                  <ButtonSquareComponent
+                    key={`${post.id}_btn_thumbs_down`}
+                    icon={'thumbs-down'}
+                    color={'red'}
+                    onPress={() => this.castVote(-1)}
+                  />,
                 ]
               : [<View />]
           }
@@ -175,10 +173,9 @@ export class PostHeaderComponent extends Component<Props> {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 paddingHorizontal: 5,
-                paddingBottom: 5,
-                paddingTop: 5,
+                paddingVertical: 5,
                 borderTopColor: Styling.colors.dark,
-                borderTopWidth: 1,
+                // borderTopWidth: 1,
                 // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
                 borderBottomColor: Styling.colors.accent,
                 borderBottomWidth: this.props.isUnread ? 1 : 0,
@@ -237,7 +234,7 @@ export class PostHeaderComponent extends Component<Props> {
                       textAlign: 'right',
                     },
                   ]}>
-                  {post.rating}
+                  {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
                 </Text>
               </TouchableRipple>
             </View>
@@ -262,6 +259,6 @@ export class PostHeaderComponent extends Component<Props> {
           />
         )}
       </View>
-    );
+    )
   }
 }

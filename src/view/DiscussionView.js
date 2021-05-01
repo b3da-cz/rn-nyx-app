@@ -255,11 +255,13 @@ export class DiscussionView extends Component<Props> {
             fabStyle={{ backgroundColor: Styling.colors.primary }}
             actions={[
               {
+                key: 'bookmark',
                 icon: 'bookmark',
                 label: this.state.isBooked ? 'unbook' : 'book',
                 onPress: () => this.bookmarkDiscussion(),
               },
               {
+                key: 'header',
                 icon: 'book',
                 label: this.state.isHeaderVisible ? 'hide header' : 'show header',
                 onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),

@@ -85,7 +85,7 @@ export class SearchView extends Component<Props> {
           <FlatList
             data={this.state.users}
             extraData={this.state}
-            keyExtractor={(item, index) => `${item.id}`}
+            keyExtractor={(item, index) => `${item.username}`}
             refreshing={this.state.isFetching}
             style={{
               height: '100%',

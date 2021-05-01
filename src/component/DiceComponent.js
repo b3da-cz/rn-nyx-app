@@ -6,7 +6,7 @@ import { Styling } from '../lib'
 
 export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls, canRoll, onRoll }) => {
   return (
-    <View style={{ borderColor: Styling.colors.darker, borderWidth: Styling.metrics.block.small }}>
+    <View style={Styling.groups.borderWithoutTop}>
       <Text
         style={{
           padding: Styling.metrics.block.medium,
@@ -22,7 +22,9 @@ export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls
             user={r.user}
             isDarkMode={isDarkMode}
             isPressable={false}
-            extraText={r.rolls?.toString()}
+            extraText={
+              r.rolls?.length > 0 ? `${r.rolls.toString()} [${r.rolls.reduce((a, b) => Number(a) + Number(b))}]` : null
+            }
             marginBottom={0}
             marginTop={Styling.metrics.block.small}
           />

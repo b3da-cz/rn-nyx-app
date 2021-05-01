@@ -6,6 +6,7 @@ import { TouchableRipple } from 'react-native-paper'
 import { UserIconComponent } from './UserIconComponent'
 
 export const RatingDetailComponent = ({
+  postKey,
   ratings,
   ratingWidth,
   ratingHeight,
@@ -37,13 +38,13 @@ export const RatingDetailComponent = ({
         }}>
         <Icon
           name={isPositive ? 'thumbs-up' : 'thumbs-down'}
-          size={ratingWidth}
+          size={ratingWidth / 1.25}
           color={isPositive ? 'green' : 'red'}
           style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
         />
         {ratings.map(r => (
           <UserIconComponent
-            key={`${r.username}${r.tag}`}
+            key={`${r.username}_${r.tag}_${postKey}`} //todo proper model
             username={r.username}
             width={ratingWidth}
             height={ratingHeight}

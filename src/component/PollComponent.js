@@ -29,7 +29,7 @@ export const PollComponent = ({
     }
   }
   return (
-    <View style={{ borderColor: Styling.colors.darker, borderWidth: Styling.metrics.block.small }}>
+    <View style={Styling.groups.borderWithoutTop}>
       <Text
         style={{
           padding: Styling.metrics.block.medium,

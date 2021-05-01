@@ -88,15 +88,19 @@ export const Styling = {
     squareBtn: {
       width: 50,
       height: 50,
-      backgroundColor: 'red',
+      backgroundColor: '#222',
       alignItems: 'center',
       justifyContent: 'center',
-      borderTopWidth: 1,
-      borderTopColor: '#444',
     },
     flexCentered: {
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    borderWithoutTop: {
+      borderColor: '#222',
+      borderLeftWidth: 5,
+      borderRightWidth: 5,
+      borderBottomWidth: 5,
     },
   },
 }
