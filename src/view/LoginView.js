@@ -127,6 +127,7 @@ export class LoginView extends Component<Props> {
                 marginTop: Styling.metrics.block.small,
                 marginHorizontal: Styling.metrics.block.small,
               }}
+              placeholder={t('username')}
               onChangeText={val => this.setState({ username: val })}
               value={`${username}`}
             />

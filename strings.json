@@ -8,7 +8,7 @@
     "en": "All"
   },
   "bookmarks": {
-    "cs": "Záložky",
+    "cs": "Sledované",
     "en": "Boomarks"
   },
   "confirm": {
@@ -80,7 +80,7 @@
         "en": "Login"
       },
       "message": {
-        "cs": "Otevří nyx.cz -> osobní nastavení -> autorizace -> zadej potvrzovací kód:",
+        "cs": "Otevři nyx.cz -> osobní nastavení -> autorizace -> zadej potvrzovací kód:",
         "en": "Open nyx.cz -> user settings -> authorization -> enter confirmation code:"
       }
     },

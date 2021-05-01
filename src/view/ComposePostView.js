@@ -206,13 +206,13 @@ export class ComposePostView extends Component<Props> {
           {searchResults.length === 0 && (
             <TextInput
               multiline={true}
-              numberOfLines={15}
+              numberOfLines={5}
               textAlignVertical={'top'}
               selectionColor={Styling.colors.primary}
               onChangeText={val => this.setState({ message: val })}
               value={`${message}`}
               placeholder={`${t('message')} ..`}
-              style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small }}
+              style={{ backgroundColor: Styling.colors.dark, marginHorizontal: Styling.metrics.block.small, marginBottom: 50 }}
             />
           )}
           <Picker

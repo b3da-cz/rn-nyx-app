@@ -206,8 +206,10 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         replyTo={route?.params?.replyTo}
         onSend={() => {
           navigation.goBack()
-          refs?.DiscussionView?.reloadDiscussionLatest(true)
-          refs?.MailView?.getLatestMessages()
+          setTimeout(() => {
+            refs?.DiscussionView?.reloadDiscussionLatest(true)
+            refs?.MailView?.getLatestMessages()
+          }, 300)
         }}
         onMount={() => navigation.setOptions({ title: isMailPost ? t('new.message') : `${t('new.post')}: ${title}` })}
       />

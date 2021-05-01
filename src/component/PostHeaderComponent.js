@@ -143,13 +143,13 @@ export class PostHeaderComponent extends Component<Props> {
                     key={`${post.id}_btn_thumbs_up`}
                     icon={'thumbs-up'}
                     color={'green'}
-                    onPress={() => this.castVote(1)}
+                    onPress={() => this.castVote(post, 1)}
                   />,
                   <ButtonSquareComponent
                     key={`${post.id}_btn_thumbs_down`}
                     icon={'thumbs-down'}
                     color={'red'}
-                    onPress={() => this.castVote(-1)}
+                    onPress={() => this.castVote(post, -1)}
                   />,
                 ]
               : [<View />]
