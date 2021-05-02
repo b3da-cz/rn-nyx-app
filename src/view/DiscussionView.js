@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
-import { FAB, Portal } from 'react-native-paper'
-import { BookmarkCategoriesDialog, PostComponent } from '../component'
+import { BookmarkCategoriesDialog, FabComponent, PostComponent } from '../component'
 import { Context, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
@@ -29,7 +28,6 @@ export class DiscussionView extends Component<Props> {
       isCategoryPickerVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
-      isSubmenuOpen: false,
       isFetching: false,
     }
     this.refScroll = null
@@ -278,38 +276,31 @@ export class DiscussionView extends Component<Props> {
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
         />
-        <Portal>
-          <FAB.Group
-            visible={this.state.isSubmenuVisible}
-            open={this.state.isSubmenuOpen}
-            icon={this.state.isSubmenuOpen ? 'email' : 'plus'}
-            fabStyle={{ backgroundColor: Styling.colors.primary }}
-            actions={[
-              {
-                key: 'bookmark',
-                icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
-                label: this.state.isBooked ? t('unbook') : t('book'),
-                onPress: () => this.bookmarkDiscussion(),
-              },
-              {
-                key: 'header',
-                icon: 'file-table-box',
-                label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
-                onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
-              },
-            ]}
-            onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
-            onPress={() => {
-              if (this.state.isSubmenuOpen) {
-                this.setState({ isSubmenuOpen: false })
-                this.props.navigation.push('composePost', {
-                  discussionId: this.props.id,
-                })
-              }
-            }}
-            style={{ marginBottom: 50 }}
-          />
-        </Portal>
+        <FabComponent
+          isVisible={this.state.isSubmenuVisible}
+          iconOpen={'email'}
+          actions={[
+            {
+              key: 'bookmark',
+              icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
+              label: this.state.isBooked ? t('unbook') : t('book'),
+              onPress: () => this.bookmarkDiscussion(),
+            },
+            {
+              key: 'header',
+              icon: 'file-table-box',
+              label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
+              onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
+            },
+          ]}
+          onPress={isOpen => {
+            if (isOpen) {
+              this.props.navigation.push('composePost', {
+                discussionId: this.props.id,
+              })
+            }
+          }}
+        />
         <FlatList
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}

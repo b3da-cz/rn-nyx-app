@@ -37,7 +37,7 @@ export class BookmarksView extends Component<Props> {
   async getBookmarks() {
     this.setState({ isFetching: true })
     const res = await this.nyx.getBookmarks()
-    if (res.bookmarks) {
+    if (res?.bookmarks?.length) {
       const reminderCount = res.reminder_count || 0
       const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
       this.setState({ reminderCount, sectionedBookmarks, isFetching: false })

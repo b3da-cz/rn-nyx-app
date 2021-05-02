@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
-import { Portal, FAB } from 'react-native-paper'
 import { Picker } from '@react-native-picker/picker'
-import { PostComponent } from '../component'
+import { FabComponent, PostComponent } from '../component'
 import { Context, getDistinctPosts, Styling, parsePostsContent, t } from '../lib'
 
 type Props = {
@@ -19,7 +18,6 @@ export class MailView extends Component<Props> {
       conversations: [],
       messages: [],
       isSubmenuVisible: false,
-      isSubmenuOpen: false,
       isFetching: false,
     }
     this.refScroll = null
@@ -61,7 +59,6 @@ export class MailView extends Component<Props> {
       messages: parsedMessages,
       reminders: parsedReminders,
       isFetching: false,
-      isSubmenuOpen: false,
       activeRecipient: this.state.activeRecipient === 'reminders' ? 'all' : this.state.activeRecipient,
     })
   }
@@ -116,7 +113,7 @@ export class MailView extends Component<Props> {
   }
 
   onPostDelete() {
-    console.warn('todo'); // TODO: remove
+    console.warn('todo') // TODO: remove
   }
 
   getPickerItemColor(val, hasUnreadMail) {
@@ -186,37 +183,32 @@ export class MailView extends Component<Props> {
           onEndReachedThreshold={0.01}
           renderItem={({ item }) => this.renderMessage(item)}
         />
-        <Portal>
-          <FAB.Group
-            visible={this.state.isSubmenuVisible}
-            open={this.state.isSubmenuOpen}
-            icon={this.state.activeRecipient === 'reminders' ? 'close' : !this.state.isSubmenuOpen ? 'plus' : 'email'}
-            fabStyle={{ backgroundColor: Styling.colors.secondary }}
-            actions={
-              this.state.activeRecipient === 'reminders'
-                ? []
-                : [
-                    {
-                      icon: 'bell',
-                      label: t('reminders.title'),
-                      onPress: () => this.getReminders(),
-                    },
-                  ]
+        <FabComponent
+          isVisible={this.state.isSubmenuVisible}
+          iconOpen={'email'}
+          backgroundColor={Styling.colors.secondary}
+          actions={
+            this.state.activeRecipient === 'reminders'
+              ? []
+              : [
+                  {
+                    icon: 'bell',
+                    label: 'aa',
+                    onPress: () => this.getReminders(),
+                  },
+                ]
+          }
+          onPress={isOpen => {
+            if (isOpen) {
+              this.props.navigation.push('composePost', {
+                isMailPost: true,
+                username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',
+              })
+            } else if (!isOpen && this.state.activeRecipient === 'reminders') {
+              this.getLatestMessages() // todo push new view for reminders
             }
-            onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
-            onPress={() => {
-              if (this.state.isSubmenuOpen) {
-                this.props.navigation.push('composePost', {
-                  isMailPost: true,
-                  username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',
-                })
-              } else if (!this.state.isSubmenuOpen && this.state.activeRecipient === 'reminders') {
-                this.getLatestMessages()
-              }
-            }}
-            style={{ marginBottom: 50 }}
-          />
-        </Portal>
+          }}
+        />
       </View>
     )
   }

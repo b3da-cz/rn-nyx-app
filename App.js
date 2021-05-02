@@ -2,9 +2,9 @@
  * @format
  * @flow
  */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Node } from 'react'
-import { LogBox, Modal } from 'react-native'
+import { Linking, LogBox, Modal } from 'react-native'
 import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
@@ -37,6 +37,14 @@ const App: () => Node = () => {
   const refs = {}
   // const theme = useColorScheme()
   const theme = 'dark'
+
+  useEffect(() => {
+    return () => {
+      console.warn('App unmount') // TODO: remove
+      Linking.removeAllListeners('url')
+    }
+  })
+
   const initNyx = async (username?, isAutologin = true) => {
     if (!username) {
       const auth = await Storage.getAuth()
@@ -95,6 +103,12 @@ const App: () => Node = () => {
     setTimeout(() => {
       RNBootSplash.hide({ fade: true })
     }, 500)
+    const handleDeepLinks = async () => {
+      const initialUrl = await Linking.getInitialURL()
+      Linking.addEventListener('url', ({ url }) => console.warn(url))
+      // console.warn('initialUrl', initialUrl) // todo pass to messagebox
+    }
+    handleDeepLinks()
   }
   if (!config.isLoaded) {
     init()
