@@ -25,3 +25,9 @@ export const getDistinctPosts = (posts, oldPosts) => {
   // console.warn('posts len', newPosts.length); // TODO: remove
   return newPosts
 }
+
+export const wait = async (ms = 100) => {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(), ms)
+  })
+}

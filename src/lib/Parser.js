@@ -189,13 +189,13 @@ export class Parser {
         }
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
         const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
-        this.clearText += `${img.src.startsWith('/files/') ? '//nyx.cz' : ''}${img.url}`
+        this.clearText += `${img.src.startsWith('/files/') ? 'https://nyx.cz' : ''}${img.url}`
       }
     })
   }

@@ -52,7 +52,7 @@ export class PostHeaderComponent extends Component<Props> {
       } else {
         Share.open({
           title: 'Link',
-          message: `//nyx.cz/discussion/${this.props.post.discussion_id}/id/${this.props.post.id}`,
+          message: `https://nyx.cz/discussion/${this.props.post.discussion_id}/id/${this.props.post.id}`,
         })
       }
       setTimeout(() => this.refSwipeable.recenter(), 300)

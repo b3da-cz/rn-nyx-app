@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { FAB, Portal } from 'react-native-paper'
 import { BookmarkCategoriesDialog, PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, t } from '../lib'
+import { Context, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   navigation: any,
@@ -99,26 +99,23 @@ export class DiscussionView extends Component<Props> {
   }
 
   async jumpToPost(discussionId, postId) {
-    let post = this.getStoredPostById(postId)
-    if (!post) {
+    let postIndex = this.getPostIndexById(this.state.lastSeenPostId)
+    if (postIndex === undefined) {
       if (this.state.discussionId !== discussionId) {
         this.setState({ discussionId })
       }
       const queryString = `${discussionId}?order=older_than&from_id=${Number(postId) + 1}`
       await this.fetchDiscussion(queryString)
-      post = this.getStoredPostById(postId)
+      await wait(200)
+      postIndex = this.getPostIndexById(postId)
     }
-    this.scrollToPost(post)
+    this.scrollToPost(postIndex)
   }
 
   async jumpToLastSeen() {
-    let post = this.getStoredPostById(this.state.lastSeenPostId)
-    if (!post) {
-      const queryString = `${this.state.discussionId}?order=older_than&from_id=${Number(post.id) + 1}`
-      await this.fetchDiscussion(queryString)
-      post = this.getStoredPostById(this.state.lastSeenPostId)
-    }
-    this.scrollToPost(post)
+    await wait(200)
+    const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
+    this.scrollToPost(postIndex, true)
   }
 
   async fetchDiscussion(idOrQueryString) {
@@ -156,16 +153,23 @@ export class DiscussionView extends Component<Props> {
     return this.state?.posts?.filter(p => p.id == postId)[0]
   }
 
-  scrollToPost(post, animated = false) {
+  getPostIndexById(postId) {
+    let index = 0
+    for (const p of this.state.posts) {
+      if (p.id == postId) {
+        return index
+      }
+      index++
+    }
+  }
+
+  scrollToPost(postIndex, animated = false) {
     try {
-      if (post) {
+      if (postIndex > 1) {
         setTimeout(() => {
-          this.refScroll.scrollToItem({
-            item: post,
-            animated,
-          })
+          this.refScroll.scrollToIndex({ index: postIndex, viewPosition: 0.1, animated })
           this.setState({ isFetching: false })
-        }, 300) // todo .. get onListUpdated
+        }, 200)
       }
     } catch (e) {
       console.warn(e)
@@ -177,6 +181,12 @@ export class DiscussionView extends Component<Props> {
       index: 0,
       animated,
     })
+  }
+
+  onScrollToIndexFailed(error) {
+    const offset = error.averageItemLength * error.highestMeasuredFrameIndex
+    this.refScroll.scrollToOffset({ offset })
+    setTimeout(() => this.refScroll.scrollToIndex({ index: error.index }), 200)
   }
 
   showPost(discussionId, postId) {
@@ -318,6 +328,8 @@ export class DiscussionView extends Component<Props> {
             this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
           }
           // getItemLayout={} // todo calc item height in Parser?
+          initialNumToRender={30}
+          onScrollToIndexFailed={error => this.onScrollToIndexFailed(error)}
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}
