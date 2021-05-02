@@ -9,6 +9,7 @@ type Props = {
   id: number,
   postId?: number,
   showHeader?: boolean,
+  jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
 }
@@ -23,6 +24,7 @@ export class DiscussionView extends Component<Props> {
       images: [],
       header: [],
       bookmarkCategories: [],
+      lastSeenPostId: null,
       isBooked: null,
       isCategoryPickerVisible: false,
       isHeaderVisible: false,
@@ -51,6 +53,9 @@ export class DiscussionView extends Component<Props> {
       this.reloadDiscussionLatest().then(() => {
         if (this.props.showHeader) {
           this.setHeaderVisible(true)
+        }
+        if (this.props.jumpToLastSeen) {
+          this.jumpToLastSeen()
         }
       })
     }
@@ -106,6 +111,16 @@ export class DiscussionView extends Component<Props> {
     this.scrollToPost(post)
   }
 
+  async jumpToLastSeen() {
+    let post = this.getStoredPostById(this.state.lastSeenPostId)
+    if (!post) {
+      const queryString = `${this.state.discussionId}?order=older_than&from_id=${Number(post.id) + 1}`
+      await this.fetchDiscussion(queryString)
+      post = this.getStoredPostById(this.state.lastSeenPostId)
+    }
+    this.scrollToPost(post)
+  }
+
   async fetchDiscussion(idOrQueryString) {
     // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
@@ -119,7 +134,8 @@ export class DiscussionView extends Component<Props> {
     if (header?.length > 0) {
       header = parsePostsContent(header)
     }
-    const uploadedFiles = res?.discussion_common.waiting_files || []
+    const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
+    const uploadedFiles = res?.discussion_common?.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
@@ -127,6 +143,7 @@ export class DiscussionView extends Component<Props> {
       images,
       isBooked,
       header,
+      lastSeenPostId,
       posts: parsedPosts,
       isFetching: false,
     })

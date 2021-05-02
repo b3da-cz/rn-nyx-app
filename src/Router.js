@@ -119,7 +119,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
   const discussionOptions = { headerShown: true, title: '' }
 
   const Discussion = ({ navigation, route }) => {
-    const { discussionId, postId, showHeader } = route.params
+    const { discussionId, postId, showHeader, jumpToLastSeen } = route.params
     return (
       <DiscussionView
         ref={r => setRef('DiscussionView', r)}
@@ -127,7 +127,8 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         id={discussionId}
         postId={postId}
         showHeader={showHeader}
-        onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })}
+        jumpToLastSeen={jumpToLastSeen}
+        onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
         onImages={(images, i) => showImages(navigation, images, i)}
       />
     )
@@ -145,14 +146,14 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
   const Bookmarks = ({ navigation }) => (
     <BookmarksView
       navigation={navigation}
-      onDetailShow={discussionId => navigation.push('discussion', { discussionId })}
+      onDetailShow={discussionId => navigation.push('discussion', { discussionId, jumpToLastSeen: true })}
     />
   )
 
   const History = ({ navigation }) => (
     <HistoryView
       navigation={navigation}
-      onDetailShow={discussionId => navigation.push('discussion', { discussionId })}
+      onDetailShow={discussionId => navigation.push('discussion', { discussionId, jumpToLastSeen: true })}
     />
   )
 
@@ -188,13 +189,10 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
     const isMailPost = route?.params?.isMailPost
     const discussionId = isMailPost ? null : route.params.discussionId
     const postId = isMailPost ? null : route.params.postId
-    let title = isMailPost ? route.params.username : ''
     const discussion = isMailPost
       ? null
       : nyx.store.discussions.filter(d => Number(d.discussion_id) === Number(discussionId))[0]
-    if (discussion) {
-      title = discussion?.full_name
-    }
+    const title = isMailPost ? route.params.username : discussion?.full_name || ''
     const uploadedFiles = isMailPost ? [] : discussion?.detail?.discussion_common?.waiting_files
     return (
       <ComposePostView
@@ -265,6 +263,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         initialRouteName={config.initialRouteName}
         tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
         lazy={true}
+        options={{ cardStyle: { backgroundColor: '#000' } }}
         tabBarOptions={NavOptions.tabBarOptions}>
         {config.isHistoryEnabled && (
           <Tab.Screen
