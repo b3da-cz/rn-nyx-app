@@ -145,6 +145,10 @@
     "cs": "Záhlaví",
     "en": "Header"
   },
+  "share": {
+    "cs": "Sdílet",
+    "en": "Share"
+  },
   "show": {
     "cs": "Zobrazit",
     "en": "Show"

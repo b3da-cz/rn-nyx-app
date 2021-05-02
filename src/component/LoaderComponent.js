@@ -13,6 +13,7 @@ export const LoaderComponent = ({
   color = Styling.colors.primary,
   backgroundColor = Styling.colors.black,
   fontSize = Styling.metrics.fontSize.xlarge,
+  marginBottomSpinner = 0,
   marginBottom = 0,
   marginTop = 0,
   borderColor = Styling.colors.secondary,
@@ -37,7 +38,7 @@ export const LoaderComponent = ({
           zIndex: 1,
         },
       ]}>
-      <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: 100 }} />
+      <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: marginBottomSpinner }} />
       {(label?.length > 0 || icon?.length > 0) && (
         <Text
           style={{
