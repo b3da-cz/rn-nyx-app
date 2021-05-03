@@ -1,3 +1,8 @@
+import React, { FC } from 'react'
+import { Portal } from 'react-native-paper'
+import DocumentPicker from 'react-native-document-picker'
+import ImageResizer from 'react-native-image-resizer'
+
 export const generateUuidV4 = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0,
@@ -30,4 +35,36 @@ export const wait = async (ms = 100) => {
   return new Promise(resolve => {
     setTimeout(() => resolve(), ms)
   })
+}
+
+// fixes TextInput wild behavior inside Portal
+export const withPortal = <P>(Component: FC<P>) => (props: P) => (
+  <Portal>
+    <Component {...props} />
+  </Portal>
+)
+
+export const pickFileAndResizeJpegs = async size => {
+  try {
+    const file = await DocumentPicker.pick({
+      type: [DocumentPicker.types.images],
+    })
+    // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
+    let resized = null
+    if (file.type === 'image/jpeg' && size !== 'Original') {
+      resized = await ImageResizer.createResizedImage(file.uri, size, size, 'JPEG', 80, undefined, undefined, false, {
+        onlyScaleDown: true,
+      })
+      // console.warn(`resized ${Math.floor(resized.size / 1024)}Kb`) // TODO: remove
+    }
+    return {
+      uri: resized ? resized.uri : file.uri,
+      type: file.type,
+      name: file.name,
+    }
+  } catch (e) {
+    if (!DocumentPicker.isCancel(e)) {
+      console.warn(e)
+    }
+  }
 }

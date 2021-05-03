@@ -6,7 +6,7 @@ import { Styling } from '../lib'
 
 export const FabComponent = ({
   isVisible,
-  actions,
+  actions = [],
   iconOpen,
   iconClosed = 'plus',
   backgroundColor = Styling.colors.primary,

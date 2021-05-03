@@ -8,7 +8,7 @@ export const UserRowComponent = ({
   user,
   isDarkMode,
   extraText,
-  marginBottom = Styling.metrics.block.small,
+  marginBottom = Styling.metrics.block.xsmall,
   marginTop = 0,
   isPressable = true,
   onPress,

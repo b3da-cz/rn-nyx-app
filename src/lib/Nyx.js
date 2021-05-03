@@ -194,6 +194,23 @@ export class Nyx {
     return null
   }
 
+  async getWaitingFiles(discussionId?) {
+    try {
+      const res = await fetch(
+        `https://nyx.cz/api/${!discussionId ? 'mail' : `discussion/${discussionId}`}/waiting_files`,
+        {
+          method: 'GET',
+          referrerPolicy: 'no-referrer',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
+      return res
+    } catch (e) {
+      this.logError('get waiting files', e)
+    }
+    return null
+  }
+
   async getNotifications() {
     try {
       const res = await fetch('https://nyx.cz/api/notifications', {

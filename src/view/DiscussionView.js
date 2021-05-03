@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
-import { BookmarkCategoriesDialog, FabComponent, PostComponent } from '../component'
+import { Portal } from 'react-native-paper'
+import { BookmarkCategoriesDialog, FabComponent, MessageBoxDialog, PostComponent } from '../component'
 import { Context, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
@@ -28,9 +29,11 @@ export class DiscussionView extends Component<Props> {
       isCategoryPickerVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
+      isMsgBtnVisible: false,
       isFetching: false,
     }
     this.refScroll = null
+    this.refMsgBoxDialog = null
     this.navFocusListener = null
     this.navBlurListener = null
   }
@@ -39,10 +42,10 @@ export class DiscussionView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false })
+      this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
     this.setFocusOnStart()
     if (this.props.postId > 0) {
@@ -69,7 +72,8 @@ export class DiscussionView extends Component<Props> {
   }
 
   setFocusOnStart() {
-    this.setState({ isSubmenuVisible: this.props.navigation.isFocused() })
+    const isFocused = this.props.navigation.isFocused()
+    this.setState({ isSubmenuVisible: isFocused, isMsgBtnVisible: isFocused })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -203,11 +207,15 @@ export class DiscussionView extends Component<Props> {
   }
 
   onReply(discussionId, postId, username) {
-    this.props.navigation.push('composePost', {
-      discussionId,
-      postId,
-      replyTo: username,
-    })
+    const msg = this.refMsgBoxDialog?.state?.message || ''
+    this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
+    this.refMsgBoxDialog?.showDialog()
+
+    // this.props.navigation.push('composePost', {
+    //   discussionId,
+    //   postId,
+    //   replyTo: username,
+    // })
   }
 
   onVoteCast(updatedPost) {
@@ -276,31 +284,32 @@ export class DiscussionView extends Component<Props> {
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
         />
-        <FabComponent
-          isVisible={this.state.isSubmenuVisible}
-          iconOpen={'email'}
-          actions={[
-            {
-              key: 'bookmark',
-              icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
-              label: this.state.isBooked ? t('unbook') : t('book'),
-              onPress: () => this.bookmarkDiscussion(),
-            },
-            {
-              key: 'header',
-              icon: 'file-table-box',
-              label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
-              onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
-            },
-          ]}
-          onPress={isOpen => {
-            if (isOpen) {
-              this.props.navigation.push('composePost', {
-                discussionId: this.props.id,
-              })
-            }
-          }}
-        />
+        {/*todo topic actions*/}
+        {/*<FabComponent*/}
+        {/*  isVisible={this.state.isSubmenuVisible}*/}
+        {/*  iconOpen={'email'}*/}
+        {/*  actions={[*/}
+        {/*    {*/}
+        {/*      key: 'bookmark',*/}
+        {/*      icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',*/}
+        {/*      label: this.state.isBooked ? t('unbook') : t('book'),*/}
+        {/*      onPress: () => this.bookmarkDiscussion(),*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      key: 'header',*/}
+        {/*      icon: 'file-table-box',*/}
+        {/*      label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,*/}
+        {/*      onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),*/}
+        {/*    },*/}
+        {/*  ]}*/}
+        {/*  onPress={isOpen => {*/}
+        {/*    if (isOpen) {*/}
+        {/*      this.props.navigation.push('composePost', {*/}
+        {/*        discussionId: this.props.id,*/}
+        {/*      })*/}
+        {/*    }*/}
+        {/*  }}*/}
+        {/*/>*/}
         <FlatList
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
@@ -340,6 +349,16 @@ export class DiscussionView extends Component<Props> {
             />
           )}
         />
+        {/*(todo avoid Portal if possible, esp. with TextInput child)*/}
+        {/*<Portal>*/}
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ discussionId: this.props.id }}
+          isVisible={this.state.isMsgBtnVisible}
+          onSend={() => this.reloadDiscussionLatest(true)}
+        />
+        {/*</Portal>*/}
       </View>
     )
   }

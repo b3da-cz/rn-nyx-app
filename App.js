@@ -40,7 +40,6 @@ const App: () => Node = () => {
 
   useEffect(() => {
     return () => {
-      console.warn('App unmount') // TODO: remove
       Linking.removeAllListeners('url')
     }
   })

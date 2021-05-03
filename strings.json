@@ -129,6 +129,10 @@
     "cs": "Přiložit soubor",
     "en": "Append file"
   },
+  "jpegSize": {
+    "cs": "Velikost jpg",
+    "en": "Jpg size"
+  },
   "send": {
     "cs": "Odeslat",
     "en": "Send"
