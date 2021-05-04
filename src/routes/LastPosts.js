@@ -3,7 +3,7 @@ import { LastPostsView } from '../view'
 
 export const LastPosts = ({ navigation }) => (
   <LastPostsView
+    navigation={navigation}
     onImages={(images, imgIndex) => navigation.navigate('gallery', { images, imgIndex })}
-    onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
   />
 )

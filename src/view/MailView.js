@@ -25,6 +25,7 @@ export class MailView extends Component<Props> {
     this.refScroll = null
     this.navFocusListener = null
     this.navBlurListener = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
@@ -36,6 +37,12 @@ export class MailView extends Component<Props> {
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getLatestMessages()
+      }
+    })
     setTimeout(() => this.getLatestMessages(), 100)
   }
 
@@ -45,6 +52,9 @@ export class MailView extends Component<Props> {
     }
     if (this.navBlurListener) {
       this.navBlurListener()
+    }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
     }
   }
 

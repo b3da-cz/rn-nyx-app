@@ -4,8 +4,8 @@ import { PostComponent } from '../component'
 import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
 
 type Props = {
+  navigation: any,
   onImages: Function,
-  onNavigation: Function,
 }
 export class LastPostsView extends Component<Props> {
   static contextType = Context
@@ -16,12 +16,25 @@ export class LastPostsView extends Component<Props> {
       images: [],
       isFetching: false,
     }
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getLastPosts()
+      }
+    })
     this.getLastPosts()
+  }
+
+  componentWillUnmount() {
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   async getLastPosts() {
@@ -64,8 +77,10 @@ export class LastPostsView extends Component<Props> {
             isDarkMode={this.isDarkMode}
             isHeaderInteractive={false}
             isHeaderPressable={true}
-            onHeaderPress={(discussionId, postId) => this.props.onNavigation({ discussionId, postId })}
-            onDiscussionDetailShow={(discussionId, postId) => this.props.onNavigation({ discussionId, postId })}
+            onHeaderPress={(discussionId, postId) => this.props.navigation.push('discussion', { discussionId, postId })}
+            onDiscussionDetailShow={(discussionId, postId) =>
+              this.props.navigation.push('discussion', { discussionId, postId })
+            }
             onImage={image => this.showImages(image)}
             onDelete={() => null}
           />
