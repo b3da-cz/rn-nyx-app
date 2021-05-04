@@ -10,16 +10,17 @@ import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling, NavOptions, subscribeFCM, t } from './lib'
 import {
-  BookmarksView,
-  HistoryView,
+  BookmarksStackContainer,
+  HistoryStackContainer,
+  LastPostsStackContainer,
+  MailStackContainer,
+  NotificationsStackContainer,
+  SearchStackContainer,
+} from './routes'
+import {
   ImageModal,
-  MailView,
-  DiscussionView,
   ComposePostView,
-  NotificationsView,
-  LastPostsView,
   ProfileView,
-  SearchView,
 } from './view'
 
 export const Router = ({ config, nyx, refs, onConfigReload }) => {
@@ -94,14 +95,6 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
     }
   })
 
-  const setRef = (component, ref) => {
-    refs[component] = ref
-  }
-
-  const showImages = (navigation, images, imgIndex) => {
-    navigation.navigate('gallery', { images, imgIndex })
-  }
-
   const checkNotifications = () => {
     if (nyx?.store?.context?.user?.notifications_unread !== notificationsUnread) {
       setNotificationsUnread(nyx.store.context.user.notifications_unread)
@@ -109,76 +102,7 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
   }
 
   const RootStack = createStackNavigator()
-  const NotificationsStack = createStackNavigator()
-  const BookmarksStack = createStackNavigator()
-  const HistoryStack = createStackNavigator()
-  const SearchStack = createStackNavigator()
-  const LastPostsStack = createStackNavigator()
-  const MailStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
-  const discussionOptions = { headerShown: true, title: '' }
-
-  const Discussion = ({ navigation, route }) => {
-    const { discussionId, postId, showHeader, jumpToLastSeen } = route.params
-    return (
-      <DiscussionView
-        ref={r => setRef('DiscussionView', r)}
-        navigation={navigation}
-        id={discussionId}
-        postId={postId}
-        showHeader={showHeader}
-        jumpToLastSeen={jumpToLastSeen}
-        onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
-        onImages={(images, i) => showImages(navigation, images, i)}
-        // onHeaderSwipe={isSwiping => navigation.setOptions({ gestureEnabled: !isSwiping })}
-        // onHeaderSwipe={isSwiping => setNavGesturesEnabled(isSwiping)}
-      />
-    )
-  }
-
-  const Mail = ({ navigation }) => (
-    <MailView
-      ref={r => setRef('MailView', r)}
-      navigation={navigation}
-      onImages={(images, i) => showImages(navigation, images, i)}
-      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
-    />
-  )
-
-  const Bookmarks = ({ navigation }) => (
-    <BookmarksView
-      navigation={navigation}
-      onDetailShow={discussionId => navigation.push('discussion', { discussionId, jumpToLastSeen: true })}
-    />
-  )
-
-  const History = ({ navigation }) => (
-    <HistoryView
-      navigation={navigation}
-      onDetailShow={discussionId => navigation.push('discussion', { discussionId, jumpToLastSeen: true })}
-    />
-  )
-
-  const Notifications = ({ navigation }) => (
-    <NotificationsView
-      onImages={(images, i) => showImages(navigation, images, i)}
-      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
-    />
-  )
-
-  const LastPosts = ({ navigation }) => (
-    <LastPostsView
-      onImages={(images, i) => showImages(navigation, images, i)}
-      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
-    />
-  )
-
-  const Search = ({ navigation }) => (
-    <SearchView
-      onNavigation={({ discussionId, postId }) => navigation.push('discussion', { discussionId, postId })}
-      onUserSelected={username => navigation.push('composePost', { isMailPost: true, username })}
-    />
-  )
 
   const Profile = ({ navigation }) => <ProfileView config={config} onConfigChange={() => onConfigReload()} />
 
@@ -215,48 +139,6 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
       />
     )
   }
-
-  const NotificationsStackContainer = ({ navigation, route }) => (
-    <NotificationsStack.Navigator initialRouteName={'notifications'} screenOptions={NavOptions.screenOptions}>
-      <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false }} />
-      <NotificationsStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </NotificationsStack.Navigator>
-  )
-
-  const BookmarksStackContainer = ({ navigation, route }) => (
-    <BookmarksStack.Navigator initialRouteName={'bookmarks'} screenOptions={NavOptions.screenOptions}>
-      <BookmarksStack.Screen name={'bookmarks'} component={Bookmarks} options={{ headerShown: false }} />
-      <BookmarksStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </BookmarksStack.Navigator>
-  )
-
-  const HistoryStackContainer = ({ navigation, route }) => (
-    <HistoryStack.Navigator initialRouteName={'history'} screenOptions={NavOptions.screenOptions}>
-      <HistoryStack.Screen name={'history'} component={History} options={{ headerShown: false }} />
-      <HistoryStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </HistoryStack.Navigator>
-  )
-
-  const MailStackContainer = ({ navigation, route }) => (
-    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions}>
-      <MailStack.Screen name={'mail'} component={Mail} options={{ headerShown: false }} />
-      <MailStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </MailStack.Navigator>
-  )
-
-  const LastPostsStackContainer = ({ navigation, route }) => (
-    <LastPostsStack.Navigator initialRouteName={'last'} screenOptions={NavOptions.screenOptions}>
-      <LastPostsStack.Screen name={'last'} component={LastPosts} options={{ headerShown: false }} />
-      <LastPostsStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </LastPostsStack.Navigator>
-  )
-
-  const SearchStackContainer = ({ navigation, route }) => (
-    <SearchStack.Navigator initialRouteName={'search'} screenOptions={NavOptions.screenOptions}>
-      <SearchStack.Screen name={'search'} component={Search} options={{ headerShown: false }} />
-      <SearchStack.Screen name={'discussion'} component={Discussion} options={discussionOptions} />
-    </SearchStack.Navigator>
-  )
 
   const TabContainer = ({ navigation }) => {
     nav = navigation
