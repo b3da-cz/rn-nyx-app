@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { ScrollView, Switch, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
-import { ButtonComponent, confirm, UserIconComponent } from '../component'
+import {ButtonComponent, confirm, FormRowToggleComponent, MessageBoxDialog, UserIconComponent} from '../component';
 import { Context, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
@@ -132,67 +132,31 @@ export class ProfileView extends Component<Props> {
             </Text>
           </View>
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
-            {t('profile.tabsOnBottom')}
-          </Text>
-          <Switch
-            thumbColor={this.state.isBottomTabs ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setBottomTabs(val)}
-            value={this.state.isBottomTabs}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
-            {t('profile.navGestures')}
-          </Text>
-          <Switch
-            thumbColor={this.state.isNavGesturesEnabled ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setNavGesturesEnabled(val)}
-            value={this.state.isNavGesturesEnabled}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('bookmarks')}</Text>
-          <Switch
-            thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setBookmarksEnabled(val)}
-            value={this.state.isBookmarksEnabled}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('history')}</Text>
-          <Switch
-            thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setHistoryEnabled(val)}
-            value={this.state.isHistoryEnabled}
-          />
-        </View>
-        <View>
+        <FormRowToggleComponent
+          label={t('profile.tabsOnBottom')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isBottomTabs}
+          onChange={val => this.setBottomTabs(val)}
+        />
+        <FormRowToggleComponent
+          label={t('profile.navGestures')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isNavGesturesEnabled}
+          onChange={val => this.setNavGesturesEnabled(val)}
+        />
+        <FormRowToggleComponent
+          label={t('bookmarks')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isBookmarksEnabled}
+          onChange={val => this.setBookmarksEnabled(val)}
+        />
+        <FormRowToggleComponent
+          label={t('history')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isHistoryEnabled}
+          onChange={val => this.setHistoryEnabled(val)}
+        />
+        <View style={{ marginTop: 10 }}>
           <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('profile.initialView')}</Text>
           <Picker
             mode={'dropdown'}
@@ -246,6 +210,16 @@ export class ProfileView extends Component<Props> {
           marginBottom={Styling.metrics.block.small}
           isDarkMode={this.isDarkMode}
           onPress={() => this.logout()}
+        />
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ isGitIssue: true }}
+          fabBackgroundColor={Styling.colors.secondary}
+          fabIcon={'github'}
+          fabTopPosition={0}
+          isVisible={true}
+          onSend={() => null}
         />
       </ScrollView>
     )

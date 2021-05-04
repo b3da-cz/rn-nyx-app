@@ -141,6 +141,10 @@
     "cs": "Odeslat",
     "en": "Send"
   },
+  "title": {
+    "cs": "Název",
+    "en": "Title"
+  },
   "message": {
     "cs": "Zpráva",
     "en": "Message"

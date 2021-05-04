@@ -3,14 +3,15 @@ import { ActivityIndicator, Text, View, ScrollView, Image } from 'react-native'
 import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { createIssue, pickFileAndResizeJpegs, Styling, t } from '../lib'
 
 type Props = {
   nyx: any,
   isVisible: boolean,
-  params: { discussionId: number, mailRecipient: string },
+  params: { discussionId: number, mailRecipient: string, isGitIssue: boolean },
   fabBackgroundColor?: string,
   fabBottomPosition?: number,
+  fabTopPosition?: number,
   fabIcon?: string,
   onSend: Function,
 }
@@ -23,6 +24,7 @@ export class MessageBoxDialog extends Component<Props> {
       isFetching: false,
       isUploading: false,
       isMenuVisible: false,
+      issueTitle: '',
       selectedSize: 'Original',
       message: '',
       msgBoxSelection: { start: 0, end: 0 },
@@ -136,10 +138,13 @@ export class MessageBoxDialog extends Component<Props> {
     let res
     if (this.props.params.discussionId > 0) {
       res = await this.props.nyx.postToDiscussion(this.props.params.discussionId, this.state.message)
-    } else {
+    } else if (this.state.selectedRecipient?.length > 0) {
       res = await this.props.nyx.sendPrivateMessage(this.state.selectedRecipient, this.state.message)
+    } else if (this.props.params.isGitIssue) {
+      res = await createIssue(this.state.issueTitle, this.state.message)
+      this.setState({ isFetching: false })
     }
-    if (res.error) {
+    if (!res || res?.error) {
       console.warn(res)
       return
     }
@@ -155,6 +160,7 @@ export class MessageBoxDialog extends Component<Props> {
       isFetching,
       isMenuVisible,
       isUploading,
+      issueTitle,
       message,
       searchPhrase,
       selectedRecipient,
@@ -170,7 +176,23 @@ export class MessageBoxDialog extends Component<Props> {
           style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
           <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 5, paddingBottom: 0 }}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>
-              {!params?.discussionId && (
+              {!!params?.isGitIssue && (
+                <TextInput
+                  numberOfLines={1}
+                  textAlignVertical={'center'}
+                  selectionColor={Styling.colors.primary}
+                  onChangeText={val => this.setState({ issueTitle: val })}
+                  value={`${issueTitle}`}
+                  placeholder={selectedRecipient || `${t('title')} ..`}
+                  style={{
+                    backgroundColor: Styling.colors.dark,
+                    marginBottom: -2,
+                    zIndex: 1,
+                    height: 42,
+                  }}
+                />
+              )}
+              {!params?.discussionId && !params.isGitIssue && (
                 <View>
                   <TextInput
                     numberOfLines={1}
@@ -277,25 +299,35 @@ export class MessageBoxDialog extends Component<Props> {
             )}
             <View
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
-                <IconButton
-                  icon={'unfold-more-horizontal'}
-                  onPress={() => this.setState({ areDetailsShown: !areDetailsShown })}
-                  rippleColor={'rgba(18,146,180, 0.3)'}
-                />
-                {isUploading ? (
-                  <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginRight: 12 }} />
-                ) : (
-                  <View>
-                    {uploadedFiles.length > 0 && <Badge style={{ position: 'absolute' }}>{uploadedFiles.length}</Badge>}
-                    <IconButton
-                      icon={'image'}
-                      onPress={() => this.appendFile()}
-                      rippleColor={'rgba(18,146,180, 0.3)'}
-                    />
-                  </View>
-                )}
-              </View>
+              {!params?.isGitIssue ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
+                  <IconButton
+                    icon={'unfold-more-horizontal'}
+                    onPress={() => this.setState({ areDetailsShown: !areDetailsShown })}
+                    rippleColor={'rgba(18,146,180, 0.3)'}
+                  />
+                  {isUploading ? (
+                    <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginRight: 12 }} />
+                  ) : (
+                    <View>
+                      {uploadedFiles.length > 0 && (
+                        <Badge style={{ position: 'absolute' }}>{uploadedFiles.length}</Badge>
+                      )}
+                      <IconButton
+                        icon={'image'}
+                        onPress={() => this.appendFile()}
+                        rippleColor={'rgba(18,146,180, 0.3)'}
+                      />
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
+                  <Text style={{ color: Styling.colors.lighter, fontSize: Styling.metrics.fontSize.medium }}>
+                    Github issue
+                  </Text>
+                </View>
+              )}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/*<IconButton icon={'backspace'} size={22} onPress={() => setMessage('')} />*/}
                 {isFetching ? (
@@ -314,11 +346,13 @@ export class MessageBoxDialog extends Component<Props> {
           </Dialog.Actions>
         </Dialog>
         <FAB
+          small={this.props.params.isGitIssue}
           style={{
             position: 'absolute',
             margin: 16,
             right: 0,
-            bottom: this.props.fabBottomPosition || 0,
+            bottom: this.props.fabTopPosition === undefined ? this.props.fabBottomPosition || 0 : undefined,
+            top: this.props.fabTopPosition,
             backgroundColor: this.props.fabBackgroundColor || Styling.colors.primary,
           }}
           icon={this.props.fabIcon || 'message'}
