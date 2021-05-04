@@ -18,12 +18,32 @@ export class RemindersView extends Component<Props> {
       isFetching: false,
     }
     this.refScroll = null
+    this.navFocusListener = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      setTimeout(() => this.getReminders(), 100)
+    })
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getReminders()
+      }
+    })
     setTimeout(() => this.getReminders(), 100)
+  }
+
+  componentWillUnmount() {
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   async getReminders() {

@@ -240,36 +240,38 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                 </View>
               </View>
-              {post.reminder && (
-                <ButtonSquareComponent
-                  icon={'bell'}
-                  height={40}
-                  color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
-                  onPress={() => this.setReminder(post)}
-                />
-              )}
-              {post.rating !== undefined && (
-                <TouchableRipple
-                  disabled={!this.props.isInteractive}
-                  rippleColor={'rgba(18,146,180, 0.73)'}
-                  onPress={() => this.getRating(post, true)}>
-                  <Text
-                    style={[
-                      {
-                        padding: 10,
-                        color:
-                          post.my_rating === 'positive'
-                            ? 'green'
-                            : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
-                            ? 'red'
-                            : Styling.colors.lighter,
-                        textAlign: 'right',
-                      },
-                    ]}>
-                    {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
-                  </Text>
-                </TouchableRipple>
-              )}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                {post.rating !== undefined && (
+                  <TouchableRipple
+                    disabled={!this.props.isInteractive}
+                    rippleColor={'rgba(18,146,180, 0.73)'}
+                    onPress={() => this.getRating(post, true)}>
+                    <Text
+                      style={[
+                        {
+                          padding: 10,
+                          color:
+                            post.my_rating === 'positive'
+                              ? 'green'
+                              : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
+                              ? 'red'
+                              : Styling.colors.lighter,
+                          textAlign: 'right',
+                        },
+                      ]}>
+                      {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
+                    </Text>
+                  </TouchableRipple>
+                )}
+                {post.reminder && (
+                  <ButtonSquareComponent
+                    icon={'bell'}
+                    height={40}
+                    color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                    onPress={() => this.setReminder(post)}
+                  />
+                )}
+              </View>
             </View>
           </TouchableRipple>
         </Swipeable>
