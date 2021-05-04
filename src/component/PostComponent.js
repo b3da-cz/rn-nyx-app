@@ -10,7 +10,7 @@ import {
   SpoilerComponent,
   VideoYoutubeComponent,
 } from '../component'
-import { Nyx, TOKEN, Styling } from '../lib'
+import {Nyx, TOKEN, Styling, generateUuidV4} from '../lib';
 
 type Props = {
   post: Object,
@@ -21,11 +21,13 @@ type Props = {
   isHeaderInteractive: boolean,
   isHeaderPressable: boolean,
   onHeaderPress?: Function,
+  onHeaderSwipe?: Function,
   onDiscussionDetailShow: Function,
   onReply?: Function,
   onImage: Function,
   onDelete: Function,
   onVoteCast?: Function,
+  onReminder?: Function,
   onDiceRoll?: Function,
   onPollVote?: Function,
 }
@@ -139,9 +141,11 @@ export class PostComponent extends Component<Props> {
     ) {
       return
     }
+    const k = text.replace(/(<([^>]+)>)/gi, '')
+    const key = k?.length > 7 ? k.substr(0, 7) : generateUuidV4()
     return (
       <Text
-        key={text.replace(/(<([^>]+)>)/gi, '').substr(0, 9) || `${Math.random()}`}
+        key={key}
         style={[
           Styling.groups.themeComponent(this.props.isDarkMode),
           { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
@@ -232,6 +236,10 @@ export class PostComponent extends Component<Props> {
           }
           onDelete={postId => this.props.onDelete(postId)}
           onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
+          onReminder={(post, isReminder) => this.props.onReminder(post, isReminder)}
+          onSwipe={isSwiping =>
+            typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
+          }
         />
         <View
           style={[

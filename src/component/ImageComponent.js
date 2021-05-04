@@ -10,7 +10,7 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
   useLayoutEffect(() => {
     try {
       if (src.startsWith('/files/')) {
-        setImgSrc(`//nyx.cz${src}`)
+        setImgSrc(`https://nyx.cz${src}`)
       }
       if (useExactSize) {
         setImgWidth(width)

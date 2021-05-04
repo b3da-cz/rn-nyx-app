@@ -16,13 +16,20 @@ export class HistoryView extends Component<Props> {
       isFetching: false,
     }
     this.navFocusListener = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.getHistory()
+      setTimeout(() => this.getHistory(), 100)
+    })
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getHistory()
+      }
     })
     setTimeout(() => this.getHistory(), 100)
   }
@@ -30,6 +37,9 @@ export class HistoryView extends Component<Props> {
   componentWillUnmount() {
     if (this.navFocusListener) {
       this.navFocusListener()
+    }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
     }
   }
 

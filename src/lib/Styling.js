@@ -159,3 +159,5 @@ export const NavOptions = {
   },
   cardStyle: { backgroundColor: '#000' },
 }
+
+export const discussionScreenOptions = { headerShown: true, title: '' }

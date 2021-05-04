@@ -6,8 +6,8 @@ import { PostComponent, RatingDetailComponent } from '../component'
 import { Context, parseNotificationsContent, Styling } from '../lib'
 
 type Props = {
+  navigation: any,
   onImages: Function,
-  onNavigation: Function,
 }
 export class NotificationsView extends Component<Props> {
   static contextType = Context
@@ -19,12 +19,25 @@ export class NotificationsView extends Component<Props> {
       isFetching: false,
     }
     this.refScroll = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getNotifications()
+      }
+    })
     this.getNotifications()
+  }
+
+  componentWillUnmount() {
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   async getNotifications() {
@@ -43,11 +56,7 @@ export class NotificationsView extends Component<Props> {
   }
 
   showPost(discussionId, postId) {
-    this.props.onNavigation({ discussionId, postId })
-  }
-
-  onPostDelete() {
-    console.warn('nope, todo') // TODO: remove
+    this.props.navigation.push('discussion', { discussionId, postId })
   }
 
   renderItem(item) {
@@ -69,7 +78,6 @@ export class NotificationsView extends Component<Props> {
           onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
           onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
           onImage={image => this.showImages(image)}
-          onDelete={postId => this.onPostDelete(postId)}
         />
         {thumbs_up?.length > 0 && (
           <RatingDetailComponent
@@ -118,7 +126,6 @@ export class NotificationsView extends Component<Props> {
             onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
             onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
             onImage={image => this.showImages(image)}
-            onDelete={postId => this.onPostDelete(postId)}
           />
         </View>
       </View>

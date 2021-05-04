@@ -75,7 +75,6 @@ export class Nyx {
     try {
       const res = await fetch(`https://nyx.cz/api/bookmarks${includingSeen ? '/all' : ''}`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       this.store.context = res.context
@@ -91,7 +90,6 @@ export class Nyx {
     try {
       const res = await fetch('https://nyx.cz/api/bookmarks/history/more', {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       this.store.context = res.context
@@ -107,7 +105,6 @@ export class Nyx {
     try {
       const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       this.store.context = res.context
@@ -120,13 +117,10 @@ export class Nyx {
 
   async getLastDiscussions() {
     try {
-      const res = await fetch('https://nyx.cz/api/last/discussions', {
+      return await fetch('https://nyx.cz/api/last/discussions', {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      // this.store.context = res.context
-      return res
     } catch (e) {
       this.logError('get last discussions', e)
     }
@@ -141,7 +135,6 @@ export class Nyx {
         }`,
         {
           method: 'GET',
-          referrerPolicy: 'no-referrer',
           headers: this.getHeaders(),
         },
       ).then(resp => resp.json())
@@ -159,7 +152,6 @@ export class Nyx {
     try {
       const res = await fetch(`https://nyx.cz/api/discussion/${id}`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       this.store.context = res.context
@@ -182,26 +174,46 @@ export class Nyx {
 
   async getMail(queryString = '') {
     try {
-      const res = await fetch(`https://nyx.cz/api/mail${queryString}`, {
+      return await fetch(`https://nyx.cz/api/mail${queryString}`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('get mail', e)
     }
     return null
   }
 
-  async getNotifications() {
+  async getReminders(type = 'bookmarks') {
     try {
-      const res = await fetch('https://nyx.cz/api/notifications', {
+      return await fetch(`https://nyx.cz/api/${type}/reminders`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
+    } catch (e) {
+      this.logError('get reminders', e)
+    }
+    return null
+  }
+
+  async getWaitingFiles(discussionId?) {
+    try {
+      return await fetch(`https://nyx.cz/api/${!discussionId ? 'mail' : `discussion/${discussionId}`}/waiting_files`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('get waiting files', e)
+    }
+    return null
+  }
+
+  async getNotifications() {
+    try {
+      return await fetch('https://nyx.cz/api/notifications', {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
     } catch (e) {
       this.logError('get notifications', e)
     }
@@ -210,12 +222,10 @@ export class Nyx {
 
   async getRating(post) {
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}`, {
+      return await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}`, {
         method: 'GET',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('get rating', e)
     }
@@ -227,7 +237,6 @@ export class Nyx {
     try {
       const res = await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}/${vote}`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
       if (res.error && res.code === 'NeedsConfirmation') {
@@ -243,18 +252,33 @@ export class Nyx {
     return null
   }
 
+  async setReminder(discussionId, postId, isReminder) {
+    try {
+      return await fetch(
+        `https://nyx.cz/api/${
+          discussionId > 0 ? `discussion/${discussionId}` : 'mail'
+        }/reminder/${postId}/${isReminder}`,
+        {
+          method: 'POST',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
+    } catch (e) {
+      this.logError('cast vote', e)
+    }
+    return null
+  }
+
   async sendPrivateMessage(recipient, message) {
     const data = { recipient, message }
     try {
-      const res = await fetch('https://nyx.cz/api/mail/send', {
+      return await fetch('https://nyx.cz/api/mail/send', {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders('application/x-www-form-urlencoded'),
         body: Object.keys(data)
           .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
           .join('&'),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('send private message', e)
     }
@@ -263,17 +287,15 @@ export class Nyx {
 
   async bookmarkDiscussion(discussionId, isBooked, categoryId?) {
     try {
-      const res = await fetch(
+      return await fetch(
         `https://nyx.cz/api/discussion/${discussionId}/bookmark?new_state=${isBooked}${
           categoryId > 0 ? `&category=${categoryId}` : ''
         }`,
         {
           method: 'POST',
-          referrerPolicy: 'no-referrer',
           headers: this.getHeaders(),
         },
       ).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('bookmark discussion', e)
     }
@@ -282,12 +304,10 @@ export class Nyx {
 
   async rollDice(discussionId, postId) {
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/dice/${postId}/roll`, {
+      return await fetch(`https://nyx.cz/api/discussion/${discussionId}/dice/${postId}/roll`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('roll dice', e)
     }
@@ -296,12 +316,10 @@ export class Nyx {
 
   async rollDiceInHeader(discussionId, contentId) {
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/content/dice/${contentId}/roll`, {
+      return await fetch(`https://nyx.cz/api/discussion/${discussionId}/content/dice/${contentId}/roll`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('roll dice in header', e)
     }
@@ -310,15 +328,10 @@ export class Nyx {
 
   async voteInPoll(discussionId, postId, answers) {
     try {
-      const res = await fetch(
-        `https://nyx.cz/api/discussion/${discussionId}/poll/${postId}/vote/${answers.toString()}`,
-        {
-          method: 'POST',
-          referrerPolicy: 'no-referrer',
-          headers: this.getHeaders(),
-        },
-      ).then(resp => resp.json())
-      return res
+      return await fetch(`https://nyx.cz/api/discussion/${discussionId}/poll/${postId}/vote/${answers.toString()}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
     } catch (e) {
       this.logError('vote in poll', e)
     }
@@ -327,15 +340,13 @@ export class Nyx {
 
   async voteInHeaderPoll(discussionId, contentId, answers) {
     try {
-      const res = await fetch(
+      return await fetch(
         `https://nyx.cz/api/discussion/${discussionId}/content/poll/${contentId}/vote/${answers.toString()}`,
         {
           method: 'POST',
-          referrerPolicy: 'no-referrer',
           headers: this.getHeaders(),
         },
       ).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('vote in header poll', e)
     }
@@ -345,15 +356,13 @@ export class Nyx {
   async postToDiscussion(discussionId, text) {
     const data = { content: text }
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/send/text`, {
+      return await fetch(`https://nyx.cz/api/discussion/${discussionId}/send/text`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders('application/x-www-form-urlencoded'),
         body: Object.keys(data)
           .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
           .join('&'),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('post to discussion', e)
     }
@@ -362,12 +371,10 @@ export class Nyx {
 
   async deletePost(discussionId, postId) {
     try {
-      const res = await fetch(`https://nyx.cz/api/discussion/${discussionId}/delete/${postId}`, {
+      return await fetch(`https://nyx.cz/api/discussion/${discussionId}/delete/${postId}`, {
         method: 'DELETE',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('delete post', e)
     }
@@ -380,15 +387,13 @@ export class Nyx {
       formData.append('file', file)
       formData.append('file_type', discussionId ? 'discussion_attachment' : 'mail_attachment') // free_file | discussion_attachment | mail_attachment
       formData.append('id_specific', discussionId || 0)
-      const res = await fetch('https://nyx.cz/api/file/upload', {
+      return await fetch('https://nyx.cz/api/file/upload', {
         method: 'PUT',
-        referrerPolicy: 'no-referrer',
         headers: {
           Authorization: `Bearer ${this.auth.token}`,
         },
         body: formData,
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('upload file', e)
     }
@@ -397,45 +402,22 @@ export class Nyx {
 
   async deleteFile(fileId) {
     try {
-      const res = await fetch(`https://nyx.cz/api/file/delete/${fileId}`, {
+      return await fetch(`https://nyx.cz/api/file/delete/${fileId}`, {
         method: 'DELETE',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('delete file', e)
     }
     return null
   }
 
-  async setVisibility(isVisible) {
-    // todo nope
-    const status = isVisible ? 20 : 10
-    console.warn('set visibility ', this.auth, isVisible) // TODO: remove
-    try {
-      const res = await fetch('https://nyx.cz/api/header', {
-        method: 'POST',
-        referrerPolicy: 'no-referrer',
-        headers: this.getHeaders(),
-        body: { status },
-      }).then(resp => resp.json())
-      console.warn(res, this.auth) // TODO: remove
-      return res
-    } catch (e) {
-      this.logError('set visibility', e)
-    }
-    return null
-  }
-
   async subscribeForFCM(fcmToken) {
     try {
-      const res = await fetch(`https://nyx.cz/api/register_for_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
+      return await fetch(`https://nyx.cz/api/register_for_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('fcm sub', e)
     }
@@ -444,12 +426,10 @@ export class Nyx {
 
   async unregisterFromFCM(fcmToken) {
     try {
-      const res = await fetch(`https://nyx.cz/api/deregister_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
+      return await fetch(`https://nyx.cz/api/deregister_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
         method: 'POST',
-        referrerPolicy: 'no-referrer',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      return res
     } catch (e) {
       this.logError('fcm sub', e)
     }

@@ -129,15 +129,22 @@ export class Parser {
   getVideosYoutube() {
     return this.html
       .querySelectorAll('a')
-      .filter(a => a.getAttribute('href') && (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')))
+      .filter(
+        a =>
+          a.getAttribute('href') &&
+          (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')),
+      )
       .map(a => ({
         id: generateUuidV4(),
         raw: a.toString(),
         text: a.innerText,
         link: a.getAttribute('href'),
-        videoId: a.getAttribute('href') && a.getAttribute('href').includes('youtube')
-          ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
-          : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be') ? a.getAttribute('href').replace('https://youtu.be/', '') : 'error',
+        videoId:
+          a.getAttribute('href') && a.getAttribute('href').includes('youtube')
+            ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
+            : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be')
+            ? a.getAttribute('href').replace('https://youtu.be/', '')
+            : 'error',
       }))
   }
 
@@ -168,34 +175,36 @@ export class Parser {
           p = p.substring(4)
         }
         p = p.trim()
+        p = p
+          .split('<br>')
+          .join('\n')
+          .split('<br />')
+          .join('\n')
+          .split('\n\n')
+          .join('\n')
+          .split('&lt;')
+          .join('<')
+          .split('&gt;')
+          .join('>')
+          .split('&amp;')
+          .join('&')
+          .replace(/(<([^>]+)>)/gi, '')
+        // const withoutWhitespaces = p.replace(/\s+/g, '')
         if (!p || (p && (p.length === 0 || p === ' '))) {
           this.contentParts.splice(i)
         } else {
           this.contentParts[i] = p
-            .split('<br>')
-            .join('\n')
-            .split('<br />')
-            .join('\n')
-            .split('\n\n')
-            .join('\n')
-            .split('&lt;')
-            .join('<')
-            .split('&gt;')
-            .join('>')
-            .split('&amp;')
-            .join('&')
-            .replace(/(<([^>]+)>)/gi, '')
           this.clearText += this.contentParts[i]
         }
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
         const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? '//nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
-        this.clearText += `${img.src.startsWith('/files/') ? '//nyx.cz' : ''}${img.url}`
+        this.clearText += `${img.src.startsWith('/files/') ? 'https://nyx.cz' : ''}${img.url}`
       }
     })
   }
@@ -207,7 +216,6 @@ export const parsePostsContent = posts => {
       if (!post.parsed) {
         const parser = new Parser(post.content)
         post.parsed = parser.parse()
-        post.id = Number(post.id)
       }
     }
   } catch (e) {

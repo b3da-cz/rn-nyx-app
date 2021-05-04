@@ -17,13 +17,20 @@ export class BookmarksView extends Component<Props> {
       isFetching: false,
     }
     this.navFocusListener = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.getBookmarks()
+      setTimeout(() => this.getBookmarks(), 100)
+    })
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getBookmarks()
+      }
     })
     setTimeout(() => this.getBookmarks(), 100)
   }
@@ -32,12 +39,15 @@ export class BookmarksView extends Component<Props> {
     if (this.navFocusListener) {
       this.navFocusListener()
     }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   async getBookmarks() {
     this.setState({ isFetching: true })
     const res = await this.nyx.getBookmarks()
-    if (res.bookmarks) {
+    if (res?.bookmarks?.length) {
       const reminderCount = res.reminder_count || 0
       const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
       this.setState({ reminderCount, sectionedBookmarks, isFetching: false })

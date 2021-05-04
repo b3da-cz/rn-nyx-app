@@ -18,6 +18,7 @@ type Props = {
   onSend: Function,
   onMount: Function,
 }
+// deprecated, todo Search, cleanup
 export class ComposePostView extends Component<Props> {
   static contextType = Context
   constructor(props) {

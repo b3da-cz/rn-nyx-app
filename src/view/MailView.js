@@ -1,9 +1,8 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
-import { Portal, FAB } from 'react-native-paper'
 import { Picker } from '@react-native-picker/picker'
-import { PostComponent } from '../component'
-import { Context, getDistinctPosts, Styling, parsePostsContent, t } from '../lib'
+import { MessageBoxDialog, PostComponent } from '../component'
+import { Context, getDistinctPosts, Styling, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -19,22 +18,30 @@ export class MailView extends Component<Props> {
       conversations: [],
       messages: [],
       isSubmenuVisible: false,
-      isSubmenuOpen: false,
+      isMsgBtnVisible: false,
       isFetching: false,
     }
+    this.refMsgBoxDialog = null
     this.refScroll = null
     this.navFocusListener = null
     this.navBlurListener = null
+    this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false })
+      this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
+    })
+    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+      const isFocused = this.props.navigation.isFocused()
+      if (isFocused && !this.state.isFetching) {
+        this.getLatestMessages()
+      }
     })
     setTimeout(() => this.getLatestMessages(), 100)
   }
@@ -46,12 +53,17 @@ export class MailView extends Component<Props> {
     if (this.navBlurListener) {
       this.navBlurListener()
     }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   async getLatestMessages() {
+    const isFocused = this.props.navigation.isFocused()
     this.setState({
       isFetching: true,
-      isSubmenuVisible: this.props.navigation.isFocused(),
+      isSubmenuVisible: isFocused,
+      isMsgBtnVisible: isFocused,
     })
     const res = await this.nyx.getMail()
     const parsedMessages = parsePostsContent(res.posts)
@@ -61,7 +73,6 @@ export class MailView extends Component<Props> {
       messages: parsedMessages,
       reminders: parsedReminders,
       isFetching: false,
-      isSubmenuOpen: false,
       activeRecipient: this.state.activeRecipient === 'reminders' ? 'all' : this.state.activeRecipient,
     })
   }
@@ -94,10 +105,9 @@ export class MailView extends Component<Props> {
     })
   }
 
-  async getReminders() {
+  async getRemindsers() {
     this.setState({ isFetching: true })
-    const queryString = '/reminders'
-    const res = await this.nyx.getMail(queryString)
+    const res = await this.nyx.getReminders('mail')
     const parsedReminders = parsePostsContent(res.reminders)
     this.setState({
       activeRecipient: 'reminders',
@@ -116,7 +126,16 @@ export class MailView extends Component<Props> {
   }
 
   onPostDelete() {
-    console.warn('todo'); // TODO: remove
+    console.warn('todo') // TODO: remove
+  }
+
+  async onReply(username) {
+    if (this.state.activeRecipient !== username) {
+      this.setState({ activeRecipient: username })
+      await wait()
+      // await this.onConversationSelected(username)
+    }
+    this.refMsgBoxDialog?.showDialog()
   }
 
   getPickerItemColor(val, hasUnreadMail) {
@@ -140,12 +159,7 @@ export class MailView extends Component<Props> {
         isUnread={msg.unread}
         isHeaderInteractive={false}
         isHeaderPressable={true}
-        onHeaderPress={() =>
-          this.props.navigation.push('composePost', {
-            isMailPost: true,
-            username: msg.username,
-          })
-        }
+        onHeaderPress={() => this.onReply(msg.username)}
         onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
         onImage={image => this.showImages(image)}
         onDelete={postId => this.onPostDelete(postId)}
@@ -186,37 +200,16 @@ export class MailView extends Component<Props> {
           onEndReachedThreshold={0.01}
           renderItem={({ item }) => this.renderMessage(item)}
         />
-        <Portal>
-          <FAB.Group
-            visible={this.state.isSubmenuVisible}
-            open={this.state.isSubmenuOpen}
-            icon={this.state.activeRecipient === 'reminders' ? 'close' : !this.state.isSubmenuOpen ? 'plus' : 'email'}
-            fabStyle={{ backgroundColor: Styling.colors.secondary }}
-            actions={
-              this.state.activeRecipient === 'reminders'
-                ? []
-                : [
-                    {
-                      icon: 'bell',
-                      label: t('reminders.title'),
-                      onPress: () => this.getReminders(),
-                    },
-                  ]
-            }
-            onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
-            onPress={() => {
-              if (this.state.isSubmenuOpen) {
-                this.props.navigation.push('composePost', {
-                  isMailPost: true,
-                  username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',
-                })
-              } else if (!this.state.isSubmenuOpen && this.state.activeRecipient === 'reminders') {
-                this.getLatestMessages()
-              }
-            }}
-            style={{ marginBottom: 50 }}
-          />
-        </Portal>
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ mailRecipient: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '' }}
+          fabBackgroundColor={Styling.colors.secondary}
+          fabIcon={'email'}
+          fabBottomPosition={50}
+          isVisible={this.state.isMsgBtnVisible}
+          onSend={() => this.getLatestMessages()}
+        />
       </View>
     )
   }

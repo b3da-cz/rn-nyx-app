@@ -15,12 +15,17 @@ export const ButtonSquareComponent = ({
   marginTop = 0,
   borderColor = Styling.colors.secondary,
   borderWidth = 0,
+  width = 50,
+  height = 50,
 }) => {
   return (
     <TouchableRipple
       disabled={isDisabled}
       rippleColor={'rgba(18,146,180, 0.3)'}
-      style={[Styling.groups.squareBtn, { backgroundColor, marginBottom, marginTop, borderColor, borderWidth }]}
+      style={[
+        Styling.groups.squareBtn,
+        { backgroundColor, marginBottom, marginTop, borderColor, borderWidth, width, height },
+      ]}
       onPress={() => onPress()}
       onLongPress={() => (typeof onLongPress === 'function' ? onLongPress() : null)}>
       <Icon name={icon} size={size} color={color} />

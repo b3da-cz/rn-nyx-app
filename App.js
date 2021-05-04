@@ -2,9 +2,9 @@
  * @format
  * @flow
  */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Node } from 'react'
-import { LogBox, Modal } from 'react-native'
+import { Linking, LogBox, Modal } from 'react-native'
 import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
@@ -20,8 +20,12 @@ LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWi
 const initialConfig = {
   isLoaded: false,
   isBookmarksEnabled: true,
-  isHistoryEnabled: true,
   isBottomTabs: true,
+  isHistoryEnabled: true,
+  isSearchEnabled: true,
+  isLastEnabled: true,
+  isRemindersEnabled: true,
+  isNavGesturesEnabled: true,
   initialRouteName: 'historyStack',
   fcmToken: null,
   isFCMSubscribed: false,
@@ -37,6 +41,13 @@ const App: () => Node = () => {
   const refs = {}
   // const theme = useColorScheme()
   const theme = 'dark'
+
+  useEffect(() => {
+    return () => {
+      Linking.removeAllListeners('url')
+    }
+  })
+
   const initNyx = async (username?, isAutologin = true) => {
     if (!username) {
       const auth = await Storage.getAuth()
@@ -76,8 +87,12 @@ const App: () => Node = () => {
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
-      isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
       isBottomTabs: conf.isBottomTabs === undefined ? true : !!conf.isBottomTabs,
+      isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
+      isSearchEnabled: conf?.isSearchEnabled !== undefined ? !!conf.isSearchEnabled : true,
+      isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,
+      isRemindersEnabled: conf?.isRemindersEnabled !== undefined ? !!conf.isRemindersEnabled : true,
+      isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? true : !!conf.isNavGesturesEnabled,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
@@ -95,6 +110,12 @@ const App: () => Node = () => {
     setTimeout(() => {
       RNBootSplash.hide({ fade: true })
     }, 500)
+    const handleDeepLinks = async () => {
+      const initialUrl = await Linking.getInitialURL()
+      Linking.addEventListener('url', ({ url }) => console.warn(url))
+      // console.warn('initialUrl', initialUrl) // todo pass to messagebox
+    }
+    handleDeepLinks()
   }
   if (!config.isLoaded) {
     init()

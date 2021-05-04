@@ -9,7 +9,7 @@
   },
   "bookmarks": {
     "cs": "Sledované",
-    "en": "Boomarks"
+    "en": "Bookmarks"
   },
   "confirm": {
     "cs": "Potvrdit",
@@ -22,6 +22,10 @@
   "mail": {
     "cs": "Pošta",
     "en": "Mail"
+  },
+  "last": {
+    "cs": "Poslední",
+    "en": "Last"
   },
   "search": {
     "title": {
@@ -45,6 +49,14 @@
     "remove": {
       "cs": "Odebrat upomínku",
       "en": "Remove reminder"
+    },
+    "inMail": {
+      "cs": "V poště",
+      "en": "In mail"
+    },
+    "inDiscussions": {
+      "cs": "V klubech",
+      "en": "In topics"
     }
   },
   "profile": {
@@ -92,6 +104,10 @@
       "cs": "Navigační taby dole",
       "en": "Tabs on bottom"
     },
+    "navGestures": {
+      "cs": "Navigační gesta",
+      "en": "Navigation gestures"
+    },
     "initialView": {
       "cs": "Start aplikace na",
       "en": "Initial view"
@@ -129,9 +145,17 @@
     "cs": "Přiložit soubor",
     "en": "Append file"
   },
+  "jpegSize": {
+    "cs": "Velikost jpg",
+    "en": "Jpg size"
+  },
   "send": {
     "cs": "Odeslat",
     "en": "Send"
+  },
+  "title": {
+    "cs": "Název",
+    "en": "Title"
   },
   "message": {
     "cs": "Zpráva",
@@ -144,6 +168,10 @@
   "header": {
     "cs": "Záhlaví",
     "en": "Header"
+  },
+  "share": {
+    "cs": "Sdílet",
+    "en": "Share"
   },
   "show": {
     "cs": "Zobrazit",

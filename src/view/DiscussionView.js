@@ -1,16 +1,18 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
-import { FAB, Portal } from 'react-native-paper'
-import { BookmarkCategoriesDialog, PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, t } from '../lib'
+import { Portal } from 'react-native-paper'
+import { BookmarkCategoriesDialog, FabComponent, MessageBoxDialog, PostComponent } from '../component'
+import { Context, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   navigation: any,
   id: number,
   postId?: number,
   showHeader?: boolean,
+  jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
+  onHeaderSwipe: Function,
 }
 export class DiscussionView extends Component<Props> {
   static contextType = Context
@@ -23,14 +25,16 @@ export class DiscussionView extends Component<Props> {
       images: [],
       header: [],
       bookmarkCategories: [],
+      lastSeenPostId: null,
       isBooked: null,
       isCategoryPickerVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
-      isSubmenuOpen: false,
+      isMsgBtnVisible: false,
       isFetching: false,
     }
     this.refScroll = null
+    this.refMsgBoxDialog = null
     this.navFocusListener = null
     this.navBlurListener = null
   }
@@ -39,10 +43,10 @@ export class DiscussionView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false })
+      this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
     this.setFocusOnStart()
     if (this.props.postId > 0) {
@@ -51,6 +55,9 @@ export class DiscussionView extends Component<Props> {
       this.reloadDiscussionLatest().then(() => {
         if (this.props.showHeader) {
           this.setHeaderVisible(true)
+        }
+        if (this.props.jumpToLastSeen) {
+          this.jumpToLastSeen()
         }
       })
     }
@@ -66,7 +73,8 @@ export class DiscussionView extends Component<Props> {
   }
 
   setFocusOnStart() {
-    this.setState({ isSubmenuVisible: this.props.navigation.isFocused() })
+    const isFocused = this.props.navigation.isFocused()
+    this.setState({ isSubmenuVisible: isFocused, isMsgBtnVisible: isFocused })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -94,16 +102,23 @@ export class DiscussionView extends Component<Props> {
   }
 
   async jumpToPost(discussionId, postId) {
-    let post = this.getStoredPostById(postId)
-    if (!post) {
+    let postIndex = this.getPostIndexById(this.state.lastSeenPostId)
+    if (postIndex === undefined) {
       if (this.state.discussionId !== discussionId) {
         this.setState({ discussionId })
       }
       const queryString = `${discussionId}?order=older_than&from_id=${Number(postId) + 1}`
       await this.fetchDiscussion(queryString)
-      post = this.getStoredPostById(postId)
+      await wait(200)
+      postIndex = this.getPostIndexById(postId)
     }
-    this.scrollToPost(post)
+    this.scrollToPost(postIndex)
+  }
+
+  async jumpToLastSeen() {
+    await wait(200)
+    const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
+    this.scrollToPost(postIndex, true)
   }
 
   async fetchDiscussion(idOrQueryString) {
@@ -119,7 +134,8 @@ export class DiscussionView extends Component<Props> {
     if (header?.length > 0) {
       header = parsePostsContent(header)
     }
-    const uploadedFiles = res?.discussion_common.waiting_files || []
+    const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
+    const uploadedFiles = res?.discussion_common?.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
@@ -127,28 +143,36 @@ export class DiscussionView extends Component<Props> {
       images,
       isBooked,
       header,
+      lastSeenPostId,
       posts: parsedPosts,
       isFetching: false,
     })
     this.onDiscussionFetched(title, uploadedFiles)
     this.nyx.store.activeDiscussionId = this.props.id
-    return newPosts
+    return parsedPosts
   }
 
   getStoredPostById(postId) {
     return this.state?.posts?.filter(p => p.id == postId)[0]
   }
 
-  scrollToPost(post, animated = false) {
+  getPostIndexById(postId) {
+    let index = 0
+    for (const p of this.state.posts) {
+      if (p.id == postId) {
+        return index
+      }
+      index++
+    }
+  }
+
+  scrollToPost(postIndex, animated = false) {
     try {
-      if (post) {
+      if (postIndex > 1) {
         setTimeout(() => {
-          this.refScroll.scrollToItem({
-            item: post,
-            animated,
-          })
+          this.refScroll.scrollToIndex({ index: postIndex, viewPosition: 0.1, animated })
           this.setState({ isFetching: false })
-        }, 300) // todo .. get onListUpdated
+        }, 200)
       }
     } catch (e) {
       console.warn(e)
@@ -160,6 +184,12 @@ export class DiscussionView extends Component<Props> {
       index: 0,
       animated,
     })
+  }
+
+  onScrollToIndexFailed(error) {
+    const offset = error.averageItemLength * error.highestMeasuredFrameIndex
+    this.refScroll.scrollToOffset({ offset })
+    setTimeout(() => this.refScroll.scrollToIndex({ index: error.index }), 200)
   }
 
   showPost(discussionId, postId) {
@@ -178,11 +208,9 @@ export class DiscussionView extends Component<Props> {
   }
 
   onReply(discussionId, postId, username) {
-    this.props.navigation.push('composePost', {
-      discussionId,
-      postId,
-      replyTo: username,
-    })
+    const msg = this.refMsgBoxDialog?.state?.message || ''
+    this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
+    this.refMsgBoxDialog?.showDialog()
   }
 
   onVoteCast(updatedPost) {
@@ -207,6 +235,12 @@ export class DiscussionView extends Component<Props> {
       const posts = getDistinctPosts(parsedPosts, this.state.posts)
       this.setState({ posts })
     }
+  }
+
+  onReminder(post, isReminder) {
+    const p = { ...post, reminder: isReminder }
+    const posts = getDistinctPosts([p], this.state.posts)
+    this.setState({ posts })
   }
 
   async bookmarkDiscussion(categoryId?) {
@@ -251,38 +285,32 @@ export class DiscussionView extends Component<Props> {
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
         />
-        <Portal>
-          <FAB.Group
-            visible={this.state.isSubmenuVisible}
-            open={this.state.isSubmenuOpen}
-            icon={this.state.isSubmenuOpen ? 'email' : 'plus'}
-            fabStyle={{ backgroundColor: Styling.colors.primary }}
-            actions={[
-              {
-                key: 'bookmark',
-                icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
-                label: this.state.isBooked ? t('unbook') : t('book'),
-                onPress: () => this.bookmarkDiscussion(),
-              },
-              {
-                key: 'header',
-                icon: 'file-table-box',
-                label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
-                onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
-              },
-            ]}
-            onStateChange={({ open }) => this.setState({ isSubmenuOpen: open })}
-            onPress={() => {
-              if (this.state.isSubmenuOpen) {
-                this.setState({ isSubmenuOpen: false })
-                this.props.navigation.push('composePost', {
-                  discussionId: this.props.id,
-                })
-              }
-            }}
-            style={{ marginBottom: 50 }}
-          />
-        </Portal>
+        {/*todo topic actions*/}
+        {/*<FabComponent*/}
+        {/*  isVisible={this.state.isSubmenuVisible}*/}
+        {/*  iconOpen={'email'}*/}
+        {/*  actions={[*/}
+        {/*    {*/}
+        {/*      key: 'bookmark',*/}
+        {/*      icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',*/}
+        {/*      label: this.state.isBooked ? t('unbook') : t('book'),*/}
+        {/*      onPress: () => this.bookmarkDiscussion(),*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      key: 'header',*/}
+        {/*      icon: 'file-table-box',*/}
+        {/*      label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,*/}
+        {/*      onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),*/}
+        {/*    },*/}
+        {/*  ]}*/}
+        {/*  onPress={isOpen => {*/}
+        {/*    if (isOpen) {*/}
+        {/*      this.props.navigation.push('composePost', {*/}
+        {/*        discussionId: this.props.id,*/}
+        {/*      })*/}
+        {/*    }*/}
+        {/*  }}*/}
+        {/*/>*/}
         <FlatList
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
@@ -292,6 +320,7 @@ export class DiscussionView extends Component<Props> {
           onRefresh={() => this.loadDiscussionTop()}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
+          // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',
             backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
@@ -301,6 +330,8 @@ export class DiscussionView extends Component<Props> {
             this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
           }
           // getItemLayout={} // todo calc item height in Parser?
+          initialNumToRender={30}
+          onScrollToIndexFailed={error => this.onScrollToIndexFailed(error)}
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}
@@ -317,9 +348,22 @@ export class DiscussionView extends Component<Props> {
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
+              onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
+              // onHeaderSwipe={isSwiping => this.setState({ isSwiping })}
+              onHeaderSwipe={isSwiping => this.props.onHeaderSwipe(isSwiping)}
             />
           )}
         />
+        {/*(todo avoid Portal if possible, esp. with TextInput child)*/}
+        {/*<Portal>*/}
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ discussionId: this.props.id }}
+          isVisible={this.state.isMsgBtnVisible}
+          onSend={() => this.reloadDiscussionLatest(true)}
+        />
+        {/*</Portal>*/}
       </View>
     )
   }

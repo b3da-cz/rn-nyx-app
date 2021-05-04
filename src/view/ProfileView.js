@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { ScrollView, Switch, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
-import { ButtonComponent, confirm, UserIconComponent } from '../component'
+import {ButtonComponent, confirm, FormRowToggleComponent, MessageBoxDialog, UserIconComponent} from '../component';
 import { Context, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
@@ -28,9 +28,13 @@ export class ProfileView extends Component<Props> {
     }
     this.state = {
       isFetching: false,
-      isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
       isBookmarksEnabled: config?.isBookmarksEnabled !== undefined ? !!config.isBookmarksEnabled : true,
+      isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
       isHistoryEnabled: config?.isHistoryEnabled !== undefined ? !!config.isHistoryEnabled : true,
+      isSearchEnabled: config?.isSearchEnabled !== undefined ? !!config.isSearchEnabled : true,
+      isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
+      isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
+      isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
     }
@@ -40,34 +44,10 @@ export class ProfileView extends Component<Props> {
     this.setState({ username: this.nyx.auth.username })
   }
 
-  async setBottomTabs(isBottomTabs) {
-    this.setState({ isBottomTabs })
+  async setOption(name, val) {
+    this.setState({ [name]: val })
     const conf = await Storage.getConfig()
-    conf.isBottomTabs = isBottomTabs
-    await Storage.setConfig(conf)
-    this.props.onConfigChange()
-  }
-
-  async setBookmarksEnabled(isBookmarksEnabled) {
-    this.setState({ isBookmarksEnabled })
-    const conf = await Storage.getConfig()
-    conf.isBookmarksEnabled = isBookmarksEnabled
-    await Storage.setConfig(conf)
-    this.props.onConfigChange()
-  }
-
-  async setHistoryEnabled(isHistoryEnabled) {
-    this.setState({ isHistoryEnabled })
-    const conf = await Storage.getConfig()
-    conf.isHistoryEnabled = isHistoryEnabled
-    await Storage.setConfig(conf)
-    this.props.onConfigChange()
-  }
-
-  async setInitialRouteName(initialRouteName) {
-    this.setState({ initialRouteName })
-    const conf = await Storage.getConfig()
-    conf.initialRouteName = initialRouteName
+    conf[name] = val
     await Storage.setConfig(conf)
     this.props.onConfigChange()
   }
@@ -123,51 +103,49 @@ export class ProfileView extends Component<Props> {
             </Text>
           </View>
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
-            {t('profile.tabsOnBottom')}
-          </Text>
-          <Switch
-            thumbColor={this.state.isBottomTabs ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setBottomTabs(val)}
-            value={this.state.isBottomTabs}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('bookmarks')}</Text>
-          <Switch
-            thumbColor={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setBookmarksEnabled(val)}
-            value={this.state.isBookmarksEnabled}
-          />
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: Styling.metrics.block.large,
-          }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('history')}</Text>
-          <Switch
-            thumbColor={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.lighter}
-            onValueChange={val => this.setHistoryEnabled(val)}
-            value={this.state.isHistoryEnabled}
-          />
-        </View>
-        <View>
+        <FormRowToggleComponent
+          label={t('profile.tabsOnBottom')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isBottomTabs}
+          onChange={val => this.setOption('isBottomTabs', val)}
+        />
+        <FormRowToggleComponent
+          label={t('profile.navGestures')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isNavGesturesEnabled}
+          onChange={val => this.setOption('isNavGesturesEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('bookmarks')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isBookmarksEnabled}
+          onChange={val => this.setOption('isBookmarksEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('history')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isHistoryEnabled}
+          onChange={val => this.setOption('isHistoryEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('search.title')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isSearchEnabled}
+          onChange={val => this.setOption('isSearchEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('last')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isLastEnabled}
+          onChange={val => this.setOption('isLastEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('reminders.title')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isRemindersEnabled}
+          onChange={val => this.setOption('isRemindersEnabled', val)}
+        />
+        <View style={{ marginTop: 10 }}>
           <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('profile.initialView')}</Text>
           <Picker
             mode={'dropdown'}
@@ -221,6 +199,16 @@ export class ProfileView extends Component<Props> {
           marginBottom={Styling.metrics.block.small}
           isDarkMode={this.isDarkMode}
           onPress={() => this.logout()}
+        />
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ isGitIssue: true }}
+          fabBackgroundColor={Styling.colors.secondary}
+          fabIcon={'github'}
+          fabTopPosition={0}
+          isVisible={false}
+          onSend={() => null}
         />
       </ScrollView>
     )
