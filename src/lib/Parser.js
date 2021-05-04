@@ -129,15 +129,22 @@ export class Parser {
   getVideosYoutube() {
     return this.html
       .querySelectorAll('a')
-      .filter(a => a.getAttribute('href') && (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')))
+      .filter(
+        a =>
+          a.getAttribute('href') &&
+          (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')),
+      )
       .map(a => ({
         id: generateUuidV4(),
         raw: a.toString(),
         text: a.innerText,
         link: a.getAttribute('href'),
-        videoId: a.getAttribute('href') && a.getAttribute('href').includes('youtube')
-          ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
-          : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be') ? a.getAttribute('href').replace('https://youtu.be/', '') : 'error',
+        videoId:
+          a.getAttribute('href') && a.getAttribute('href').includes('youtube')
+            ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
+            : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be')
+            ? a.getAttribute('href').replace('https://youtu.be/', '')
+            : 'error',
       }))
   }
 
@@ -168,23 +175,25 @@ export class Parser {
           p = p.substring(4)
         }
         p = p.trim()
+        p = p
+          .split('<br>')
+          .join('\n')
+          .split('<br />')
+          .join('\n')
+          .split('\n\n')
+          .join('\n')
+          .split('&lt;')
+          .join('<')
+          .split('&gt;')
+          .join('>')
+          .split('&amp;')
+          .join('&')
+          .replace(/(<([^>]+)>)/gi, '')
+        // const withoutWhitespaces = p.replace(/\s+/g, '')
         if (!p || (p && (p.length === 0 || p === ' '))) {
           this.contentParts.splice(i)
         } else {
           this.contentParts[i] = p
-            .split('<br>')
-            .join('\n')
-            .split('<br />')
-            .join('\n')
-            .split('\n\n')
-            .join('\n')
-            .split('&lt;')
-            .join('<')
-            .split('&gt;')
-            .join('>')
-            .split('&amp;')
-            .join('&')
-            .replace(/(<([^>]+)>)/gi, '')
           this.clearText += this.contentParts[i]
         }
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
