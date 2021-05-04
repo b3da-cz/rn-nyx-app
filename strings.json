@@ -23,6 +23,10 @@
     "cs": "Pošta",
     "en": "Mail"
   },
+  "last": {
+    "cs": "Poslední",
+    "en": "Last"
+  },
   "search": {
     "title": {
       "cs": "Hledání",

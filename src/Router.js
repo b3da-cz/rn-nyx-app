@@ -292,21 +292,25 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
             options={{ tabBarLabel: () => <Icon name="bookmark" size={14} color="#ccc" /> }}
           />
         )}
-        <Tab.Screen
-          name={'searchStack'}
-          component={SearchStackContainer}
-          options={{ tabBarLabel: () => <Icon name="search" size={14} color="#ccc" /> }}
-        />
+        {config.isSearchEnabled && (
+          <Tab.Screen
+            name={'searchStack'}
+            component={SearchStackContainer}
+            options={{ tabBarLabel: () => <Icon name="search" size={14} color="#ccc" /> }}
+          />
+        )}
         <Tab.Screen
           name={'mailStack'}
           component={MailStackContainer}
           options={{ tabBarLabel: () => <Icon name="mail" size={14} color="#ccc" /> }}
         />
-        <Tab.Screen
-          name={'lastPostsStack'}
-          component={LastPostsStackContainer}
-          options={{ tabBarLabel: () => <Icon name="inbox" size={14} color="#ccc" /> }}
-        />
+        {config.isLastEnabled && (
+          <Tab.Screen
+            name={'lastPostsStack'}
+            component={LastPostsStackContainer}
+            options={{ tabBarLabel: () => <Icon name="inbox" size={14} color="#ccc" /> }}
+          />
+        )}
         <Tab.Screen
           name={'notificationsStack'}
           component={NotificationsStackContainer}

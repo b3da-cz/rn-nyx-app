@@ -20,8 +20,10 @@ LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWi
 const initialConfig = {
   isLoaded: false,
   isBookmarksEnabled: true,
-  isHistoryEnabled: true,
   isBottomTabs: true,
+  isHistoryEnabled: true,
+  isSearchEnabled: true,
+  isLastEnabled: true,
   isNavGesturesEnabled: true,
   initialRouteName: 'historyStack',
   fcmToken: null,
@@ -84,8 +86,10 @@ const App: () => Node = () => {
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
-      isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
       isBottomTabs: conf.isBottomTabs === undefined ? true : !!conf.isBottomTabs,
+      isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
+      isSearchEnabled: conf?.isSearchEnabled !== undefined ? !!conf.isSearchEnabled : true,
+      isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? true : !!conf.isNavGesturesEnabled,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
       fcmToken: conf.fcmToken || null,
