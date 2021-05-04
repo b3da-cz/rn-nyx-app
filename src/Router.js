@@ -15,6 +15,7 @@ import {
   LastPostsStackContainer,
   MailStackContainer,
   NotificationsStackContainer,
+  RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
 import {
@@ -191,6 +192,13 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
             name={'lastPostsStack'}
             component={LastPostsStackContainer}
             options={{ tabBarLabel: () => <Icon name="inbox" size={14} color="#ccc" /> }}
+          />
+        )}
+        {config.isRemindersEnabled && (
+          <Tab.Screen
+            name={'remindersStack'}
+            component={RemindersStackContainer}
+            options={{ tabBarLabel: () => <Icon name="bell" size={14} color="#ccc" /> }}
           />
         )}
         <Tab.Screen

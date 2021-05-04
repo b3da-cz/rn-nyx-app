@@ -49,6 +49,14 @@
     "remove": {
       "cs": "Odebrat upomínku",
       "en": "Remove reminder"
+    },
+    "inMail": {
+      "cs": "V poště",
+      "en": "In mail"
+    },
+    "inDiscussions": {
+      "cs": "V klubech",
+      "en": "In topics"
     }
   },
   "profile": {

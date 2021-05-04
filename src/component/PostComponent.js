@@ -27,6 +27,7 @@ type Props = {
   onImage: Function,
   onDelete: Function,
   onVoteCast?: Function,
+  onReminder?: Function,
   onDiceRoll?: Function,
   onPollVote?: Function,
 }
@@ -233,6 +234,7 @@ export class PostComponent extends Component<Props> {
           }
           onDelete={postId => this.props.onDelete(postId)}
           onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
+          onReminder={(post, isReminder) => this.props.onReminder(post, isReminder)}
           onSwipe={isSwiping =>
             typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
           }

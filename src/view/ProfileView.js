@@ -33,6 +33,7 @@ export class ProfileView extends Component<Props> {
       isHistoryEnabled: config?.isHistoryEnabled !== undefined ? !!config.isHistoryEnabled : true,
       isSearchEnabled: config?.isSearchEnabled !== undefined ? !!config.isSearchEnabled : true,
       isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
+      isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
@@ -137,6 +138,12 @@ export class ProfileView extends Component<Props> {
           isDarkMode={this.isDarkMode}
           value={this.state.isLastEnabled}
           onChange={val => this.setOption('isLastEnabled', val)}
+        />
+        <FormRowToggleComponent
+          label={t('reminders.title')}
+          isDarkMode={this.isDarkMode}
+          value={this.state.isRemindersEnabled}
+          onChange={val => this.setOption('isRemindersEnabled', val)}
         />
         <View style={{ marginTop: 10 }}>
           <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('profile.initialView')}</Text>

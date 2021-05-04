@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
-import { FabComponent, MessageBoxDialog, PostComponent } from '../component'
+import { MessageBoxDialog, PostComponent } from '../component'
 import { Context, getDistinctPosts, Styling, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
@@ -105,10 +105,9 @@ export class MailView extends Component<Props> {
     })
   }
 
-  async getReminders() {
+  async getRemindsers() {
     this.setState({ isFetching: true })
-    const queryString = '/reminders'
-    const res = await this.nyx.getMail(queryString)
+    const res = await this.nyx.getReminders('mail')
     const parsedReminders = parsePostsContent(res.reminders)
     this.setState({
       activeRecipient: 'reminders',
@@ -161,12 +160,6 @@ export class MailView extends Component<Props> {
         isHeaderInteractive={false}
         isHeaderPressable={true}
         onHeaderPress={() => this.onReply(msg.username)}
-        // onHeaderPress={() =>
-        //   this.props.navigation.push('composePost', {
-        //     isMailPost: true,
-        //     username: msg.username,
-        //   })
-        // }
         onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
         onImage={image => this.showImages(image)}
         onDelete={postId => this.onPostDelete(postId)}
@@ -217,33 +210,6 @@ export class MailView extends Component<Props> {
           isVisible={this.state.isMsgBtnVisible}
           onSend={() => this.getLatestMessages()}
         />
-        {/*todo reminders*/}
-        {/*<FabComponent*/}
-        {/*  isVisible={this.state.isSubmenuVisible}*/}
-        {/*  iconOpen={'email'}*/}
-        {/*  backgroundColor={Styling.colors.secondary}*/}
-        {/*  actions={*/}
-        {/*    this.state.activeRecipient === 'reminders'*/}
-        {/*      ? []*/}
-        {/*      : [*/}
-        {/*          {*/}
-        {/*            icon: 'bell',*/}
-        {/*            label: 'aa',*/}
-        {/*            onPress: () => this.getReminders(),*/}
-        {/*          },*/}
-        {/*        ]*/}
-        {/*  }*/}
-        {/*  onPress={isOpen => {*/}
-        {/*    if (isOpen) {*/}
-        {/*      this.props.navigation.push('composePost', {*/}
-        {/*        isMailPost: true,*/}
-        {/*        username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',*/}
-        {/*      })*/}
-        {/*    } else if (!isOpen && this.state.activeRecipient === 'reminders') {*/}
-        {/*      this.getLatestMessages() // todo push new view for reminders*/}
-        {/*    }*/}
-        {/*  }}*/}
-        {/*/>*/}
       </View>
     )
   }

@@ -149,7 +149,7 @@ export class DiscussionView extends Component<Props> {
     })
     this.onDiscussionFetched(title, uploadedFiles)
     this.nyx.store.activeDiscussionId = this.props.id
-    return newPosts
+    return parsedPosts
   }
 
   getStoredPostById(postId) {
@@ -211,12 +211,6 @@ export class DiscussionView extends Component<Props> {
     const msg = this.refMsgBoxDialog?.state?.message || ''
     this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
     this.refMsgBoxDialog?.showDialog()
-
-    // this.props.navigation.push('composePost', {
-    //   discussionId,
-    //   postId,
-    //   replyTo: username,
-    // })
   }
 
   onVoteCast(updatedPost) {
@@ -241,6 +235,12 @@ export class DiscussionView extends Component<Props> {
       const posts = getDistinctPosts(parsedPosts, this.state.posts)
       this.setState({ posts })
     }
+  }
+
+  onReminder(post, isReminder) {
+    const p = { ...post, reminder: isReminder }
+    const posts = getDistinctPosts([p], this.state.posts)
+    this.setState({ posts })
   }
 
   async bookmarkDiscussion(categoryId?) {
@@ -348,6 +348,7 @@ export class DiscussionView extends Component<Props> {
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
+              onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
               // onHeaderSwipe={isSwiping => this.setState({ isSwiping })}
               onHeaderSwipe={isSwiping => this.props.onHeaderSwipe(isSwiping)}
             />

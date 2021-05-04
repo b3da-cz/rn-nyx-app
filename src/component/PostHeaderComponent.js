@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Text, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
@@ -18,6 +18,7 @@ type Props = {
   onPress?: Function,
   onReply?: Function,
   onDelete: Function,
+  onReminder?: Function,
   onVoteCast?: Function,
   onSwipe?: Function,
 }
@@ -89,6 +90,12 @@ export class PostHeaderComponent extends Component<Props> {
     this.props.onVoteCast(res)
   }
 
+  async setReminder(post) {
+    await this.props.nyx.setReminder(post.discussion_id, post.id, !post.reminder)
+    this.refSwipeable?.recenter()
+    this.props.onReminder(post, !post.reminder)
+  }
+
   async deletePost(post) {
     const res = await confirm(t('confirm'), `${t('delete.post')}?`)
     if (res) {
@@ -132,6 +139,14 @@ export class PostHeaderComponent extends Component<Props> {
               onPress={() => this.onShare()}
               onLongPress={() => this.onShare(true)}
             />,
+            post.can_be_reminded && (
+              <ButtonSquareComponent
+                key={`${post.id}_btn_remind`}
+                icon={'bell'}
+                color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                onPress={() => this.setReminder(post)}
+              />
+            ),
             post.can_be_deleted && (
               <ButtonSquareComponent
                 key={`${post.id}_btn_delete`}
@@ -140,7 +155,7 @@ export class PostHeaderComponent extends Component<Props> {
                 onPress={() => this.deletePost(post)}
               />
             ),
-          ]}
+          ].filter(b => !!b)}
           leftButtonContainerStyle={{ alignItems: 'flex-end' }}
           leftButtonWidth={50}
           rightButtonWidth={50}
@@ -225,26 +240,36 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                 </View>
               </View>
-              <TouchableRipple
-                disabled={!this.props.isInteractive}
-                rippleColor={'rgba(18,146,180, 0.73)'}
-                onPress={() => this.getRating(post, true)}>
-                <Text
-                  style={[
-                    {
-                      padding: 10,
-                      color:
-                        post.my_rating === 'positive'
-                          ? 'green'
-                          : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
-                          ? 'red'
-                          : Styling.colors.lighter,
-                      textAlign: 'right',
-                    },
-                  ]}>
-                  {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
-                </Text>
-              </TouchableRipple>
+              {post.reminder && (
+                <ButtonSquareComponent
+                  icon={'bell'}
+                  height={40}
+                  color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                  onPress={() => this.setReminder(post)}
+                />
+              )}
+              {post.rating !== undefined && (
+                <TouchableRipple
+                  disabled={!this.props.isInteractive}
+                  rippleColor={'rgba(18,146,180, 0.73)'}
+                  onPress={() => this.getRating(post, true)}>
+                  <Text
+                    style={[
+                      {
+                        padding: 10,
+                        color:
+                          post.my_rating === 'positive'
+                            ? 'green'
+                            : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
+                            ? 'red'
+                            : Styling.colors.lighter,
+                        textAlign: 'right',
+                      },
+                    ]}>
+                    {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
+                  </Text>
+                </TouchableRipple>
+              )}
             </View>
           </TouchableRipple>
         </Swipeable>
