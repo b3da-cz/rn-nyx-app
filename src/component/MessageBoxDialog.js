@@ -9,6 +9,9 @@ type Props = {
   nyx: any,
   isVisible: boolean,
   params: { discussionId: number, mailRecipient: string },
+  fabBackgroundColor?: string,
+  fabBottomPosition?: number,
+  fabIcon?: string,
   onSend: Function,
 }
 export class MessageBoxDialog extends Component<Props> {
@@ -40,10 +43,10 @@ export class MessageBoxDialog extends Component<Props> {
     ]
   }
 
-  showDialog() {
+  showDialog(isFromFab = false) {
     this.setState({ isDialogVisible: true })
-    if (this.props.params.mailRecipient?.length) {
-      this.setState({ selectedRecipient: this.props.params.mailRecipient })
+    if (this.props.params.mailRecipient?.length && !isFromFab) {
+      this.setState({ selectedRecipient: this.props.params.mailRecipient, searchPhrase: '', users: [] })
     }
     this.fetchUploadedFiles()
     setTimeout(() => this.refMsgBox?.focus(), 100)
@@ -315,12 +318,12 @@ export class MessageBoxDialog extends Component<Props> {
             position: 'absolute',
             margin: 16,
             right: 0,
-            bottom: 50,
-            backgroundColor: Styling.colors.primary,
+            bottom: this.props.fabBottomPosition || 0,
+            backgroundColor: this.props.fabBackgroundColor || Styling.colors.primary,
           }}
-          icon="message"
+          icon={this.props.fabIcon || 'message'}
           visible={isVisible && !isDialogVisible}
-          onPress={() => this.showDialog()}
+          onPress={() => this.showDialog(true)}
         />
       </View>
     )

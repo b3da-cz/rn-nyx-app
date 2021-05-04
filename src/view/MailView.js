@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
-import { FabComponent, PostComponent } from '../component'
-import { Context, getDistinctPosts, Styling, parsePostsContent, t } from '../lib'
+import { FabComponent, MessageBoxDialog, PostComponent } from '../component'
+import { Context, getDistinctPosts, Styling, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -18,8 +18,10 @@ export class MailView extends Component<Props> {
       conversations: [],
       messages: [],
       isSubmenuVisible: false,
+      isMsgBtnVisible: false,
       isFetching: false,
     }
+    this.refMsgBoxDialog = null
     this.refScroll = null
     this.navFocusListener = null
     this.navBlurListener = null
@@ -29,10 +31,10 @@ export class MailView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false })
+      this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
     setTimeout(() => this.getLatestMessages(), 100)
   }
@@ -47,9 +49,11 @@ export class MailView extends Component<Props> {
   }
 
   async getLatestMessages() {
+    const isFocused = this.props.navigation.isFocused()
     this.setState({
       isFetching: true,
-      isSubmenuVisible: this.props.navigation.isFocused(),
+      isSubmenuVisible: isFocused,
+      isMsgBtnVisible: isFocused,
     })
     const res = await this.nyx.getMail()
     const parsedMessages = parsePostsContent(res.posts)
@@ -116,6 +120,15 @@ export class MailView extends Component<Props> {
     console.warn('todo') // TODO: remove
   }
 
+  async onReply(username) {
+    if (this.state.activeRecipient !== username) {
+      this.setState({ activeRecipient: username })
+      await wait()
+      // await this.onConversationSelected(username)
+    }
+    this.refMsgBoxDialog?.showDialog()
+  }
+
   getPickerItemColor(val, hasUnreadMail) {
     return hasUnreadMail
       ? Styling.colors.secondary
@@ -137,12 +150,13 @@ export class MailView extends Component<Props> {
         isUnread={msg.unread}
         isHeaderInteractive={false}
         isHeaderPressable={true}
-        onHeaderPress={() =>
-          this.props.navigation.push('composePost', {
-            isMailPost: true,
-            username: msg.username,
-          })
-        }
+        onHeaderPress={() => this.onReply(msg.username)}
+        // onHeaderPress={() =>
+        //   this.props.navigation.push('composePost', {
+        //     isMailPost: true,
+        //     username: msg.username,
+        //   })
+        // }
         onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
         onImage={image => this.showImages(image)}
         onDelete={postId => this.onPostDelete(postId)}
@@ -183,32 +197,43 @@ export class MailView extends Component<Props> {
           onEndReachedThreshold={0.01}
           renderItem={({ item }) => this.renderMessage(item)}
         />
-        <FabComponent
-          isVisible={this.state.isSubmenuVisible}
-          iconOpen={'email'}
-          backgroundColor={Styling.colors.secondary}
-          actions={
-            this.state.activeRecipient === 'reminders'
-              ? []
-              : [
-                  {
-                    icon: 'bell',
-                    label: 'aa',
-                    onPress: () => this.getReminders(),
-                  },
-                ]
-          }
-          onPress={isOpen => {
-            if (isOpen) {
-              this.props.navigation.push('composePost', {
-                isMailPost: true,
-                username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',
-              })
-            } else if (!isOpen && this.state.activeRecipient === 'reminders') {
-              this.getLatestMessages() // todo push new view for reminders
-            }
-          }}
+        <MessageBoxDialog
+          ref={r => (this.refMsgBoxDialog = r)}
+          nyx={this.nyx}
+          params={{ mailRecipient: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '' }}
+          fabBackgroundColor={Styling.colors.secondary}
+          fabIcon={'email'}
+          fabBottomPosition={50}
+          isVisible={this.state.isMsgBtnVisible}
+          onSend={() => this.getLatestMessages()}
         />
+        {/*todo reminders*/}
+        {/*<FabComponent*/}
+        {/*  isVisible={this.state.isSubmenuVisible}*/}
+        {/*  iconOpen={'email'}*/}
+        {/*  backgroundColor={Styling.colors.secondary}*/}
+        {/*  actions={*/}
+        {/*    this.state.activeRecipient === 'reminders'*/}
+        {/*      ? []*/}
+        {/*      : [*/}
+        {/*          {*/}
+        {/*            icon: 'bell',*/}
+        {/*            label: 'aa',*/}
+        {/*            onPress: () => this.getReminders(),*/}
+        {/*          },*/}
+        {/*        ]*/}
+        {/*  }*/}
+        {/*  onPress={isOpen => {*/}
+        {/*    if (isOpen) {*/}
+        {/*      this.props.navigation.push('composePost', {*/}
+        {/*        isMailPost: true,*/}
+        {/*        username: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '',*/}
+        {/*      })*/}
+        {/*    } else if (!isOpen && this.state.activeRecipient === 'reminders') {*/}
+        {/*      this.getLatestMessages() // todo push new view for reminders*/}
+        {/*    }*/}
+        {/*  }}*/}
+        {/*/>*/}
       </View>
     )
   }
