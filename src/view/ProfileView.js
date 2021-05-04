@@ -31,6 +31,7 @@ export class ProfileView extends Component<Props> {
       isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
       isBookmarksEnabled: config?.isBookmarksEnabled !== undefined ? !!config.isBookmarksEnabled : true,
       isHistoryEnabled: config?.isHistoryEnabled !== undefined ? !!config.isHistoryEnabled : true,
+      isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
     }
@@ -68,6 +69,14 @@ export class ProfileView extends Component<Props> {
     this.setState({ initialRouteName })
     const conf = await Storage.getConfig()
     conf.initialRouteName = initialRouteName
+    await Storage.setConfig(conf)
+    this.props.onConfigChange()
+  }
+
+  async setNavGesturesEnabled(isNavGesturesEnabled) {
+    this.setState({ isNavGesturesEnabled })
+    const conf = await Storage.getConfig()
+    conf.isNavGesturesEnabled = isNavGesturesEnabled
     await Storage.setConfig(conf)
     this.props.onConfigChange()
   }
@@ -137,6 +146,22 @@ export class ProfileView extends Component<Props> {
             thumbColor={this.state.isBottomTabs ? Styling.colors.primary : Styling.colors.lighter}
             onValueChange={val => this.setBottomTabs(val)}
             value={this.state.isBottomTabs}
+          />
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: Styling.metrics.block.large,
+          }}>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
+            {t('profile.navGestures')}
+          </Text>
+          <Switch
+            thumbColor={this.state.isNavGesturesEnabled ? Styling.colors.primary : Styling.colors.lighter}
+            onValueChange={val => this.setNavGesturesEnabled(val)}
+            value={this.state.isNavGesturesEnabled}
           />
         </View>
         <View

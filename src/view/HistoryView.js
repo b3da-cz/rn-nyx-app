@@ -22,7 +22,7 @@ export class HistoryView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.getHistory()
+      setTimeout(() => this.getHistory(), 100)
     })
     setTimeout(() => this.getHistory(), 100)
   }

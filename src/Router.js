@@ -130,6 +130,8 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         jumpToLastSeen={jumpToLastSeen}
         onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
         onImages={(images, i) => showImages(navigation, images, i)}
+        // onHeaderSwipe={isSwiping => navigation.setOptions({ gestureEnabled: !isSwiping })}
+        // onHeaderSwipe={isSwiping => setNavGesturesEnabled(isSwiping)}
       />
     )
   }
@@ -263,6 +265,17 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         initialRouteName={config.initialRouteName}
         tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
         lazy={true}
+        swipeEnabled={config.isNavGesturesEnabled}
+        // gestureHandlerProps={{
+        //   wip, needs more testing
+        //   maxPointers: 1,
+        //   minDist: 200,
+        //   minDeltaX: 80,
+        //   activeOffsetX: undefined,
+        //
+        //   hitSlop: {height: 60, bottom: 0},
+        //   minDeltaY: 0,
+        // }}
         options={{ cardStyle: { backgroundColor: '#000' } }}
         tabBarOptions={NavOptions.tabBarOptions}>
         {config.isHistoryEnabled && (

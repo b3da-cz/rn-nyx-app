@@ -23,7 +23,7 @@ export class BookmarksView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.getBookmarks()
+      setTimeout(() => this.getBookmarks(), 100)
     })
     setTimeout(() => this.getBookmarks(), 100)
   }

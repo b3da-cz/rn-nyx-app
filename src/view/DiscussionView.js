@@ -12,6 +12,7 @@ type Props = {
   jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
+  onHeaderSwipe: Function,
 }
 export class DiscussionView extends Component<Props> {
   static contextType = Context
@@ -319,6 +320,7 @@ export class DiscussionView extends Component<Props> {
           onRefresh={() => this.loadDiscussionTop()}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
+          // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',
             backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
@@ -346,6 +348,8 @@ export class DiscussionView extends Component<Props> {
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
+              // onHeaderSwipe={isSwiping => this.setState({ isSwiping })}
+              onHeaderSwipe={isSwiping => this.props.onHeaderSwipe(isSwiping)}
             />
           )}
         />

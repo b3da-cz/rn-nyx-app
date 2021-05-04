@@ -19,6 +19,7 @@ type Props = {
   onReply?: Function,
   onDelete: Function,
   onVoteCast?: Function,
+  onSwipe?: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
   constructor(props) {
@@ -112,6 +113,13 @@ export class PostHeaderComponent extends Component<Props> {
     return (
       <View>
         <Swipeable
+          onSwipeStart={e => {
+            e.preventDefault()
+            e.stopPropagation()
+            return false
+          }}
+          // onSwipeStart={() => this.props.onSwipe(true)}
+          // onSwipeRelease={() => this.props.onSwipe(false)}
           leftButtons={[
             <ButtonSquareComponent
               key={`${post.id}_btn_reply`}

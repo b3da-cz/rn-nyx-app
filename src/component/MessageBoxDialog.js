@@ -318,7 +318,7 @@ export class MessageBoxDialog extends Component<Props> {
             bottom: 50,
             backgroundColor: Styling.colors.primary,
           }}
-          icon="plus"
+          icon="message"
           visible={isVisible && !isDialogVisible}
           onPress={() => this.showDialog()}
         />

@@ -21,6 +21,7 @@ type Props = {
   isHeaderInteractive: boolean,
   isHeaderPressable: boolean,
   onHeaderPress?: Function,
+  onHeaderSwipe?: Function,
   onDiscussionDetailShow: Function,
   onReply?: Function,
   onImage: Function,
@@ -232,6 +233,9 @@ export class PostComponent extends Component<Props> {
           }
           onDelete={postId => this.props.onDelete(postId)}
           onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
+          onSwipe={isSwiping =>
+            typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
+          }
         />
         <View
           style={[

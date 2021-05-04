@@ -92,6 +92,10 @@
       "cs": "Navigační taby dole",
       "en": "Tabs on bottom"
     },
+    "navGestures": {
+      "cs": "Navigační gesta",
+      "en": "Navigation gestures"
+    },
     "initialView": {
       "cs": "Start aplikace na",
       "en": "Initial view"
