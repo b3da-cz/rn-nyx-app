@@ -190,8 +190,8 @@ export class Parser {
           .join('&')
           .replace(/(<([^>]+)>)/gi, '')
         // const withoutWhitespaces = p.replace(/\s+/g, '')
-        if (!p || (p && (p.length === 0 || p === ' '))) {
-          this.contentParts.splice(i)
+        if (!p || (p && (p.length === 0 || p === ' ' || p === '\n'))) {
+          this.contentParts.splice(i, 1)
         } else {
           this.contentParts[i] = p
           this.clearText += this.contentParts[i]
