@@ -10,7 +10,7 @@ export const FabComponent = ({
   iconOpen,
   iconClosed = 'plus',
   backgroundColor = Styling.colors.primary,
-  paddingBottom = 50,
+  paddingBottom = 45,
   onPress,
 }) => {
   const [isOpen, setIsOpen] = useState(false)

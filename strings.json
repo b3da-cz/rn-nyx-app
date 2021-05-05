@@ -165,6 +165,10 @@
     "cs": "Kategorie",
     "en": "Categories"
   },
+  "board": {
+    "cs": "Nástěnka",
+    "en": "Board"
+  },
   "header": {
     "cs": "Záhlaví",
     "en": "Header"

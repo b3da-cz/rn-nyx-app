@@ -81,17 +81,20 @@ export class Nyx {
       this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
       return res
     } catch (e) {
-      this.logError('get history', e)
+      this.logError('get bookmarks', e)
     }
     return null
   }
 
-  async getHistory() {
+  async getHistory(showRead = true, showBooked = true) {
     try {
-      const res = await fetch('https://nyx.cz/api/bookmarks/history/more', {
-        method: 'GET',
-        headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      const res = await fetch(
+        `https://nyx.cz/api/bookmarks/history?more_results=true&show_read=${showRead}&show_booked=${showBooked}`,
+        {
+          method: 'GET',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
       this.store.context = res.context
       this.store.discussions = res.discussions
       return res
@@ -166,6 +169,18 @@ export class Nyx {
         }
       })
       return res
+    } catch (e) {
+      this.logError('get discussion', e)
+    }
+    return null
+  }
+
+  async getDiscussionBoard(id) {
+    try {
+      return await fetch(`https://nyx.cz/api/discussion/${id}/content/home`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
     } catch (e) {
       this.logError('get discussion', e)
     }

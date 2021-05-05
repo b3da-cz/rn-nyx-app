@@ -14,6 +14,7 @@ type Props = {
   fabTopPosition?: number,
   fabIcon?: string,
   onSend: Function,
+  onDismiss?: Function,
 }
 export class MessageBoxDialog extends Component<Props> {
   constructor(props) {
@@ -152,6 +153,11 @@ export class MessageBoxDialog extends Component<Props> {
     this.props.onSend()
   }
 
+  dismissDialog() {
+    this.setState({ isDialogVisible: false })
+    typeof this.props.onDismiss === 'function' && this.props.onDismiss()
+  }
+
   render() {
     const { isVisible, params } = this.props
     const {
@@ -172,7 +178,7 @@ export class MessageBoxDialog extends Component<Props> {
       <View style={{ position: 'absolute', top: 0, height: '100%', left: 0, right: 0 }}>
         <Dialog
           visible={isDialogVisible}
-          onDismiss={() => this.setState({ isDialogVisible: false })}
+          onDismiss={() => this.dismissDialog()}
           style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
           <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 5, paddingBottom: 0 }}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>

@@ -190,7 +190,7 @@ export class PostComponent extends Component<Props> {
 
   async rollDice() {
     let res = null
-    if (this.props.post.location === 'header') {
+    if (this.props.post.location === 'header' || this.props.post.location === 'home') {
       res = await this.props.nyx.rollDiceInHeader(this.props.post.discussion_id, this.props.post.id)
     } else {
       res = await this.props.nyx.rollDice(this.props.post.discussion_id, this.props.post.id)
@@ -200,7 +200,7 @@ export class PostComponent extends Component<Props> {
 
   async voteInPoll(answers) {
     let res = null
-    if (this.props.post.location === 'header') {
+    if (this.props.post.location === 'header' || this.props.post.location === 'home') {
       res = await this.props.nyx.voteInHeaderPoll(this.props.post.discussion_id, this.props.post.id, answers)
     } else {
       res = await this.props.nyx.voteInPoll(this.props.post.discussion_id, this.props.post.id, answers)

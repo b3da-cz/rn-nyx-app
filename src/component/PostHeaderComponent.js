@@ -114,7 +114,7 @@ export class PostHeaderComponent extends Component<Props> {
 
   render() {
     const { post } = this.props
-    if (post.location === 'header') {
+    if (post.location === 'header' || post.location === 'home') {
       return null
     }
     return (
