@@ -67,13 +67,10 @@ export class MailView extends Component<Props> {
     })
     const res = await this.nyx.getMail()
     const parsedMessages = parsePostsContent(res.posts)
-    const parsedReminders = parsePostsContent(res.reminders)
     this.setState({
       conversations: res.conversations,
       messages: parsedMessages,
-      reminders: parsedReminders,
       isFetching: false,
-      activeRecipient: this.state.activeRecipient === 'reminders' ? 'all' : this.state.activeRecipient,
     })
   }
 
@@ -101,18 +98,6 @@ export class MailView extends Component<Props> {
       activeRecipient: username,
       conversations: res.conversations,
       messages: res.posts,
-      isFetching: false,
-    })
-  }
-
-  async getRemindsers() {
-    this.setState({ isFetching: true })
-    const res = await this.nyx.getReminders('mail')
-    const parsedReminders = parsePostsContent(res.reminders)
-    this.setState({
-      activeRecipient: 'reminders',
-      conversations: res.conversations,
-      reminders: parsedReminders,
       isFetching: false,
     })
   }
@@ -170,7 +155,7 @@ export class MailView extends Component<Props> {
   render() {
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
-        {this.state.conversations && this.state.conversations.length > 0 && this.state.activeRecipient !== 'reminders' && (
+        {this.state.conversations && this.state.conversations.length > 0 && (
           <Picker
             mode={'dropdown'}
             style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
@@ -191,7 +176,7 @@ export class MailView extends Component<Props> {
         <FlatList
           style={{ height: '100%' }}
           ref={r => (this.refScroll = r)}
-          data={this.state.activeRecipient === 'reminders' ? this.state.reminders : this.state.messages}
+          data={this.state.messages}
           extraData={this.state}
           keyExtractor={(item, index) => `${item.id}`}
           refreshing={this.state.isFetching}

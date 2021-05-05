@@ -59,14 +59,14 @@ export class Parser {
   tokenizeContent() {
     const T = this.TOKEN
     let content = this.contentRaw
-    this.spoilers.forEach(s => (content = content.split(s.raw).join(`${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
-    this.replies.forEach(l => (content = content.split(l.raw).join(`${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
-    this.links.forEach(l => (content = content.split(l.raw).join(`${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
-    this.images.forEach(i => (content = content.split(i.raw).join(`${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
-    this.codeBlocks.forEach(c => (content = content.split(c.raw).join(`${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
-    this.ytBlocks.forEach(y => (content = content.split(y.raw).join(`${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
-    this.ytBlocksToDelete.forEach(y => (content = content.split(y.raw).join('')))
-    this.pcBlocksToDelete.forEach(p => (content = content.split(p.raw).join('')))
+    this.spoilers.forEach(s => (content = content.replace(s.raw, `${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
+    this.replies.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
+    this.links.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
+    this.images.forEach(i => (content = content.replace(i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
+    this.codeBlocks.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
+    this.ytBlocks.forEach(y => (content = content.replace(y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
+    this.ytBlocksToDelete.forEach(y => (content = content.replace(y.raw, '')))
+    this.pcBlocksToDelete.forEach(p => (content = content.replace(p.raw, '')))
     this.contentParts = content.split(T.SPLIT)
     this.finalizeText()
     this.contentTemplate = content
@@ -204,7 +204,7 @@ export class Parser {
         this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
-        this.clearText += `${img.src.startsWith('/files/') ? 'https://nyx.cz' : ''}${img.url}`
+        this.clearText += `${img.src.startsWith('/files/') ? 'https://nyx.cz' : ''}${img.src}`
       }
     })
   }
