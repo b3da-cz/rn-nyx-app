@@ -31,7 +31,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}
-          refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getHistory()} />}>
+          refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getList()} />}>
           <View>
             {this.state.discussions?.length > 0 &&
               this.state.discussions.map(d => (

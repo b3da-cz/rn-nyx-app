@@ -41,7 +41,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
           initialNumToRender={100}
           keyExtractor={(item, index) => item.discussion_id}
           refreshing={this.state.isFetching}
-          onRefresh={() => this.getBookmarks()}
+          onRefresh={() => this.getList()}
           renderSectionHeader={({ section: { title } }) => (
             <Text
               style={{
