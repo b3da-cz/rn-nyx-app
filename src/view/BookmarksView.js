@@ -1,15 +1,15 @@
-import React, { Component } from 'react'
+import React from 'react'
 import { SectionList, Text, View } from 'react-native'
 import { FAB } from 'react-native-paper'
 import { DiscussionRowComponent } from '../component'
-import { Context, Storage, Styling } from '../lib'
+import { Styling } from '../lib'
+import { BaseDiscussionListView } from '../view'
 
 type Props = {
   navigation: any,
   onDetailShow: Function,
 }
-export class BookmarksView extends Component<Props> {
-  static contextType = Context
+export class BookmarksView extends BaseDiscussionListView<Props> {
   constructor(props) {
     super(props)
     this.state = {
@@ -18,43 +18,9 @@ export class BookmarksView extends Component<Props> {
       isShowingRead: false,
       isFetching: false,
     }
-    this.navFocusListener = null
-    this.navTabPressListener = null
   }
 
-  componentDidMount() {
-    this.config = this.context.config
-    this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
-    this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      setTimeout(() => this.getBookmarks(), 100)
-    })
-    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
-      if (isFocused && !this.state.isFetching) {
-        this.getBookmarks()
-      }
-    })
-    setTimeout(() => {
-      this.init()
-      this.getBookmarks()
-    }, 100)
-  }
-
-  componentWillUnmount() {
-    if (this.navFocusListener) {
-      this.navFocusListener()
-    }
-    if (this.navTabPressListener) {
-      this.navTabPressListener()
-    }
-  }
-
-  init() {
-    this.setState({ isShowingRead: this.config?.isShowingReadOnLists })
-  }
-
-  async getBookmarks() {
+  async getList() {
     this.setState({ isFetching: true })
     const res = await this.nyx.getBookmarks(this.state.isShowingRead)
     if (res?.bookmarks?.length) {
@@ -64,18 +30,6 @@ export class BookmarksView extends Component<Props> {
     } else {
       this.setState({ isFetching: false })
     }
-  }
-
-  async toggleRead(isShowingRead) {
-    const config = await Storage.getConfig()
-    config.isShowingReadOnLists = !isShowingRead
-    this.setState({ isShowingRead: !isShowingRead })
-    await Storage.setConfig(config)
-    await this.getBookmarks()
-  }
-
-  showDiscussion(id) {
-    this.props.onDetailShow(id)
   }
 
   render() {
@@ -121,7 +75,7 @@ export class BookmarksView extends Component<Props> {
             backgroundColor: Styling.colors.darker,
             opacity: 0.75,
           }}
-          icon={this.state.isShowingRead ? 'star' : 'star-outline'}
+          icon={this.state.isShowingRead ? 'star-outline' : 'star'}
           visible={true}
           onPress={() => this.toggleRead(this.state.isShowingRead)}
         />

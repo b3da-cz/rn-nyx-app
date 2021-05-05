@@ -1,3 +1,4 @@
+export * from './BaseDiscussionListView'
 export * from './BookmarksView'
 export * from './ComposePostView'
 export * from './DiscussionView'
