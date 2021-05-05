@@ -20,6 +20,7 @@ export class HistoryView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.config = this.context.config
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
@@ -45,7 +46,7 @@ export class HistoryView extends Component<Props> {
 
   async getHistory() {
     this.setState({ isFetching: true })
-    const res = await this.nyx.getHistory()
+    const res = await this.nyx.getHistory(this.config?.isShowingReadOnLists)
     this.setState({ discussions: res.discussions, isFetching: false })
   }
 

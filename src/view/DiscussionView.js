@@ -8,6 +8,7 @@ type Props = {
   navigation: any,
   id: number,
   postId?: number,
+  showBoard?: boolean,
   showHeader?: boolean,
   jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
@@ -24,13 +25,14 @@ export class DiscussionView extends Component<Props> {
       posts: [],
       images: [],
       header: [],
+      board: [],
       bookmarkCategories: [],
       lastSeenPostId: null,
       isBooked: null,
       isCategoryPickerVisible: false,
+      isBoardVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
-      isMsgBtnVisible: false,
       isFetching: false,
     }
     this.refScroll = null
@@ -40,17 +42,21 @@ export class DiscussionView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.config = this.context.config
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
+      this.setState({ isSubmenuVisible: true })
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
+      this.setState({ isSubmenuVisible: false })
     })
     this.setFocusOnStart()
     if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
+    } else if (this.props.showBoard) {
+      this.setBoardVisible(true)
+      this.fetchDiscussionBoard()
     } else {
       this.reloadDiscussionLatest().then(() => {
         if (this.props.showHeader) {
@@ -74,7 +80,7 @@ export class DiscussionView extends Component<Props> {
 
   setFocusOnStart() {
     const isFocused = this.props.navigation.isFocused()
-    this.setState({ isSubmenuVisible: isFocused, isMsgBtnVisible: isFocused })
+    this.setState({ isSubmenuVisible: isFocused })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -152,6 +158,29 @@ export class DiscussionView extends Component<Props> {
     return parsedPosts
   }
 
+  async fetchDiscussionBoard() {
+    this.setState({ isFetching: true })
+    const res = await this.nyx.getDiscussionBoard(this.props.id)
+    if (!res || res?.error) {
+      console.warn(res)
+      return
+    }
+    const parsedBoard = parsePostsContent(res.items)
+    const title = `${res.discussion_common.discussion.name_static}${
+      res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
+    }`
+    const isBooked = res?.discussion_common?.bookmark?.bookmark
+    const images = parsedBoard.flatMap(p => p.parsed.images)
+    this.setState({
+      title,
+      images,
+      isBooked,
+      posts: parsedBoard,
+      isFetching: false,
+    })
+    this.onDiscussionFetched(title)
+  }
+
   getStoredPostById(postId) {
     return this.state?.posts?.filter(p => p.id == postId)[0]
   }
@@ -207,6 +236,11 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
+  showMsgBox() {
+    this.refMsgBoxDialog?.showDialog(true)
+    this.setState({ isSubmenuVisible: false })
+  }
+
   onReply(discussionId, postId, username) {
     const msg = this.refMsgBoxDialog?.state?.message || ''
     this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
@@ -217,15 +251,23 @@ export class DiscussionView extends Component<Props> {
     if (updatedPost?.error) {
       return
     }
-    const posts = getDistinctPosts([updatedPost], this.state.posts)
-    this.setState({ posts })
+    if (updatedPost?.location === 'home') {
+      this.fetchDiscussionBoard()
+    } else if (updatedPost?.location === 'header') {
+      this.reloadDiscussionLatest()
+    } else {
+      const posts = getDistinctPosts([updatedPost], this.state.posts)
+      this.setState({ posts })
+    }
   }
 
   onDiceRollOrPollVote(updatedPost) {
     if (updatedPost?.error) {
       return
     }
-    if (updatedPost?.location === 'header') {
+    if (updatedPost?.location === 'home') {
+      this.fetchDiscussionBoard()
+    } else if (updatedPost?.location === 'header') {
       // const parsedHeader = parsePostsContent([updatedPost])
       // const header = getDistinctPosts(parsedHeader, this.state.header)
       // this.setState({ header }) // todo proper model
@@ -259,6 +301,15 @@ export class DiscussionView extends Component<Props> {
     this.setState({ isFetching: false, isCategoryPickerVisible: false })
   }
 
+  setBoardVisible(isBoardVisible) {
+    this.setState({ isBoardVisible })
+    this.onDiscussionFetched(this.state.title)
+  }
+
+  showBoard() {
+    this.props.navigation.push('discussion', { discussionId: this.props.id, showBoard: true })
+  }
+
   setHeaderVisible(isHeaderVisible) {
     this.setState({ isHeaderVisible })
     this.onDiscussionFetched(this.state.title)
@@ -270,7 +321,11 @@ export class DiscussionView extends Component<Props> {
 
   onDiscussionFetched(title, uploadedFiles = []) {
     this.props.onDiscussionFetched({
-      title: this.state.isHeaderVisible ? `${t('header')} - ${title}` : title,
+      title: this.state.isBoardVisible
+        ? `${t('board')} - ${title}`
+        : this.state.isHeaderVisible
+        ? `${t('header')} - ${title}`
+        : title,
       uploadedFiles,
     })
   }
@@ -285,32 +340,36 @@ export class DiscussionView extends Component<Props> {
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
         />
-        {/*todo topic actions*/}
-        {/*<FabComponent*/}
-        {/*  isVisible={this.state.isSubmenuVisible}*/}
-        {/*  iconOpen={'email'}*/}
-        {/*  actions={[*/}
-        {/*    {*/}
-        {/*      key: 'bookmark',*/}
-        {/*      icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',*/}
-        {/*      label: this.state.isBooked ? t('unbook') : t('book'),*/}
-        {/*      onPress: () => this.bookmarkDiscussion(),*/}
-        {/*    },*/}
-        {/*    {*/}
-        {/*      key: 'header',*/}
-        {/*      icon: 'file-table-box',*/}
-        {/*      label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,*/}
-        {/*      onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),*/}
-        {/*    },*/}
-        {/*  ]}*/}
-        {/*  onPress={isOpen => {*/}
-        {/*    if (isOpen) {*/}
-        {/*      this.props.navigation.push('composePost', {*/}
-        {/*        discussionId: this.props.id,*/}
-        {/*      })*/}
-        {/*    }*/}
-        {/*  }}*/}
-        {/*/>*/}
+        <FabComponent
+          isVisible={this.state.isSubmenuVisible}
+          iconOpen={'message'}
+          paddingBottom={this.config?.isBottomTabs ? 45 : 0}
+          actions={[
+            {
+              key: 'bookmark',
+              icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
+              label: this.state.isBooked ? t('unbook') : t('book'),
+              onPress: () => this.bookmarkDiscussion(),
+            },
+            {
+              key: 'board',
+              icon: 'home',
+              label: `${this.state.isBoardVisible ? t('hide') : t('show')} ${t('board')}`,
+              onPress: () => (this.state.isBoardVisible ? this.props.navigation.goBack() : this.showBoard()),
+            },
+            {
+              key: 'header',
+              icon: 'file-table-box',
+              label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
+              onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
+            },
+          ]}
+          onPress={isOpen => {
+            if (isOpen) {
+              this.showMsgBox()
+            }
+          }}
+        />
         <FlatList
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
@@ -360,8 +419,12 @@ export class DiscussionView extends Component<Props> {
           ref={r => (this.refMsgBoxDialog = r)}
           nyx={this.nyx}
           params={{ discussionId: this.props.id }}
-          isVisible={this.state.isMsgBtnVisible}
-          onSend={() => this.reloadDiscussionLatest(true)}
+          isVisible={false}
+          onDismiss={() => this.setState({ isSubmenuVisible: true })}
+          onSend={() => {
+            this.setState({ isSubmenuVisible: true })
+            this.reloadDiscussionLatest(true)
+          }}
         />
         {/*</Portal>*/}
       </View>

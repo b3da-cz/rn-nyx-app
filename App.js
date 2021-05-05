@@ -26,6 +26,7 @@ const initialConfig = {
   isLastEnabled: true,
   isRemindersEnabled: true,
   isNavGesturesEnabled: true,
+  isShowingReadOnLists: true,
   initialRouteName: 'historyStack',
   fcmToken: null,
   isFCMSubscribed: false,
@@ -93,6 +94,7 @@ const App: () => Node = () => {
       isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,
       isRemindersEnabled: conf?.isRemindersEnabled !== undefined ? !!conf.isRemindersEnabled : true,
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? true : !!conf.isNavGesturesEnabled,
+      isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
@@ -125,7 +127,7 @@ const App: () => Node = () => {
     <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
       {!isAppLoaded && <LoaderComponent />}
       {isAuthenticated && (
-        <Context.Provider value={{ nyx, theme, refs }}>
+        <Context.Provider value={{ config, nyx, theme, refs }}>
           <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CombinedDefaultTheme}>
             <Router config={config} nyx={nyx} refs={refs} onConfigReload={() => loadConfig()} />
           </NavigationContainer>
