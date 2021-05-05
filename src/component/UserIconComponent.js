@@ -17,6 +17,7 @@ export const UserIconComponent = ({
   if (!username) {
     username = 'B3DA_API_TEST' // default icon, todo
   }
+  username = username.toUpperCase()
   return (
     <Image
       style={{
