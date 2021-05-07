@@ -245,6 +245,7 @@ export class DiscussionView extends Component<Props> {
     const msg = this.refMsgBoxDialog?.state?.message || ''
     this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
     this.refMsgBoxDialog?.showDialog()
+    this.setState({ isSubmenuVisible: false })
   }
 
   onVoteCast(updatedPost) {
