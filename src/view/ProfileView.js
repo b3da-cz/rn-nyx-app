@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { ScrollView, Switch, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
-import {ButtonComponent, confirm, FormRowToggleComponent, MessageBoxDialog, UserIconComponent} from '../component';
+import { ButtonComponent, confirm, FormRowToggleComponent, MessageBoxDialog, UserIconComponent } from '../component'
 import { Context, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
@@ -146,13 +146,15 @@ export class ProfileView extends Component<Props> {
           onChange={val => this.setOption('isRemindersEnabled', val)}
         />
         <View style={{ marginTop: 10 }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>{t('profile.initialView')}</Text>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
+            {t('profile.initialView')}
+          </Text>
           <Picker
             mode={'dropdown'}
             style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
             prompt={t('profile.initialView')}
             selectedValue={this.state.initialRouteName}
-            onValueChange={route => this.setInitialRouteName(route)}>
+            onValueChange={route => this.setOption('initialRouteName', route)}>
             <Picker.Item
               key={'historyStack'}
               label={t('history')}

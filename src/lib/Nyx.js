@@ -39,6 +39,7 @@ export class Nyx {
 
   logout() {
     Storage.removeAll()
+    this.deleteAuthToken()
     if (this.onLogout && typeof this.onLogout === 'function') {
       this.onLogout()
     }
@@ -68,6 +69,17 @@ export class Nyx {
       }
     } catch (e) {
       this.logError('create token', e)
+    }
+  }
+
+  async deleteAuthToken() {
+    try {
+      return await fetch(`https://nyx.cz/api/delete_token/${this.auth.token}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('delete token', e)
     }
   }
 

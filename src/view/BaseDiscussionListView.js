@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import { Context, Storage } from '../lib'
 
 export class BaseDiscussionListView extends Component<Props> {
