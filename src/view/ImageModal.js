@@ -42,6 +42,7 @@ export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'f
       <ImageViewer
         imageUrls={images}
         index={imgIndex}
+        doubleClickInterval={300}
         onSave={img => share(img)}
         loadingRender={() => <LoaderComponent />}
         menuContext={{ saveToLocal: t('share'), cancel: t('cancel') }}
