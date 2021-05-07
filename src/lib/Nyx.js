@@ -39,6 +39,7 @@ export class Nyx {
 
   logout() {
     Storage.removeAll()
+    this.deleteAuthToken()
     if (this.onLogout && typeof this.onLogout === 'function') {
       this.onLogout()
     }
@@ -71,6 +72,17 @@ export class Nyx {
     }
   }
 
+  async deleteAuthToken() {
+    try {
+      return await fetch(`https://nyx.cz/api/delete_token/${this.auth.token}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('delete token', e)
+    }
+  }
+
   async getBookmarks(includingSeen = true) {
     try {
       const res = await fetch(`https://nyx.cz/api/bookmarks${includingSeen ? '/all' : ''}`, {
@@ -86,10 +98,12 @@ export class Nyx {
     return null
   }
 
-  async getHistory(showRead = true, showBooked = true) {
+  async getHistory(showRead = true, showBooked?) {
     try {
       const res = await fetch(
-        `https://nyx.cz/api/bookmarks/history?more_results=true&show_read=${showRead}&show_booked=${showBooked}`,
+        `https://nyx.cz/api/bookmarks/history?more_results=true&show_read=${showRead}${
+          showBooked !== undefined ? `&show_booked=${showBooked}` : ''
+        }`,
         {
           method: 'GET',
           headers: this.getHeaders(),
