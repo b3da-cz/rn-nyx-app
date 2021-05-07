@@ -98,10 +98,12 @@ export class Nyx {
     return null
   }
 
-  async getHistory(showRead = true, showBooked = true) {
+  async getHistory(showRead = true, showBooked?) {
     try {
       const res = await fetch(
-        `https://nyx.cz/api/bookmarks/history?more_results=true&show_read=${showRead}&show_booked=${showBooked}`,
+        `https://nyx.cz/api/bookmarks/history?more_results=true&show_read=${showRead}${
+          showBooked !== undefined ? `&show_booked=${showBooked}` : ''
+        }`,
         {
           method: 'GET',
           headers: this.getHeaders(),
