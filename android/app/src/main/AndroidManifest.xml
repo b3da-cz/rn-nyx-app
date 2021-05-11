@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="net.b3da.nnn">
+          xmlns:tools="http://schemas.android.com/tools"
+          package="net.b3da.nnn">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -10,6 +11,10 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme">
+
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/ic_stat_ic_notification" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_color" tools:replace="android:resource" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="nnn-notifications" tools:replace="android:value" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
