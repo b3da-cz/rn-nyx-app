@@ -4,19 +4,15 @@ import { TouchableRipple } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const ImageComponent = ({ src, backgroundColor, width, height, useExactSize, onPress }) => {
-  const [imgSrc, setImgSrc] = useState(src)
-  const [imgWidth, setImgWidth] = useState(width)
-  const [imgHeight, setImgHeight] = useState(height)
+  const [imgWidth, setImgWidth] = useState(width || 0)
+  const [imgHeight, setImgHeight] = useState(height || 0)
   useLayoutEffect(() => {
     try {
-      if (src.startsWith('/files/')) {
-        setImgSrc(`https://nyx.cz${src}`)
-      }
       if (useExactSize) {
         setImgWidth(width)
         setImgHeight(height)
       } else {
-        Image.getSize(imgSrc, (w, h) => {
+        Image.getSize(src, (w, h) => {
           if (width && !height) {
             setImgHeight(h * (width / w))
           } else if (!width && height) {
@@ -31,9 +27,15 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
       setImgWidth(width)
       setImgHeight(width / 2.5)
     }
-  }, [height, imgSrc, src, useExactSize, width])
+  }, [height, src, useExactSize, width])
   return (
-    <TouchableRipple rippleColor={'rgba(18,146,180, 0.3)'} onPress={() => onPress()}>
+    <TouchableRipple
+      rippleColor={'rgba(18,146,180, 0.3)'}
+      style={{
+        width: imgWidth + 2 * Styling.metrics.block.small,
+        height: imgHeight + 2 * Styling.metrics.block.small,
+      }}
+      onPress={() => onPress()}>
       <Image
         style={{
           backgroundColor,
@@ -45,7 +47,7 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
         // resizeMode={'cover'} for thumbs
         resizeMode={'contain'}
         // resizeMode={'center'}
-        source={{ uri: imgSrc }}
+        source={{ uri: src }}
       />
     </TouchableRipple>
   )

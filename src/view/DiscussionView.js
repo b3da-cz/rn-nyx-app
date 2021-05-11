@@ -1,8 +1,14 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { Portal } from 'react-native-paper'
-import { BookmarkCategoriesDialog, FabComponent, MessageBoxDialog, PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
+import {
+  AdvertisementComponent,
+  BookmarkCategoriesDialog,
+  FabComponent,
+  MessageBoxDialog,
+  PostComponent,
+} from '../component'
+import { Context, formatDate, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   navigation: any,
@@ -15,6 +21,7 @@ type Props = {
   onImages: Function,
   onHeaderSwipe: Function,
 }
+// todo refactor
 export class DiscussionView extends Component<Props> {
   static contextType = Context
   constructor(props) {
@@ -22,12 +29,15 @@ export class DiscussionView extends Component<Props> {
     this.state = {
       title: '',
       discussionId: null,
+      advertisementOP: null,
       posts: [],
       images: [],
       header: [],
       board: [],
       bookmarkCategories: [],
       lastSeenPostId: null,
+      hasBoard: false,
+      hasHeader: false,
       isBooked: null,
       isCategoryPickerVisible: false,
       isBoardVisible: false,
@@ -131,6 +141,10 @@ export class DiscussionView extends Component<Props> {
     // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
     const res = await this.nyx.getDiscussion(idOrQueryString)
+    this.getAdvertisementOP(
+      res?.discussion_common?.advertisement_specific_data?.advertisement,
+      res?.discussion_common?.advertisement_specific_data?.attachments,
+    )
     const newPosts = getDistinctPosts(res.posts, this.state.posts)
     const parsedPosts = parsePostsContent(newPosts)
     const title = `${res.discussion_common.discussion.name_static}${
@@ -152,6 +166,8 @@ export class DiscussionView extends Component<Props> {
       lastSeenPostId,
       posts: parsedPosts,
       isFetching: false,
+      hasBoard: res.discussion_common?.discussion?.has_home,
+      hasHeader: res.discussion_common?.discussion?.has_header,
     })
     this.onDiscussionFetched(title, uploadedFiles)
     this.nyx.store.activeDiscussionId = this.props.id
@@ -179,6 +195,23 @@ export class DiscussionView extends Component<Props> {
       isFetching: false,
     })
     this.onDiscussionFetched(title)
+  }
+
+  getAdvertisementOP(ad, images) {
+    if (!ad) {
+      return
+    }
+    this.setState({
+      advertisementOP: {
+        action: ad.ad_type === 'offer' ? 'Nabízím' : 'Sháním',
+        summary: ad.summary,
+        shipping: ad.shipping,
+        images: images.map(img => ({ url: `https://nyx.cz${img.url}` })),
+        location: ad.location,
+        price: `${ad.price}${ad.currency}`,
+        updated: formatDate(ad.refreshed_at),
+      },
+    })
   }
 
   getStoredPostById(postId) {
@@ -225,9 +258,9 @@ export class DiscussionView extends Component<Props> {
     this.props.navigation.push('discussion', { discussionId, postId })
   }
 
-  showImages(image) {
-    const imgIndex = this.state.images.indexOf(image)
-    const images = this.state.images.map(img => ({ url: img.src }))
+  showImages(image, imageList?) {
+    const imgIndex = imageList?.length > 0 ? imageList.indexOf(image) : this.state.images.indexOf(image)
+    const images = imageList?.length > 0 ? imageList : this.state.images.map(img => ({ url: img?.src }))
     this.props.onImages(images, imgIndex)
   }
 
@@ -257,7 +290,10 @@ export class DiscussionView extends Component<Props> {
     } else if (updatedPost?.location === 'header') {
       this.reloadDiscussionLatest()
     } else {
-      const posts = getDistinctPosts([updatedPost], this.state.posts)
+      const post = {...this.state.posts.filter(p => p.id === updatedPost.id)[0]}
+      post.my_rating = updatedPost.my_rating
+      post.rating = updatedPost.rating
+      const posts = getDistinctPosts([post], this.state.posts)
       this.setState({ posts })
     }
   }
@@ -331,7 +367,36 @@ export class DiscussionView extends Component<Props> {
     })
   }
 
+  getFabActions() {
+    const actions = [
+      {
+        key: 'bookmark',
+        icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
+        label: this.state.isBooked ? t('unbook') : t('book'),
+        onPress: () => this.bookmarkDiscussion(),
+      },
+    ]
+    if (this.state.hasBoard) {
+      actions.push({
+        key: 'board',
+        icon: 'home',
+        label: `${this.state.isBoardVisible ? t('hide') : t('show')} ${t('board')}`,
+        onPress: () => (this.state.isBoardVisible ? this.props.navigation.goBack() : this.showBoard()),
+      })
+    }
+    if (this.state.hasHeader) {
+      actions.push({
+        key: 'header',
+        icon: 'file-table-box',
+        label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
+        onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
+      })
+    }
+    return actions
+  }
+
   render() {
+    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         <BookmarkCategoriesDialog
@@ -343,34 +408,30 @@ export class DiscussionView extends Component<Props> {
         />
         <FabComponent
           isVisible={this.state.isSubmenuVisible}
-          iconOpen={'message'}
+          iconOpen={isMarket ? 'close' : 'message'}
           paddingBottom={this.config?.isBottomTabs ? 45 : 0}
-          actions={[
-            {
-              key: 'bookmark',
-              icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
-              label: this.state.isBooked ? t('unbook') : t('book'),
-              onPress: () => this.bookmarkDiscussion(),
-            },
-            {
-              key: 'board',
-              icon: 'home',
-              label: `${this.state.isBoardVisible ? t('hide') : t('show')} ${t('board')}`,
-              onPress: () => (this.state.isBoardVisible ? this.props.navigation.goBack() : this.showBoard()),
-            },
-            {
-              key: 'header',
-              icon: 'file-table-box',
-              label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
-              onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
-            },
-          ]}
+          actions={this.getFabActions()}
           onPress={isOpen => {
-            if (isOpen) {
+            if (isOpen && !isMarket) {
               this.showMsgBox()
             }
           }}
         />
+        {this.state.advertisementOP && (
+          <AdvertisementComponent
+            action={this.state.advertisementOP.action}
+            summary={this.state.advertisementOP.summary}
+            shipping={this.state.advertisementOP.shipping}
+            images={this.state.advertisementOP.images}
+            location={this.state.advertisementOP.location}
+            price={this.state.advertisementOP.price}
+            updated={this.state.advertisementOP.updated}
+            isActive={false}
+            isDetail={true}
+            isDarkMode={this.isDarkMode}
+            onImage={img => this.showImages(img, this.state.advertisementOP.images)}
+          />
+        )}
         <FlatList
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
@@ -402,7 +463,7 @@ export class DiscussionView extends Component<Props> {
               isReply={false}
               isUnread={item.new}
               onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
-              onImage={image => this.showImages(image)}
+              onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
               onVoteCast={updatedPost => this.onVoteCast(updatedPost)}

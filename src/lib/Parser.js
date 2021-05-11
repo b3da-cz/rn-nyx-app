@@ -1,4 +1,5 @@
 import Bugfender from '@bugfender/rn-bugfender'
+import he from 'he'
 import { parse } from 'node-html-parser'
 import { generateUuidV4 } from '../lib'
 
@@ -14,11 +15,13 @@ export const TOKEN = {
 }
 
 export class Parser {
-  constructor(htmlString) {
+  constructor(htmlString, postType = 'text') {
+    // undefined type === users own text posts
     this.contentRaw = htmlString
     this.contentTemplate = null
     this.contentParts = []
     this.clearText = ''
+    this.type = postType
     this.isParsed = false
     this.isTokenized = false
     this.html = parse(`<div>${htmlString}</div>`)
@@ -26,6 +29,13 @@ export class Parser {
   }
 
   parse() {
+    // todo get img dimensions and calc layout
+    if (this.type === 'dice' || this.type === 'poll') {
+      return {}
+    }
+    if (this.type === 'advertisement') {
+      this.parseAdvertisement()
+    }
     if (!this.isParsed) {
       this.getBlocksFromHtml()
     }
@@ -33,6 +43,7 @@ export class Parser {
       this.tokenizeContent()
     }
     return {
+      advertisement: this.advertisement,
       contentParts: this.contentParts,
       spoilers: this.spoilers,
       replies: this.replies,
@@ -77,7 +88,7 @@ export class Parser {
     return this.html.querySelectorAll('.spoiler').map(s => ({
       id: generateUuidV4(),
       raw: s.toString(),
-      text: s.innerText,
+      text: this.replaceHtmlEntitiesAndTags(s.innerText || ''),
     }))
   }
 
@@ -85,10 +96,10 @@ export class Parser {
     return this.html.querySelectorAll('a[data-discussion-id]').map(a => ({
       id: generateUuidV4(),
       raw: a.toString(),
-      text: a.innerText,
+      text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
       discussionId: a.getAttribute('data-discussion-id'),
       postId: a.getAttribute('data-id'),
-      url: a.getAttribute('href'),
+      url: this.fixLink(a.getAttribute('href')),
     }))
   }
 
@@ -105,8 +116,8 @@ export class Parser {
       .map(a => ({
         id: generateUuidV4(),
         raw: a.toString(),
-        text: a.innerText,
-        url: a.getAttribute('href'),
+        text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
+        url: this.fixLink(a.getAttribute('href')),
       }))
   }
 
@@ -114,8 +125,8 @@ export class Parser {
     return this.html.querySelectorAll('img').map(i => ({
       id: generateUuidV4(),
       raw: i.toString(),
-      src: i.getAttribute('src'),
-      thumb: i.getAttribute('data-thumb'),
+      src: this.fixLink(i.getAttribute('src')),
+      thumb: this.fixLink(i.getAttribute('data-thumb')),
     }))
   }
 
@@ -137,7 +148,7 @@ export class Parser {
       .map(a => ({
         id: generateUuidV4(),
         raw: a.toString(),
-        text: a.innerText,
+        text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
         link: a.getAttribute('href'),
         videoId:
           a.getAttribute('href') && a.getAttribute('href').includes('youtube')
@@ -164,6 +175,17 @@ export class Parser {
     }))
   }
 
+  parseAdvertisement() {
+    this.advertisement = {
+      action: this.html.querySelector('h3').innerText,
+      title: this.replaceHtmlEntitiesAndTags(this.html.querySelector('h2').innerText),
+      location: this.replaceHtmlEntitiesAndTags(this.html.querySelector('div.location').innerText),
+      price: this.replaceHtmlEntitiesAndTags(this.html.querySelector('div.price').innerText),
+      updated: this.html.querySelector('div.updated').innerText,
+    }
+    // console.warn(this.html.firstChild.structure, this.advertisement) // TODO: remove
+  }
+
   finalizeText() {
     this.clearText = ''
     this.contentParts.forEach((p, i) => {
@@ -174,21 +196,7 @@ export class Parser {
         if (p.startsWith('<br>')) {
           p = p.substring(4)
         }
-        p = p.trim()
-        p = p
-          .split('<br>')
-          .join('\n')
-          .split('<br />')
-          .join('\n')
-          .split('\n\n')
-          .join('\n')
-          .split('&lt;')
-          .join('<')
-          .split('&gt;')
-          .join('>')
-          .split('&amp;')
-          .join('&')
-          .replace(/(<([^>]+)>)/gi, '')
+        p = this.replaceHtmlEntitiesAndTags(p)
         // const withoutWhitespaces = p.replace(/\s+/g, '')
         if (!p || (p && (p.length === 0 || p === ' ' || p === '\n'))) {
           this.contentParts.splice(i, 1)
@@ -198,15 +206,32 @@ export class Parser {
         }
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
         const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
-        this.clearText += `[${link.text}](${link.url.startsWith('/discussion/') ? 'https://nyx.cz' : ''}${link.url})`
+        this.clearText += `[${link.text}](${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
-        this.clearText += `${img.src.startsWith('/files/') ? 'https://nyx.cz' : ''}${img.src}`
+        this.clearText += `${img.src}`
       }
     })
+  }
+
+  replaceHtmlEntitiesAndTags(text) {
+    text = he.decode(text)
+    return text
+      .trim()
+      .split('<br>')
+      .join('\n')
+      .split('<br />')
+      .join('\n')
+      .split('\n\n')
+      .join('\n')
+      .replace(/(<([^>]+)>)/gi, '')
+  }
+
+  fixLink(url) {
+    return url?.startsWith('/') ? `https://nyx.cz${url}` : url
   }
 }
 
@@ -214,7 +239,7 @@ export const parsePostsContent = posts => {
   try {
     for (const post of posts) {
       if (!post.parsed) {
-        const parser = new Parser(post.content)
+        const parser = new Parser(post.content, post.post_type)
         post.parsed = parser.parse()
       }
     }

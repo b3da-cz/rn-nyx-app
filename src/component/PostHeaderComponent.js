@@ -5,7 +5,7 @@ import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
 import { ButtonSquareComponent, confirm, RatingDetailComponent, UserIconComponent } from '../component'
-import { Nyx, Styling, t } from '../lib'
+import { formatDate, Nyx, Styling, t } from '../lib'
 
 type Props = {
   post: Object,
@@ -107,11 +107,6 @@ export class PostHeaderComponent extends Component<Props> {
     }
   }
 
-  formatDate(str) {
-    const d = new Date(str)
-    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}  ${str.substring(11)}`
-  }
-
   render() {
     const { post } = this.props
     if (post.location === 'header' || post.location === 'home') {
@@ -128,11 +123,13 @@ export class PostHeaderComponent extends Component<Props> {
           // onSwipeStart={() => this.props.onSwipe(true)}
           // onSwipeRelease={() => this.props.onSwipe(false)}
           leftButtons={[
-            <ButtonSquareComponent
-              key={`${post.id}_btn_reply`}
-              icon={'corner-down-right'}
-              onPress={() => this.onReply()}
-            />,
+            !post.parsed?.advertisement && (
+              <ButtonSquareComponent
+                key={`${post.id}_btn_reply`}
+                icon={'corner-down-right'}
+                onPress={() => this.onReply()}
+              />
+            ),
             <ButtonSquareComponent
               key={`${post.id}_btn_share`}
               icon={'share'}
@@ -236,7 +233,7 @@ export class PostHeaderComponent extends Component<Props> {
                       color: this.props.isUnread ? Styling.colors.accent : Styling.colors.lighter,
                       fontSize: 10,
                     }}>
-                    {post?.inserted_at?.length > 0 && this.formatDate(post.inserted_at)}
+                    {post?.inserted_at?.length > 0 && formatDate(post.inserted_at)}
                   </Text>
                 </View>
               </View>
