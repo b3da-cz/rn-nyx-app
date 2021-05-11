@@ -232,7 +232,7 @@ export class DiscussionView extends Component<Props> {
     try {
       if (postIndex > 1) {
         setTimeout(() => {
-          this.refScroll.scrollToIndex({ index: postIndex, viewPosition: 0.1, animated })
+          this.refScroll.scrollToIndex({ index: postIndex - 1, viewPosition: 0, animated })
           this.setState({ isFetching: false })
         }, 200)
       }
