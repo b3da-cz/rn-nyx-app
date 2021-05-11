@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, Linking, ScrollView, View } from 'react-native'
+import { Text, Linking, View } from 'react-native'
 import {
   AdvertisementComponent,
   CodeBlockComponent,
@@ -38,8 +38,6 @@ export class PostComponent extends Component<Props> {
     this.state = {
       isFetching: false,
       ratings: {},
-      enabledYtPlayers: {},
-      visibleSpoilers: {},
     }
   }
 
@@ -83,14 +81,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderSpoiler({ id, text }) {
-    return (
-      <SpoilerComponent
-        key={id}
-        text={text}
-        isVisible={this.state.visibleSpoilers[id]}
-        onPress={() => this.setState({ visibleSpoilers: { ...this.state.visibleSpoilers, ...{ [id]: true } } })}
-      />
-    )
+    return <SpoilerComponent key={id} text={text} />
   }
 
   renderImage(img) {
@@ -126,10 +117,6 @@ export class PostComponent extends Component<Props> {
         width={Styling.metrics.window().width}
         height={Styling.metrics.window().width / 1.777}
         backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
-        isPlayerVisible={this.state.enabledYtPlayers[ytBlock.videoId]}
-        onPreviewPress={() =>
-          this.setState({ enabledYtPlayers: { ...this.state.enabledYtPlayers, ...{ [ytBlock.videoId]: true } } })
-        }
       />
     )
   }
