@@ -1,3 +1,4 @@
+export * from './AdvertisementComponent'
 export * from './BookmarkCategoriesDialog'
 export * from './ButtonComponent'
 export * from './ButtonSquareComponent'

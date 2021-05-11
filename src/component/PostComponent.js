@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { Text, Linking, View } from 'react-native'
+import { Text, Linking, ScrollView, View } from 'react-native'
 import {
+  AdvertisementComponent,
   CodeBlockComponent,
   DiceComponent,
   PollComponent,
@@ -10,7 +11,7 @@ import {
   SpoilerComponent,
   VideoYoutubeComponent,
 } from '../component'
-import {Nyx, TOKEN, Styling, generateUuidV4} from '../lib';
+import { Nyx, TOKEN, Styling, generateUuidV4 } from '../lib'
 
 type Props = {
   post: Object,
@@ -40,6 +41,10 @@ export class PostComponent extends Component<Props> {
       enabledYtPlayers: {},
       visibleSpoilers: {},
     }
+  }
+
+  shouldComponentUpdate(nextProps) {
+    return this.props.post.rating !== nextProps.post.rating || this.props.post.reminder !== nextProps.post.reminder
   }
 
   renderReply(reply) {
@@ -89,19 +94,16 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
-    // console.warn(img.raw, this.props.post?.content_raw) // TODO: remove
     if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
+    const w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
     if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
-      let w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
-      let h = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
       return (
         <ImageComponent
           key={img.id}
           src={img.src}
           width={w}
-          // height={this.props.isHeaderInteractive ? undefined : h / 2.5}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() => this.props.onImage(img)}
         />
@@ -141,9 +143,10 @@ export class PostComponent extends Component<Props> {
     ) {
       return
     }
+    const key = generateUuidV4()
     return (
       <Text
-        key={generateUuidV4()}
+        key={key}
         style={[
           Styling.groups.themeComponent(this.props.isDarkMode),
           { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
@@ -206,6 +209,33 @@ export class PostComponent extends Component<Props> {
     this.props.onPollVote(res)
   }
 
+  renderAdvertisement() {
+    const { action, title, location, price, updated } = this.props.post.parsed.advertisement
+    // const { contentParts, images } = this.props.post.parsed
+    const { post } = this.props
+    const images =
+      post.content_raw?.data?.photo_ids?.length > 0 &&
+      post.content_raw?.data?.photo_ids.map(p => ({ id: generateUuidV4(), url: `https://nyx.cz${p}` }))
+    const key = generateUuidV4()
+    return (
+      <AdvertisementComponent
+        key={key}
+        action={action}
+        title={title}
+        summary={post.content_raw?.data?.summary}
+        repliesCount={post.content_raw?.data?.posts_count}
+        images={images}
+        location={location}
+        price={price}
+        updated={updated}
+        isActive={post.content_raw?.data?.state === 'active'}
+        isDarkMode={this.props.isDarkMode}
+        onPress={() => this.props.onDiscussionDetailShow(post.content_raw?.data?.discussion_id)}
+        onImage={img => this.props.onImage(img, images)}
+      />
+    )
+  }
+
   render() {
     if (!this.props.post.parsed) {
       return (
@@ -234,7 +264,7 @@ export class PostComponent extends Component<Props> {
           }
           onDelete={postId => this.props.onDelete(postId)}
           onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
-          onReminder={(post, isReminder) => this.props.onReminder(post, isReminder)}
+          onReminder={(p, isReminder) => this.props.onReminder(p, isReminder)}
           onSwipe={isSwiping =>
             typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
           }
@@ -244,8 +274,8 @@ export class PostComponent extends Component<Props> {
             Styling.groups.themeComponent(this.props.isDarkMode),
             { paddingBottom: 5, borderWidth: 0, borderColor: 'red' },
           ]}>
-          {contentParts &&
-            contentParts.length > 0 &&
+          {post?.content_raw?.type !== 'advertisement' &&
+            contentParts?.length > 0 &&
             contentParts.map(part => {
               if (part.startsWith(TOKEN.REPLY)) {
                 const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
@@ -271,6 +301,7 @@ export class PostComponent extends Component<Props> {
                 return this.renderTextNode(part)
               }
             })}
+          {post?.content_raw?.type === 'advertisement' && post?.parsed?.advertisement && this.renderAdvertisement()}
           {post?.content_raw?.type === 'dice' && this.renderDice()}
           {post?.content_raw?.type === 'poll' && this.renderPoll()}
         </View>

@@ -68,3 +68,10 @@ export const pickFileAndResizeJpegs = async size => {
     }
   }
 }
+
+export const formatDate = str => {
+  const y = str.substr(0, 4)
+  const m = str.substr(5, 2)
+  const d = str.substr(8, 2)
+  return `${d}.${m}.${y}  ${str.substring(11)}`
+}

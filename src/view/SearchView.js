@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, View } from 'react-native'
+import { SectionList, Text, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, UserRowComponent } from '../component'
 import { Context, Styling, t } from '../lib'
@@ -14,6 +14,7 @@ export class SearchView extends Component<Props> {
     super(props)
     this.state = {
       searchPhrase: '',
+      sectionedSearchResults: [],
       posts: [],
       images: [],
       discussions: [],
@@ -43,13 +44,30 @@ export class SearchView extends Component<Props> {
     }
     this.setState({ isFetching: true })
     const res = await this.nyx.search({ phrase: searchPhrase, isUnified: true })
-    if (res && res.discussion) {
-      const { discussions, events, advertisements } = res.discussion
-      this.setState({ discussions, events, advertisements, users: [] })
-    } else if (res && res.user) {
-      const { exact, friends, others } = res.user
-      this.setState({ users: [...exact, ...friends, ...others], discussions: [] })
-    }
+    const { discussions, events, advertisements } = res.discussion || {}
+    const { exact, friends, others } = res.user || {}
+    const users = [...(exact || []), ...(friends || []), ...(others || [])]
+    const sectioned = [
+      { title: t('advertisements'), data: advertisements || [] },
+      { title: t('discussions'), data: discussions || [] },
+      // { title: t('events'), data: events || [] },
+      // { title: t('posts'), data: posts || [] },
+      { title: t('users'), data: users || [] },
+    ]
+    sectioned.forEach((section, i) => {
+      if (section.data.length > 0) {
+        sectioned[i].data = Array.from(new Set([...section.data]))
+      } else {
+        delete sectioned[i]
+      }
+    })
+    this.setState({
+      discussions,
+      events,
+      advertisements,
+      users,
+      sectionedSearchResults: sectioned.filter(s => !!s),
+    })
   }
 
   render() {
@@ -60,48 +78,53 @@ export class SearchView extends Component<Props> {
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
           value={`${this.state.searchPhrase}`}
         />
-        {this.state.discussions?.length > 0 && (
-          <FlatList
-            data={this.state.discussions}
-            extraData={this.state}
-            keyExtractor={(item, index) => `${item.id}`}
-            refreshing={this.state.isFetching}
-            style={{
-              height: '100%',
-              paddingTop: Styling.metrics.block.small,
-              backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.lighter,
-            }}
-            renderItem={({ item }) => (
-              <DiscussionRowComponent
-                key={item.id}
-                discussion={item}
-                isDarkMode={this.isDarkMode}
-                onPress={discussionId => this.props.onNavigation({ discussionId })}
-              />
-            )}
-          />
-        )}
-        {this.state.users?.length > 0 && (
-          <FlatList
-            data={this.state.users}
-            extraData={this.state}
-            keyExtractor={(item, index) => `${item.username}`}
-            refreshing={this.state.isFetching}
-            style={{
-              height: '100%',
-              paddingTop: Styling.metrics.block.small,
-              backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.lighter,
-            }}
-            renderItem={({ item }) => (
-              <UserRowComponent
-                key={item.username}
-                user={item}
-                isDarkMode={this.isDarkMode}
-                onPress={() => this.props.onUserSelected(item.username)}
-              />
-            )}
-          />
-        )}
+        <SectionList
+          sections={this.state.sectionedSearchResults}
+          stickySectionHeadersEnabled={true}
+          initialNumToRender={30}
+          keyExtractor={(item, index) => item.id}
+          style={{ marginTop: Styling.metrics.block.xsmall }}
+          refreshing={this.state.isFetching}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text
+              style={{
+                fontSize: Styling.metrics.fontSize.medium,
+                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
+                textAlign: 'right',
+                paddingVertical: 6,
+                paddingHorizontal: Styling.metrics.block.small,
+                marginBottom: Styling.metrics.block.xsmall,
+              }}>
+              {title}
+            </Text>
+          )}
+          renderItem={({ item, section: { title } }) => {
+            switch (title) {
+              case t('posts'):
+              case t('discussions'):
+              case t('advertisements'):
+              default:
+                return (
+                  <DiscussionRowComponent
+                    key={item.id}
+                    discussion={item}
+                    isDarkMode={this.isDarkMode}
+                    onPress={discussionId => this.props.onNavigation({ discussionId })}
+                  />
+                )
+              case t('users'):
+                return (
+                  <UserRowComponent
+                    key={item.username}
+                    user={item}
+                    isDarkMode={this.isDarkMode}
+                    onPress={() => this.props.onUserSelected(item.username)}
+                  />
+                )
+            }
+          }}
+        />
       </View>
     )
   }
