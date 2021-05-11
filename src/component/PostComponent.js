@@ -44,7 +44,7 @@ export class PostComponent extends Component<Props> {
   }
 
   shouldComponentUpdate(nextProps) {
-    return this.props.post.rating !== nextProps.post.rating
+    return this.props.post.rating !== nextProps.post.rating || this.props.post.reminder !== nextProps.post.reminder
   }
 
   renderReply(reply) {
