@@ -43,6 +43,7 @@ export class DiscussionView extends Component<Props> {
       isBoardVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
+      isMsgBoxVisible: false,
       isFetching: false,
     }
     this.refScroll = null
@@ -56,7 +57,9 @@ export class DiscussionView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      if (!this.state.isMsgBoxVisible) {
+        this.setState({ isSubmenuVisible: true })
+      }
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false })
@@ -271,14 +274,14 @@ export class DiscussionView extends Component<Props> {
 
   showMsgBox() {
     this.refMsgBoxDialog?.showDialog(true)
-    this.setState({ isSubmenuVisible: false })
+    this.setState({ isSubmenuVisible: false, isMsgBoxVisible: true })
   }
 
   onReply(discussionId, postId, username) {
     const msg = this.refMsgBoxDialog?.state?.message || ''
     this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
     this.refMsgBoxDialog?.showDialog()
-    this.setState({ isSubmenuVisible: false })
+    this.setState({ isSubmenuVisible: false, isMsgBoxVisible: true })
   }
 
   onVoteCast(updatedPost) {
@@ -482,9 +485,9 @@ export class DiscussionView extends Component<Props> {
           nyx={this.nyx}
           params={{ discussionId: this.props.id }}
           isVisible={false}
-          onDismiss={() => this.setState({ isSubmenuVisible: true })}
+          onDismiss={() => this.setState({ isSubmenuVisible: true, isMsgBoxVisible: false })}
           onSend={() => {
-            this.setState({ isSubmenuVisible: true })
+            this.setState({ isSubmenuVisible: true, isMsgBoxVisible: false })
             this.reloadDiscussionLatest(true)
           }}
         />
