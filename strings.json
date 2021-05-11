@@ -7,6 +7,22 @@
     "cs": "Vše",
     "en": "All"
   },
+  "advertisements": {
+    "cs": "Inzeráty",
+    "en": "Advertisements"
+  },
+  "discussions": {
+    "cs": "Kluby",
+    "en": "Topics"
+  },
+  "posts": {
+    "cs": "Příspěvky",
+    "en": "Posts"
+  },
+  "users": {
+    "cs": "Uživatelé",
+    "en": "Users"
+  },
   "bookmarks": {
     "cs": "Sledované",
     "en": "Bookmarks"
