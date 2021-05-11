@@ -53,7 +53,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                   },
                   Styling.groups.themeComponent(this.isDarkMode),
                 ]}>
-                <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: 200 }} />
+                <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: 0 }} />
               </View>
             )}
           </View>
@@ -65,9 +65,16 @@ export class HistoryView extends BaseDiscussionListView<Props> {
             margin: 16,
             right: 0,
             top: 0,
-            backgroundColor: Styling.colors.darker,
+            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
             opacity: 0.75,
           }}
+          color={
+            !this.state.isShowingRead
+              ? Styling.colors.primary
+              : this.isDarkMode
+              ? Styling.colors.lighter
+              : Styling.colors.darker
+          }
           icon={this.state.isShowingRead ? 'star-outline' : 'star'}
           visible={true}
           onPress={() => this.toggleRead(this.state.isShowingRead)}

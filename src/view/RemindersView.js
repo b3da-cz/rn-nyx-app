@@ -112,8 +112,8 @@ export class RemindersView extends Component<Props> {
             <Text
               style={{
                 fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
+                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
+                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.light,
                 textAlign: 'right',
                 paddingVertical: 6,
                 paddingHorizontal: Styling.metrics.block.small,

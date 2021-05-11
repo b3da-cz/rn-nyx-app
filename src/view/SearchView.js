@@ -23,12 +23,15 @@ export class SearchView extends Component<Props> {
       users: [],
       isFetching: false,
     }
-    this.isDarkMode = true // render called before didMount.. wtf
   }
 
   componentDidMount() {
+    this.init()
+  }
+
+  init() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
+    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   setSearchPhrase(searchPhrase, andDoSearch = true) {
@@ -72,7 +75,7 @@ export class SearchView extends Component<Props> {
 
   render() {
     return (
-      <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}>
+      <View style={[Styling.groups.themeComponent(this.state.isDarkMode), { height: '100%' }]}>
         <Searchbar
           placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
@@ -89,8 +92,8 @@ export class SearchView extends Component<Props> {
             <Text
               style={{
                 fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
+                color: this.state.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
+                backgroundColor: this.state.isDarkMode ? Styling.colors.dark : Styling.colors.light,
                 textAlign: 'right',
                 paddingVertical: 6,
                 paddingHorizontal: Styling.metrics.block.small,
@@ -109,7 +112,7 @@ export class SearchView extends Component<Props> {
                   <DiscussionRowComponent
                     key={item.id}
                     discussion={item}
-                    isDarkMode={this.isDarkMode}
+                    isDarkMode={this.state.isDarkMode}
                     onPress={discussionId => this.props.onNavigation({ discussionId })}
                   />
                 )
@@ -118,7 +121,7 @@ export class SearchView extends Component<Props> {
                   <UserRowComponent
                     key={item.username}
                     user={item}
-                    isDarkMode={this.isDarkMode}
+                    isDarkMode={this.state.isDarkMode}
                     onPress={() => this.props.onUserSelected(item.username)}
                   />
                 )

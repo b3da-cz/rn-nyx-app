@@ -200,6 +200,7 @@ export class PostHeaderComponent extends Component<Props> {
           onRef={r => (this.refSwipeable = r)}>
           <TouchableRipple
             disabled={!this.props.isPressable}
+            style={{ backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter }}
             onPress={() => this.props.onPress(post.discussion_id, post.id)}
             rippleColor={'rgba(18,146,180, 0.73)'}>
             <View
@@ -209,11 +210,17 @@ export class PostHeaderComponent extends Component<Props> {
                 alignItems: 'center',
                 paddingHorizontal: 5,
                 paddingVertical: 5,
-                borderTopColor: Styling.colors.dark,
+                borderTopColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.light,
                 // borderTopWidth: 1,
-                // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-                borderBottomColor: Styling.colors.accent,
-                borderBottomWidth: this.props.isUnread ? 1 : 0,
+                borderBottomColor:
+                  this.props.isUnread && this.props.isDarkMode
+                    ? Styling.colors.accent
+                    : this.props.isUnread && !this.props.isDarkMode
+                    ? Styling.colors.secondary
+                    : this.props.isDarkMode
+                    ? Styling.colors.darker
+                    : Styling.colors.light,
+                borderBottomWidth: 1,
               }}>
               <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
                 {this.props.isReply && (
@@ -229,7 +236,14 @@ export class PostHeaderComponent extends Component<Props> {
                   <Text
                     style={[
                       Styling.groups.link(),
-                      { color: this.props.isUnread ? Styling.colors.accent : Styling.colors.primary },
+                      {
+                        color:
+                          this.props.isUnread && this.props.isDarkMode
+                            ? Styling.colors.accent
+                            : this.props.isUnread && !this.props.isDarkMode
+                            ? Styling.colors.secondary
+                            : Styling.colors.primary,
+                      },
                     ]}
                     numberOfLines={1}>
                     {post.username?.length > 0 ? post.username : ''}{' '}
@@ -245,7 +259,14 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                   <Text
                     style={{
-                      color: this.props.isUnread ? Styling.colors.accent : Styling.colors.lighter,
+                      color:
+                        this.props.isUnread && this.props.isDarkMode
+                          ? Styling.colors.accent
+                          : this.props.isUnread && !this.props.isDarkMode
+                          ? Styling.colors.secondary
+                          : this.props.isDarkMode
+                          ? Styling.colors.lighter
+                          : Styling.colors.darker,
                       fontSize: 10,
                     }}>
                     {post?.inserted_at?.length > 0 && formatDate(post.inserted_at)}
@@ -267,7 +288,9 @@ export class PostHeaderComponent extends Component<Props> {
                               ? 'green'
                               : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
                               ? 'red'
-                              : Styling.colors.lighter,
+                              : this.props.isDarkMode
+                              ? Styling.colors.lighter
+                              : Styling.colors.dark,
                           textAlign: 'right',
                         },
                       ]}>

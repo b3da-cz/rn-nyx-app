@@ -18,13 +18,9 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import {
-  ImageModal,
-  ComposePostView,
-  ProfileView,
-} from './view'
+import { ImageModal, ComposePostView, ProfileView } from './view'
 
-export const Router = ({ config, nyx, refs, onConfigReload }) => {
+export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
   useEffect(() => {
@@ -159,63 +155,98 @@ export const Router = ({ config, nyx, refs, onConfigReload }) => {
         //   hitSlop: {height: 60, bottom: 0},
         //   minDeltaY: 0,
         // }}
-        options={{ cardStyle: { backgroundColor: '#000' } }}
-        tabBarOptions={NavOptions.tabBarOptions}>
+        options={{ cardStyle: NavOptions.cardStyle(isDarkMode) }}
+        tabBarOptions={NavOptions.tabBarOptions(isDarkMode)}>
         {config.isHistoryEnabled && (
           <Tab.Screen
             name={'historyStack'}
             component={HistoryStackContainer}
-            options={{ tabBarLabel: () => <Icon name="book-open" size={14} color="#ccc" /> }}
+            options={{
+              tabBarLabel: () => (
+                <Icon name="book-open" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+              ),
+            }}
           />
         )}
         {config.isBookmarksEnabled && (
           <Tab.Screen
             name={'bookmarksStack'}
             component={BookmarksStackContainer}
-            options={{ tabBarLabel: () => <Icon name="bookmark" size={14} color="#ccc" /> }}
+            options={{
+              tabBarLabel: () => (
+                <Icon name="bookmark" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+              ),
+            }}
           />
         )}
         {config.isSearchEnabled && (
           <Tab.Screen
             name={'searchStack'}
             component={SearchStackContainer}
-            options={{ tabBarLabel: () => <Icon name="search" size={14} color="#ccc" /> }}
+            options={{
+              tabBarLabel: () => (
+                <Icon name="search" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+              ),
+            }}
           />
         )}
         <Tab.Screen
           name={'mailStack'}
           component={MailStackContainer}
-          options={{ tabBarLabel: () => <Icon name="mail" size={14} color="#ccc" /> }}
+          options={{
+            tabBarLabel: () => (
+              <Icon name="mail" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+            ),
+          }}
         />
         {config.isLastEnabled && (
           <Tab.Screen
             name={'lastPostsStack'}
             component={LastPostsStackContainer}
-            options={{ tabBarLabel: () => <Icon name="inbox" size={14} color="#ccc" /> }}
+            options={{
+              tabBarLabel: () => (
+                <Icon name="inbox" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+              ),
+            }}
           />
         )}
         {config.isRemindersEnabled && (
           <Tab.Screen
             name={'remindersStack'}
             component={RemindersStackContainer}
-            options={{ tabBarLabel: () => <Icon name="bell" size={14} color="#ccc" /> }}
+            options={{
+              tabBarLabel: () => (
+                <Icon name="bell" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+              ),
+            }}
           />
         )}
         <Tab.Screen
           name={'notificationsStack'}
           component={NotificationsStackContainer}
-          options={{ tabBarLabel: () => <Icon name="activity" size={14} color="#ccc" /> }}
+          options={{
+            tabBarLabel: () => (
+              <Icon name="activity" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+            ),
+          }}
         />
         <Tab.Screen
           name={'profile'}
           component={Profile}
-          options={{ tabBarLabel: () => <Icon name="settings" size={14} color="#ccc" /> }}
+          options={{
+            tabBarLabel: () => (
+              <Icon name="settings" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+            ),
+          }}
         />
       </Tab.Navigator>
     )
   }
   return (
-    <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} options={{ cardStyle: { backgroundColor: '#000' } }}>
+    <RootStack.Navigator
+      initialRouteName={'tabs'}
+      mode={'modal'}
+      options={{ cardStyle: NavOptions.cardStyle(isDarkMode) }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: '' }} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />

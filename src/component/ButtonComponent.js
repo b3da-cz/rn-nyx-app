@@ -13,7 +13,7 @@ export const ButtonComponent = ({
   width = '100%',
   textAlign = 'center',
   color = Styling.colors.primary,
-  backgroundColor = Styling.colors.black,
+  backgroundColor,
   fontSize = Styling.metrics.fontSize.xlarge,
   marginBottom = 0,
   marginTop = 0,

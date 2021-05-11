@@ -3,7 +3,7 @@ import { ActivityIndicator, Text, View, ScrollView, Image } from 'react-native'
 import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { createIssue, pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { Context, createIssue, pickFileAndResizeJpegs, Styling, t } from '../lib'
 
 type Props = {
   nyx: any,
@@ -17,11 +17,13 @@ type Props = {
   onDismiss?: Function,
 }
 export class MessageBoxDialog extends Component<Props> {
+  static contextType = Context
   constructor(props) {
     super(props)
     this.state = {
       areDetailsShown: false,
       isDialogVisible: false,
+      isDarkMode: false,
       isFetching: false,
       isUploading: false,
       isMenuVisible: false,
@@ -44,6 +46,14 @@ export class MessageBoxDialog extends Component<Props> {
       { title: '600px', value: 600 },
       { title: '400px', value: 400 },
     ]
+  }
+
+  componentDidMount() {
+    this.init()
+  }
+
+  init() {
+    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   showDialog(isFromFab = false) {
@@ -163,6 +173,7 @@ export class MessageBoxDialog extends Component<Props> {
     const {
       areDetailsShown,
       isDialogVisible,
+      isDarkMode,
       isFetching,
       isMenuVisible,
       isUploading,
@@ -191,7 +202,7 @@ export class MessageBoxDialog extends Component<Props> {
                   value={`${issueTitle}`}
                   placeholder={selectedRecipient || `${t('title')} ..`}
                   style={{
-                    backgroundColor: Styling.colors.dark,
+                    backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                     marginBottom: -2,
                     zIndex: 1,
                     height: 42,
@@ -208,7 +219,7 @@ export class MessageBoxDialog extends Component<Props> {
                     value={`${searchPhrase}`}
                     placeholder={selectedRecipient || `${t('username')} ..`}
                     style={{
-                      backgroundColor: Styling.colors.dark,
+                      backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                       marginBottom: -2,
                       zIndex: 1,
                       height: 42,
@@ -219,7 +230,7 @@ export class MessageBoxDialog extends Component<Props> {
                       <UserRowComponent
                         key={u.username}
                         user={u}
-                        isDarkMode={true}
+                        isDarkMode={isDarkMode}
                         onPress={() => this.selectRecipient(u)}
                       />
                     ))}
@@ -236,7 +247,7 @@ export class MessageBoxDialog extends Component<Props> {
                   onChangeText={val => this.setState({ message: val })}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
-                  style={{ backgroundColor: Styling.colors.dark }}
+                  style={{ backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light }}
                 />
               )}
             </ScrollView>
@@ -253,7 +264,9 @@ export class MessageBoxDialog extends Component<Props> {
                   marginTop: 5,
                 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: Styling.colors.lighter }}>{t('jpegSize')}</Text>
+                  <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.dark }}>
+                    {t('jpegSize')}
+                  </Text>
                   <Menu
                     visible={isMenuVisible}
                     statusBarHeight={-150}
@@ -262,7 +275,9 @@ export class MessageBoxDialog extends Component<Props> {
                       <Button
                         onPress={() => (isUploading ? null : this.setState({ isMenuVisible: true }))}
                         uppercase={false}
-                        color={isUploading ? Styling.colors.dark : Styling.colors.lighter}>
+                        color={
+                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
+                        }>
                         {`${selectedSize}${selectedSize !== 'Original' ? 'px' : ''}`}
                       </Button>
                     }>
@@ -296,7 +311,9 @@ export class MessageBoxDialog extends Component<Props> {
                         lineHeight={22}
                         paddingHorizontal={0}
                         onPress={() => (isUploading ? null : this.deleteFile(f.id))}
-                        color={isUploading ? Styling.colors.dark : Styling.colors.lighter}
+                        color={
+                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
+                        }
                       />
                     </View>
                   ))}

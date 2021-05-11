@@ -34,7 +34,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
 
   render() {
     return (
-      <View>
+      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         <SectionList
           sections={this.state.sectionedBookmarks}
           stickySectionHeadersEnabled={true}
@@ -46,8 +46,8 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             <Text
               style={{
                 fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
+                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
+                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.light,
                 textAlign: 'left',
                 paddingVertical: 6,
                 paddingHorizontal: Styling.metrics.block.small,
@@ -72,9 +72,16 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             margin: 16,
             right: 0,
             top: 0,
-            backgroundColor: Styling.colors.darker,
+            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
             opacity: 0.75,
           }}
+          color={
+            !this.state.isShowingRead
+              ? Styling.colors.primary
+              : this.isDarkMode
+              ? Styling.colors.lighter
+              : Styling.colors.darker
+          }
           icon={this.state.isShowingRead ? 'star-outline' : 'star'}
           visible={true}
           onPress={() => this.toggleRead(this.state.isShowingRead)}

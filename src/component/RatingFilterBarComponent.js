@@ -18,7 +18,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
   }
   const getColorForMinRating = rating => {
     return minimumRating === rating
-      ? Styling.colors.accent
+      ? Styling.colors.primary
       : isDarkMode
       ? Styling.colors.lighter
       : Styling.colors.darker
@@ -31,6 +31,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
       style={
         isOpen
           ? [
+              Styling.groups.shadow,
               {
                 backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
                 position: 'absolute',
@@ -43,6 +44,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
             ]
           : [
               Styling.groups.squareBtn,
+              Styling.groups.shadow,
               {
                 position: 'absolute',
                 top: 0,
@@ -51,8 +53,8 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
                 margin: 16,
                 backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
                 marginBottom: Styling.metrics.block.xsmall,
-                width: 48,
-                height: 48,
+                width: 42,
+                height: 42,
                 borderRadius: 25,
                 opacity: 0.75,
               },
@@ -66,7 +68,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
             size={16}
             color={
               fromFriends || minimumRating > 0
-                ? Styling.colors.accent
+                ? Styling.colors.primary
                 : isDarkMode
                 ? Styling.colors.lighter
                 : Styling.colors.darker
@@ -77,7 +79,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
           <View style={{ flexDirection: 'row' }}>
             <ButtonSquareComponent
               icon={'users'}
-              color={fromFriends ? Styling.colors.accent : isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+              color={fromFriends ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
               onPress={() => setFilter(0, !fromFriends)}
             />
             <ButtonComponent

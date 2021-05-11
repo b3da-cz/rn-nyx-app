@@ -1,12 +1,13 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
-import { NavOptions, discussionScreenOptions } from '../lib'
+import { Context, NavOptions, discussionScreenOptions } from '../lib'
 import { Discussion, Mail } from '../routes'
 
 export const MailStackContainer = ({ navigation, route }) => {
   const MailStack = createStackNavigator()
+  const context = useContext(Context)
   return (
-    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions}>
+    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions(context.theme === 'dark')}>
       <MailStack.Screen name={'mail'} component={Mail} options={{ headerShown: false }} />
       <MailStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </MailStack.Navigator>
