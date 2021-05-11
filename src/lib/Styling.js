@@ -8,6 +8,8 @@ export const Styling = {
     white: '#FFFFFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
+    mediumlight: '#a0a0a0',
+    medium: '#616161',
     dark: '#444444',
     darker: '#222222',
     black: '#000000',
@@ -193,6 +195,7 @@ export const NavOptions = {
   screenOptions: isDarkMode => ({
     headerStyle: {
       backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
+      height: 50,
     },
     headerTintColor: isDarkMode ? Styling.colors.white : Styling.colors.darker,
   }),

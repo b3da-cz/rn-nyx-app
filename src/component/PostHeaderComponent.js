@@ -123,7 +123,7 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   render() {
-    const { post } = this.props
+    const { post, isDarkMode } = this.props
     if (post.location === 'header' || post.location === 'home') {
       return null
     }
@@ -142,12 +142,14 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_reply`}
                 icon={'corner-down-right'}
+                color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
                 onPress={() => this.onReply()}
               />
             ),
             <ButtonSquareComponent
               key={`${post.id}_btn_share`}
               icon={'share'}
+              color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
               onPress={() => this.onShare()}
               onLongPress={() => this.onShare(true)}
             />,
@@ -155,7 +157,9 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_remind`}
                 icon={'bell'}
-                color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                color={
+                  post.reminder ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker
+                }
                 onPress={() => this.setReminder(post)}
               />
             ),
@@ -200,7 +204,7 @@ export class PostHeaderComponent extends Component<Props> {
           onRef={r => (this.refSwipeable = r)}>
           <TouchableRipple
             disabled={!this.props.isPressable}
-            style={{ backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter }}
+            style={{ backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter }}
             onPress={() => this.props.onPress(post.discussion_id, post.id)}
             rippleColor={'rgba(18,146,180, 0.73)'}>
             <View
@@ -210,14 +214,14 @@ export class PostHeaderComponent extends Component<Props> {
                 alignItems: 'center',
                 paddingHorizontal: 5,
                 paddingVertical: 5,
-                borderTopColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.light,
+                borderTopColor: isDarkMode ? Styling.colors.darker : Styling.colors.light,
                 // borderTopWidth: 1,
                 borderBottomColor:
-                  this.props.isUnread && this.props.isDarkMode
+                  this.props.isUnread && isDarkMode
                     ? Styling.colors.accent
-                    : this.props.isUnread && !this.props.isDarkMode
+                    : this.props.isUnread && !isDarkMode
                     ? Styling.colors.secondary
-                    : this.props.isDarkMode
+                    : isDarkMode
                     ? Styling.colors.darker
                     : Styling.colors.light,
                 borderBottomWidth: 1,
@@ -227,7 +231,7 @@ export class PostHeaderComponent extends Component<Props> {
                   <Icon
                     name={'corner-down-right'}
                     size={20}
-                    color={this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+                    color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
                     style={{ marginRight: Styling.metrics.block.small }}
                   />
                 )}
@@ -238,9 +242,9 @@ export class PostHeaderComponent extends Component<Props> {
                       Styling.groups.link(),
                       {
                         color:
-                          this.props.isUnread && this.props.isDarkMode
+                          this.props.isUnread && isDarkMode
                             ? Styling.colors.accent
-                            : this.props.isUnread && !this.props.isDarkMode
+                            : this.props.isUnread && !isDarkMode
                             ? Styling.colors.secondary
                             : Styling.colors.primary,
                       },
@@ -260,11 +264,11 @@ export class PostHeaderComponent extends Component<Props> {
                   <Text
                     style={{
                       color:
-                        this.props.isUnread && this.props.isDarkMode
+                        this.props.isUnread && isDarkMode
                           ? Styling.colors.accent
-                          : this.props.isUnread && !this.props.isDarkMode
+                          : this.props.isUnread && !isDarkMode
                           ? Styling.colors.secondary
-                          : this.props.isDarkMode
+                          : isDarkMode
                           ? Styling.colors.lighter
                           : Styling.colors.darker,
                       fontSize: 10,
@@ -288,7 +292,7 @@ export class PostHeaderComponent extends Component<Props> {
                               ? 'green'
                               : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
                               ? 'red'
-                              : this.props.isDarkMode
+                              : isDarkMode
                               ? Styling.colors.lighter
                               : Styling.colors.dark,
                           textAlign: 'right',
@@ -315,7 +319,7 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.positive}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={this.props.isDarkMode}
+            isDarkMode={isDarkMode}
             isPositive={true}
           />
         )}
@@ -324,7 +328,7 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.negative}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={this.props.isDarkMode}
+            isDarkMode={isDarkMode}
             isPositive={false}
           />
         )}

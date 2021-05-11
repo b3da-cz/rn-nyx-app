@@ -4,17 +4,19 @@ import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling } from '../lib'
 
-export const DiscussionRowComponent = ({ discussion, isDarkMode, onPress }) => {
+export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress }) => {
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
   const unreadRowColor = (unreads, replies) =>
     replies > 0
       ? Styling.colors.accent
-      : unreads > 0
-      ? Styling.colors.primary
+      : (unreads > 0 || isAccented) && isDarkMode
+      ? Styling.colors.white
+      : (unreads > 0 || isAccented) && !isDarkMode
+      ? Styling.colors.black
       : isDarkMode
-      ? Styling.colors.light
-      : Styling.colors.dark
+      ? Styling.colors.medium
+      : Styling.colors.mediumlight
   const unreadPostCount = Math.max(
     discussion.new_posts_count || 0,
     discussion.new_replies_count || 0,

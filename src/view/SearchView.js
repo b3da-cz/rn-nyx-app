@@ -113,6 +113,7 @@ export class SearchView extends Component<Props> {
                     key={item.id}
                     discussion={item}
                     isDarkMode={this.state.isDarkMode}
+                    isAccented={true}
                     onPress={discussionId => this.props.onNavigation({ discussionId })}
                   />
                 )
