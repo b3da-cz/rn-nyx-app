@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { FlatList } from 'react-native'
-import { PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent } from '../lib'
+import { FlatList, View } from 'react-native'
+import { PostComponent, RatingFilterBarComponent } from '../component'
+import { Context, Styling, getDistinctPosts, parsePostsContent, wait } from '../lib'
 
 type Props = {
   navigation: any,
@@ -14,7 +14,9 @@ export class LastPostsView extends Component<Props> {
     this.state = {
       posts: [],
       images: [],
+      isRatedByFriends: false,
       isFetching: false,
+      minRating: 0,
     }
     this.navTabPressListener = null
   }
@@ -38,9 +40,9 @@ export class LastPostsView extends Component<Props> {
   }
 
   async getLastPosts() {
-    this.setState({ isFetching: true })
-    const res = await this.nyx.getLastPosts()
-    const newPosts = getDistinctPosts(res.posts, this.state.posts)
+    this.setState({ isFetching: true, posts: [] })
+    const res = await this.nyx.getLastPosts(this.state.minRating, this.state.isRatedByFriends)
+    const newPosts = getDistinctPosts(res.posts, [])
     const parsedPosts = parsePostsContent(newPosts)
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
@@ -48,7 +50,16 @@ export class LastPostsView extends Component<Props> {
       images,
       isFetching: false,
     })
-    return newPosts
+    return parsedPosts
+  }
+
+  async setFilter(minRating, isRatedByFriends) {
+    this.setState({
+      isRatedByFriends: minRating > 0 ? false : isRatedByFriends,
+      minRating,
+    })
+    await wait()
+    this.getLastPosts()
   }
 
   showImages(image) {
@@ -59,33 +70,42 @@ export class LastPostsView extends Component<Props> {
 
   render() {
     return (
-      <FlatList
-        data={this.state.posts}
-        extraData={this.state}
-        keyExtractor={(item, index) => `${item.uuid}`}
-        refreshing={this.state.isFetching}
-        onRefresh={() => this.getLastPosts()}
-        style={{
-          height: '100%',
-          backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-        }}
-        renderItem={({ item }) => (
-          <PostComponent
-            key={item.id}
-            post={item}
-            nyx={this.nyx}
-            isDarkMode={this.isDarkMode}
-            isHeaderInteractive={false}
-            isHeaderPressable={true}
-            onHeaderPress={(discussionId, postId) => this.props.navigation.push('discussion', { discussionId, postId })}
-            onDiscussionDetailShow={(discussionId, postId) =>
-              this.props.navigation.push('discussion', { discussionId, postId })
-            }
-            onImage={image => this.showImages(image)}
-            onDelete={() => null}
-          />
-        )}
-      />
+      <View>
+        <RatingFilterBarComponent
+          isDarkMode={this.isDarkMode}
+          height={50}
+          onFilter={(minRating, isRatedByFriends) => this.setFilter(minRating, isRatedByFriends)}
+        />
+        <FlatList
+          data={this.state.posts}
+          extraData={this.state}
+          keyExtractor={(item, index) => `${item.uuid}`}
+          refreshing={this.state.isFetching}
+          onRefresh={() => this.getLastPosts()}
+          style={{
+            height: '100%',
+            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+          }}
+          renderItem={({ item }) => (
+            <PostComponent
+              key={item.id}
+              post={item}
+              nyx={this.nyx}
+              isDarkMode={this.isDarkMode}
+              isHeaderInteractive={false}
+              isHeaderPressable={true}
+              onHeaderPress={(discussionId, postId) =>
+                this.props.navigation.push('discussion', { discussionId, postId })
+              }
+              onDiscussionDetailShow={(discussionId, postId) =>
+                this.props.navigation.push('discussion', { discussionId, postId })
+              }
+              onImage={image => this.showImages(image)}
+              onDelete={() => null}
+            />
+          )}
+        />
+      </View>
     )
   }
 }

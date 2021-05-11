@@ -118,12 +118,17 @@ export class Nyx {
     return null
   }
 
-  async getLastPosts(isRatedByFriends?) {
+  async getLastPosts(minRating = 0, isRatedByFriends?, isRatedByMe?) {
     try {
-      const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      const res = await fetch(
+        `https://nyx.cz/api/last${minRating > 0 ? `/min_rating/${minRating}` : ''}${
+          isRatedByFriends ? '/rated_by_friends' : ''
+        }${isRatedByMe ? '/rated_by_me' : ''}`,
+        {
+          method: 'GET',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
       this.store.context = res.context
       return res
     } catch (e) {

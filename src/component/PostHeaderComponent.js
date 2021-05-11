@@ -37,6 +37,10 @@ export class PostHeaderComponent extends Component<Props> {
     this.refSwipeable = null
   }
 
+  componentDidMount() {
+    this.getRatingByFriends()
+  }
+
   onReply() {
     if (typeof this.props.onReply === 'function') {
       this.props.onReply(this.props.post.discussion_id, this.props.post.id, this.props.post.username)
@@ -60,6 +64,17 @@ export class PostHeaderComponent extends Component<Props> {
       setTimeout(() => this.refSwipeable.recenter(), 300)
     } catch (e) {
       console.warn(e)
+    }
+  }
+
+  getRatingByFriends() {
+    if (this.props.post?.rating_friends?.length > 0) {
+      this.setState({
+        ratings: {
+          positive: this.props.post.rating_friends.map(username => ({ username })),
+          negative: [],
+        },
+      })
     }
   }
 
