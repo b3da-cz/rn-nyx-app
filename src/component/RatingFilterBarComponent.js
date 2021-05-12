@@ -1,19 +1,25 @@
 import React, { useState } from 'react'
-import { View } from 'react-native'
+import { LayoutAnimation, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, ButtonSquareComponent } from '../component'
-import { Styling, wait } from '../lib'
+import { LayoutAnimConf, Styling, wait } from '../lib'
 
 export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [minimumRating, setMinimumRating] = useState(0)
   const [fromFriends, setFromFriends] = useState(false)
+
+  const openFilter = () => {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    setIsOpen(true)
+  }
   const setFilter = async (minRating, isRatedByFriends) => {
     setMinimumRating(minRating)
     setFromFriends(isRatedByFriends)
     onFilter(minRating, isRatedByFriends)
     await wait(200)
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     setIsOpen(false)
   }
   const getColorForMinRating = rating => {
@@ -60,7 +66,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               },
             ]
       }
-      onPress={() => setIsOpen(!isOpen)}>
+      onPress={() => openFilter()}>
       <View>
         {!isOpen && (
           <Icon
@@ -79,6 +85,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
           <View style={{ flexDirection: 'row' }}>
             <ButtonSquareComponent
               icon={'users'}
+              size={Styling.metrics.fontSize.large}
               color={fromFriends ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
               onPress={() => setFilter(0, !fromFriends)}
             />
@@ -86,6 +93,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'0'}
               color={getColorForMinRating(0)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={50}
               onPress={() => setFilter(0, false)}
             />
@@ -93,6 +101,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+10'}
               color={getColorForMinRating(10)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={50}
               onPress={() => setFilter(10, false)}
             />
@@ -100,6 +109,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+25'}
               color={getColorForMinRating(25)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={50}
               onPress={() => setFilter(25, false)}
             />
@@ -107,6 +117,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+50'}
               color={getColorForMinRating(50)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={50}
               onPress={() => setFilter(50, false)}
             />
@@ -114,6 +125,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+100'}
               color={getColorForMinRating(100)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={65}
               onPress={() => setFilter(100, false)}
             />
@@ -121,6 +133,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+200'}
               color={getColorForMinRating(200)}
               backgroundColor={'inherit'}
+              fontSize={Styling.metrics.fontSize.large}
               width={65}
               onPress={() => setFilter(200, false)}
             />

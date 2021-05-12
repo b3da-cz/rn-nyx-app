@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { SectionList, View } from 'react-native'
+import { LayoutAnimation, SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { Context, Styling, t } from '../lib'
@@ -64,6 +64,7 @@ export class SearchView extends Component<Props> {
         delete sectioned[i]
       }
     })
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       discussions,
       events,
@@ -89,7 +90,7 @@ export class SearchView extends Component<Props> {
           style={{ marginTop: Styling.metrics.block.xsmall }}
           refreshing={this.state.isFetching}
           renderSectionHeader={({ section: { title } }) => (
-            <SectionHeaderComponent isDarkMode={this.isDarkMode} title={title} />
+            <SectionHeaderComponent isDarkMode={this.state.isDarkMode} title={title} />
           )}
           renderItem={({ item, section: { title } }) => {
             switch (title) {

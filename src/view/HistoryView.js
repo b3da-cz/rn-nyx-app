@@ -1,5 +1,5 @@
 import React from 'react'
-import { ActivityIndicator, ScrollView, RefreshControl, View } from 'react-native'
+import { ScrollView, RefreshControl, View } from 'react-native'
 import { DiscussionRowComponent } from '../component'
 import { Styling } from '../lib'
 import { BaseDiscussionListView } from '../view'
@@ -18,7 +18,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     }
   }
 
-  async getList() {
+  async getList(isAnimated = false) {
     this.setState({ isFetching: true })
     const res = await this.nyx.getHistory(this.state.isShowingRead)
     this.setState({ discussions: res.discussions, isFetching: false })
@@ -41,20 +41,6 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                   onPress={id => this.showDiscussion(id)}
                 />
               ))}
-            {this.state.discussions && this.state.discussions.length === 0 && (
-              <View
-                style={[
-                  {
-                    height: Styling.metrics.window().height - 60,
-                    width: '100%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                  Styling.groups.themeComponent(this.isDarkMode),
-                ]}>
-                <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: 0 }} />
-              </View>
-            )}
           </View>
         </ScrollView>
         {this.renderFAB()}

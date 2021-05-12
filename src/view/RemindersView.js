@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { SectionList, View } from 'react-native'
+import { LayoutAnimation, SectionList, View } from 'react-native'
 import { PostComponent, SectionHeaderComponent } from '../component'
 import { Context, Styling, parsePostsContent, t } from '../lib'
 
@@ -54,6 +54,7 @@ export class RemindersView extends Component<Props> {
       { title: t('reminders.inMail'), data: mail.reminders },
       { title: t('reminders.inDiscussions'), data: bookmarks.reminders },
     ]
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       images: [...mail.images, ...bookmarks.images],
       bookmarks: bookmarks.reminders,

@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, Text, View, ScrollView, Image } from 'react-native'
+import { ActivityIndicator, Text, View, ScrollView, Image, LayoutAnimation } from 'react-native'
 import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { Context, createIssue, pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { Context, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, Styling, t } from '../lib'
 
 type Props = {
   nyx: any,
@@ -86,6 +86,7 @@ export class MessageBoxDialog extends Component<Props> {
   async searchUsername(searchPhrase) {
     this.setState({ isFetching: true, searchPhrase })
     const res = await this.props.nyx.search({ phrase: searchPhrase, isUsername: true })
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     if (res?.exact) {
       this.setState({ isFetching: false, users: [...res.exact, ...(res.friends || []), ...(res.others || [])] })
     } else if (!searchPhrase || searchPhrase?.length === 0) {
@@ -95,6 +96,7 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   async selectRecipient(user) {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     this.setState({ searchPhrase: user.username, selectedRecipient: user.username, users: [] })
   }
 
@@ -114,6 +116,7 @@ export class MessageBoxDialog extends Component<Props> {
       this.setState({ isUploading: true })
       const res = await this.props.nyx.uploadFile(file, this.props.params?.discussionId)
       if (res && res.id > 0) {
+        LayoutAnimation.configureNext(LayoutAnimConf.spring)
         this.setState({
           isUploading: false,
           uploadedFiles: this.state.uploadedFiles?.length ? [...this.state.uploadedFiles, res] : [res],
@@ -134,7 +137,13 @@ export class MessageBoxDialog extends Component<Props> {
     }
     this.setState({ isUploading: true })
     await this.props.nyx.deleteFile(fileId)
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     this.setState({ isUploading: false, uploadedFiles: this.state.uploadedFiles.filter(f => f.id !== fileId) })
+  }
+
+  toggleDetail(areDetailsShown) {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    this.setState({ areDetailsShown })
   }
 
   addText(text) {
@@ -326,7 +335,7 @@ export class MessageBoxDialog extends Component<Props> {
                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
                   <IconButton
                     icon={'unfold-more-horizontal'}
-                    onPress={() => this.setState({ areDetailsShown: !areDetailsShown })}
+                    onPress={() => this.toggleDetail(!areDetailsShown)}
                     rippleColor={'rgba(18,146,180, 0.3)'}
                   />
                   {isUploading ? (
