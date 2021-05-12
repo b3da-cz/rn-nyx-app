@@ -284,7 +284,7 @@ export class DiscussionView extends Component<Props> {
     this.setState({ isSubmenuVisible: false, isMsgBoxVisible: true })
   }
 
-  onVoteCast(updatedPost) {
+  onPostRated(updatedPost) {
     if (updatedPost?.error) {
       return
     }
@@ -469,7 +469,7 @@ export class DiscussionView extends Component<Props> {
               onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
-              onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
+              onPostRated={updatedPost => this.onPostRated(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onReminder={(post, isReminder) => this.onReminder(post, isReminder)}

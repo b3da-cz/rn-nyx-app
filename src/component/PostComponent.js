@@ -27,7 +27,7 @@ type Props = {
   onReply?: Function,
   onImage: Function,
   onDelete: Function,
-  onVoteCast?: Function,
+  onPostRated?: Function,
   onReminder?: Function,
   onDiceRoll?: Function,
   onPollVote?: Function,
@@ -250,7 +250,7 @@ export class PostComponent extends Component<Props> {
             typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
           }
           onDelete={postId => this.props.onDelete(postId)}
-          onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
+          onPostRated={updatedPost => this.props.onPostRated(updatedPost)}
           onReminder={(p, isReminder) => this.props.onReminder(p, isReminder)}
           onSwipe={isSwiping =>
             typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null

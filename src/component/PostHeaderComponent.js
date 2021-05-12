@@ -19,7 +19,7 @@ type Props = {
   onReply?: Function,
   onDelete: Function,
   onReminder?: Function,
-  onVoteCast?: Function,
+  onPostRated?: Function,
   onSwipe?: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
@@ -99,10 +99,10 @@ export class PostHeaderComponent extends Component<Props> {
     this.setState({ ratings })
   }
 
-  async castVote(post, vote) {
-    const res = await this.props.nyx.castVote(post, vote > 0 ? 'positive' : 'negative')
+  async ratePost(post, vote) {
+    const res = await this.props.nyx.ratePost(post, post.my_rating?.includes(vote) ? 'remove' : vote)
     this.refSwipeable?.recenter()
-    this.props.onVoteCast(res)
+    this.props.onPostRated(res)
   }
 
   async setReminder(post) {
@@ -182,13 +182,13 @@ export class PostHeaderComponent extends Component<Props> {
                     key={`${post.id}_btn_thumbs_up`}
                     icon={'thumbs-up'}
                     color={'green'}
-                    onPress={() => this.castVote(post, 1)}
+                    onPress={() => this.ratePost(post, 'positive')}
                   />,
                   <ButtonSquareComponent
                     key={`${post.id}_btn_thumbs_down`}
                     icon={'thumbs-down'}
                     color={'red'}
-                    onPress={() => this.castVote(post, -1)}
+                    onPress={() => this.ratePost(post, 'negative')}
                   />,
                 ]
               : [<View />]
