@@ -1,5 +1,6 @@
-import { Component } from 'react'
-import { Context, Storage } from '../lib'
+import React, { Component } from 'react'
+import { FAB } from 'react-native-paper'
+import { Context, Storage, Styling } from '../lib'
 
 export class BaseDiscussionListView extends Component<Props> {
   static contextType = Context
@@ -39,6 +40,7 @@ export class BaseDiscussionListView extends Component<Props> {
 
   init() {
     this.setState({ isShowingRead: this.config?.isShowingReadOnLists })
+    this.setState({ shownCategories: this.config?.shownCategories })
   }
 
   async getList() {}
@@ -51,7 +53,32 @@ export class BaseDiscussionListView extends Component<Props> {
     await this.getList()
   }
 
+  async persistShownCategories(shownCategories) {
+    const config = await Storage.getConfig()
+    config.shownCategories = shownCategories
+    await Storage.setConfig(config)
+  }
+
   showDiscussion(id) {
     this.props.onDetailShow(id)
+  }
+
+  renderFAB() {
+    return (
+      <FAB
+        small={true}
+        style={Styling.groups.fabDiscussionList(this.isDarkMode)}
+        color={
+          !this.state.isShowingRead
+            ? Styling.colors.primary
+            : this.isDarkMode
+            ? Styling.colors.lighter
+            : Styling.colors.darker
+        }
+        icon={this.state.isShowingRead ? 'star-outline' : 'star'}
+        visible={true}
+        onPress={() => this.toggleRead(this.state.isShowingRead)}
+      />
+    )
   }
 }

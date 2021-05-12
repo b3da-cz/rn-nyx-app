@@ -1,8 +1,7 @@
 import React from 'react'
-import { SectionList, Text, View } from 'react-native'
-import { FAB } from 'react-native-paper'
-import { DiscussionRowComponent } from '../component'
-import { Styling } from '../lib'
+import { LayoutAnimation, SectionList, View } from 'react-native'
+import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
+import { LayoutAnimConf, Styling } from '../lib'
 import { BaseDiscussionListView } from '../view'
 
 type Props = {
@@ -15,6 +14,8 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     this.state = {
       reminderCount: 0,
       sectionedBookmarks: [],
+      shownBookmarks: [],
+      shownCategories: null,
       isShowingRead: false,
       isFetching: false,
     }
@@ -26,35 +27,60 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     if (res?.bookmarks?.length) {
       const reminderCount = res.reminder_count || 0
       const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
-      this.setState({ reminderCount, sectionedBookmarks, isFetching: false })
+      const shownBookmarks = [...sectionedBookmarks]
+      const shownCategories = this.state.shownCategories ?? Array.from(new Set(sectionedBookmarks.map(b => b.title)))
+      this.setState({ reminderCount, sectionedBookmarks, shownBookmarks, shownCategories, isFetching: false })
+      this.filterCategories(shownCategories, false)
     } else {
       this.setState({ isFetching: false })
     }
   }
 
+  filterCategories(shownCategories, isAnimated = true) {
+    const shownBookmarks = []
+    for (const b of this.state.sectionedBookmarks) {
+      if (!shownCategories.includes(b.title)) {
+        shownBookmarks.push({ title: b.title, data: [] })
+      } else {
+        shownBookmarks.push({ title: b.title, data: [...b.data] })
+      }
+    }
+    if (isAnimated) {
+      LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    }
+    this.setState({ shownCategories, shownBookmarks })
+  }
+
+  toggleCategory(title) {
+    let shownCategories = [...this.state.shownCategories]
+    if (shownCategories.includes(title)) {
+      shownCategories = this.state.shownCategories.filter(c => c !== title)
+    } else {
+      shownCategories.push(title)
+    }
+    this.filterCategories(shownCategories)
+    this.persistShownCategories(shownCategories)
+  }
+
   render() {
+    const { shownCategories, shownBookmarks, isFetching } = this.state
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         <SectionList
-          sections={this.state.sectionedBookmarks}
+          sections={shownBookmarks}
           stickySectionHeadersEnabled={true}
           initialNumToRender={100}
           keyExtractor={(item, index) => item.discussion_id}
-          refreshing={this.state.isFetching}
+          refreshing={isFetching}
           onRefresh={() => this.getList()}
           renderSectionHeader={({ section: { title } }) => (
-            <Text
-              style={{
-                fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.light,
-                textAlign: 'left',
-                paddingVertical: 6,
-                paddingHorizontal: Styling.metrics.block.small,
-                marginBottom: Styling.metrics.block.xsmall,
-              }}>
-              {title}
-            </Text>
+            <SectionHeaderComponent
+              isDarkMode={this.isDarkMode}
+              title={title}
+              icon={shownCategories.includes(title) ? null : 'plus'}
+              isPressable={true}
+              onPress={() => this.toggleCategory(title)}
+            />
           )}
           renderItem={({ item }) => (
             <DiscussionRowComponent
@@ -65,27 +91,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             />
           )}
         />
-        <FAB
-          small={true}
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            top: 0,
-            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-            opacity: 0.75,
-          }}
-          color={
-            !this.state.isShowingRead
-              ? Styling.colors.primary
-              : this.isDarkMode
-              ? Styling.colors.lighter
-              : Styling.colors.darker
-          }
-          icon={this.state.isShowingRead ? 'star-outline' : 'star'}
-          visible={true}
-          onPress={() => this.toggleRead(this.state.isShowingRead)}
-        />
+        {this.renderFAB()}
       </View>
     )
   }

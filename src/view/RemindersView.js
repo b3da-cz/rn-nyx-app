@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { SectionList, Text, View } from 'react-native'
-import { PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, t } from '../lib'
+import { SectionList, View } from 'react-native'
+import { PostComponent, SectionHeaderComponent } from '../component'
+import { Context, Styling, parsePostsContent, t } from '../lib'
 
 type Props = {
   navigation: any,
@@ -109,18 +109,7 @@ export class RemindersView extends Component<Props> {
           refreshing={this.state.isFetching}
           onRefresh={() => this.getReminders()}
           renderSectionHeader={({ section: { title } }) => (
-            <Text
-              style={{
-                fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.light,
-                textAlign: 'right',
-                paddingVertical: 6,
-                paddingHorizontal: Styling.metrics.block.small,
-                marginBottom: Styling.metrics.block.xsmall,
-              }}>
-              {title}
-            </Text>
+            <SectionHeaderComponent isDarkMode={this.isDarkMode} title={title} />
           )}
           renderItem={({ item }) => (
             <PostComponent

@@ -1,6 +1,5 @@
 import React from 'react'
 import { ActivityIndicator, ScrollView, RefreshControl, View } from 'react-native'
-import { FAB } from 'react-native-paper'
 import { DiscussionRowComponent } from '../component'
 import { Styling } from '../lib'
 import { BaseDiscussionListView } from '../view'
@@ -58,27 +57,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
             )}
           </View>
         </ScrollView>
-        <FAB
-          small={true}
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            top: 0,
-            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-            opacity: 0.75,
-          }}
-          color={
-            !this.state.isShowingRead
-              ? Styling.colors.primary
-              : this.isDarkMode
-              ? Styling.colors.lighter
-              : Styling.colors.darker
-          }
-          icon={this.state.isShowingRead ? 'star-outline' : 'star'}
-          visible={true}
-          onPress={() => this.toggleRead(this.state.isShowingRead)}
-        />
+        {this.renderFAB()}
       </View>
     )
   }

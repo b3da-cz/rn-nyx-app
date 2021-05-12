@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react'
 import type { Node } from 'react'
-import { Linking, LogBox, Modal } from 'react-native'
+import { Linking, LogBox, Modal, Platform, UIManager } from 'react-native'
 import useColorScheme from 'react-native/Libraries/Utilities/useColorScheme'
 import 'react-native-gesture-handler'
 import { NavigationContainer } from '@react-navigation/native'
@@ -18,6 +18,12 @@ import { LoginView } from './src/view'
 
 LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWillMount has', 'Reanimated 2']) // Ignore log notifications from Swipeable todo
 
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true)
+  }
+}
+
 const initialConfig = {
   isLoaded: false,
   isBookmarksEnabled: true,
@@ -29,6 +35,7 @@ const initialConfig = {
   isNavGesturesEnabled: true,
   isShowingReadOnLists: true,
   initialRouteName: 'historyStack',
+  shownCategories: null,
   fcmToken: null,
   isFCMSubscribed: false,
 }
@@ -98,6 +105,7 @@ const App: () => Node = () => {
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? true : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
+      shownCategories: conf.shownCategories || null,
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
     })

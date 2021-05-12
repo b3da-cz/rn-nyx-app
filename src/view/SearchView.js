@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { SectionList, Text, View } from 'react-native'
+import { SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
-import { DiscussionRowComponent, UserRowComponent } from '../component'
+import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { Context, Styling, t } from '../lib'
 
 type Props = {
@@ -89,18 +89,7 @@ export class SearchView extends Component<Props> {
           style={{ marginTop: Styling.metrics.block.xsmall }}
           refreshing={this.state.isFetching}
           renderSectionHeader={({ section: { title } }) => (
-            <Text
-              style={{
-                fontSize: Styling.metrics.fontSize.medium,
-                color: this.state.isDarkMode ? Styling.colors.lighter : Styling.colors.black,
-                backgroundColor: this.state.isDarkMode ? Styling.colors.dark : Styling.colors.light,
-                textAlign: 'right',
-                paddingVertical: 6,
-                paddingHorizontal: Styling.metrics.block.small,
-                marginBottom: Styling.metrics.block.xsmall,
-              }}>
-              {title}
-            </Text>
+            <SectionHeaderComponent isDarkMode={this.isDarkMode} title={title} />
           )}
           renderItem={({ item, section: { title } }) => {
             switch (title) {

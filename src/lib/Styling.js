@@ -98,6 +98,7 @@ export const Styling = {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    flexRowSpbCentered: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     borderWithoutTop: {
       borderColor: '#222',
       borderLeftWidth: 5,
@@ -115,6 +116,14 @@ export const Styling = {
 
       elevation: 5,
     },
+    fabDiscussionList: isDarkMode => ({
+      position: 'absolute',
+      margin: 16,
+      right: 0,
+      top: 0,
+      backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+      opacity: 0.75,
+    }),
   },
 }
 
@@ -203,3 +212,22 @@ export const NavOptions = {
 }
 
 export const discussionScreenOptions = { headerShown: true, title: '' }
+
+export const LayoutAnimConf = {
+  spring: {
+    duration: 500,
+    create: {
+      type: 'linear',
+      property: 'opacity',
+    },
+    update: {
+      type: 'spring',
+      springDamping: 2,
+    },
+    delete: {
+      type: 'spring',
+      springDamping: 0.2,
+      property: 'opacity',
+    },
+  },
+}
