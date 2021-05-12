@@ -16,6 +16,7 @@ type Props = {
   postId?: number,
   showBoard?: boolean,
   showHeader?: boolean,
+  showReplies?: boolean,
   jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
@@ -65,7 +66,9 @@ export class DiscussionView extends Component<Props> {
       this.setState({ isSubmenuVisible: false })
     })
     this.setFocusOnStart()
-    if (this.props.postId > 0) {
+    if (this.props.postId > 0 && this.props.showReplies) {
+      this.fetchReplies(this.props.id, this.props.postId)
+    } else if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
     } else if (this.props.showBoard) {
       this.setBoardVisible(true)
@@ -359,6 +362,18 @@ export class DiscussionView extends Component<Props> {
     this.props.navigation.push('discussion', { discussionId: this.props.id, showHeader: true })
   }
 
+  async fetchReplies(discussionId, postId) {
+    this.setState({ isFetching: true })
+    const res = await this.nyx.getDiscussion(`${discussionId}/id/${postId}/replies`)
+    const replies = getDistinctPosts(res, [])
+    const posts = parsePostsContent(replies)
+    this.setState({ posts, isFetching: false })
+  }
+
+  showReplies(discussionId, postId) {
+    this.props.navigation.push('discussion', { discussionId, postId, showReplies: true })
+  }
+
   onDiscussionFetched(title, uploadedFiles = []) {
     this.props.onDiscussionFetched({
       title: this.state.isBoardVisible
@@ -469,6 +484,7 @@ export class DiscussionView extends Component<Props> {
               onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
+              onRepliesShow={(discussionId, postId) => this.showReplies(discussionId, postId)}
               onPostRated={updatedPost => this.onPostRated(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}

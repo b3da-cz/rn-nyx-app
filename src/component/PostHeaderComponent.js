@@ -4,7 +4,13 @@ import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
-import { ButtonSquareComponent, confirm, RatingDetailComponent, UserIconComponent } from '../component'
+import {
+  ButtonRepliesComponent,
+  ButtonSquareComponent,
+  confirm,
+  RatingDetailComponent,
+  UserIconComponent,
+} from '../component'
 import { formatDate, Nyx, Styling, t } from '../lib'
 
 type Props = {
@@ -17,6 +23,7 @@ type Props = {
   isPressable: boolean,
   onPress?: Function,
   onReply?: Function,
+  onRepliesShow?: Function,
   onDelete: Function,
   onReminder?: Function,
   onPostRated?: Function,
@@ -120,6 +127,10 @@ export class PostHeaderComponent extends Component<Props> {
       }
       this.props.onDelete(post.id)
     }
+  }
+
+  showReplies(post) {
+    this.props.onRepliesShow(post.discussion_id, post.id)
   }
 
   render() {
@@ -226,7 +237,13 @@ export class PostHeaderComponent extends Component<Props> {
                     : Styling.colors.light,
                 borderBottomWidth: 1,
               }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  width: post.replies?.length > 0 && this.props.isInteractive ? '70%' : '80%',
+                }}>
                 {this.props.isReply && (
                   <Icon
                     name={'corner-down-right'}
@@ -250,7 +267,17 @@ export class PostHeaderComponent extends Component<Props> {
                       },
                     ]}
                     numberOfLines={1}>
-                    {post.username?.length > 0 ? post.username : ''}{' '}
+                    {post.username?.length > 0 ? post.username : ''}
+                    {post.replies?.length > 0 && this.props.isInteractive ? (
+                      <ButtonRepliesComponent
+                        count={post.replies.length}
+                        isDarkMode={isDarkMode}
+                        onPress={() => this.showReplies(post)}
+                      />
+                    ) : (
+                      ' '
+                    )}
+
                     {post.discussion_name?.length > 0 && (
                       <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
                     )}

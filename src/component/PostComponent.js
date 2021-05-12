@@ -24,6 +24,7 @@ type Props = {
   onHeaderPress?: Function,
   onHeaderSwipe?: Function,
   onDiscussionDetailShow: Function,
+  onRepliesShow: Function,
   onReply?: Function,
   onImage: Function,
   onDelete: Function,
@@ -248,6 +249,9 @@ export class PostComponent extends Component<Props> {
           }
           onReply={(discussionId, postId, username) =>
             typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
+          }
+          onRepliesShow={(discussionId, postId) =>
+            typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(discussionId, postId) : null
           }
           onDelete={postId => this.props.onDelete(postId)}
           onPostRated={updatedPost => this.props.onPostRated(updatedPost)}
