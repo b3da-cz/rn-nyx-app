@@ -85,7 +85,7 @@ export class NotificationsView extends Component<Props> {
             ratings={thumbs_up}
             ratingWidth={32}
             ratingHeight={40}
-            isDarkMode={this.props.isDarkMode}
+            isDarkMode={this.isDarkMode}
             isPositive={true}
           />
         )}

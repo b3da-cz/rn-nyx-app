@@ -1,6 +1,5 @@
 import React from 'react'
-import { ActivityIndicator, ScrollView, RefreshControl, View } from 'react-native'
-import { FAB } from 'react-native-paper'
+import { ScrollView, RefreshControl, View } from 'react-native'
 import { DiscussionRowComponent } from '../component'
 import { Styling } from '../lib'
 import { BaseDiscussionListView } from '../view'
@@ -19,7 +18,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     }
   }
 
-  async getList() {
+  async getList(isAnimated = false) {
     this.setState({ isFetching: true })
     const res = await this.nyx.getHistory(this.state.isShowingRead)
     this.setState({ discussions: res.discussions, isFetching: false })
@@ -42,36 +41,9 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                   onPress={id => this.showDiscussion(id)}
                 />
               ))}
-            {this.state.discussions && this.state.discussions.length === 0 && (
-              <View
-                style={[
-                  {
-                    height: Styling.metrics.window().height - 60,
-                    width: '100%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                  Styling.groups.themeComponent(this.isDarkMode),
-                ]}>
-                <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginBottom: 200 }} />
-              </View>
-            )}
           </View>
         </ScrollView>
-        <FAB
-          small={true}
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            top: 0,
-            backgroundColor: Styling.colors.darker,
-            opacity: 0.75,
-          }}
-          icon={this.state.isShowingRead ? 'star-outline' : 'star'}
-          visible={true}
-          onPress={() => this.toggleRead(this.state.isShowingRead)}
-        />
+        {this.renderFAB()}
       </View>
     )
   }

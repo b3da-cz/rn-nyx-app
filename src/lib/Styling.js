@@ -8,6 +8,8 @@ export const Styling = {
     white: '#FFFFFF',
     lighter: '#F3F3F3',
     light: '#DAE1E7',
+    mediumlight: '#a0a0a0',
+    medium: '#616161',
     dark: '#444444',
     darker: '#222222',
     black: '#000000',
@@ -96,12 +98,32 @@ export const Styling = {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    flexRowSpbCentered: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     borderWithoutTop: {
       borderColor: '#222',
       borderLeftWidth: 5,
       borderRightWidth: 5,
       borderBottomWidth: 5,
     },
+    shadow: {
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+
+      elevation: 5,
+    },
+    fabDiscussionList: isDarkMode => ({
+      position: 'absolute',
+      margin: 16,
+      right: 0,
+      top: 0,
+      backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+      opacity: 0.75,
+    }),
   },
 }
 
@@ -134,11 +156,39 @@ export const CustomDarkTheme = {
   roundness: 4,
 }
 
+export const CustomLightTheme = {
+  animation: { scale: 1 },
+  colors: {
+    accent: '#03dac6',
+    backdrop: 'rgba(0, 0, 0, 0.5)',
+    background: 'rgb(242, 242, 242)',
+    border: 'rgb(216, 216, 216)',
+    card: 'rgb(255, 255, 255)',
+    disabled: 'rgba(0, 0, 0, 0.26)',
+    error: '#B00020',
+    notification: 'rgb(255, 59, 48)',
+    onBackground: '#000000',
+    onSurface: '#000000',
+    placeholder: 'rgba(0, 0, 0, 0.54)',
+    primary: Styling.colors.primary,
+    surface: '#ffffff',
+    text: 'rgb(28, 28, 30)',
+  },
+  dark: false,
+  fonts: {
+    light: { fontFamily: 'sans-serif-light', fontWeight: 'normal' },
+    medium: { fontFamily: 'sans-serif-medium', fontWeight: 'normal' },
+    regular: { fontFamily: 'sans-serif', fontWeight: 'normal' },
+    thin: { fontFamily: 'sans-serif-thin', fontWeight: 'normal' },
+  },
+  roundness: 4,
+}
+
 export const NavOptions = {
-  tabBarOptions: {
+  tabBarOptions: isDarkMode => ({
     style: {
       height: 45,
-      backgroundColor: Styling.colors.black,
+      backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
     },
     labelStyle: {
       fontSize: 8,
@@ -150,14 +200,34 @@ export const NavOptions = {
     // tabStyle: { width: tabBarWidth - (notificationsBarWidth / tabBarItemCount) },
     pressColor: Styling.colors.primary,
     activeTintColor: Styling.colors.primary,
-  },
-  screenOptions: {
+  }),
+  screenOptions: isDarkMode => ({
     headerStyle: {
-      backgroundColor: Styling.colors.black,
+      backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
+      height: 50,
     },
-    headerTintColor: '#fff',
-  },
-  cardStyle: { backgroundColor: '#000' },
+    headerTintColor: isDarkMode ? Styling.colors.white : Styling.colors.darker,
+  }),
+  cardStyle: isDarkMode => ({ backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white }),
 }
 
 export const discussionScreenOptions = { headerShown: true, title: '' }
+
+export const LayoutAnimConf = {
+  spring: {
+    duration: 500,
+    create: {
+      type: 'linear',
+      property: 'opacity',
+    },
+    update: {
+      type: 'spring',
+      springDamping: 2,
+    },
+    delete: {
+      type: 'spring',
+      springDamping: 0.2,
+      property: 'opacity',
+    },
+  },
+}

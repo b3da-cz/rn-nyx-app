@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, Text, View, ScrollView, Image } from 'react-native'
+import { ActivityIndicator, Text, View, ScrollView, Image, LayoutAnimation } from 'react-native'
 import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { createIssue, pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { Context, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, Styling, t } from '../lib'
 
 type Props = {
   nyx: any,
@@ -17,11 +17,13 @@ type Props = {
   onDismiss?: Function,
 }
 export class MessageBoxDialog extends Component<Props> {
+  static contextType = Context
   constructor(props) {
     super(props)
     this.state = {
       areDetailsShown: false,
       isDialogVisible: false,
+      isDarkMode: false,
       isFetching: false,
       isUploading: false,
       isMenuVisible: false,
@@ -44,6 +46,14 @@ export class MessageBoxDialog extends Component<Props> {
       { title: '600px', value: 600 },
       { title: '400px', value: 400 },
     ]
+  }
+
+  componentDidMount() {
+    this.init()
+  }
+
+  init() {
+    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   showDialog(isFromFab = false) {
@@ -76,6 +86,7 @@ export class MessageBoxDialog extends Component<Props> {
   async searchUsername(searchPhrase) {
     this.setState({ isFetching: true, searchPhrase })
     const res = await this.props.nyx.search({ phrase: searchPhrase, isUsername: true })
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     if (res?.exact) {
       this.setState({ isFetching: false, users: [...res.exact, ...(res.friends || []), ...(res.others || [])] })
     } else if (!searchPhrase || searchPhrase?.length === 0) {
@@ -85,6 +96,7 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   async selectRecipient(user) {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     this.setState({ searchPhrase: user.username, selectedRecipient: user.username, users: [] })
   }
 
@@ -104,6 +116,7 @@ export class MessageBoxDialog extends Component<Props> {
       this.setState({ isUploading: true })
       const res = await this.props.nyx.uploadFile(file, this.props.params?.discussionId)
       if (res && res.id > 0) {
+        LayoutAnimation.configureNext(LayoutAnimConf.spring)
         this.setState({
           isUploading: false,
           uploadedFiles: this.state.uploadedFiles?.length ? [...this.state.uploadedFiles, res] : [res],
@@ -124,7 +137,13 @@ export class MessageBoxDialog extends Component<Props> {
     }
     this.setState({ isUploading: true })
     await this.props.nyx.deleteFile(fileId)
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
     this.setState({ isUploading: false, uploadedFiles: this.state.uploadedFiles.filter(f => f.id !== fileId) })
+  }
+
+  toggleDetail(areDetailsShown) {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    this.setState({ areDetailsShown })
   }
 
   addText(text) {
@@ -163,6 +182,7 @@ export class MessageBoxDialog extends Component<Props> {
     const {
       areDetailsShown,
       isDialogVisible,
+      isDarkMode,
       isFetching,
       isMenuVisible,
       isUploading,
@@ -191,7 +211,7 @@ export class MessageBoxDialog extends Component<Props> {
                   value={`${issueTitle}`}
                   placeholder={selectedRecipient || `${t('title')} ..`}
                   style={{
-                    backgroundColor: Styling.colors.dark,
+                    backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                     marginBottom: -2,
                     zIndex: 1,
                     height: 42,
@@ -208,7 +228,7 @@ export class MessageBoxDialog extends Component<Props> {
                     value={`${searchPhrase}`}
                     placeholder={selectedRecipient || `${t('username')} ..`}
                     style={{
-                      backgroundColor: Styling.colors.dark,
+                      backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                       marginBottom: -2,
                       zIndex: 1,
                       height: 42,
@@ -219,7 +239,7 @@ export class MessageBoxDialog extends Component<Props> {
                       <UserRowComponent
                         key={u.username}
                         user={u}
-                        isDarkMode={true}
+                        isDarkMode={isDarkMode}
                         onPress={() => this.selectRecipient(u)}
                       />
                     ))}
@@ -236,7 +256,7 @@ export class MessageBoxDialog extends Component<Props> {
                   onChangeText={val => this.setState({ message: val })}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
-                  style={{ backgroundColor: Styling.colors.dark }}
+                  style={{ backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light }}
                 />
               )}
             </ScrollView>
@@ -253,7 +273,9 @@ export class MessageBoxDialog extends Component<Props> {
                   marginTop: 5,
                 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: Styling.colors.lighter }}>{t('jpegSize')}</Text>
+                  <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.dark }}>
+                    {t('jpegSize')}
+                  </Text>
                   <Menu
                     visible={isMenuVisible}
                     statusBarHeight={-150}
@@ -262,7 +284,9 @@ export class MessageBoxDialog extends Component<Props> {
                       <Button
                         onPress={() => (isUploading ? null : this.setState({ isMenuVisible: true }))}
                         uppercase={false}
-                        color={isUploading ? Styling.colors.dark : Styling.colors.lighter}>
+                        color={
+                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
+                        }>
                         {`${selectedSize}${selectedSize !== 'Original' ? 'px' : ''}`}
                       </Button>
                     }>
@@ -296,7 +320,9 @@ export class MessageBoxDialog extends Component<Props> {
                         lineHeight={22}
                         paddingHorizontal={0}
                         onPress={() => (isUploading ? null : this.deleteFile(f.id))}
-                        color={isUploading ? Styling.colors.dark : Styling.colors.lighter}
+                        color={
+                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
+                        }
                       />
                     </View>
                   ))}
@@ -309,7 +335,7 @@ export class MessageBoxDialog extends Component<Props> {
                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
                   <IconButton
                     icon={'unfold-more-horizontal'}
-                    onPress={() => this.setState({ areDetailsShown: !areDetailsShown })}
+                    onPress={() => this.toggleDetail(!areDetailsShown)}
                     rippleColor={'rgba(18,146,180, 0.3)'}
                   />
                   {isUploading ? (

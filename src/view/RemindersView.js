@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { SectionList, Text, View } from 'react-native'
-import { PostComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, t } from '../lib'
+import { LayoutAnimation, SectionList, View } from 'react-native'
+import { PostComponent, SectionHeaderComponent } from '../component'
+import { Context, Styling, parsePostsContent, t } from '../lib'
 
 type Props = {
   navigation: any,
@@ -54,6 +54,7 @@ export class RemindersView extends Component<Props> {
       { title: t('reminders.inMail'), data: mail.reminders },
       { title: t('reminders.inDiscussions'), data: bookmarks.reminders },
     ]
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       images: [...mail.images, ...bookmarks.images],
       bookmarks: bookmarks.reminders,
@@ -109,18 +110,7 @@ export class RemindersView extends Component<Props> {
           refreshing={this.state.isFetching}
           onRefresh={() => this.getReminders()}
           renderSectionHeader={({ section: { title } }) => (
-            <Text
-              style={{
-                fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
-                textAlign: 'right',
-                paddingVertical: 6,
-                paddingHorizontal: Styling.metrics.block.small,
-                marginBottom: Styling.metrics.block.xsmall,
-              }}>
-              {title}
-            </Text>
+            <SectionHeaderComponent isDarkMode={this.isDarkMode} title={title} />
           )}
           renderItem={({ item }) => (
             <PostComponent

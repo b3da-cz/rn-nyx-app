@@ -13,7 +13,7 @@ export const ButtonComponent = ({
   width = '100%',
   textAlign = 'center',
   color = Styling.colors.primary,
-  backgroundColor = Styling.colors.black,
+  backgroundColor,
   fontSize = Styling.metrics.fontSize.xlarge,
   marginBottom = 0,
   marginTop = 0,
@@ -51,7 +51,8 @@ export const ButtonComponent = ({
           paddingHorizontal,
         }}>
         {icon?.length > 0 && <Icon name={icon} size={fontSize} color={color} />}
-        {` ${label}`}
+        {icon?.length > 0 && ' '}
+        {`${label}`}
       </Text>
     </TouchableRipple>
   )

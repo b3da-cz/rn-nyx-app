@@ -14,7 +14,6 @@ export const RatingDetailComponent = ({
   isDarkMode,
   isDisabled = true,
   onPress,
-  backgroundColor = Styling.colors.black,
   marginBottom = 0,
   marginTop = 0,
   borderColor = Styling.colors.secondary,
@@ -24,10 +23,7 @@ export const RatingDetailComponent = ({
     <TouchableRipple
       disabled={isDisabled}
       rippleColor={'rgba(18,146,180, 0.3)'}
-      style={[
-        Styling.groups.themeComponent(isDarkMode),
-        { marginBottom, marginTop, borderColor, borderWidth, backgroundColor },
-      ]}
+      style={[Styling.groups.themeComponent(isDarkMode), { marginBottom, marginTop, borderColor, borderWidth }]}
       onPress={() => onPress()}>
       <View
         style={{
@@ -50,6 +46,7 @@ export const RatingDetailComponent = ({
             height={ratingHeight}
             borderWidth={1}
             marginRight={1}
+            marginBottom={1}
           />
         ))}
       </View>

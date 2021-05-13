@@ -4,17 +4,19 @@ import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling } from '../lib'
 
-export const DiscussionRowComponent = ({ discussion, isDarkMode, onPress }) => {
+export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress }) => {
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
   const unreadRowColor = (unreads, replies) =>
     replies > 0
       ? Styling.colors.accent
-      : unreads > 0
-      ? Styling.colors.primary
+      : (unreads > 0 || isAccented) && isDarkMode
+      ? Styling.colors.white
+      : (unreads > 0 || isAccented) && !isDarkMode
+      ? Styling.colors.black
       : isDarkMode
-      ? Styling.colors.light
-      : Styling.colors.dark
+      ? Styling.colors.medium
+      : Styling.colors.mediumlight
   const unreadPostCount = Math.max(
     discussion.new_posts_count || 0,
     discussion.new_replies_count || 0,
@@ -28,8 +30,12 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, onPress }) => {
       style={{
         backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         paddingVertical: 6,
-        paddingHorizontal: Styling.metrics.block.small,
+        paddingLeft: Styling.metrics.block.xsmall,
+        paddingRight: Styling.metrics.block.small,
         marginBottom: Styling.metrics.block.xsmall,
+        borderColor:
+          unreadPostCount > 0 ? Styling.colors.primary : isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+        borderLeftWidth: 3,
       }}
       onPress={() => onPress(id)}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

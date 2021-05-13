@@ -118,12 +118,17 @@ export class Nyx {
     return null
   }
 
-  async getLastPosts(isRatedByFriends?) {
+  async getLastPosts(minRating = 0, isRatedByFriends?, isRatedByMe?) {
     try {
-      const res = await fetch(`https://nyx.cz/api/last${isRatedByFriends ? '/rated_by_friends' : ''}`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      const res = await fetch(
+        `https://nyx.cz/api/last${minRating > 0 ? `/min_rating/${minRating}` : ''}${
+          isRatedByFriends ? '/rated_by_friends' : ''
+        }${isRatedByMe ? '/rated_by_me' : ''}`,
+        {
+          method: 'GET',
+          headers: this.getHeaders(),
+        },
+      ).then(resp => resp.json())
       this.store.context = res.context
       return res
     } catch (e) {
@@ -261,8 +266,8 @@ export class Nyx {
     return null
   }
 
-  async castVote(post, vote) {
-    // console.warn('cast vote', this.auth, post, vote); // TODO: remove // positive|negative|negative_visible
+  async ratePost(post, vote) {
+    // console.warn('rate post', this.auth, post, vote); // TODO: remove // positive|negative|negative_visible|remove
     try {
       const res = await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}/${vote}`, {
         method: 'POST',
@@ -271,12 +276,12 @@ export class Nyx {
       if (res.error && res.code === 'NeedsConfirmation') {
         const isConfirmed = await confirm(t('confirm'), res.message)
         if (isConfirmed) {
-          return this.castVote(post, 'negative_visible')
+          return this.ratePost(post, 'negative_visible')
         }
       }
       return res
     } catch (e) {
-      this.logError('cast vote', e)
+      this.logError('rate post', e)
     }
     return null
   }

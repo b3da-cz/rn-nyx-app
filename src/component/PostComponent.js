@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, Linking, ScrollView, View } from 'react-native'
+import { Text, Linking, View } from 'react-native'
 import {
   AdvertisementComponent,
   CodeBlockComponent,
@@ -24,10 +24,11 @@ type Props = {
   onHeaderPress?: Function,
   onHeaderSwipe?: Function,
   onDiscussionDetailShow: Function,
+  onRepliesShow: Function,
   onReply?: Function,
   onImage: Function,
   onDelete: Function,
-  onVoteCast?: Function,
+  onPostRated?: Function,
   onReminder?: Function,
   onDiceRoll?: Function,
   onPollVote?: Function,
@@ -38,8 +39,6 @@ export class PostComponent extends Component<Props> {
     this.state = {
       isFetching: false,
       ratings: {},
-      enabledYtPlayers: {},
-      visibleSpoilers: {},
     }
   }
 
@@ -83,14 +82,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderSpoiler({ id, text }) {
-    return (
-      <SpoilerComponent
-        key={id}
-        text={text}
-        isVisible={this.state.visibleSpoilers[id]}
-        onPress={() => this.setState({ visibleSpoilers: { ...this.state.visibleSpoilers, ...{ [id]: true } } })}
-      />
-    )
+    return <SpoilerComponent key={id} text={text} />
   }
 
   renderImage(img) {
@@ -126,10 +118,6 @@ export class PostComponent extends Component<Props> {
         width={Styling.metrics.window().width}
         height={Styling.metrics.window().width / 1.777}
         backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
-        isPlayerVisible={this.state.enabledYtPlayers[ytBlock.videoId]}
-        onPreviewPress={() =>
-          this.setState({ enabledYtPlayers: { ...this.state.enabledYtPlayers, ...{ [ytBlock.videoId]: true } } })
-        }
       />
     )
   }
@@ -262,8 +250,11 @@ export class PostComponent extends Component<Props> {
           onReply={(discussionId, postId, username) =>
             typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
           }
+          onRepliesShow={(discussionId, postId) =>
+            typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(discussionId, postId) : null
+          }
           onDelete={postId => this.props.onDelete(postId)}
-          onVoteCast={updatedPost => this.props.onVoteCast(updatedPost)}
+          onPostRated={updatedPost => this.props.onPostRated(updatedPost)}
           onReminder={(p, isReminder) => this.props.onReminder(p, isReminder)}
           onSwipe={isSwiping =>
             typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null

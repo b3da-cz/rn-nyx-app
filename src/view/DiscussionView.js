@@ -16,6 +16,7 @@ type Props = {
   postId?: number,
   showBoard?: boolean,
   showHeader?: boolean,
+  showReplies?: boolean,
   jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
@@ -43,6 +44,7 @@ export class DiscussionView extends Component<Props> {
       isBoardVisible: false,
       isHeaderVisible: false,
       isSubmenuVisible: false,
+      isMsgBoxVisible: false,
       isFetching: false,
     }
     this.refScroll = null
@@ -56,13 +58,17 @@ export class DiscussionView extends Component<Props> {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.setState({ isSubmenuVisible: true })
+      if (!this.state.isMsgBoxVisible) {
+        this.setState({ isSubmenuVisible: true })
+      }
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false })
     })
     this.setFocusOnStart()
-    if (this.props.postId > 0) {
+    if (this.props.postId > 0 && this.props.showReplies) {
+      this.fetchReplies(this.props.id, this.props.postId)
+    } else if (this.props.postId > 0) {
       this.jumpToPost(this.props.id, this.props.postId)
     } else if (this.props.showBoard) {
       this.setBoardVisible(true)
@@ -232,7 +238,7 @@ export class DiscussionView extends Component<Props> {
     try {
       if (postIndex > 1) {
         setTimeout(() => {
-          this.refScroll.scrollToIndex({ index: postIndex, viewPosition: 0.1, animated })
+          this.refScroll.scrollToIndex({ index: postIndex - 1, viewPosition: 0, animated })
           this.setState({ isFetching: false })
         }, 200)
       }
@@ -271,17 +277,17 @@ export class DiscussionView extends Component<Props> {
 
   showMsgBox() {
     this.refMsgBoxDialog?.showDialog(true)
-    this.setState({ isSubmenuVisible: false })
+    this.setState({ isSubmenuVisible: false, isMsgBoxVisible: true })
   }
 
   onReply(discussionId, postId, username) {
     const msg = this.refMsgBoxDialog?.state?.message || ''
     this.refMsgBoxDialog?.addText(`${msg.length > 0 ? '\n' : ''}{reply ${username}|${postId}}: `)
     this.refMsgBoxDialog?.showDialog()
-    this.setState({ isSubmenuVisible: false })
+    this.setState({ isSubmenuVisible: false, isMsgBoxVisible: true })
   }
 
-  onVoteCast(updatedPost) {
+  onPostRated(updatedPost) {
     if (updatedPost?.error) {
       return
     }
@@ -354,6 +360,18 @@ export class DiscussionView extends Component<Props> {
 
   showHeader() {
     this.props.navigation.push('discussion', { discussionId: this.props.id, showHeader: true })
+  }
+
+  async fetchReplies(discussionId, postId) {
+    this.setState({ isFetching: true })
+    const res = await this.nyx.getDiscussion(`${discussionId}/id/${postId}/replies`)
+    const replies = getDistinctPosts(res, [])
+    const posts = parsePostsContent(replies)
+    this.setState({ posts, isFetching: false })
+  }
+
+  showReplies(discussionId, postId) {
+    this.props.navigation.push('discussion', { discussionId, postId, showReplies: true })
   }
 
   onDiscussionFetched(title, uploadedFiles = []) {
@@ -466,7 +484,8 @@ export class DiscussionView extends Component<Props> {
               onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}
               onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
-              onVoteCast={updatedPost => this.onVoteCast(updatedPost)}
+              onRepliesShow={(discussionId, postId) => this.showReplies(discussionId, postId)}
+              onPostRated={updatedPost => this.onPostRated(updatedPost)}
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
@@ -482,9 +501,9 @@ export class DiscussionView extends Component<Props> {
           nyx={this.nyx}
           params={{ discussionId: this.props.id }}
           isVisible={false}
-          onDismiss={() => this.setState({ isSubmenuVisible: true })}
+          onDismiss={() => this.setState({ isSubmenuVisible: true, isMsgBoxVisible: false })}
           onSend={() => {
-            this.setState({ isSubmenuVisible: true })
+            this.setState({ isSubmenuVisible: true, isMsgBoxVisible: false })
             this.reloadDiscussionLatest(true)
           }}
         />

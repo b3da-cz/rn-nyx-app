@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, View } from 'react-native'
+import { FlatList, LayoutAnimation, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { MessageBoxDialog, PostComponent } from '../component'
 import { Context, getDistinctPosts, Styling, parsePostsContent, t, wait } from '../lib'
@@ -67,6 +67,7 @@ export class MailView extends Component<Props> {
     })
     const res = await this.nyx.getMail()
     const parsedMessages = parsePostsContent(res.posts)
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       conversations: res.conversations,
       messages: parsedMessages,
@@ -83,6 +84,7 @@ export class MailView extends Component<Props> {
     const res = await this.nyx.getMail(queryString)
     const newMessages = getDistinctPosts(res.posts, messages)
     const parsedMessages = parsePostsContent(newMessages)
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       conversations: res.conversations,
       messages: parsedMessages,
@@ -91,13 +93,15 @@ export class MailView extends Component<Props> {
   }
 
   async onConversationSelected(username) {
-    this.setState({ isFetching: true })
+    this.setState({ isFetching: true, messages: [] })
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx.getMail(queryString)
+    const parsedMessages = parsePostsContent(res.posts)
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       activeRecipient: username,
       conversations: res.conversations,
-      messages: res.posts,
+      messages: parsedMessages,
       isFetching: false,
     })
   }

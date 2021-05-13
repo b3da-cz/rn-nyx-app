@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { SectionList, Text, View } from 'react-native'
+import { LayoutAnimation, SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
-import { DiscussionRowComponent, UserRowComponent } from '../component'
+import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { Context, Styling, t } from '../lib'
 
 type Props = {
@@ -23,12 +23,15 @@ export class SearchView extends Component<Props> {
       users: [],
       isFetching: false,
     }
-    this.isDarkMode = true // render called before didMount.. wtf
   }
 
   componentDidMount() {
+    this.init()
+  }
+
+  init() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
+    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   setSearchPhrase(searchPhrase, andDoSearch = true) {
@@ -61,6 +64,7 @@ export class SearchView extends Component<Props> {
         delete sectioned[i]
       }
     })
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
     this.setState({
       discussions,
       events,
@@ -72,7 +76,7 @@ export class SearchView extends Component<Props> {
 
   render() {
     return (
-      <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}>
+      <View style={[Styling.groups.themeComponent(this.state.isDarkMode), { height: '100%' }]}>
         <Searchbar
           placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
@@ -86,18 +90,7 @@ export class SearchView extends Component<Props> {
           style={{ marginTop: Styling.metrics.block.xsmall }}
           refreshing={this.state.isFetching}
           renderSectionHeader={({ section: { title } }) => (
-            <Text
-              style={{
-                fontSize: Styling.metrics.fontSize.medium,
-                color: this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                backgroundColor: this.isDarkMode ? Styling.colors.dark : Styling.colors.lighter,
-                textAlign: 'right',
-                paddingVertical: 6,
-                paddingHorizontal: Styling.metrics.block.small,
-                marginBottom: Styling.metrics.block.xsmall,
-              }}>
-              {title}
-            </Text>
+            <SectionHeaderComponent isDarkMode={this.state.isDarkMode} title={title} />
           )}
           renderItem={({ item, section: { title } }) => {
             switch (title) {
@@ -109,7 +102,8 @@ export class SearchView extends Component<Props> {
                   <DiscussionRowComponent
                     key={item.id}
                     discussion={item}
-                    isDarkMode={this.isDarkMode}
+                    isDarkMode={this.state.isDarkMode}
+                    isAccented={true}
                     onPress={discussionId => this.props.onNavigation({ discussionId })}
                   />
                 )
@@ -118,7 +112,7 @@ export class SearchView extends Component<Props> {
                   <UserRowComponent
                     key={item.username}
                     user={item}
-                    isDarkMode={this.isDarkMode}
+                    isDarkMode={this.state.isDarkMode}
                     onPress={() => this.props.onUserSelected(item.username)}
                   />
                 )

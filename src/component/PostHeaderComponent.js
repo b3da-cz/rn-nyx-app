@@ -4,7 +4,13 @@ import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Share from 'react-native-share'
-import { ButtonSquareComponent, confirm, RatingDetailComponent, UserIconComponent } from '../component'
+import {
+  ButtonRepliesComponent,
+  ButtonSquareComponent,
+  confirm,
+  RatingDetailComponent,
+  UserIconComponent,
+} from '../component'
 import { formatDate, Nyx, Styling, t } from '../lib'
 
 type Props = {
@@ -17,9 +23,10 @@ type Props = {
   isPressable: boolean,
   onPress?: Function,
   onReply?: Function,
+  onRepliesShow?: Function,
   onDelete: Function,
   onReminder?: Function,
-  onVoteCast?: Function,
+  onPostRated?: Function,
   onSwipe?: Function,
 }
 export class PostHeaderComponent extends Component<Props> {
@@ -35,6 +42,10 @@ export class PostHeaderComponent extends Component<Props> {
       ratingHeight: (Styling.metrics.screen().width / 20) * 1.25,
     }
     this.refSwipeable = null
+  }
+
+  componentDidMount() {
+    this.getRatingByFriends()
   }
 
   onReply() {
@@ -63,6 +74,17 @@ export class PostHeaderComponent extends Component<Props> {
     }
   }
 
+  getRatingByFriends() {
+    if (this.props.post?.rating_friends?.length > 0) {
+      this.setState({
+        ratings: {
+          positive: this.props.post.rating_friends.map(username => ({ username })),
+          negative: [],
+        },
+      })
+    }
+  }
+
   async getRating(post, bounceRight = false) {
     if (bounceRight && (this.state.ratings?.positive?.length > 0 || this.state.ratings?.negative?.length > 0)) {
       this.setState({
@@ -84,10 +106,10 @@ export class PostHeaderComponent extends Component<Props> {
     this.setState({ ratings })
   }
 
-  async castVote(post, vote) {
-    const res = await this.props.nyx.castVote(post, vote > 0 ? 'positive' : 'negative')
+  async ratePost(post, vote) {
+    const res = await this.props.nyx.ratePost(post, post.my_rating?.includes(vote) ? 'remove' : vote)
     this.refSwipeable?.recenter()
-    this.props.onVoteCast(res)
+    this.props.onPostRated(res)
   }
 
   async setReminder(post) {
@@ -107,8 +129,12 @@ export class PostHeaderComponent extends Component<Props> {
     }
   }
 
+  showReplies(post) {
+    this.props.onRepliesShow(post.discussion_id, post.id)
+  }
+
   render() {
-    const { post } = this.props
+    const { post, isDarkMode } = this.props
     if (post.location === 'header' || post.location === 'home') {
       return null
     }
@@ -127,12 +153,14 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_reply`}
                 icon={'corner-down-right'}
+                color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
                 onPress={() => this.onReply()}
               />
             ),
             <ButtonSquareComponent
               key={`${post.id}_btn_share`}
               icon={'share'}
+              color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
               onPress={() => this.onShare()}
               onLongPress={() => this.onShare(true)}
             />,
@@ -140,7 +168,9 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_remind`}
                 icon={'bell'}
-                color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                color={
+                  post.reminder ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker
+                }
                 onPress={() => this.setReminder(post)}
               />
             ),
@@ -163,13 +193,13 @@ export class PostHeaderComponent extends Component<Props> {
                     key={`${post.id}_btn_thumbs_up`}
                     icon={'thumbs-up'}
                     color={'green'}
-                    onPress={() => this.castVote(post, 1)}
+                    onPress={() => this.ratePost(post, 'positive')}
                   />,
                   <ButtonSquareComponent
                     key={`${post.id}_btn_thumbs_down`}
                     icon={'thumbs-down'}
                     color={'red'}
-                    onPress={() => this.castVote(post, -1)}
+                    onPress={() => this.ratePost(post, 'negative')}
                   />,
                 ]
               : [<View />]
@@ -185,6 +215,7 @@ export class PostHeaderComponent extends Component<Props> {
           onRef={r => (this.refSwipeable = r)}>
           <TouchableRipple
             disabled={!this.props.isPressable}
+            style={{ backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter }}
             onPress={() => this.props.onPress(post.discussion_id, post.id)}
             rippleColor={'rgba(18,146,180, 0.73)'}>
             <View
@@ -194,18 +225,30 @@ export class PostHeaderComponent extends Component<Props> {
                 alignItems: 'center',
                 paddingHorizontal: 5,
                 paddingVertical: 5,
-                borderTopColor: Styling.colors.dark,
+                borderTopColor: isDarkMode ? Styling.colors.darker : Styling.colors.light,
                 // borderTopWidth: 1,
-                // backgroundColor: this.props.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-                borderBottomColor: Styling.colors.accent,
-                borderBottomWidth: this.props.isUnread ? 1 : 0,
+                borderBottomColor:
+                  this.props.isUnread && isDarkMode
+                    ? Styling.colors.accent
+                    : this.props.isUnread && !isDarkMode
+                    ? Styling.colors.secondary
+                    : isDarkMode
+                    ? Styling.colors.darker
+                    : Styling.colors.light,
+                borderBottomWidth: 1,
               }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '80%' }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  width: post.replies?.length > 0 && this.props.isInteractive ? '70%' : '80%',
+                }}>
                 {this.props.isReply && (
                   <Icon
                     name={'corner-down-right'}
                     size={20}
-                    color={this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+                    color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
                     style={{ marginRight: Styling.metrics.block.small }}
                   />
                 )}
@@ -214,10 +257,27 @@ export class PostHeaderComponent extends Component<Props> {
                   <Text
                     style={[
                       Styling.groups.link(),
-                      { color: this.props.isUnread ? Styling.colors.accent : Styling.colors.primary },
+                      {
+                        color:
+                          this.props.isUnread && isDarkMode
+                            ? Styling.colors.accent
+                            : this.props.isUnread && !isDarkMode
+                            ? Styling.colors.secondary
+                            : Styling.colors.primary,
+                      },
                     ]}
                     numberOfLines={1}>
-                    {post.username?.length > 0 ? post.username : ''}{' '}
+                    {post.username?.length > 0 ? post.username : ''}
+                    {post.replies?.length > 0 && this.props.isInteractive ? (
+                      <ButtonRepliesComponent
+                        count={post.replies.length}
+                        isDarkMode={isDarkMode}
+                        onPress={() => this.showReplies(post)}
+                      />
+                    ) : (
+                      ' '
+                    )}
+
                     {post.discussion_name?.length > 0 && (
                       <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
                     )}
@@ -230,7 +290,14 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                   <Text
                     style={{
-                      color: this.props.isUnread ? Styling.colors.accent : Styling.colors.lighter,
+                      color:
+                        this.props.isUnread && isDarkMode
+                          ? Styling.colors.accent
+                          : this.props.isUnread && !isDarkMode
+                          ? Styling.colors.secondary
+                          : isDarkMode
+                          ? Styling.colors.lighter
+                          : Styling.colors.darker,
                       fontSize: 10,
                     }}>
                     {post?.inserted_at?.length > 0 && formatDate(post.inserted_at)}
@@ -252,7 +319,9 @@ export class PostHeaderComponent extends Component<Props> {
                               ? 'green'
                               : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
                               ? 'red'
-                              : Styling.colors.lighter,
+                              : isDarkMode
+                              ? Styling.colors.lighter
+                              : Styling.colors.dark,
                           textAlign: 'right',
                         },
                       ]}>
@@ -277,7 +346,7 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.positive}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={this.props.isDarkMode}
+            isDarkMode={isDarkMode}
             isPositive={true}
           />
         )}
@@ -286,7 +355,7 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.negative}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={this.props.isDarkMode}
+            isDarkMode={isDarkMode}
             isPositive={false}
           />
         )}
