@@ -30,8 +30,12 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
       style={{
         backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         paddingVertical: 6,
-        paddingHorizontal: Styling.metrics.block.small,
+        paddingLeft: Styling.metrics.block.xsmall,
+        paddingRight: Styling.metrics.block.small,
         marginBottom: Styling.metrics.block.xsmall,
+        borderColor:
+          unreadPostCount > 0 ? Styling.colors.primary : isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+        borderLeftWidth: 3,
       }}
       onPress={() => onPress(id)}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

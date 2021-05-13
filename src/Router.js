@@ -98,6 +98,15 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
     }
   }
 
+  const getTabIconColor = isFocused =>
+    isFocused && isDarkMode
+      ? Styling.colors.lighter
+      : isFocused && !isDarkMode
+      ? Styling.colors.black
+      : isDarkMode
+      ? Styling.colors.mediumlight
+      : Styling.colors.medium
+
   const RootStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
@@ -162,9 +171,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             name={'historyStack'}
             component={HistoryStackContainer}
             options={{
-              tabBarLabel: () => (
-                <Icon name="book-open" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-              ),
+              tabBarLabel: ({ focused }) => <Icon name="book-open" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}
@@ -173,9 +180,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             name={'bookmarksStack'}
             component={BookmarksStackContainer}
             options={{
-              tabBarLabel: () => (
-                <Icon name="bookmark" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-              ),
+              tabBarLabel: ({ focused }) => <Icon name="bookmark" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}
@@ -184,9 +189,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             name={'searchStack'}
             component={SearchStackContainer}
             options={{
-              tabBarLabel: () => (
-                <Icon name="search" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-              ),
+              tabBarLabel: ({ focused }) => <Icon name="search" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}
@@ -194,9 +197,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'mailStack'}
           component={MailStackContainer}
           options={{
-            tabBarLabel: () => (
-              <Icon name="mail" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-            ),
+            tabBarLabel: ({ focused }) => <Icon name="mail" size={14} color={getTabIconColor(focused)} />,
           }}
         />
         {config.isLastEnabled && (
@@ -204,9 +205,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             name={'lastPostsStack'}
             component={LastPostsStackContainer}
             options={{
-              tabBarLabel: () => (
-                <Icon name="inbox" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-              ),
+              tabBarLabel: ({ focused }) => <Icon name="inbox" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}
@@ -215,9 +214,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             name={'remindersStack'}
             component={RemindersStackContainer}
             options={{
-              tabBarLabel: () => (
-                <Icon name="bell" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-              ),
+              tabBarLabel: ({ focused }) => <Icon name="bell" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}
@@ -225,18 +222,14 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'notificationsStack'}
           component={NotificationsStackContainer}
           options={{
-            tabBarLabel: () => (
-              <Icon name="activity" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-            ),
+            tabBarLabel: ({ focused }) => <Icon name="activity" size={14} color={getTabIconColor(focused)} />,
           }}
         />
         <Tab.Screen
           name={'profile'}
           component={Profile}
           options={{
-            tabBarLabel: () => (
-              <Icon name="settings" size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
-            ),
+            tabBarLabel: ({ focused }) => <Icon name="settings" size={14} color={getTabIconColor(focused)} />,
           }}
         />
       </Tab.Navigator>
