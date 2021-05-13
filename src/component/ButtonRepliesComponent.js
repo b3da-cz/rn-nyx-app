@@ -8,7 +8,7 @@ export const ButtonRepliesComponent = ({ count, isDarkMode, onPress }) => {
   return (
     <TouchableRipple
       rippleColor={'rgba(18,146,180, 0.3)'}
-      style={[Styling.groups.squareBtn, { width: 20, height: 20 }]}
+      style={[Styling.groups.squareBtn, { width: 20, height: 20, backgroundColor: 'inherit' }]}
       onPress={() => onPress()}>
       <View style={{ alignItems: 'center' }}>
         <Icon name={'chevron-up'} size={10} color={isDarkMode ? Styling.colors.mediumlight : Styling.colors.medium} />

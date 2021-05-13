@@ -29,7 +29,7 @@ export const PollComponent = ({
     }
   }
   return (
-    <View>
+    <View style={{ paddingHorizontal: Styling.metrics.block.small }}>
       <Text
         style={{
           padding: Styling.metrics.block.medium,
@@ -68,8 +68,22 @@ export const PollComponent = ({
               label={answers[key].answer}
               textAlign={'left'}
               borderWidth={1}
-              borderColor={selected.includes(key) ? Styling.colors.secondary : Styling.colors.black}
-              backgroundColor={selected.includes(key) ? Styling.colors.darker : Styling.colors.black}
+              borderColor={
+                selected.includes(key)
+                  ? Styling.colors.secondary
+                  : isDarkMode
+                  ? Styling.colors.black
+                  : Styling.colors.white
+              }
+              backgroundColor={
+                selected.includes(key)
+                  ? isDarkMode
+                    ? Styling.colors.darker
+                    : Styling.colors.lighter
+                  : isDarkMode
+                  ? Styling.colors.black
+                  : Styling.colors.white
+              }
               color={Styling.colors.secondary}
               fontSize={Styling.metrics.fontSize.medium}
               marginTop={answers[key].result ? 0 : Styling.metrics.block.small}

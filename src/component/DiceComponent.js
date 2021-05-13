@@ -6,7 +6,7 @@ import { Styling } from '../lib'
 
 export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls, canRoll, onRoll }) => {
   return (
-    <View>
+    <View style={{ paddingHorizontal: Styling.metrics.block.small }}>
       <Text
         style={{
           padding: Styling.metrics.block.medium,
