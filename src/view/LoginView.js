@@ -108,7 +108,7 @@ export class LoginView extends Component<Props> {
               textAlign={'center'}
               borderWidth={1}
               borderColor={Styling.colors.primary}
-              backgroundColor={Styling.colors.black}
+              backgroundColor={isDarkMode ? Styling.colors.black : Styling.colors.white}
               color={Styling.colors.primary}
               fontSize={Styling.metrics.fontSize.xxlarge}
               marginTop={Styling.metrics.block.small}
@@ -136,8 +136,10 @@ export class LoginView extends Component<Props> {
               label={t('profile.login.do')}
               textAlign={'center'}
               borderWidth={1}
-              borderColor={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.black}
-              backgroundColor={Styling.colors.black}
+              borderColor={
+                isUsernameFilledIn ? Styling.colors.primary : isDarkMode ? Styling.colors.black : Styling.colors.white
+              }
+              backgroundColor={isDarkMode ? Styling.colors.black : Styling.colors.white}
               color={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.darker}
               fontSize={Styling.metrics.fontSize.xxlarge}
               marginTop={Styling.metrics.block.small}

@@ -14,6 +14,8 @@ target 'Nnn' do
 
   pod 'RNBugfender', :path => '../node_modules/@bugfender/rn-bugfender'
 
+  pod 'RNTextSize', :path => '../node_modules/react-native-text-size'
+
   target 'NnnTests' do
     inherit! :complete
     # Pods for testing

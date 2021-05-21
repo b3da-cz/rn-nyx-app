@@ -29,8 +29,9 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
       const shownBookmarks = [...sectionedBookmarks]
       const shownCategories = this.state.shownCategories ?? Array.from(new Set(sectionedBookmarks.map(b => b.title)))
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
       this.setState({ reminderCount, sectionedBookmarks, shownBookmarks, shownCategories, isFetching: false })
-      this.filterCategories(shownCategories, false)
+      this.filterCategories(shownCategories, true)
     } else {
       this.setState({ isFetching: false })
     }
@@ -46,7 +47,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       }
     }
     if (isAnimated) {
-      LayoutAnimation.configureNext(LayoutAnimConf.spring)
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     }
     this.setState({ shownCategories, shownBookmarks })
   }
@@ -69,10 +70,13 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         <SectionList
           sections={shownBookmarks}
           stickySectionHeadersEnabled={true}
-          initialNumToRender={100}
+          initialNumToRender={500}
           keyExtractor={(item, index) => item.discussion_id}
           refreshing={isFetching}
           onRefresh={() => this.getList()}
+          // getItemLayout={(data, index) => {
+          //   return { length: 46.2, offset: 46.2 * index, index }
+          // }}
           renderSectionHeader={({ section: { title } }) => (
             <SectionHeaderComponent
               isDarkMode={this.isDarkMode}

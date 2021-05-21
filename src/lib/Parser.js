@@ -12,6 +12,7 @@ export const TOKEN = {
   IMG: '###I#',
   CODE: '###C#',
   YT: '###Y#',
+  VIDEO: '###V#',
 }
 
 export class Parser {
@@ -21,6 +22,7 @@ export class Parser {
     this.contentTemplate = null
     this.contentParts = []
     this.clearText = ''
+    this.clearTextWithUrls = ''
     this.type = postType
     this.isParsed = false
     this.isTokenized = false
@@ -29,7 +31,6 @@ export class Parser {
   }
 
   parse() {
-    // todo get img dimensions and calc layout
     if (this.type === 'dice' || this.type === 'poll') {
       return {}
     }
@@ -48,10 +49,14 @@ export class Parser {
       spoilers: this.spoilers,
       replies: this.replies,
       links: this.links,
-      images: this.images,
+      images: this.images.filter(img => !img.src.includes('/images/play')),
       codeBlocks: this.codeBlocks,
       ytBlocks: this.ytBlocks,
+      videos: this.videos,
       clearText: this.clearText,
+      clearTextWithUrls: this.clearTextWithUrls,
+      height: null,
+      offset: null,
     }
   }
 
@@ -62,6 +67,7 @@ export class Parser {
     this.images = this.getImages()
     this.codeBlocks = this.getCodeBlocks()
     this.ytBlocks = this.getVideosYoutube()
+    this.videos = this.getVideoTags() || []
     this.ytBlocksToDelete = this.getYtBlocksForCleanup()
     this.pcBlocksToDelete = this.getPCBlocksForCleanup()
     this.isParsed = true
@@ -76,6 +82,7 @@ export class Parser {
     this.images.forEach(i => (content = content.replace(i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
     this.codeBlocks.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
     this.ytBlocks.forEach(y => (content = content.replace(y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
+    this.videos.forEach(v => (content = content.replace(v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
     this.ytBlocksToDelete.forEach(y => (content = content.replace(y.raw, '')))
     this.pcBlocksToDelete.forEach(p => (content = content.replace(p.raw, '')))
     this.contentParts = content.split(T.SPLIT)
@@ -93,14 +100,32 @@ export class Parser {
   }
 
   getReplies() {
-    return this.html.querySelectorAll('a[data-discussion-id]').map(a => ({
-      id: generateUuidV4(),
-      raw: a.toString(),
-      text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
-      discussionId: a.getAttribute('data-discussion-id'),
-      postId: a.getAttribute('data-id'),
-      url: this.fixLink(a.getAttribute('href')),
-    }))
+    return [
+      ...this.html.querySelectorAll('a[data-discussion-id]').map(a => ({
+        id: generateUuidV4(),
+        raw: a.toString(),
+        text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
+        discussionId: a.getAttribute('data-discussion-id'),
+        postId: a.getAttribute('data-id'),
+        url: this.fixLink(a.getAttribute('href')),
+      })),
+      ...this.html
+        .querySelectorAll('a')
+        .filter(
+          a =>
+            !a.hasAttribute('data-discussion-id') &&
+            a.getAttribute('href') &&
+            a.getAttribute('href').startsWith('/discussion'),
+        )
+        .map(a => ({
+          id: generateUuidV4(),
+          raw: a.toString(),
+          text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
+          discussionId: a.getAttribute('href').split('/')[2],
+          postId: a.getAttribute('href').split('/')[4],
+          url: this.fixLink(a.getAttribute('href')),
+        })),
+    ]
   }
 
   getLinks() {
@@ -111,7 +136,8 @@ export class Parser {
           !a.hasAttribute('data-discussion-id') &&
           a.getAttribute('href') &&
           !a.getAttribute('href').includes('youtube') &&
-          !a.getAttribute('href').includes('youtu.be'),
+          !a.getAttribute('href').includes('youtu.be') &&
+          !a.getAttribute('href').startsWith('/discussion'),
       )
       .map(a => ({
         id: generateUuidV4(),
@@ -159,6 +185,15 @@ export class Parser {
       }))
   }
 
+  getVideoTags() {
+    // todo prefetch height.. possible?
+    return this.html.querySelectorAll('video').map(v => ({
+      id: generateUuidV4(),
+      raw: v.toString(),
+      link: v.getAttribute('src') ?? v.querySelector('source')?.getAttribute('src'),
+    }))
+  }
+
   getYtBlocksForCleanup() {
     return this.html.querySelectorAll('div.embed-wrapper').map(a => ({
       id: generateUuidV4(),
@@ -183,11 +218,11 @@ export class Parser {
       price: this.replaceHtmlEntitiesAndTags(this.html.querySelector('div.price').innerText),
       updated: this.html.querySelector('div.updated').innerText,
     }
-    // console.warn(this.html.firstChild.structure, this.advertisement) // TODO: remove
   }
 
   finalizeText() {
     this.clearText = ''
+    this.clearTextWithUrls = ''
     this.contentParts.forEach((p, i) => {
       if (p?.length > 3 && !p.startsWith('###')) {
         if (p.startsWith(':')) {
@@ -203,16 +238,23 @@ export class Parser {
         } else {
           this.contentParts[i] = p
           this.clearText += this.contentParts[i]
+          this.clearTextWithUrls += this.contentParts[i]
         }
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
         const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
-        this.clearText += `[${link.text}](${link.url})`
+        this.clearText += `${link.text} `
+        this.clearTextWithUrls += `[${link.text}](${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
-        this.clearText += `[${link.text}](${link.url})`
+        this.clearText += `${link.text} `
+        this.clearTextWithUrls += `[${link.text}](${link.url})`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
-        this.clearText += `${img.src}`
+        this.clearTextWithUrls += `${img.src}`
+      } else if (p?.length > 3 && p.startsWith(TOKEN.YT)) {
+        const vid = this.ytBlocks.filter(l => l.id === p.replace(TOKEN.YT, ''))[0]
+        this.clearText += `[${vid.text}] `
+        this.clearTextWithUrls += `[${vid.text}]`
       }
     })
   }
@@ -224,8 +266,6 @@ export class Parser {
       .split('<br>')
       .join('\n')
       .split('<br />')
-      .join('\n')
-      .split('\n\n')
       .join('\n')
       .replace(/(<([^>]+)>)/gi, '')
   }
