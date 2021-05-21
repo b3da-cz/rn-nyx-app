@@ -16,6 +16,8 @@ target 'Nnn' do
 
   pod 'RNTextSize', :path => '../node_modules/react-native-text-size'
 
+  pod 'react-native-cameraroll', :path => '../node_modules/@react-native-community/cameraroll'
+
   target 'NnnTests' do
     inherit! :complete
     # Pods for testing

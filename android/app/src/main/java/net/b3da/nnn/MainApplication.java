@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
+import com.reactnativecommunity.cameraroll.CameraRollPackage;
 import com.bugfender.react.RNBugfenderPackage;
 import com.github.amarcruz.rntextsize.RNTextSizePackage;
 import com.facebook.react.ReactInstanceManager;

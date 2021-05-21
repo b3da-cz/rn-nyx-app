@@ -1,13 +1,50 @@
 import React from 'react'
-import { Modal, TouchableOpacity } from 'react-native'
+import { Modal, TouchableOpacity, PermissionsAndroid, Platform } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import ImageViewer from 'react-native-image-zoom-viewer'
-import ImgToBase64 from 'react-native-image-base64'
+import CameraRoll from '@react-native-community/cameraroll'
+import RNFetchBlob from 'rn-fetch-blob'
 import Share from 'react-native-share'
 import { LoaderComponent } from '../component'
 import { t } from '../lib'
 
 export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'fade', onExit }) => {
+  const hasWritePermission = async () => {
+    const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+    const hasPermission = await PermissionsAndroid.check(permission)
+    if (hasPermission) {
+      return true
+    }
+    const status = await PermissionsAndroid.request(permission)
+    return status === 'granted'
+  }
+
+  const fetchFile = async (url, asBase64?) => {
+    if (Platform.OS === 'android' && !(await hasWritePermission())) {
+      return
+    }
+    return await RNFetchBlob.config({
+      fileCache: true,
+    })
+      .fetch('GET', url)
+      .then(async resp => {
+        if (resp.info().status === 200) {
+          const res = asBase64 ? await resp.base64() : `file://${resp.path()}`
+          setTimeout(() => resp.flush(), 2000)
+          return res
+        }
+      })
+      .catch(e => console.warn(e))
+  }
+
+  const save = async url => {
+    const path = await fetchFile(url)
+    // todo not working on a > 9, android:requestLegacyExternalStorage="true" with targetSdk 29 or false with target 28..
+    CameraRoll.save(path, { album: 'nnn', type: 'photo' })
+      .then(res => console.warn(res))
+      .catch(e => console.warn(e))
+  }
+
   const share = async url => {
     try {
       let type = 'image/jpeg'
@@ -21,7 +58,7 @@ export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'f
           type = 'image/gif'
           break
       }
-      const base64 = await ImgToBase64.getBase64String(url)
+      const base64 = await fetchFile(url, true)
       Share.open({
         url: `data:${type};base64,${base64}`,
         type,
@@ -31,6 +68,7 @@ export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'f
       console.warn(e)
     }
   }
+
   return (
     <Modal visible={isShowing} transparent={true} animationType={animationType} onRequestClose={() => onExit()}>
       <TouchableOpacity

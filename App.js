@@ -7,6 +7,7 @@ import type { Node } from 'react'
 import { Linking, LogBox, Modal, Platform, UIManager } from 'react-native'
 import useColorScheme from 'react-native/Libraries/Utilities/useColorScheme'
 import 'react-native-gesture-handler'
+import { NetworkProvider } from 'react-native-offline'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
@@ -137,32 +138,34 @@ const App: () => Node = () => {
   }
 
   return (
-    <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-      {!isAppLoaded && <LoaderComponent />}
-      {isAuthenticated && (
-        <Context.Provider value={{ config, nyx, theme, refs }}>
-          <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-            <Router
-              config={config}
-              nyx={nyx}
-              refs={refs}
+    <NetworkProvider pingServerUrl={'https://nyx.cz'}>
+      <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+        {!isAppLoaded && <LoaderComponent />}
+        {isAuthenticated && (
+          <Context.Provider value={{ config, nyx, theme, refs }}>
+            <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+              <Router
+                config={config}
+                nyx={nyx}
+                refs={refs}
+                isDarkMode={theme === 'dark'}
+                onConfigReload={() => loadConfig()}
+              />
+            </NavigationContainer>
+          </Context.Provider>
+        )}
+        {isAppLoaded && (
+          <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
+            <LoginView
               isDarkMode={theme === 'dark'}
-              onConfigReload={() => loadConfig()}
+              confirmationCode={confirmationCode}
+              onUsername={username => initNyx(username, false)}
+              onLogin={() => onLogin()}
             />
-          </NavigationContainer>
-        </Context.Provider>
-      )}
-      {isAppLoaded && (
-        <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
-          <LoginView
-            isDarkMode={theme === 'dark'}
-            confirmationCode={confirmationCode}
-            onUsername={username => initNyx(username, false)}
-            onLogin={() => onLogin()}
-          />
-        </Modal>
-      )}
-    </PaperProvider>
+          </Modal>
+        )}
+      </PaperProvider>
+    </NetworkProvider>
   )
 }
 

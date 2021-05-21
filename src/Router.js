@@ -4,6 +4,7 @@
  */
 import React, { useEffect, useState } from 'react'
 import 'react-native-gesture-handler'
+import { NetworkConsumer } from 'react-native-offline'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
@@ -229,7 +230,13 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'profile'}
           component={Profile}
           options={{
-            tabBarLabel: ({ focused }) => <Icon name="settings" size={14} color={getTabIconColor(focused)} />,
+            tabBarLabel: ({ focused }) => (
+              <NetworkConsumer>
+                {({ isConnected }) => (
+                  <Icon name={isConnected ? 'settings' : 'wifi-off'} size={14} color={getTabIconColor(focused)} />
+                )}
+              </NetworkConsumer>
+            ),
           }}
         />
       </Tab.Navigator>
