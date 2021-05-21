@@ -36,6 +36,7 @@ export class ProfileView extends Component<Props> {
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
+      theme: config?.theme || 'system',
       username: '',
     }
   }
@@ -170,6 +171,21 @@ export class ProfileView extends Component<Props> {
               color={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.darker}
             />
             <Picker.Item key={'mailStack'} label={t('mail')} value={'mailStack'} color={Styling.colors.primary} />
+          </Picker>
+        </View>
+        <View style={{ marginTop: 10 }}>
+          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: 18 }]}>
+            {t('profile.theme')}
+          </Text>
+          <Picker
+            mode={'dropdown'}
+            style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
+            prompt={t('profile.theme')}
+            selectedValue={this.state.theme}
+            onValueChange={route => this.setOption('theme', route)}>
+            <Picker.Item key={'system'} label={t('profile.system')} value={'system'} color={Styling.colors.primary} />
+            <Picker.Item key={'dark'} label={t('profile.dark')} value={'dark'} color={Styling.colors.primary} />
+            <Picker.Item key={'light'} label={t('profile.light')} value={'light'} color={Styling.colors.primary} />
           </Picker>
         </View>
         <ButtonComponent

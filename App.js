@@ -38,6 +38,7 @@ const initialConfig = {
   shownCategories: null,
   fcmToken: null,
   isFCMSubscribed: false,
+  theme: 'system',
 }
 
 const App: () => Node = () => {
@@ -48,7 +49,8 @@ const App: () => Node = () => {
   const [isAppLoaded, setIsAppLoaded] = useState(false)
   const [config, setConfig] = useState(initialConfig)
   const refs = {}
-  const theme = useColorScheme()
+  const systemTheme = useColorScheme()
+  const theme = config.theme === 'system' ? systemTheme : config.theme
   // const theme = 'dark'
   // const theme = 'light'
 
@@ -108,6 +110,7 @@ const App: () => Node = () => {
       shownCategories: conf.shownCategories || null,
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
+      theme: conf.theme === undefined ? 'system' : conf.theme,
     })
     return conf
   }
