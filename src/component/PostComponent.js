@@ -253,6 +253,7 @@ export class PostComponent extends Component<Props> {
       <View
         style={{
           height: post?.parsed?.height,
+          paddingBottom: post?.parsed?.height > 0 ? undefined : 15,
           backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
           borderColor: 'red',
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,

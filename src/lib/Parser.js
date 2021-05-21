@@ -148,12 +148,15 @@ export class Parser {
   }
 
   getImages() {
-    return this.html.querySelectorAll('img').map(i => ({
-      id: generateUuidV4(),
-      raw: i.toString(),
-      src: this.fixLink(i.getAttribute('src')),
-      thumb: this.fixLink(i.getAttribute('data-thumb')),
-    }))
+    return this.html
+      .querySelectorAll('img')
+      .filter(i => i.hasAttribute('src'))
+      .map(i => ({
+        id: generateUuidV4(),
+        raw: i.toString(),
+        src: this.fixLink(i.getAttribute('src')),
+        thumb: this.fixLink(i.getAttribute('data-thumb')),
+      }))
   }
 
   getCodeBlocks() {
@@ -164,7 +167,7 @@ export class Parser {
   }
 
   getVideosYoutube() {
-    return this.html
+    const ytBlocks = this.html
       .querySelectorAll('a')
       .filter(
         a =>
@@ -183,6 +186,13 @@ export class Parser {
             ? a.getAttribute('href').replace('https://youtu.be/', '')
             : 'error',
       }))
+    return ytBlocks.map(b => {
+      let videoId = b.videoId
+      if (b.videoId.split('?').length > 1) {
+        videoId = b.videoId.split('?')[0]
+      }
+      return { ...b, videoId }
+    })
   }
 
   getVideoTags() {
