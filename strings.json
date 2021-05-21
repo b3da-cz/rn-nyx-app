@@ -228,5 +228,13 @@
   "username": {
     "cs": "Uživatelské jméno",
     "en": "Username"
+  },
+  "agree": {
+    "cs": "Souhlasím",
+    "en": "Agree"
+  },
+  "exit": {
+    "cs": "Zavřít",
+    "en": "Exit"
   }
 }

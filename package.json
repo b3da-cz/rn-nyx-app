@@ -6,6 +6,8 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
+    "release-apk": "react-native run-android --variant=release",
+    "release-aab": "cd android && ./gradlew bundleRelease && cd ..",
     "test": "jest",
     "lint": "eslint .",
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""

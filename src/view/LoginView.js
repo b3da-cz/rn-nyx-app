@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import { Text, Image, View, Linking } from 'react-native'
+import { Text, Image, View, Linking, LayoutAnimation } from 'react-native'
 import { TextInput, TouchableRipple } from 'react-native-paper'
 import DeviceInfo from 'react-native-device-info'
-import { ButtonComponent } from '../component'
+import { ButtonComponent, TOSComponent } from '../component'
 import { Styling, t } from '../lib'
 import Share from 'react-native-share'
 
@@ -17,6 +17,7 @@ export class LoginView extends Component<Props> {
     super(props)
     this.state = {
       username: '',
+      areTOSConfirmed: false,
     }
   }
 
@@ -30,9 +31,20 @@ export class LoginView extends Component<Props> {
   }
 
   render() {
-    const { username } = this.state
+    const { username, areTOSConfirmed } = this.state
     const { confirmationCode, isDarkMode } = this.props
     const isUsernameFilledIn = username && username.length > 0
+    if (!areTOSConfirmed) {
+      return (
+        <TOSComponent
+          isDarkMode={this.props.isDarkMode}
+          onConfirm={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+            this.setState({ areTOSConfirmed: true })
+          }}
+        />
+      )
+    }
     return (
       <View style={[Styling.groups.themeView(isDarkMode), { flex: 1 }]}>
         <View
