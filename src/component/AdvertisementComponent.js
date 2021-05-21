@@ -23,6 +23,9 @@ export const AdvertisementComponent = ({
 }) => {
   const imgW = isDetail ? undefined : 100
   const imgH = isDetail ? 200 : 100
+  const color =
+    !isDetail && !isActive ? Styling.colors.medium : isDarkMode ? Styling.colors.lighter : Styling.colors.darker
+  const fontSize = Styling.metrics.fontSize.medium
   return (
     <View>
       <ScrollView horizontal={true}>
@@ -46,41 +49,18 @@ export const AdvertisementComponent = ({
         onPress={() => onPress()}>
         <View style={{ paddingHorizontal: Styling.metrics.block.small, paddingBottom: Styling.metrics.block.small }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text
-              style={{
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                fontSize: Styling.metrics.fontSize.xlarge,
-              }}>
-              {action}
-            </Text>
-            <Text
-              style={{
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                fontSize: Styling.metrics.fontSize.medium,
-                textAlign: 'right',
-              }}>
+            <Text style={{ color, fontSize: Styling.metrics.fontSize.xlarge }}>{action}</Text>
+            <Text style={{ color, fontSize, textAlign: 'right' }}>
               {isDetail ? updated : repliesCount > 0 ? repliesCount : ''}
             </Text>
           </View>
-          <Text
-            style={{
-              color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-              fontSize: Styling.metrics.fontSize.medium,
-            }}>
-            {title}
-          </Text>
-          <Text
-            style={{
-              color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-              fontSize: Styling.metrics.fontSize.medium,
-            }}>
-            {summary}
-          </Text>
+          <Text style={{ color, fontSize }}>{title}</Text>
+          <Text style={{ color, fontSize }}>{summary}</Text>
           {shipping?.length > 0 && (
             <Text
               style={{
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                fontSize: Styling.metrics.fontSize.medium,
+                color,
+                fontSize,
                 paddingTop: Styling.metrics.block.small,
               }}>
               {shipping}
@@ -88,21 +68,8 @@ export const AdvertisementComponent = ({
           )}
           <View
             style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: Styling.metrics.block.small }}>
-            <Text
-              style={{
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                fontSize: Styling.metrics.fontSize.medium,
-              }}>
-              {location}
-            </Text>
-            <Text
-              style={{
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                fontSize: Styling.metrics.fontSize.medium,
-                textAlign: 'right',
-              }}>
-              {price}
-            </Text>
+            <Text style={{ color, fontSize }}>{location}</Text>
+            <Text style={{ color, fontSize, textAlign: 'right' }}>{price}</Text>
           </View>
         </View>
       </TouchableRipple>

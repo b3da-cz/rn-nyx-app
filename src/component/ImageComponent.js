@@ -12,16 +12,20 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
         setImgWidth(width)
         setImgHeight(height)
       } else {
-        Image.getSize(src, (w, h) => {
-          if (width && !height) {
-            setImgHeight(h * (width / w))
-          } else if (!width && height) {
-            setImgWidth(w * (height / h))
-          } else {
-            setImgWidth(w)
-            setImgHeight(h)
-          }
-        })
+        Image.getSize(
+          src,
+          (w, h) => {
+            if (width && !height) {
+              setImgHeight(h * (width / w))
+            } else if (!width && height) {
+              setImgWidth(w * (height / h))
+            } else {
+              setImgWidth(w)
+              setImgHeight(h)
+            }
+          },
+          error => console.warn(error),
+        )
       }
     } catch (e) {
       setImgWidth(width)
@@ -43,10 +47,8 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
           height: imgHeight,
           margin: Styling.metrics.block.small,
         }}
-        // resizeMethod={'scale'}
         // resizeMode={'cover'} for thumbs
         resizeMode={'contain'}
-        // resizeMode={'center'}
         source={{ uri: src }}
       />
     </TouchableRipple>

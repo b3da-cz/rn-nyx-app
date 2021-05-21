@@ -1,34 +1,31 @@
 import React, { useState } from 'react'
-import { View } from 'react-native'
-import { Text, TouchableRipple } from 'react-native-paper'
+import { ScrollView } from 'react-native'
+import { Dialog, Portal, Text } from 'react-native-paper'
 import { Styling } from '../lib'
 
-export const SpoilerComponent = ({ children, text }) => {
+export const SpoilerComponent = ({ children, text, isDarkMode }) => {
   const [isVisible, setIsVisible] = useState(false)
   return (
-    <View>
-      {isVisible ? (
-        <Text
-          style={{
-            padding: Styling.metrics.block.medium,
-            fontSize: Styling.metrics.fontSize.medium,
-            color: Styling.colors.lighter,
-            borderWidth: 1,
-            borderColor: Styling.colors.dark,
-          }}>
-          {text}
-        </Text>
-      ) : (
-        <TouchableRipple
-          style={{ padding: Styling.metrics.block.medium, borderWidth: 1, borderColor: Styling.colors.secondary }}
-          rippleColor={'rgba(18,146,180, 0.3)'}
-          onPress={() => setIsVisible(true)}>
-          <Text
-            style={{ fontSize: Styling.metrics.fontSize.large, color: Styling.colors.secondary, textAlign: 'center' }}>
-            SPOILER
-          </Text>
-        </TouchableRipple>
-      )}
-    </View>
+    <Text>
+      <Portal>
+        <Dialog visible={isVisible} onDismiss={() => setIsVisible(false)}>
+          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
+            <ScrollView>
+              <Text
+                style={{
+                  padding: Styling.metrics.block.medium,
+                  fontSize: 15,
+                  color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                }}>
+                {text}
+              </Text>
+            </ScrollView>
+          </Dialog.ScrollArea>
+        </Dialog>
+      </Portal>
+      <Text onPress={() => setIsVisible(true)} style={{ fontSize: 15, color: Styling.colors.secondary }}>
+        {`SPOILER `}
+      </Text>
+    </Text>
   )
 }

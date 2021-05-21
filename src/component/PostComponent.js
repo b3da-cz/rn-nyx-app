@@ -7,9 +7,9 @@ import {
   PollComponent,
   PostHeaderComponent,
   ImageComponent,
-  LinkComponent,
   SpoilerComponent,
   VideoYoutubeComponent,
+  VideoTagComponent,
 } from '../component'
 import { Nyx, TOKEN, Styling, generateUuidV4 } from '../lib'
 
@@ -48,22 +48,21 @@ export class PostComponent extends Component<Props> {
 
   renderReply(reply) {
     return (
-      <LinkComponent
+      <Text
         key={reply.id}
-        color={Styling.colors.primary}
-        fontSize={Styling.metrics.fontSize.large}
+        style={{ color: Styling.colors.primary, fontSize: 15 }}
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
-        {!reply.text.includes('@') && '@'}
         {reply.text}
-        {!reply.text.includes('@') && ':'}
-      </LinkComponent>
+        {!reply.text.startsWith('[') ? ': ' : ' '}
+      </Text>
     )
   }
 
   renderLink(link) {
     return (
-      <LinkComponent
+      <Text
         key={link.id}
+        style={{ color: Styling.colors.secondary, fontSize: 15 }}
         onPress={() => {
           Linking.openURL(link.url).catch(() => {
             if (link.url.startsWith('/discussion/')) {
@@ -76,26 +75,28 @@ export class PostComponent extends Component<Props> {
             }
           })
         }}>
-        {link.text}
-      </LinkComponent>
+        {`${link.text} `}
+      </Text>
     )
   }
 
   renderSpoiler({ id, text }) {
-    return <SpoilerComponent key={id} text={text} />
+    return <SpoilerComponent key={id} text={text} isDarkMode={this.props.isDarkMode} />
   }
 
   renderImage(img) {
-    if (this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
+    if (!img?.src || this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
-    const w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 10
-    if (!img.src.includes('/images/play') && !img.src.includes('img.youtube.com')) {
+    const w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 20
+    if (!img.src.includes('img.youtube.com')) {
       return (
         <ImageComponent
           key={img.id}
           src={img.src}
           width={w}
+          height={img.height > 0 ? img.height * (w / img.width) : undefined}
+          useExactSize={img.width > 0}
           backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() => this.props.onImage(img)}
         />
@@ -104,7 +105,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderCodeBlock(codeBlock) {
-    return <CodeBlockComponent key={codeBlock.id} html={codeBlock.raw} />
+    return <CodeBlockComponent key={codeBlock.id} html={codeBlock.raw} height={codeBlock.height} />
   }
 
   renderYtBlock(ytBlock, images) {
@@ -115,11 +116,15 @@ export class PostComponent extends Component<Props> {
         videoId={ytBlock.videoId}
         videoLink={ytBlock.link}
         previewSrc={img && img.src}
-        width={Styling.metrics.window().width}
-        height={Styling.metrics.window().width / 1.777}
+        width={Styling.metrics.screen().width - 20}
+        height={(Styling.metrics.screen().width - 20) / 1.777}
         backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
       />
     )
+  }
+
+  renderVideoBlock(video) {
+    return <VideoTagComponent key={video.id} height={Styling.metrics.screen().width + 200} url={video.link} />
   }
 
   renderTextNode(text) {
@@ -137,9 +142,9 @@ export class PostComponent extends Component<Props> {
         key={key}
         style={[
           Styling.groups.themeComponent(this.props.isDarkMode),
-          { fontSize: 16, paddingVertical: 2, paddingHorizontal: 2, lineHeight: 22 },
+          { fontSize: 15, paddingVertical: 2, paddingHorizontal: 5, textAlign: 'justify' },
         ]}>
-        {text}
+        {`${text} `}
       </Text>
     )
   }
@@ -199,7 +204,6 @@ export class PostComponent extends Component<Props> {
 
   renderAdvertisement() {
     const { action, title, location, price, updated } = this.props.post.parsed.advertisement
-    // const { contentParts, images } = this.props.post.parsed
     const { post } = this.props
     const images =
       post.content_raw?.data?.photo_ids?.length > 0 &&
@@ -232,14 +236,31 @@ export class PostComponent extends Component<Props> {
         </View>
       )
     }
-    const { post } = this.props
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers } = this.props.post.parsed
+    const { post, isDarkMode } = this.props
+    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers, videos } = this.props.post.parsed
+    const hasTextTypeBlock = () =>
+      post?.content_raw?.type !== 'advertisement' &&
+      contentParts?.length > 0 &&
+      contentParts.filter(
+        part =>
+          part.startsWith(TOKEN.REPLY) ||
+          part.startsWith(TOKEN.LINK) ||
+          part.startsWith(TOKEN.SPOILER) ||
+          part.startsWith(TOKEN.CODE) ||
+          (part?.length > 0 && !part.startsWith('###')),
+      ).length > 0
     return (
-      <View>
+      <View
+        style={{
+          height: post?.parsed?.height,
+          backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
+          borderColor: 'red',
+          // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,
+        }}>
         <PostHeaderComponent
           post={post}
           nyx={this.props.nyx}
-          isDarkMode={this.props.isDarkMode}
+          isDarkMode={isDarkMode}
           isReply={this.props.isReply}
           isUnread={this.props.isUnread}
           isInteractive={this.props.isHeaderInteractive}
@@ -260,36 +281,42 @@ export class PostComponent extends Component<Props> {
             typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
           }
         />
-        <View
-          style={[
-            Styling.groups.themeComponent(this.props.isDarkMode),
-            { paddingBottom: 5, borderWidth: 0, borderColor: 'red' },
-          ]}>
+        {hasTextTypeBlock() && (
+          <Text style={[Styling.groups.themeComponent(isDarkMode), { paddingHorizontal: 5 }]}>
+            {post?.content_raw?.type !== 'advertisement' &&
+              contentParts?.length > 0 &&
+              contentParts.map(part => {
+                if (part.startsWith(TOKEN.REPLY)) {
+                  const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
+                  return this.renderReply(reply)
+                } else if (part.startsWith(TOKEN.LINK)) {
+                  const link = links.filter(l => l.id === part.replace(TOKEN.LINK, ''))[0]
+                  return this.renderLink(link)
+                } else if (part.startsWith(TOKEN.SPOILER)) {
+                  const spoiler = spoilers.filter(s => s.id === part.replace(TOKEN.SPOILER, ''))[0]
+                  return this.renderSpoiler(spoiler)
+                } else if (part.startsWith(TOKEN.CODE)) {
+                  const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
+                  return this.renderCodeBlock(codeBlock)
+                } else if (part?.length > 0 && !part.startsWith('###')) {
+                  return this.renderTextNode(part)
+                }
+              })}
+          </Text>
+        )}
+        <View style={[Styling.groups.themeComponent(isDarkMode), { paddingHorizontal: 5, flex: 1 }]}>
           {post?.content_raw?.type !== 'advertisement' &&
             contentParts?.length > 0 &&
             contentParts.map(part => {
-              if (part.startsWith(TOKEN.REPLY)) {
-                const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
-                return this.renderReply(reply)
-              } else if (part.startsWith(TOKEN.LINK)) {
-                const link = links.filter(l => l.id === part.replace(TOKEN.LINK, ''))[0]
-                return this.renderLink(link)
-              } else if (part.startsWith(TOKEN.SPOILER)) {
-                const spoiler = spoilers.filter(s => s.id === part.replace(TOKEN.SPOILER, ''))[0]
-                return this.renderSpoiler(spoiler)
-              } else if (part.startsWith(TOKEN.IMG)) {
+              if (part.startsWith(TOKEN.IMG)) {
                 const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
                 return this.renderImage(img)
-              } else if (part.startsWith(TOKEN.CODE)) {
-                const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
-                return this.renderCodeBlock(codeBlock)
               } else if (part.startsWith(TOKEN.YT)) {
                 const ytBlock = ytBlocks.filter(c => c.id === part.replace(TOKEN.YT, ''))[0]
                 return this.renderYtBlock(ytBlock, images)
-              } else if (!part || (part && part.length === 0)) {
-                return null
-              } else {
-                return this.renderTextNode(part)
+              } else if (part.startsWith(TOKEN.VIDEO)) {
+                const video = videos.filter(c => c.id === part.replace(TOKEN.VIDEO, ''))[0]
+                return this.renderVideoBlock(video)
               }
             })}
           {post?.content_raw?.type === 'advertisement' && post?.parsed?.advertisement && this.renderAdvertisement()}
