@@ -28,12 +28,21 @@ export const RatingDetailDialogComponent = ({
             <ScrollView style={{ marginVertical: 5 }}>
               {ratingsPositive?.length > 0 && (
                 <View>
-                  <Icon
-                    name={'thumbs-up'}
-                    size={30}
-                    color={'green'}
-                    style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
-                  />
+                  <View style={Styling.groups.flexRowSpbCentered}>
+                    <Icon
+                      name={'thumbs-up'}
+                      size={30}
+                      color={'green'}
+                      style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
+                    />
+                    <Text
+                      style={{
+                        color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                        fontSize: Styling.metrics.fontSize.medium,
+                      }}>
+                      {ratingsPositive.length}
+                    </Text>
+                  </View>
                   {ratingsPositive.map(r => (
                     <UserRowComponent
                       key={`${r.username}-${postKey}`}
@@ -48,12 +57,21 @@ export const RatingDetailDialogComponent = ({
               )}
               {ratingsNegative?.length > 0 && (
                 <View>
-                  <Icon
-                    name={'thumbs-down'}
-                    size={30}
-                    color={'red'}
-                    style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
-                  />
+                  <View style={Styling.groups.flexRowSpbCentered}>
+                    <Icon
+                      name={'thumbs-down'}
+                      size={30}
+                      color={'red'}
+                      style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
+                    />
+                    <Text
+                      style={{
+                        color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                        fontSize: Styling.metrics.fontSize.medium,
+                      }}>
+                      {ratingsNegative.length}
+                    </Text>
+                  </View>
                   {ratingsNegative.map(r => (
                     <UserRowComponent
                       key={`${r.username}-${postKey}`}
