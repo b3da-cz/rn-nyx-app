@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
-import { Portal } from 'react-native-paper'
+import { ProgressBar } from 'react-native-paper'
+import Bugfender from '@bugfender/rn-bugfender'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
@@ -8,7 +9,17 @@ import {
   MessageBoxDialog,
   PostComponent,
 } from '../component'
-import { Context, formatDate, Styling, getDistinctPosts, parsePostsContent, t, wait } from '../lib'
+import {
+  Context,
+  fetchImageSizes,
+  formatDate,
+  getBlockSizes,
+  getDistinctPosts,
+  parsePostsContent,
+  Styling,
+  t,
+  wait,
+} from '../lib'
 
 type Props = {
   navigation: any,
@@ -39,6 +50,7 @@ export class DiscussionView extends Component<Props> {
       lastSeenPostId: null,
       hasBoard: false,
       hasHeader: false,
+      imgPrefetchProgress: { length: 0, done: 0 },
       isBooked: null,
       isCategoryPickerVisible: false,
       isBoardVisible: false,
@@ -74,7 +86,7 @@ export class DiscussionView extends Component<Props> {
       this.setBoardVisible(true)
       this.fetchDiscussionBoard()
     } else {
-      this.reloadDiscussionLatest().then(() => {
+      this.reloadDiscussionLatest().then(async () => {
         if (this.props.showHeader) {
           this.setHeaderVisible(true)
         }
@@ -110,7 +122,10 @@ export class DiscussionView extends Component<Props> {
     const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const topPostId = this.state.posts.length > 0 && this.state.posts[0].id
     const queryString = `${discussionId}?order=newer_than&from_id=${topPostId}`
-    await this.fetchDiscussion(queryString)
+    const addedLen = await this.fetchDiscussion(queryString)
+    if (addedLen > 0 && addedLen !== this.state.posts.length) {
+      this.scrollToPost(addedLen)
+    }
   }
 
   async loadDiscussionBottom() {
@@ -138,14 +153,18 @@ export class DiscussionView extends Component<Props> {
   }
 
   async jumpToLastSeen() {
-    await wait(200)
+    await wait(20)
     const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
-    this.scrollToPost(postIndex, true)
+    this.scrollToPost(postIndex !== undefined ? postIndex : this.state.posts.length - 5, false)
   }
 
   async fetchDiscussion(idOrQueryString) {
+    if (this.state.isFetching) {
+      return 0
+    }
     // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
+    this.measureMs()
     const res = await this.nyx.getDiscussion(idOrQueryString)
     this.getAdvertisementOP(
       res?.discussion_common?.advertisement_specific_data?.advertisement,
@@ -153,9 +172,17 @@ export class DiscussionView extends Component<Props> {
     )
     const newPosts = getDistinctPosts(res.posts, this.state.posts)
     const parsedPosts = parsePostsContent(newPosts)
+    this.measureMs('parsed')
+    const parsedPostsWImageSizes = await fetchImageSizes(parsedPosts, false, ({ length, done }) => {
+      // this.setState({ imgPrefetchProgress: { length, done } })
+    })
+    this.measureMs('images fetched')
+    const finalizedPosts = await getBlockSizes(parsedPostsWImageSizes)
+    this.measureMs('layout calculated')
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
+    this.measureMs(`end [${finalizedPosts.length}] ${idOrQueryString} - ${title.substr(0, 40)}`, true)
     let header = res?.discussion_common?.discussion_specific_data?.header
     if (header?.length > 0) {
       header = parsePostsContent(header)
@@ -163,21 +190,22 @@ export class DiscussionView extends Component<Props> {
     const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
     const uploadedFiles = res?.discussion_common?.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = parsedPosts.flatMap(p => p.parsed.images)
+    const images = finalizedPosts.flatMap(p => p.parsed.images)
     this.setState({
       title,
       images,
       isBooked,
       header,
       lastSeenPostId,
-      posts: parsedPosts,
+      posts: finalizedPosts,
       isFetching: false,
+      imgPrefetchProgress: { length: 0, done: 0 },
       hasBoard: res.discussion_common?.discussion?.has_home,
       hasHeader: res.discussion_common?.discussion?.has_header,
     })
     this.onDiscussionFetched(title, uploadedFiles)
     this.nyx.store.activeDiscussionId = this.props.id
-    return parsedPosts
+    return res?.posts?.length || 0
   }
 
   async fetchDiscussionBoard() {
@@ -239,8 +267,7 @@ export class DiscussionView extends Component<Props> {
       if (postIndex > 1) {
         setTimeout(() => {
           this.refScroll.scrollToIndex({ index: postIndex - 1, viewPosition: 0, animated })
-          this.setState({ isFetching: false })
-        }, 200)
+        }, 20)
       }
     } catch (e) {
       console.warn(e)
@@ -296,7 +323,7 @@ export class DiscussionView extends Component<Props> {
     } else if (updatedPost?.location === 'header') {
       this.reloadDiscussionLatest()
     } else {
-      const post = {...this.state.posts.filter(p => p.id === updatedPost.id)[0]}
+      const post = { ...this.state.posts.filter(p => p.id === updatedPost.id)[0] }
       post.my_rating = updatedPost.my_rating
       post.rating = updatedPost.rating
       const posts = getDistinctPosts([post], this.state.posts)
@@ -385,29 +412,47 @@ export class DiscussionView extends Component<Props> {
     })
   }
 
+  measureMs(action: string, isEnd?: boolean): void {
+    if (!this.timing) {
+      this.timing = {}
+      this.timerStart = +new Date()
+    } else {
+      this.timing[action] = +new Date() - this.timerStart
+      this.timerStart = +new Date()
+    }
+    if (isEnd) {
+      // console.warn(this.timing) // TODO: remove
+      Bugfender.d('DISCUSSION_TIMING', JSON.stringify(this.timing))
+      this.timing = null
+      this.timerStart = null
+    }
+  }
+
   getFabActions() {
+    const { isBooked, hasBoard, isBoardVisible, hasHeader, isHeaderVisible } = this.state
+    const { navigation } = this.props
     const actions = [
       {
         key: 'bookmark',
-        icon: this.state.isBooked ? 'bookmark-remove' : 'bookmark',
-        label: this.state.isBooked ? t('unbook') : t('book'),
+        icon: isBooked ? 'bookmark-remove' : 'bookmark',
+        label: isBooked ? t('unbook') : t('book'),
         onPress: () => this.bookmarkDiscussion(),
       },
     ]
-    if (this.state.hasBoard) {
+    if (hasBoard) {
       actions.push({
         key: 'board',
         icon: 'home',
-        label: `${this.state.isBoardVisible ? t('hide') : t('show')} ${t('board')}`,
-        onPress: () => (this.state.isBoardVisible ? this.props.navigation.goBack() : this.showBoard()),
+        label: `${isBoardVisible ? t('hide') : t('show')} ${t('board')}`,
+        onPress: () => (isBoardVisible ? navigation.goBack() : this.showBoard()),
       })
     }
-    if (this.state.hasHeader) {
+    if (hasHeader) {
       actions.push({
         key: 'header',
         icon: 'file-table-box',
-        label: `${this.state.isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
-        onPress: () => (this.state.isHeaderVisible ? this.props.navigation.goBack() : this.showHeader()),
+        label: `${isHeaderVisible ? t('hide') : t('show')} ${t('header')}`,
+        onPress: () => (isHeaderVisible ? navigation.goBack() : this.showHeader()),
       })
     }
     return actions
@@ -417,6 +462,13 @@ export class DiscussionView extends Component<Props> {
     const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+        {this.state.imgPrefetchProgress?.length > 0 && (
+          <ProgressBar
+            progress={this.state.imgPrefetchProgress.done / (this.state.imgPrefetchProgress.length / 100) / 100}
+            color={Styling.colors.primary}
+            style={{ height: 3 }}
+          />
+        )}
         <BookmarkCategoriesDialog
           isVisible={this.state.isCategoryPickerVisible}
           isDarkMode={this.isDarkMode}
@@ -468,7 +520,11 @@ export class DiscussionView extends Component<Props> {
             this.state.isFetching &&
             this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
           }
-          // getItemLayout={} // todo calc item height in Parser?
+          getItemLayout={(data, index) => ({
+            length: data[index].parsed.height,
+            offset: data[index].parsed.offset - data[index].parsed.height,
+            index,
+          })}
           initialNumToRender={30}
           onScrollToIndexFailed={error => this.onScrollToIndexFailed(error)}
           renderItem={({ item }) => (

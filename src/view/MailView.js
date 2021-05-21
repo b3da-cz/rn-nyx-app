@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, LayoutAnimation, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { MessageBoxDialog, PostComponent } from '../component'
-import { Context, getDistinctPosts, Styling, parsePostsContent, t, wait } from '../lib'
+import { Context, getDistinctPosts, LayoutAnimConf, Styling, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -67,7 +67,7 @@ export class MailView extends Component<Props> {
     })
     const res = await this.nyx.getMail()
     const parsedMessages = parsePostsContent(res.posts)
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       conversations: res.conversations,
       messages: parsedMessages,
@@ -84,7 +84,7 @@ export class MailView extends Component<Props> {
     const res = await this.nyx.getMail(queryString)
     const newMessages = getDistinctPosts(res.posts, messages)
     const parsedMessages = parsePostsContent(newMessages)
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       conversations: res.conversations,
       messages: parsedMessages,
@@ -97,7 +97,7 @@ export class MailView extends Component<Props> {
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx.getMail(queryString)
     const parsedMessages = parsePostsContent(res.posts)
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       activeRecipient: username,
       conversations: res.conversations,

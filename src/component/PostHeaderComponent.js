@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, View } from 'react-native'
+import { LayoutAnimation, Text, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
@@ -9,9 +9,10 @@ import {
   ButtonSquareComponent,
   confirm,
   RatingDetailComponent,
+  RatingDetailDialogComponent,
   UserIconComponent,
 } from '../component'
-import { formatDate, Nyx, Styling, t } from '../lib'
+import { formatDate, LayoutAnimConf, Nyx, Styling, t } from '../lib'
 
 type Props = {
   post: Object,
@@ -34,6 +35,7 @@ export class PostHeaderComponent extends Component<Props> {
     super(props)
     this.state = {
       isFetching: false,
+      isRatingRowVisible: false,
       ratings: {
         positive: [],
         negative: [],
@@ -60,7 +62,7 @@ export class PostHeaderComponent extends Component<Props> {
       if (isContent) {
         Share.open({
           title: 'Content',
-          message: this.props.post.parsed.clearText,
+          message: this.props.post.parsed.clearTextWithUrls,
         })
       } else {
         Share.open({
@@ -77,6 +79,7 @@ export class PostHeaderComponent extends Component<Props> {
   getRatingByFriends() {
     if (this.props.post?.rating_friends?.length > 0) {
       this.setState({
+        isRatingRowVisible: true,
         ratings: {
           positive: this.props.post.rating_friends.map(username => ({ username })),
           negative: [],
@@ -87,6 +90,7 @@ export class PostHeaderComponent extends Component<Props> {
 
   async getRating(post, bounceRight = false) {
     if (bounceRight && (this.state.ratings?.positive?.length > 0 || this.state.ratings?.negative?.length > 0)) {
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
       this.setState({
         ratings: {
           positive: [],
@@ -103,6 +107,7 @@ export class PostHeaderComponent extends Component<Props> {
       positive: ratingsMixed.filter(r => r.tag === 'positive'),
       negative: ratingsMixed.filter(r => r.tag !== 'positive'),
     }
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({ ratings })
   }
 
@@ -204,7 +209,7 @@ export class PostHeaderComponent extends Component<Props> {
                 ]
               : [<View />]
           }
-          onRightButtonsActivate={() => this.getRating(post)}
+          // onRightButtonsActivate={() => this.getRating(post)}
           rightButtonContainerStyle={{
             flexDirection: 'column',
             alignItems: 'flex-start',
@@ -223,19 +228,16 @@ export class PostHeaderComponent extends Component<Props> {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                paddingHorizontal: 5,
-                paddingVertical: 5,
+                paddingHorizontal: 3,
+                paddingVertical: 3,
                 borderTopColor: isDarkMode ? Styling.colors.darker : Styling.colors.light,
                 // borderTopWidth: 1,
-                borderBottomColor:
-                  this.props.isUnread && isDarkMode
-                    ? Styling.colors.accent
-                    : this.props.isUnread && !isDarkMode
-                    ? Styling.colors.secondary
-                    : isDarkMode
-                    ? Styling.colors.darker
-                    : Styling.colors.light,
-                borderBottomWidth: 1,
+                borderLeftColor: this.props.isUnread
+                  ? Styling.colors.primary
+                  : isDarkMode
+                  ? Styling.colors.darker
+                  : Styling.colors.light,
+                borderLeftWidth: 3,
               }}>
               <View
                 style={{
@@ -258,12 +260,11 @@ export class PostHeaderComponent extends Component<Props> {
                     style={[
                       Styling.groups.link(),
                       {
-                        color:
-                          this.props.isUnread && isDarkMode
-                            ? Styling.colors.accent
-                            : this.props.isUnread && !isDarkMode
-                            ? Styling.colors.secondary
-                            : Styling.colors.primary,
+                        color: this.props.isUnread
+                          ? Styling.colors.primary
+                          : isDarkMode
+                          ? Styling.colors.white
+                          : Styling.colors.black,
                       },
                     ]}
                     numberOfLines={1}>
@@ -279,10 +280,13 @@ export class PostHeaderComponent extends Component<Props> {
                     )}
 
                     {post.discussion_name?.length > 0 && (
-                      <Text style={{ color: Styling.colors.primary, fontSize: 16 }}>- {post.discussion_name}</Text>
+                      <Text
+                        style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker, fontSize: 16 }}>
+                        - {post.discussion_name}
+                      </Text>
                     )}
                     {post.activity && (
-                      <Text style={{ color: Styling.colors.dark, fontSize: 12 }}>
+                      <Text style={{ color: Styling.colors.medium, fontSize: 12 }}>
                         {`[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}]`}
                         {post.activity.location}
                       </Text>
@@ -290,15 +294,12 @@ export class PostHeaderComponent extends Component<Props> {
                   </Text>
                   <Text
                     style={{
-                      color:
-                        this.props.isUnread && isDarkMode
-                          ? Styling.colors.accent
-                          : this.props.isUnread && !isDarkMode
-                          ? Styling.colors.secondary
-                          : isDarkMode
-                          ? Styling.colors.lighter
-                          : Styling.colors.darker,
-                      fontSize: 10,
+                      color: this.props.isUnread
+                        ? Styling.colors.primary
+                        : isDarkMode
+                        ? Styling.colors.lighter
+                        : Styling.colors.darker,
+                      fontSize: 11,
                     }}>
                     {post?.inserted_at?.length > 0 && formatDate(post.inserted_at)}
                   </Text>
@@ -306,28 +307,16 @@ export class PostHeaderComponent extends Component<Props> {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 {post.rating !== undefined && (
-                  <TouchableRipple
-                    disabled={!this.props.isInteractive}
-                    rippleColor={'rgba(18,146,180, 0.73)'}
-                    onPress={() => this.getRating(post, true)}>
-                    <Text
-                      style={[
-                        {
-                          padding: 10,
-                          color:
-                            post.my_rating === 'positive'
-                              ? 'green'
-                              : post.my_rating === 'negative' || post.my_rating === 'negative_visible'
-                              ? 'red'
-                              : isDarkMode
-                              ? Styling.colors.lighter
-                              : Styling.colors.dark,
-                          textAlign: 'right',
-                        },
-                      ]}>
-                      {post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
-                    </Text>
-                  </TouchableRipple>
+                  <RatingDetailDialogComponent
+                    isDarkMode={isDarkMode}
+                    isDisabled={!this.props.isInteractive}
+                    onPress={() => this.getRating(post)}
+                    postKey={post.id}
+                    rating={post.rating === 0 ? `±${post.rating}` : post.rating > 0 ? `+${post.rating}` : post.rating}
+                    myRating={post.my_rating}
+                    ratingsPositive={this.state.ratings?.positive || []}
+                    ratingsNegative={this.state.ratings?.negative || []}
+                  />
                 )}
                 {post.reminder && (
                   <ButtonSquareComponent
@@ -341,7 +330,7 @@ export class PostHeaderComponent extends Component<Props> {
             </View>
           </TouchableRipple>
         </Swipeable>
-        {this.state.ratings?.positive?.length > 0 && (
+        {this.state.isRatingRowVisible && this.state.ratings?.positive?.length > 0 && (
           <RatingDetailComponent
             ratings={this.state.ratings.positive}
             ratingWidth={this.state.ratingWidth}
@@ -350,7 +339,7 @@ export class PostHeaderComponent extends Component<Props> {
             isPositive={true}
           />
         )}
-        {this.state.ratings?.negative?.length > 0 && (
+        {this.state.isRatingRowVisible && this.state.ratings?.negative?.length > 0 && (
           <RatingDetailComponent
             ratings={this.state.ratings.negative}
             ratingWidth={this.state.ratingWidth}

@@ -127,6 +127,22 @@
     "initialView": {
       "cs": "Start aplikace na",
       "en": "Initial view"
+    },
+    "theme": {
+      "cs": "Barevné schema",
+      "en": "Color theme"
+    },
+    "system": {
+      "cs": "Podle systému",
+      "en": "System"
+    },
+    "dark": {
+      "cs": "Tmavé",
+      "en": "Dark"
+    },
+    "light": {
+      "cs": "Světlé",
+      "en": "Light"
     }
   },
   "delete": {

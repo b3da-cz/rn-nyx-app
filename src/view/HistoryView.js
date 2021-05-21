@@ -1,7 +1,7 @@
 import React from 'react'
-import { ScrollView, RefreshControl, View } from 'react-native'
+import { ScrollView, RefreshControl, View, LayoutAnimation } from 'react-native'
 import { DiscussionRowComponent } from '../component'
-import { Styling } from '../lib'
+import { LayoutAnimConf, Styling } from '../lib'
 import { BaseDiscussionListView } from '../view'
 
 type Props = {
@@ -21,6 +21,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
   async getList(isAnimated = false) {
     this.setState({ isFetching: true })
     const res = await this.nyx.getHistory(this.state.isShowingRead)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({ discussions: res.discussions, isFetching: false })
   }
 

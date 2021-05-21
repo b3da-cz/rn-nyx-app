@@ -1,4 +1,6 @@
 rootProject.name = 'Nnn'
+include ':react-native-text-size'
+project(':react-native-text-size').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-text-size/android')
 include ':@bugfender_rn-bugfender'
 project(':@bugfender_rn-bugfender').projectDir = new File(rootProject.projectDir, '../node_modules/@bugfender/rn-bugfender/android')
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)

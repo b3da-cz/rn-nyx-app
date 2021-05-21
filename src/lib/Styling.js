@@ -230,4 +230,14 @@ export const LayoutAnimConf = {
       property: 'opacity',
     },
   },
+  easeInEaseOut: {
+    duration: 300,
+    create: {
+      type: 'easeInEaseOut',
+      property: 'opacity',
+    },
+    update: {
+      type: 'easeInEaseOut',
+    },
+  },
 }

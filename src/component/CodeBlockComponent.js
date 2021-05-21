@@ -1,18 +1,33 @@
 import React from 'react'
+import { Text, View } from 'react-native'
+import { WebView } from 'react-native-webview'
 import { Styling } from '../lib'
-import AutoHeightWebView from 'react-native-autoheight-webview'
 
-export const CodeBlockComponent = ({ html, fontSize = 10 }) => {
+export const CodeBlockComponent = ({ html, height, fontSize = 11 }) => {
   return (
-    <AutoHeightWebView
-      style={{
-        width: Styling.metrics.screen().width - Styling.metrics.block.medium,
-        marginHorizontal: Styling.metrics.block.small,
-      }}
-      customStyle={`pre { font-size: ${fontSize}px; }`}
-      source={{ html }}
-      scalesPageToFit={false}
-      viewportContent={'width=device-width, user-scalable=no'}
-    />
+    <Text>
+      <View style={{ flex: 1 }}>
+        <WebView
+          style={{
+            width: Styling.metrics.screen().width - Styling.metrics.block.medium,
+            height: height,
+            backgroundColor: 'transparent',
+            marginVertical: Styling.metrics.block.small,
+          }}
+          source={{
+            html: `
+              <html lang="en">
+                <body style="margin: 0 !important; padding: 0 !important; background-color:#272822">
+                  <style>pre { font-size: ${fontSize}px; color: #ccc }</style>
+                  ${html}
+                </body>
+              </html>`,
+          }}
+          scalesPageToFit={false}
+          incognito={true}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </Text>
   )
 }

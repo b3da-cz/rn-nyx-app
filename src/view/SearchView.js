@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
-import { Context, Styling, t } from '../lib'
+import { Context, LayoutAnimConf, Styling, t } from '../lib'
 
 type Props = {
   onNavigation: Function,
@@ -64,7 +64,7 @@ export class SearchView extends Component<Props> {
         delete sectioned[i]
       }
     })
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       discussions,
       events,
