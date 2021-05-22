@@ -2,14 +2,15 @@
  * @format
  * @flow
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import 'react-native-gesture-handler'
 import { NetworkConsumer } from 'react-native-offline'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, NavOptions, subscribeFCM, t } from './lib'
+import { NotificationIconComponent } from './component'
+import { Styling, NavOptions, showNotificationBanner, subscribeFCM, t, wait } from './lib'
 import {
   BookmarksStackContainer,
   HistoryStackContainer,
@@ -23,26 +24,20 @@ import { ImageModal, ComposePostView, ProfileView } from './view'
 
 export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
-  const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
   useEffect(() => {
     const sub = subscribeFCM(message => {
+      nyx.getContext()
       switch (message.type) {
         case 'new_mail':
           if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
             setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300) // todo setting
           }
           if (message.isForegroundMsg) {
-            RNNotificationBanner.Show({
+            showNotificationBanner({
               title: message.title,
-              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              titleColor: Styling.colors.white,
-              subTitleColor: Styling.colors.white,
+              body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: Styling.colors.secondary,
-              duration: 5000,
-              enableProgress: false,
-              withIcon: true,
-              dismissable: true,
-              icon: <Icon name="mail" size={20} color={Styling.colors.white} family={'Feather'} />,
+              icon: 'mail',
               onClick: () => {
                 nav?.navigate('mailStack', { screen: 'mail' })
                 refs?.MailView?.getLatestMessages()
@@ -56,25 +51,16 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             setTimeout(() => nav.navigate('notificationsStack', { screen: 'notifications' }), 300)
           }
           if (message.isForegroundMsg) {
-            RNNotificationBanner.Show({
+            showNotificationBanner({
               title: message.title,
-              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              titleColor: Styling.colors.white,
-              subTitleColor: Styling.colors.white,
+              body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: Styling.colors.primary,
-              duration: 5000,
-              enableProgress: false,
-              withIcon: true,
-              dismissable: true,
-              icon: <Icon name="corner-down-right" size={20} color={Styling.colors.white} family={'Feather'} />,
-              onClick: () => {
+              icon: 'corner-down-right',
+              onClick: async () => {
+                nav.navigate('notificationsStack', { screen: 'notifications' })
                 if (message.discussionId > 0) {
-                  nav.navigate('notificationsStack', {
-                    screen: 'discussion',
-                    params: { discussionId: message.discussionId, postId: message.postId },
-                  })
-                } else {
-                  nav.navigate('notificationsStack', { screen: 'notifications' })
+                  await wait()
+                  nav.push('discussion', { discussionId: message.discussionId, postId: message.postId })
                 }
                 RNNotificationBanner.Dismiss()
               },
@@ -92,12 +78,6 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
       }
     }
   })
-
-  const checkNotifications = () => {
-    if (nyx?.store?.context?.user?.notifications_unread !== notificationsUnread) {
-      setNotificationsUnread(nyx.store.context.user.notifications_unread)
-    }
-  }
 
   const getTabIconColor = isFocused =>
     isFocused && isDarkMode
@@ -198,7 +178,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'mailStack'}
           component={MailStackContainer}
           options={{
-            tabBarLabel: ({ focused }) => <Icon name="mail" size={14} color={getTabIconColor(focused)} />,
+            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} isMail={true} />,
           }}
         />
         {config.isLastEnabled && (
@@ -223,7 +203,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'notificationsStack'}
           component={NotificationsStackContainer}
           options={{
-            tabBarLabel: ({ focused }) => <Icon name="activity" size={14} color={getTabIconColor(focused)} />,
+            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} />,
           }}
         />
         <Tab.Screen
@@ -233,7 +213,11 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             tabBarLabel: ({ focused }) => (
               <NetworkConsumer>
                 {({ isConnected }) => (
-                  <Icon name={isConnected ? 'settings' : 'wifi-off'} size={14} color={getTabIconColor(focused)} />
+                  <Icon
+                    name={isConnected ? 'settings' : 'wifi-off'}
+                    size={14}
+                    color={isConnected ? getTabIconColor(focused) : 'red'}
+                  />
                 )}
               </NetworkConsumer>
             ),

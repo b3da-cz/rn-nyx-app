@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
-import { ScrollView, RefreshControl, Text, View, LayoutAnimation } from 'react-native'
+import { Text, View, LayoutAnimation, FlatList } from 'react-native'
 import { UserRowComponent } from '../component'
-import { Context, formatDate, LayoutAnimConf, Styling, t } from '../lib'
+import { MainContext, formatDate, LayoutAnimConf, Styling, t } from '../lib'
 
 type Props = {
   id: number,
 }
 export class DiscussionStatsComponent extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {
@@ -66,25 +66,29 @@ export class DiscussionStatsComponent extends Component<Props> {
             </View>
           </View>
         )}
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={[Styling.groups.themeComponent(this.isDarkMode)]}
-          refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getVisits()} />}>
-          <View>
-            {this.state.visits?.length > 0 &&
-              this.state.visits.map(v => (
-                <UserRowComponent
-                  key={`${v.username}-${v.last_visited_at}`}
-                  user={v}
-                  borderLeftWidth={Styling.metrics.block.xsmall}
-                  borderColor={v.bookmark ? Styling.colors.primary : 'transparent'}
-                  extraText={`${v.new_posts}  |  ${formatDate(v.last_visited_at)}`}
-                  isDarkMode={this.isDarkMode}
-                  isPressable={false}
-                />
-              ))}
-          </View>
-        </ScrollView>
+        <FlatList
+          data={this.state.visits}
+          extraData={this.state}
+          keyExtractor={(item, index) => `${item.username}-${item.last_visited_at}`}
+          refreshing={this.state.isFetching}
+          onRefresh={() => this.getVisits(true)}
+          style={Styling.groups.themeComponent(this.isDarkMode)}
+          getItemLayout={(data, index) => {
+            return { length: 38, offset: 38 * index, index }
+          }}
+          initialNumToRender={30}
+          renderItem={({ item }) => (
+            <UserRowComponent
+              key={`${item.username}-${item.last_visited_at}`}
+              user={item}
+              borderLeftWidth={Styling.metrics.block.xsmall}
+              borderColor={item.bookmark ? Styling.colors.primary : 'transparent'}
+              extraText={`${item.new_posts}  |  ${formatDate(item.last_visited_at)}`}
+              isDarkMode={this.isDarkMode}
+              isPressable={false}
+            />
+          )}
+        />
       </View>
     )
   }

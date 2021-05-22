@@ -13,7 +13,7 @@ import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import Bugfender from '@bugfender/rn-bugfender'
 import { LoaderComponent } from './src/component'
-import { Nyx, Storage, initFCM, Context, CustomDarkTheme, CustomLightTheme } from './src/lib'
+import { Nyx, Storage, initFCM, MainContext, CustomDarkTheme, CustomLightTheme, UnreadContextProvider } from './src/lib'
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
 
@@ -142,17 +142,19 @@ const App: () => Node = () => {
       <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
         {!isAppLoaded && <LoaderComponent />}
         {isAuthenticated && (
-          <Context.Provider value={{ config, nyx, theme, refs }}>
-            <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-              <Router
-                config={config}
-                nyx={nyx}
-                refs={refs}
-                isDarkMode={theme === 'dark'}
-                onConfigReload={() => loadConfig()}
-              />
-            </NavigationContainer>
-          </Context.Provider>
+          <MainContext.Provider value={{ config, nyx, theme, refs }}>
+            <UnreadContextProvider nyx={nyx}>
+              <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+                <Router
+                  config={config}
+                  nyx={nyx}
+                  refs={refs}
+                  isDarkMode={theme === 'dark'}
+                  onConfigReload={() => loadConfig()}
+                />
+              </NavigationContainer>
+            </UnreadContextProvider>
+          </MainContext.Provider>
         )}
         {isAppLoaded && (
           <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>

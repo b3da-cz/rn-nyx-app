@@ -11,7 +11,7 @@ import {
   PostComponent,
 } from '../component'
 import {
-  Context,
+  MainContext,
   fetchImageSizes,
   formatDate,
   getBlockSizes,
@@ -37,7 +37,7 @@ type Props = {
 }
 // todo refactor
 export class DiscussionView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {
@@ -159,7 +159,11 @@ export class DiscussionView extends Component<Props> {
   async jumpToLastSeen() {
     await wait(20)
     const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
-    this.scrollToPost(postIndex !== undefined ? postIndex : this.state.posts.length - 5, false)
+    const isPostInFetchedRange = this.state.posts[this.state.posts.length - 1].id > this.state.lastSeenPostId // if true && postIndex == undefined ? DI or deleted
+    this.scrollToPost(
+      postIndex !== undefined ? postIndex : isPostInFetchedRange ? 0 : this.state.posts.length - 5,
+      false,
+    )
   }
 
   async fetchDiscussion(idOrQueryString) {
@@ -478,7 +482,7 @@ export class DiscussionView extends Component<Props> {
     if (this.props.showStats) {
       return <DiscussionStatsComponent id={this.props.id} nyx={this.nyx} />
     }
-    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště');
+    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         {this.state.imgPrefetchProgress?.length > 0 && (

@@ -34,6 +34,7 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
         borderColor:
           unreadPostCount > 0 ? Styling.colors.primary : isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         borderLeftWidth: 3,
+        height: Styling.metrics.block.discussionRowHeight,
       }}
       onPress={() => onPress(id)}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

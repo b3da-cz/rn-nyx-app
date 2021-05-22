@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, FormRowToggleComponent, MessageBoxDialog, UserIconComponent } from '../component'
-import { Context, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
+import { MainContext, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
   config: any,
   onConfigChange: Function,
 }
 export class ProfileView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.loadSettings()

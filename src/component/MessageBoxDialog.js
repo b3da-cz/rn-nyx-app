@@ -3,7 +3,7 @@ import { ActivityIndicator, Text, View, ScrollView, Image, LayoutAnimation } fro
 import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { Context, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, Styling, t } from '../lib'
 
 type Props = {
   nyx: any,
@@ -17,7 +17,7 @@ type Props = {
   onDismiss?: Function,
 }
 export class MessageBoxDialog extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

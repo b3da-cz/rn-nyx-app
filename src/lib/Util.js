@@ -2,6 +2,9 @@ import React, { FC } from 'react'
 import { Portal } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
+import { RNNotificationBanner } from 'react-native-notification-banner'
+import { Styling } from './Styling'
+import Icon from 'react-native-vector-icons/Feather'
 
 export const generateUuidV4 = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -74,4 +77,20 @@ export const formatDate = str => {
   const m = str.substr(5, 2)
   const d = str.substr(8, 2)
   return `${d}.${m}.${y}  ${str.substring(11)}`
+}
+
+export const showNotificationBanner = ({ title, body, tintColor, icon, onClick }) => {
+  RNNotificationBanner.Show({
+    title,
+    subTitle: body,
+    titleColor: Styling.colors.white,
+    subTitleColor: Styling.colors.white,
+    tintColor,
+    duration: 5000,
+    enableProgress: false,
+    withIcon: true,
+    dismissable: true,
+    icon: <Icon name={icon} size={20} color={Styling.colors.white} family={'Feather'} />,
+    onClick: () => onClick(),
+  })
 }

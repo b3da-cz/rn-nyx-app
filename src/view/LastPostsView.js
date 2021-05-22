@@ -1,14 +1,14 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { PostComponent, RatingFilterBarComponent } from '../component'
-import { Context, Styling, getDistinctPosts, parsePostsContent, wait } from '../lib'
+import { MainContext, Styling, getDistinctPosts, parsePostsContent, wait } from '../lib'
 
 type Props = {
   navigation: any,
   onImages: Function,
 }
 export class LastPostsView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

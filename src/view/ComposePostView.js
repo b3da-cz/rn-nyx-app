@@ -5,7 +5,7 @@ import DocumentPicker from 'react-native-document-picker'
 import ImageResizer from 'react-native-image-resizer'
 import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { Context, Styling, t } from '../lib'
+import { MainContext, Styling, t } from '../lib'
 import Bugfender from '@bugfender/rn-bugfender'
 
 type Props = {
@@ -20,7 +20,7 @@ type Props = {
 }
 // deprecated, todo Search, cleanup
 export class ComposePostView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

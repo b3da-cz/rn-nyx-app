@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import { FAB } from 'react-native-paper'
-import { Context, Storage, Styling } from '../lib'
+import { MainContext, Storage, Styling } from '../lib'
 
 export class BaseDiscussionListView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.navFocusListener = null

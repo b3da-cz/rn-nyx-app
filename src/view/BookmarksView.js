@@ -75,7 +75,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
           refreshing={isFetching}
           onRefresh={() => this.getList()}
           // getItemLayout={(data, index) => {
-          //   return { length: 46.2, offset: 46.2 * index, index }
+          //   return { length: 35, offset: 35 * index, index }
           // }}
           renderSectionHeader={({ section: { title } }) => (
             <SectionHeaderComponent

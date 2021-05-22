@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, LayoutAnimation, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { MessageBoxDialog, PostComponent } from '../component'
-import { Context, getDistinctPosts, LayoutAnimConf, Styling, parsePostsContent, t, wait } from '../lib'
+import { MainContext, getDistinctPosts, LayoutAnimConf, Styling, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -10,7 +10,7 @@ type Props = {
   navigation: any,
 }
 export class MailView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

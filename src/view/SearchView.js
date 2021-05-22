@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
-import { Context, LayoutAnimConf, Styling, t } from '../lib'
+import { MainContext, LayoutAnimConf, Styling, t } from '../lib'
 
 type Props = {
   onNavigation: Function,
   onUserSelected: Function,
 }
 export class SearchView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {
