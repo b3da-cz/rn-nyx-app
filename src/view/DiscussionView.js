@@ -5,6 +5,7 @@ import Bugfender from '@bugfender/rn-bugfender'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
+  DiscussionStatsComponent,
   FabComponent,
   MessageBoxDialog,
   PostComponent,
@@ -28,6 +29,7 @@ type Props = {
   showBoard?: boolean,
   showHeader?: boolean,
   showReplies?: boolean,
+  showStats?: boolean,
   jumpToLastSeen?: boolean,
   onDiscussionFetched: Function,
   onImages: Function,
@@ -84,6 +86,8 @@ export class DiscussionView extends Component<Props> {
       this.jumpToPost(this.props.id, this.props.postId)
     } else if (this.props.showBoard) {
       this.setBoardVisible(true)
+      this.fetchDiscussionBoard()
+    } else if (this.props.showStats) {
       this.fetchDiscussionBoard()
     } else {
       this.reloadDiscussionLatest().then(async () => {
@@ -389,6 +393,10 @@ export class DiscussionView extends Component<Props> {
     this.props.navigation.push('discussion', { discussionId: this.props.id, showHeader: true })
   }
 
+  showStats() {
+    this.props.navigation.push('discussion', { discussionId: this.props.id, showStats: true })
+  }
+
   async fetchReplies(discussionId, postId) {
     this.setState({ isFetching: true })
     const res = await this.nyx.getDiscussion(`${discussionId}/id/${postId}/replies`)
@@ -407,6 +415,8 @@ export class DiscussionView extends Component<Props> {
         ? `${t('board')} - ${title}`
         : this.state.isHeaderVisible
         ? `${t('header')} - ${title}`
+        : this.props.showStats
+        ? `${t('stats.title')} - ${title}`
         : title,
       uploadedFiles,
     })
@@ -438,6 +448,12 @@ export class DiscussionView extends Component<Props> {
         label: isBooked ? t('unbook') : t('book'),
         onPress: () => this.bookmarkDiscussion(),
       },
+      {
+        key: 'stats',
+        icon: 'view-list',
+        label: `${t('show')} ${t('stats.title')}`,
+        onPress: () => this.showStats(),
+      },
     ]
     if (hasBoard) {
       actions.push({
@@ -459,7 +475,10 @@ export class DiscussionView extends Component<Props> {
   }
 
   render() {
-    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
+    if (this.props.showStats) {
+      return <DiscussionStatsComponent id={this.props.id} nyx={this.nyx} />
+    }
+    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště');
     return (
       <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
         {this.state.imgPrefetchProgress?.length > 0 && (

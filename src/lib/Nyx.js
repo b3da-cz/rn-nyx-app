@@ -206,6 +206,18 @@ export class Nyx {
     return null
   }
 
+  async getDiscussionStats(id) {
+    try {
+      return await fetch(`https://nyx.cz/api/discussion/${id}/stats`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('get discussion stats', e)
+    }
+    return null
+  }
+
   async getMail(queryString = '') {
     try {
       return await fetch(`https://nyx.cz/api/mail${queryString}`, {

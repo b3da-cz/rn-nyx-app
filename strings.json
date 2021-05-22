@@ -209,6 +209,24 @@
     "cs": "Sdílet",
     "en": "Share"
   },
+  "stats": {
+    "title": {
+      "cs": "Statistiky",
+      "en": "Stats"
+    },
+    "visited": {
+      "cs": "Navštívilo",
+      "en": "Visited"
+    },
+    "booked": {
+      "cs": "Sleduje",
+      "en": "Booked"
+    },
+    "readLast": {
+      "cs": "Četlo poslední",
+      "en": "Read last"
+    }
+  },
   "show": {
     "cs": "Zobrazit",
     "en": "Show"
