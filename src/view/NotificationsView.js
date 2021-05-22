@@ -3,14 +3,14 @@ import { FlatList, Image, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { PostComponent, RatingDetailComponent } from '../component'
-import { Context, parseNotificationsContent, Styling } from '../lib'
+import { MainContext, parseNotificationsContent, Styling } from '../lib'
 
 type Props = {
   navigation: any,
   onImages: Function,
 }
 export class NotificationsView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

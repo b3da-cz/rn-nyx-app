@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-export const Context = createContext({
+export const MainContext = createContext({
   nyx: null,
   config: null,
   theme: 'dark',

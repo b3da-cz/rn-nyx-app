@@ -11,8 +11,9 @@ export const SectionHeaderComponent = ({ title, icon, isDarkMode, isPressable, o
       rippleColor={'rgba(18,146,180, 0.3)'}
       style={{
         width: '100%',
-        backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
+        backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
         marginBottom: Styling.metrics.block.xsmall,
+        height: Styling.metrics.block.discussionRowHeight,
       }}
       onPress={() => onPress()}>
       <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: Styling.metrics.block.small }]}>
@@ -20,7 +21,7 @@ export const SectionHeaderComponent = ({ title, icon, isDarkMode, isPressable, o
           style={{
             fontSize: Styling.metrics.fontSize.medium,
             color: isDarkMode ? Styling.colors.lighter : Styling.colors.black,
-            paddingVertical: 6,
+            paddingVertical: 5,
           }}>
           {title}
         </Text>

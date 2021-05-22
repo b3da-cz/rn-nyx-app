@@ -31,6 +31,7 @@ export const Styling = {
       large: 20,
       xlarge: 30,
       xxlarge: 50,
+      discussionRowHeight: 32,
     },
     fontSize: {
       xxsmall: 8,

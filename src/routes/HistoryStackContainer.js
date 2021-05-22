@@ -1,11 +1,11 @@
 import React, { useContext } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
-import { Context, NavOptions, discussionScreenOptions } from '../lib'
+import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
 import { Discussion, History } from '../routes'
 
 export const HistoryStackContainer = ({ navigation, route }) => {
   const HistoryStack = createStackNavigator()
-  const context = useContext(Context)
+  const context = useContext(MainContext)
   return (
     <HistoryStack.Navigator
       initialRouteName={'history'}

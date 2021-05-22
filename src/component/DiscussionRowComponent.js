@@ -4,13 +4,11 @@ import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling } from '../lib'
 
-export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress }) => {
+export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress, onLongPress }) => {
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
-  const unreadRowColor = (unreads, replies) =>
-    replies > 0
-      ? Styling.colors.accent
-      : (unreads > 0 || isAccented) && isDarkMode
+  const unreadRowColor = unreads =>
+    (unreads > 0 || isAccented) && isDarkMode
       ? Styling.colors.white
       : (unreads > 0 || isAccented) && !isDarkMode
       ? Styling.colors.black
@@ -36,8 +34,10 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
         borderColor:
           unreadPostCount > 0 ? Styling.colors.primary : isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         borderLeftWidth: 3,
+        height: Styling.metrics.block.discussionRowHeight,
       }}
-      onPress={() => onPress(id)}>
+      onPress={() => onPress(id)}
+      onLongPress={() => (typeof onLongPress === 'function' ? onLongPress(id) : null)}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text
           numberOfLines={1}
@@ -49,7 +49,7 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
                 ? '65%'
                 : '75%',
               fontSize: 14,
-              color: unreadRowColor(unreadPostCount, discussion.new_replies_count),
+              color: unreadRowColor(unreadPostCount),
             },
           ]}>
           {isBookmarksResultType ? discussion.full_name : discussion.discussion_name}
@@ -62,7 +62,7 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
                 // width: '25%',
                 textAlign: 'right',
                 fontSize: 14,
-                color: unreadRowColor(unreadPostCount, discussion.new_replies_count),
+                color: discussion.new_replies_count > 0 ? Styling.colors.primary : unreadRowColor(unreadPostCount),
               },
             ]}>
             {unreadPostCount}

@@ -76,6 +76,10 @@
     }
   },
   "profile": {
+    "settings": {
+      "cs": "Nastavení",
+      "en": "Settings"
+    },
     "fcm": {
       "subscribe": {
         "title": {
@@ -209,6 +213,28 @@
     "cs": "Sdílet",
     "en": "Share"
   },
+  "stats": {
+    "title": {
+      "cs": "Statistiky",
+      "en": "Stats"
+    },
+    "visited": {
+      "cs": "Navštívilo",
+      "en": "Visited"
+    },
+    "booked": {
+      "cs": "Sleduje",
+      "en": "Booked"
+    },
+    "readLast": {
+      "cs": "Četlo poslední",
+      "en": "Read last"
+    }
+  },
+  "friends": {
+    "cs": "Přátelé",
+    "en": "Friends"
+  },
   "show": {
     "cs": "Zobrazit",
     "en": "Show"
@@ -228,5 +254,13 @@
   "username": {
     "cs": "Uživatelské jméno",
     "en": "Username"
+  },
+  "agree": {
+    "cs": "Souhlasím",
+    "en": "Agree"
+  },
+  "exit": {
+    "cs": "Zavřít",
+    "en": "Exit"
   }
 }

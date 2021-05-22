@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { PostComponent, SectionHeaderComponent } from '../component'
-import { Context, Styling, parsePostsContent, t } from '../lib'
+import { MainContext, Styling, parsePostsContent, t } from '../lib'
 
 type Props = {
   navigation: any,
 }
 export class RemindersView extends Component<Props> {
-  static contextType = Context
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {

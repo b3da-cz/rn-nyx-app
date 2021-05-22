@@ -2,13 +2,15 @@
  * @format
  * @flow
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import 'react-native-gesture-handler'
+import { NetworkConsumer } from 'react-native-offline'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, NavOptions, subscribeFCM, t } from './lib'
+import { NotificationIconComponent } from './component'
+import { Styling, NavOptions, showNotificationBanner, subscribeFCM, t, wait } from './lib'
 import {
   BookmarksStackContainer,
   HistoryStackContainer,
@@ -18,32 +20,27 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import { ImageModal, ComposePostView, ProfileView } from './view'
+import { ImageModal, ProfileView, SettingsView } from './view'
 
 export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
-  const [notificationsUnread, setNotificationsUnread] = useState(0) // todo badge
   useEffect(() => {
     const sub = subscribeFCM(message => {
+      nyx.getContext()
       switch (message.type) {
         case 'new_mail':
           if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
             setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300) // todo setting
           }
           if (message.isForegroundMsg) {
-            RNNotificationBanner.Show({
+            showNotificationBanner({
               title: message.title,
-              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              titleColor: Styling.colors.white,
-              subTitleColor: Styling.colors.white,
+              body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: Styling.colors.secondary,
-              duration: 5000,
-              enableProgress: false,
-              withIcon: true,
-              dismissable: true,
-              icon: <Icon name="mail" size={20} color={Styling.colors.white} family={'Feather'} />,
-              onClick: () => {
+              icon: 'mail',
+              onClick: async () => {
                 nav?.navigate('mailStack', { screen: 'mail' })
+                await wait()
                 refs?.MailView?.getLatestMessages()
                 RNNotificationBanner.Dismiss()
               },
@@ -55,25 +52,16 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             setTimeout(() => nav.navigate('notificationsStack', { screen: 'notifications' }), 300)
           }
           if (message.isForegroundMsg) {
-            RNNotificationBanner.Show({
+            showNotificationBanner({
               title: message.title,
-              subTitle: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              titleColor: Styling.colors.white,
-              subTitleColor: Styling.colors.white,
+              body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: Styling.colors.primary,
-              duration: 5000,
-              enableProgress: false,
-              withIcon: true,
-              dismissable: true,
-              icon: <Icon name="corner-down-right" size={20} color={Styling.colors.white} family={'Feather'} />,
-              onClick: () => {
+              icon: 'corner-down-right',
+              onClick: async () => {
+                nav.navigate('notificationsStack', { screen: 'notifications' })
                 if (message.discussionId > 0) {
-                  nav.navigate('notificationsStack', {
-                    screen: 'discussion',
-                    params: { discussionId: message.discussionId, postId: message.postId },
-                  })
-                } else {
-                  nav.navigate('notificationsStack', { screen: 'notifications' })
+                  await wait()
+                  nav.push('discussion', { discussionId: message.discussionId, postId: message.postId })
                 }
                 RNNotificationBanner.Dismiss()
               },
@@ -92,12 +80,6 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
     }
   })
 
-  const checkNotifications = () => {
-    if (nyx?.store?.context?.user?.notifications_unread !== notificationsUnread) {
-      setNotificationsUnread(nyx.store.context.user.notifications_unread)
-    }
-  }
-
   const getTabIconColor = isFocused =>
     isFocused && isDarkMode
       ? Styling.colors.lighter
@@ -110,40 +92,14 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
   const RootStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
-  const Profile = ({ navigation }) => <ProfileView config={config} onConfigChange={() => onConfigReload()} />
+  const Profile = ({ navigation }) => (
+    <ProfileView config={config} navigation={navigation} onConfigChange={() => onConfigReload()} />
+  )
+  const Settings = ({ navigation }) => <SettingsView config={config} onConfigChange={() => onConfigReload()} />
 
   const Gallery = ({ navigation, route }) => {
     const { images, imgIndex } = route.params
     return <ImageModal images={images} imgIndex={imgIndex} isShowing={true} onExit={() => navigation.goBack()} />
-  }
-
-  const ComposePost = ({ navigation, route }) => {
-    const isMailPost = route?.params?.isMailPost
-    const discussionId = isMailPost ? null : route.params.discussionId
-    const postId = isMailPost ? null : route.params.postId
-    const discussion = isMailPost
-      ? null
-      : nyx.store.discussions.filter(d => Number(d.discussion_id) === Number(discussionId))[0]
-    const title = isMailPost ? route.params.username : discussion?.full_name || ''
-    const uploadedFiles = isMailPost ? [] : discussion?.detail?.discussion_common?.waiting_files
-    return (
-      <ComposePostView
-        isMailPost={isMailPost}
-        uploadedFiles={uploadedFiles}
-        username={route?.params?.username}
-        discussionId={discussionId}
-        postId={postId}
-        replyTo={route?.params?.replyTo}
-        onSend={() => {
-          navigation.goBack()
-          setTimeout(() => {
-            refs?.DiscussionView?.reloadDiscussionLatest(true)
-            refs?.MailView?.getLatestMessages()
-          }, 300)
-        }}
-        onMount={() => navigation.setOptions({ title: isMailPost ? t('new.message') : `${t('new.post')}: ${title}` })}
-      />
-    )
   }
 
   const TabContainer = ({ navigation }) => {
@@ -193,13 +149,6 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
             }}
           />
         )}
-        <Tab.Screen
-          name={'mailStack'}
-          component={MailStackContainer}
-          options={{
-            tabBarLabel: ({ focused }) => <Icon name="mail" size={14} color={getTabIconColor(focused)} />,
-          }}
-        />
         {config.isLastEnabled && (
           <Tab.Screen
             name={'lastPostsStack'}
@@ -222,14 +171,31 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
           name={'notificationsStack'}
           component={NotificationsStackContainer}
           options={{
-            tabBarLabel: ({ focused }) => <Icon name="activity" size={14} color={getTabIconColor(focused)} />,
+            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} />,
+          }}
+        />
+        <Tab.Screen
+          name={'mailStack'}
+          component={MailStackContainer}
+          options={{
+            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} isMail={true} />,
           }}
         />
         <Tab.Screen
           name={'profile'}
           component={Profile}
           options={{
-            tabBarLabel: ({ focused }) => <Icon name="settings" size={14} color={getTabIconColor(focused)} />,
+            tabBarLabel: ({ focused }) => (
+              <NetworkConsumer>
+                {({ isConnected }) => (
+                  <Icon
+                    name={isConnected ? 'user' : 'wifi-off'}
+                    size={14}
+                    color={isConnected ? getTabIconColor(focused) : 'red'}
+                  />
+                )}
+              </NetworkConsumer>
+            ),
           }}
         />
       </Tab.Navigator>
@@ -241,7 +207,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
       mode={'modal'}
       options={{ cardStyle: NavOptions.cardStyle(isDarkMode) }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
-      <RootStack.Screen name={'composePost'} component={ComposePost} options={{ title: '' }} />
+      <RootStack.Screen name={'settings'} component={Settings} options={{ title: t('profile.settings') }} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
   )

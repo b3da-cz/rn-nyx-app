@@ -1,11 +1,11 @@
 import React, { useContext } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
-import { Context, NavOptions, discussionScreenOptions } from '../lib'
+import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
 import { Bookmarks, Discussion } from '../routes'
 
 export const BookmarksStackContainer = ({ navigation, route }) => {
   const BookmarksStack = createStackNavigator()
-  const context = useContext(Context)
+  const context = useContext(MainContext)
   return (
     <BookmarksStack.Navigator
       initialRouteName={'bookmarks'}

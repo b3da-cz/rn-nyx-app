@@ -39,7 +39,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
           ? [
               Styling.groups.shadow,
               {
-                backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+                backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
                 position: 'absolute',
                 top: 0,
                 right: 0,

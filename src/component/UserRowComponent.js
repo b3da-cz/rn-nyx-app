@@ -8,6 +8,8 @@ export const UserRowComponent = ({
   user,
   isDarkMode,
   extraText,
+  borderLeftWidth = 0,
+  borderColor = 'inherit',
   marginBottom = Styling.metrics.block.xsmall,
   marginTop = 0,
   isPressable = true,
@@ -22,6 +24,8 @@ export const UserRowComponent = ({
         backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
         paddingVertical: Styling.metrics.block.small,
         paddingHorizontal: Styling.metrics.block.small,
+        borderLeftWidth,
+        borderColor,
         marginBottom,
         marginTop,
       }}

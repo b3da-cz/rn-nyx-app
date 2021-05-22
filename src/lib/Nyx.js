@@ -13,6 +13,7 @@ export class Nyx {
       this.appVersion
     } | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
     this.onLogout = null
+    this.onContextUpdate = null
   }
 
   async init(username?) {
@@ -42,6 +43,13 @@ export class Nyx {
     this.deleteAuthToken()
     if (this.onLogout && typeof this.onLogout === 'function') {
       this.onLogout()
+    }
+  }
+
+  updateContext(ctx) {
+    if (this.onContextUpdate && typeof this.onContextUpdate === 'function') {
+      this.store.context = ctx
+      this.onContextUpdate(ctx)
     }
   }
 
@@ -89,8 +97,8 @@ export class Nyx {
         method: 'GET',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      this.store.context = res.context
-      this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
+      this.updateContext(res.context)
+      // this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
       return res
     } catch (e) {
       this.logError('get bookmarks', e)
@@ -109,11 +117,27 @@ export class Nyx {
           headers: this.getHeaders(),
         },
       ).then(resp => resp.json())
-      this.store.context = res.context
-      this.store.discussions = res.discussions
+      this.updateContext(res.context)
+      // this.store.discussions = res.discussions
       return res
     } catch (e) {
       this.logError('get history', e)
+    }
+    return null
+  }
+
+  async getContext() {
+    try {
+      const res = await fetch('https://nyx.cz/api/status', {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      if (res && !res.error) {
+        this.updateContext(res)
+        return res
+      }
+    } catch (e) {
+      this.logError('get context', e)
     }
     return null
   }
@@ -129,7 +153,7 @@ export class Nyx {
           headers: this.getHeaders(),
         },
       ).then(resp => resp.json())
-      this.store.context = res.context
+      this.updateContext(res.context)
       return res
     } catch (e) {
       this.logError('get last posts', e)
@@ -161,7 +185,7 @@ export class Nyx {
         },
       ).then(resp => resp.json())
       if (!isUnified) {
-        this.store.context = res.context
+        this.updateContext(res.context)
       }
       return res
     } catch (e) {
@@ -176,17 +200,17 @@ export class Nyx {
         method: 'GET',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
-      this.store.context = res.context
-      this.store.discussions.forEach((d, i) => {
-        if (d.discussion_id === id) {
-          this.store.discussions[i].detail = {
-            updated: +new Date(),
-            discussion_common: res.discussion_common,
-            posts: res.posts,
-            presence: res.presence,
-          }
-        }
-      })
+      this.updateContext(res.context)
+      // this.store.discussions.forEach((d, i) => {
+      //   if (d.discussion_id === id) {
+      //     this.store.discussions[i].detail = {
+      //       updated: +new Date(),
+      //       discussion_common: res.discussion_common,
+      //       posts: res.posts,
+      //       presence: res.presence,
+      //     }
+      //   }
+      // })
       return res
     } catch (e) {
       this.logError('get discussion', e)
@@ -206,12 +230,26 @@ export class Nyx {
     return null
   }
 
-  async getMail(queryString = '') {
+  async getDiscussionStats(id) {
     try {
-      return await fetch(`https://nyx.cz/api/mail${queryString}`, {
+      return await fetch(`https://nyx.cz/api/discussion/${id}/stats`, {
         method: 'GET',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('get discussion stats', e)
+    }
+    return null
+  }
+
+  async getMail(queryString = '') {
+    try {
+      const res = await fetch(`https://nyx.cz/api/mail${queryString}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+      this.updateContext(res.context)
+      return res
     } catch (e) {
       this.logError('get mail', e)
     }
@@ -220,10 +258,12 @@ export class Nyx {
 
   async getReminders(type = 'bookmarks') {
     try {
-      return await fetch(`https://nyx.cz/api/${type}/reminders`, {
+      const res = await fetch(`https://nyx.cz/api/${type}/reminders`, {
         method: 'GET',
         headers: this.getHeaders(),
       }).then(resp => resp.json())
+      this.updateContext(res.context)
+      return res
     } catch (e) {
       this.logError('get reminders', e)
     }
