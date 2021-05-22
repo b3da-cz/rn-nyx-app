@@ -4,7 +4,7 @@ import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling } from '../lib'
 
-export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress }) => {
+export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress, onLongPress }) => {
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
   const unreadRowColor = unreads =>
@@ -36,7 +36,8 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
         borderLeftWidth: 3,
         height: Styling.metrics.block.discussionRowHeight,
       }}
-      onPress={() => onPress(id)}>
+      onPress={() => onPress(id)}
+      onLongPress={() => (typeof onLongPress === 'function' ? onLongPress(id) : null)}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text
           numberOfLines={1}

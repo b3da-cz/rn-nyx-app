@@ -20,7 +20,9 @@ export const FormRowToggleComponent = ({
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-      <Text style={[Styling.groups.themeComponent(isDarkMode), { fontSize }]}>{label}</Text>
+      <Text style={[Styling.groups.themeComponent(isDarkMode), { fontSize, backgroundColor: 'transparent' }]}>
+        {label}
+      </Text>
       <Switch
         thumbColor={value ? toggleColorActive : toggleColorInactive}
         onValueChange={val => onChange(val)}

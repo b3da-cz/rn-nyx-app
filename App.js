@@ -17,7 +17,7 @@ import { Nyx, Storage, initFCM, MainContext, CustomDarkTheme, CustomLightTheme, 
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
 
-LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWillMount has', 'Reanimated 2']) // Ignore log notifications from Swipeable todo
+LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWillMount has', 'Reanimated 2', 'Require cycle: node_modules/']) // Ignore log notifications from Swipeable todo
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -141,7 +141,7 @@ const App: () => Node = () => {
     <NetworkProvider pingServerUrl={'https://nyx.cz'}>
       <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
         {!isAppLoaded && <LoaderComponent />}
-        {isAuthenticated && (
+        {isAppLoaded && isAuthenticated && (
           <MainContext.Provider value={{ config, nyx, theme, refs }}>
             <UnreadContextProvider nyx={nyx}>
               <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>

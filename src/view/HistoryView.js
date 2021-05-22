@@ -2,7 +2,7 @@ import React from 'react'
 import { ScrollView, RefreshControl, View, LayoutAnimation } from 'react-native'
 import { DiscussionRowComponent } from '../component'
 import { LayoutAnimConf, Styling } from '../lib'
-import { BaseDiscussionListView } from '../view'
+import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
   navigation: any,
@@ -40,6 +40,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                   discussion={d}
                   isDarkMode={this.isDarkMode}
                   onPress={id => this.showDiscussion(id)}
+                  onLongPress={id => this.showDiscussionStats(id)}
                 />
               ))}
           </View>

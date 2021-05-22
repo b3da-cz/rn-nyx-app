@@ -76,6 +76,10 @@
     }
   },
   "profile": {
+    "settings": {
+      "cs": "Nastavení",
+      "en": "Settings"
+    },
     "fcm": {
       "subscribe": {
         "title": {
@@ -226,6 +230,10 @@
       "cs": "Četlo poslední",
       "en": "Read last"
     }
+  },
+  "friends": {
+    "cs": "Přátelé",
+    "en": "Friends"
   },
   "show": {
     "cs": "Zobrazit",

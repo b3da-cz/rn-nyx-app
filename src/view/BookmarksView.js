@@ -2,7 +2,7 @@ import React from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
 import { LayoutAnimConf, Styling } from '../lib'
-import { BaseDiscussionListView } from '../view'
+import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
   navigation: any,
@@ -92,6 +92,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
               discussion={item}
               isDarkMode={this.isDarkMode}
               onPress={id => this.showDiscussion(id)}
+              onLongPress={id => this.showDiscussionStats(id)}
             />
           )}
         />

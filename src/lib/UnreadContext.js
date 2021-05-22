@@ -1,5 +1,6 @@
 import React, { Component, createContext } from 'react'
-import { Nyx, MainContext } from '../lib'
+import { Nyx } from './Nyx'
+import { MainContext } from './MainContext'
 
 export const UnreadContext = createContext({
   posts: 0,

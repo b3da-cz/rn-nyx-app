@@ -2,6 +2,9 @@ import React, { Component } from 'react'
 import { FAB } from 'react-native-paper'
 import { MainContext, Storage, Styling } from '../lib'
 
+type Props = {
+  navigation: any,
+}
 export class BaseDiscussionListView extends Component<Props> {
   static contextType = MainContext
   constructor(props) {
@@ -59,8 +62,12 @@ export class BaseDiscussionListView extends Component<Props> {
     await Storage.setConfig(config)
   }
 
-  showDiscussion(id) {
-    this.props.onDetailShow(id)
+  showDiscussion(discussionId) {
+    this.props.navigation.push('discussion', { discussionId, jumpToLastSeen: true })
+  }
+
+  showDiscussionStats(discussionId) {
+    // this.props.navigation.push('discussion', { discussionId, showStats: true })
   }
 
   renderFAB() {
