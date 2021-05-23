@@ -19,8 +19,7 @@ import {
   Storage,
   initFCM,
   MainContext,
-  CustomDarkTheme,
-  CustomLightTheme,
+  createTheme,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -192,14 +191,17 @@ const App: () => Node = () => {
     init()
   }
 
+  const colors = ['cyan', 'teal', 'green']
+  const darkTheme = createTheme(true, ...colors)
+  const lightTheme = createTheme(false, ...colors)
   return (
     <NetworkProvider pingServerUrl={'https://nyx.cz'}>
-      <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+      <PaperProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
         {!isAppLoaded && <LoaderComponent />}
         {isAppLoaded && isAuthenticated && (
           <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
             <UnreadContextProvider nyx={nyx}>
-              <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+              <NavigationContainer theme={theme === 'dark' ? darkTheme : lightTheme}>
                 <Router
                   config={config}
                   nyx={nyx}

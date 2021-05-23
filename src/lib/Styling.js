@@ -1,8 +1,10 @@
 import { Dimensions } from 'react-native'
+import { createTheme } from './Palette'
 
 export const Styling = {
   colors: {
     primary: '#1292B4',
+    primaryDark: '#0d6f7e',
     secondary: '#b46612',
     accent: '#43E6DD',
     white: '#FFFFFF',
@@ -128,6 +130,7 @@ export const Styling = {
   },
 }
 
+export const DarkTheme = {}
 export const CustomDarkTheme = {
   animation: { scale: 1 },
   colors: {

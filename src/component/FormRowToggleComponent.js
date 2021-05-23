@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react'
-import { Switch, Text, View } from 'react-native'
+import React from 'react'
+import { Switch, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import { Styling } from '../lib'
 
 export const FormRowToggleComponent = ({
@@ -20,9 +21,7 @@ export const FormRowToggleComponent = ({
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-      <Text
-        style={[Styling.groups.themeComponent(isDarkMode), { fontSize, backgroundColor: 'transparent' }]}
-        onPress={() => onChange(!value)}>
+      <Text style={{ fontSize }} onPress={() => onChange(!value)}>
         {label}
       </Text>
       <Switch
