@@ -20,7 +20,9 @@ export const FormRowToggleComponent = ({
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-      <Text style={[Styling.groups.themeComponent(isDarkMode), { fontSize, backgroundColor: 'transparent' }]}>
+      <Text
+        style={[Styling.groups.themeComponent(isDarkMode), { fontSize, backgroundColor: 'transparent' }]}
+        onPress={() => onChange(!value)}>
         {label}
       </Text>
       <Switch

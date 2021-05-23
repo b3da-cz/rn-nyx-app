@@ -68,7 +68,13 @@ export class LoginView extends Component<Props> {
           </TouchableRipple>
           <TouchableRipple
             rippleColor={'rgba(18,146,180, 0.3)'}
-            onPress={() => Linking.openURL('https://nyx.cz').catch(() => null)}>
+            onPress={() =>
+              Linking.openURL(
+                confirmationCode?.length > 0
+                  ? `https://nyx.cz/profile/${username.toUpperCase()}/settings/authorizations`
+                  : 'https://nyx.cz',
+              ).catch(() => null)
+            }>
             <Image
               style={{
                 width: 50,
@@ -93,7 +99,11 @@ export class LoginView extends Component<Props> {
                 },
               ]}>
               <Text
-                onPress={() => Linking.openURL('https://nyx.cz').catch(() => null)}
+                onPress={() =>
+                  Linking.openURL(`https://nyx.cz/profile/${username.toUpperCase()}/settings/authorizations`).catch(
+                    () => null,
+                  )
+                }
                 style={[
                   Styling.groups.themeComponent(isDarkMode),
                   { padding: Styling.metrics.block.medium, fontSize: Styling.metrics.fontSize.large },

@@ -287,7 +287,11 @@ export class PostComponent extends Component<Props> {
           }
         />
         {hasTextTypeBlock() && (
-          <Text style={[Styling.groups.themeComponent(isDarkMode), { paddingHorizontal: 5 }]}>
+          <Text
+            style={{
+              color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+              paddingHorizontal: 5,
+            }}>
             {post?.content_raw?.type !== 'advertisement' &&
               contentParts?.length > 0 &&
               contentParts.map(part => {
