@@ -1,7 +1,7 @@
 {
   "name": "nnn",
-  "version": "0.6.0",
-  "buildVersion": 3,
+  "version": "0.6.1",
+  "buildVersion": 4,
   "private": true,
   "scripts": {
     "android": "react-native run-android",
