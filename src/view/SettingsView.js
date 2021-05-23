@@ -44,8 +44,22 @@ export class SettingsView extends Component<Props> {
   }
 
   async setOption(name, val) {
-    this.setState({ [name]: val })
     const conf = await Storage.getConfig()
+    const isBookmarksCollision =
+      name === 'isBookmarksEnabled' && !val && this.state.initialRouteName === 'bookmarksStack'
+    const isHistoryCollision = name === 'isHistoryEnabled' && !val && this.state.initialRouteName === 'historyStack'
+    if (isBookmarksCollision || isHistoryCollision) {
+      const nextInitialRoute =
+        isBookmarksCollision || !this.state.isBookmarksEnabled
+          ? isHistoryCollision || !this.state.isHistoryEnabled
+            ? 'mailStack'
+            : 'historyStack'
+          : 'bookmarksStack'
+      this.setState({ [name]: val, initialRouteName: nextInitialRoute })
+      conf.initialRouteName = nextInitialRoute
+    } else {
+      this.setState({ [name]: val })
+    }
     conf[name] = val
     await Storage.setConfig(conf)
     this.props.onConfigChange()
