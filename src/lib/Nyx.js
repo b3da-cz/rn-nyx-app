@@ -343,6 +343,18 @@ export class Nyx {
     return null
   }
 
+  async reportPost(postId) {
+    try {
+      return await fetch(`https://nyx.cz/api/report/${postId}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+      }).then(resp => resp.json())
+    } catch (e) {
+      this.logError('report post', e)
+    }
+    return null
+  }
+
   async sendPrivateMessage(recipient, message) {
     const data = { recipient, message }
     try {

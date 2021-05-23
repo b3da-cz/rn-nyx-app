@@ -5,9 +5,7 @@ import { LoaderComponent, MessageBoxDialog, UserIconComponent, UserRowComponent 
 import { formatDate, MainContext, Styling, t, LayoutAnimConf } from '../lib'
 
 type Props = {
-  config: any,
   navigation: any,
-  onConfigChange: Function,
 }
 export class ProfileView extends Component<Props> {
   static contextType = MainContext

@@ -1,7 +1,7 @@
 import React from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
-import { LayoutAnimConf, Styling } from '../lib'
+import { filterDiscussions, LayoutAnimConf, Styling } from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
@@ -26,7 +26,10 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     const res = await this.nyx.getBookmarks(this.state.isShowingRead)
     if (res?.bookmarks?.length) {
       const reminderCount = res.reminder_count || 0
-      const sectionedBookmarks = res.bookmarks.map(b => ({ title: b.category.category_name, data: b.bookmarks }))
+      const sectionedBookmarks = res.bookmarks.map(b => ({
+        title: b.category.category_name,
+        data: filterDiscussions(b.bookmarks, this.filters),
+      }))
       const shownBookmarks = [...sectionedBookmarks]
       const shownCategories = this.state.shownCategories ?? Array.from(new Set(sectionedBookmarks.map(b => b.title)))
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)

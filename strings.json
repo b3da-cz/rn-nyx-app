@@ -159,6 +159,28 @@
       "en": "Delete post"
     }
   },
+  "filter": {
+    "title": {
+      "cs": "Filtr",
+      "en": "Filter"
+    },
+    "set": {
+      "cs": "Nastavit filtraci",
+      "en": "Set filters"
+    },
+    "phrases": {
+      "cs": "Filtrované fráze",
+      "en": "Filtered phrases"
+    },
+    "users": {
+      "cs": "Blokovaní uživatelé",
+      "en": "Blocked users"
+    }
+  },
+  "empty": {
+    "cs": "Prázdné",
+    "en": "Empty"
+  },
   "ok": {
     "cs": "Ok",
     "en": "Ok"
@@ -234,6 +256,10 @@
   "friends": {
     "cs": "Přátelé",
     "en": "Friends"
+  },
+  "reportPost": {
+    "cs": "Nahlásit příspěvek",
+    "en": "Report post"
   },
   "show": {
     "cs": "Zobrazit",

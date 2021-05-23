@@ -11,11 +11,14 @@ import {
   PostComponent,
 } from '../component'
 import {
-  MainContext,
   fetchImageSizes,
+  filterPostsByAuthor,
+  filterPostsByContent,
   formatDate,
   getBlockSizes,
   getDistinctPosts,
+  isDiscussionPermitted,
+  MainContext,
   parsePostsContent,
   Styling,
   t,
@@ -71,6 +74,8 @@ export class DiscussionView extends Component<Props> {
     this.config = this.context.config
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.filters = [...this.context.filters]
+    this.blockedUsers = [...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       if (!this.state.isMsgBoxVisible) {
         this.setState({ isSubmenuVisible: true })
@@ -159,7 +164,7 @@ export class DiscussionView extends Component<Props> {
   async jumpToLastSeen() {
     await wait(20)
     const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
-    const isPostInFetchedRange = this.state.posts[this.state.posts.length - 1].id > this.state.lastSeenPostId // if true && postIndex == undefined ? DI or deleted
+    const isPostInFetchedRange = this.state.posts[this.state.posts.length - 1]?.id > this.state.lastSeenPostId // if true && postIndex == undefined ? DI or deleted
     this.scrollToPost(
       postIndex !== undefined ? postIndex : isPostInFetchedRange ? 0 : this.state.posts.length - 5,
       false,
@@ -178,7 +183,11 @@ export class DiscussionView extends Component<Props> {
       res?.discussion_common?.advertisement_specific_data?.advertisement,
       res?.discussion_common?.advertisement_specific_data?.attachments,
     )
-    const newPosts = getDistinctPosts(res.posts, this.state.posts)
+    const filteredPosts =
+      this.blockedUsers?.length > 0
+        ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
+        : filterPostsByContent(res.posts, this.filters)
+    const newPosts = getDistinctPosts(filteredPosts, this.state.posts)
     const parsedPosts = parsePostsContent(newPosts)
     this.measureMs('parsed')
     const parsedPostsWImageSizes = await fetchImageSizes(parsedPosts, false, ({ length, done }) => {
@@ -191,6 +200,10 @@ export class DiscussionView extends Component<Props> {
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
     this.measureMs(`end [${finalizedPosts.length}] ${idOrQueryString} - ${title.substr(0, 40)}`, true)
+    if (!isDiscussionPermitted(title, this.filters)) {
+      alert('Blocked content')
+      return this.props.navigation.goBack()
+    }
     let header = res?.discussion_common?.discussion_specific_data?.header
     if (header?.length > 0) {
       header = parsePostsContent(header)

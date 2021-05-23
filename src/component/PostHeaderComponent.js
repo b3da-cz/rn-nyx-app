@@ -135,14 +135,13 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async reportPost(post) {
-    console.warn('todo'); // TODO: remove
-    // const res = await confirm(t('confirm'), `${t('report.post')}?`)
-    // if (res) {
-    //   await this.props.nyx.reportPost(post.discussion_id, post.id)
-    //   if (this.refSwipeable) {
+    const res = await confirm(t('confirm'), `${t('reportPost')}?`)
+    if (res) {
+      await this.props.nyx.reportPost(post.id)
+      if (this.refSwipeable) {
         this.refSwipeable.recenter()
-    //   }
-    // }
+      }
+    }
   }
 
   showReplies(post) {

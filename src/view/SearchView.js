@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { Searchbar } from 'react-native-paper'
 import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
-import { MainContext, LayoutAnimConf, Styling, t } from '../lib'
+import { MainContext, LayoutAnimConf, Styling, t, filterDiscussions } from '../lib'
 
 type Props = {
   onNavigation: Function,
@@ -31,6 +31,7 @@ export class SearchView extends Component<Props> {
 
   init() {
     this.nyx = this.context.nyx
+    this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
@@ -52,7 +53,7 @@ export class SearchView extends Component<Props> {
     const users = [...(exact || []), ...(friends || []), ...(others || [])]
     const sectioned = [
       { title: t('advertisements'), data: advertisements || [] },
-      { title: t('discussions'), data: discussions || [] },
+      { title: t('discussions'), data: filterDiscussions(discussions, this.filters) || [] },
       // { title: t('events'), data: events || [] },
       // { title: t('posts'), data: posts || [] },
       { title: t('users'), data: users || [] },

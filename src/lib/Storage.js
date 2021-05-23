@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const StorageKeys = {
   auth: 'auth',
-  backgroundMessages: 'backgroundMessages',
+  blockedUsers: 'blockedUsers',
+  filters: 'filters',
   config: 'config',
   user: 'user',
 }
@@ -28,9 +29,13 @@ const getAuth = async () => get(StorageKeys.auth)
 
 const setAuth = async auth => set(StorageKeys.auth, auth)
 
-const getBackgroundMessages = async () => get(StorageKeys.backgroundMessages)
+const getBlockedUsers = async () => get(StorageKeys.blockedUsers)
 
-const setBackgroundMessages = async messages => set(StorageKeys.backgroundMessages, messages)
+const setBlockedUsers = async users => set(StorageKeys.blockedUsers, users)
+
+const getFilters = async () => get(StorageKeys.filters)
+
+const setFilters = async filters => set(StorageKeys.filters, filters)
 
 const getConfig = async () => get(StorageKeys.config)
 
@@ -42,14 +47,18 @@ const setUser = async conf => set(StorageKeys.user, conf)
 
 const removeAll = async () =>
   set(StorageKeys.auth, null)
+    .then(() => set(StorageKeys.blockedUsers, null))
+    .then(() => set(StorageKeys.filters, null))
     .then(() => set(StorageKeys.config, null))
     .then(() => set(StorageKeys.user, null))
 
 export const Storage = {
   getAuth,
   setAuth,
-  getBackgroundMessages,
-  setBackgroundMessages,
+  getBlockedUsers,
+  setBlockedUsers,
+  getFilters,
+  setFilters,
   getConfig,
   setConfig,
   getUser,
