@@ -112,8 +112,8 @@
         "en": "Login"
       },
       "message": {
-        "cs": "Otevři nyx.cz -> osobní nastavení -> autorizace -> zadej potvrzovací kód:",
-        "en": "Open nyx.cz -> user settings -> authorization -> enter confirmation code:"
+        "cs": "Otevři nyx.cz -> osobní nastavení -> autorizace (klikni zde) -> zadej potvrzovací kód:",
+        "en": "Open nyx.cz -> user settings -> authorization (tap here) -> enter confirmation code:"
       }
     },
     "logout": {

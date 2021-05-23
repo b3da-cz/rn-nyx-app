@@ -141,8 +141,12 @@ export class PostComponent extends Component<Props> {
       <Text
         key={key}
         style={[
-          Styling.groups.themeComponent(this.props.isDarkMode),
-          { fontSize: 15, paddingVertical: 2, paddingHorizontal: 5, textAlign: 'justify' },
+          {
+            color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+            fontSize: 15,
+            paddingVertical: 2,
+            paddingHorizontal: 5,
+          },
         ]}>
         {`${text} `}
       </Text>
@@ -283,7 +287,11 @@ export class PostComponent extends Component<Props> {
           }
         />
         {hasTextTypeBlock() && (
-          <Text style={[Styling.groups.themeComponent(isDarkMode), { paddingHorizontal: 5 }]}>
+          <Text
+            style={{
+              color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+              paddingHorizontal: 5,
+            }}>
             {post?.content_raw?.type !== 'advertisement' &&
               contentParts?.length > 0 &&
               contentParts.map(part => {

@@ -42,6 +42,7 @@ allprojects {
 subprojects {
     ext {
         nodePackageVersion = getNodePackageVersion()
+        nodeBuildVersion = getNodeBuildVersion()
     }
 }
 
@@ -49,4 +50,10 @@ def getNodePackageVersion() {
     def packageFile = new File("$rootDir/../package.json")
     def packageJson = new JsonSlurper().parseText(packageFile.text)
     return packageJson["version"]
+}
+
+def getNodeBuildVersion() {
+    def packageFile = new File("$rootDir/../package.json")
+    def packageJson = new JsonSlurper().parseText(packageFile.text)
+    return packageJson["buildVersion"]
 }
