@@ -13,6 +13,7 @@ export const UserRowComponent = ({
   marginBottom = Styling.metrics.block.xsmall,
   marginTop = 0,
   isPressable = true,
+  withIcon = true,
   onPress,
 }) => {
   return (
@@ -30,9 +31,9 @@ export const UserRowComponent = ({
         marginTop,
       }}
       onPress={() => onPress()}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={[Styling.groups.flexRowSpbCentered, { height: 35 - (2 * Styling.metrics.block.small) }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <UserIconComponent username={user.username} width={20} height={25} marginRight={10} />
+          {withIcon && <UserIconComponent username={user.username} width={20} height={25} marginRight={10} />}
           <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker }}>{user.username}</Text>
         </View>
         {extraText?.length > 0 && (

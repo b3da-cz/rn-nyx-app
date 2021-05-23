@@ -12,12 +12,28 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import Bugfender from '@bugfender/rn-bugfender'
+import { devFilter } from './black-list.json'
 import { LoaderComponent } from './src/component'
-import { Nyx, Storage, initFCM, MainContext, CustomDarkTheme, CustomLightTheme, UnreadContextProvider } from './src/lib'
+import {
+  Nyx,
+  Storage,
+  initFCM,
+  MainContext,
+  CustomDarkTheme,
+  CustomLightTheme,
+  UnreadContextProvider,
+  wait,
+} from './src/lib'
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
 
-LogBox.ignoreLogs(['Animated.event', 'Animated: `useNativeDriver`', 'componentWillMount has', 'Reanimated 2', 'Require cycle: node_modules/']) // Ignore log notifications from Swipeable todo
+LogBox.ignoreLogs([
+  'Animated.event',
+  'Animated: `useNativeDriver`',
+  'componentWillMount has',
+  'Reanimated 2',
+  'Require cycle: node_modules/',
+]) // Ignore log notifications from Swipeable todo
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -49,6 +65,8 @@ const App: () => Node = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAppLoaded, setIsAppLoaded] = useState(false)
   const [config, setConfig] = useState(initialConfig)
+  const [filters, setFilters] = useState([])
+  const [blockedUsers, setBlockedUsers] = useState([])
   const refs = {}
   const systemTheme = useColorScheme()
   const theme = config.theme === 'system' ? systemTheme : config.theme
@@ -56,6 +74,7 @@ const App: () => Node = () => {
   // const theme = 'light'
 
   useEffect(() => {
+    Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
     return () => {
       Linking.removeAllListeners('url')
     }
@@ -116,23 +135,59 @@ const App: () => Node = () => {
     return conf
   }
 
+  const loadFilters = async () => {
+    const f = (await Storage.getFilters()) || []
+    setFilters(f)
+    return f
+  }
+
+  const loadBlockedUsers = async () => {
+    const f = (await Storage.getBlockedUsers()) || []
+    setBlockedUsers(f)
+    return f
+  }
+
+  const loadStorage = async ({ getConfig = true, getFilters = true, getBlockedUsers = true }) => ({
+    config: getConfig ? await loadConfig() : config,
+    filters: getFilters ? await loadFilters() : filters,
+    blockedUsers: getBlockedUsers ? await loadBlockedUsers() : blockedUsers,
+  })
+
+  const handleDeepLink = async url => {
+    if (url === 'nnn://setdevfilters') {
+      const f = await Storage.getFilters()
+      f.unshift(devFilter)
+      await Storage.setFilters(f)
+      setFilters(f)
+      await wait(300)
+      alert('dev filter')
+    } else if (url === 'nnn://setprodfilters') {
+      const f = await Storage.getFilters()
+      const nextF = f.filter(s => s !== devFilter)
+      await Storage.setFilters(nextF)
+      setFilters(nextF)
+      await wait(300)
+      alert('prod filter')
+    }
+  }
+
   const init = async () => {
     const conf = await loadConfig()
     const isAuth = await initNyx()
     if (isAuth) {
       await initFCM(nyx, conf, isAuth)
     }
+    await loadStorage({ getConfig: false })
     setIsAppLoaded(true)
     setTimeout(() => {
       RNBootSplash.hide({ fade: true })
-    }, 500)
-    const handleDeepLinks = async () => {
-      const initialUrl = await Linking.getInitialURL()
-      Linking.addEventListener('url', ({ url }) => console.warn(url))
-      // console.warn('initialUrl', initialUrl) // todo pass to messagebox
+    }, 600)
+    const initialUrl = await Linking.getInitialURL()
+    if (initialUrl?.length > 0) {
+      handleDeepLink(initialUrl)
     }
-    handleDeepLinks()
   }
+
   if (!config.isLoaded) {
     init()
   }
@@ -142,7 +197,7 @@ const App: () => Node = () => {
       <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
         {!isAppLoaded && <LoaderComponent />}
         {isAppLoaded && isAuthenticated && (
-          <MainContext.Provider value={{ config, nyx, theme, refs }}>
+          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
             <UnreadContextProvider nyx={nyx}>
               <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
                 <Router
@@ -151,6 +206,7 @@ const App: () => Node = () => {
                   refs={refs}
                   isDarkMode={theme === 'dark'}
                   onConfigReload={() => loadConfig()}
+                  onFiltersReload={() => loadStorage({ getConfig: false })}
                 />
               </NavigationContainer>
             </UnreadContextProvider>

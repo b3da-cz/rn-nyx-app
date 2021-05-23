@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { PostComponent, SectionHeaderComponent } from '../component'
-import { MainContext, Styling, parsePostsContent, t } from '../lib'
+import { MainContext, Styling, parsePostsContent, t, filterDiscussions, filterPostsByContent } from '../lib'
 
 type Props = {
   navigation: any,
@@ -25,6 +25,7 @@ export class RemindersView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       setTimeout(() => this.getReminders(), 100)
     })
@@ -67,7 +68,8 @@ export class RemindersView extends Component<Props> {
   async fetchReminders(type) {
     const res = await this.nyx.getReminders(type)
     // const newPosts = getDistinctPosts(res.posts, this.state[type])
-    const parsedPosts = parsePostsContent(res.posts)
+    const filteredPosts = filterPostsByContent(filterDiscussions(res.posts, this.filters), this.filters)
+    const parsedPosts = parsePostsContent(filteredPosts)
     const images = parsedPosts.flatMap(p => p.parsed.images)
     return {
       reminders: parsedPosts,

@@ -22,7 +22,7 @@ import {
 } from './routes'
 import { ImageModal, ProfileView, SettingsView } from './view'
 
-export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
+export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFiltersReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   useEffect(() => {
     const sub = subscribeFCM(message => {
@@ -93,9 +93,11 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload }) => {
   const Tab = createMaterialTopTabNavigator()
 
   const Profile = ({ navigation }) => (
-    <ProfileView config={config} navigation={navigation} onConfigChange={() => onConfigReload()} />
+    <ProfileView navigation={navigation} />
   )
-  const Settings = ({ navigation }) => <SettingsView config={config} onConfigChange={() => onConfigReload()} />
+  const Settings = ({ navigation }) => (
+    <SettingsView config={config} onConfigChange={() => onConfigReload()} onFiltersChange={() => onFiltersReload()} />
+  )
 
   const Gallery = ({ navigation, route }) => {
     const { images, imgIndex } = route.params

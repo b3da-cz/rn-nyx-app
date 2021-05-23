@@ -17,6 +17,7 @@ export class BaseDiscussionListView extends Component<Props> {
     this.config = this.context.config
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       setTimeout(() => this.getList(), 100)
     })

@@ -1,7 +1,15 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { PostComponent, RatingFilterBarComponent } from '../component'
-import { MainContext, Styling, getDistinctPosts, parsePostsContent, wait } from '../lib'
+import {
+  MainContext,
+  Styling,
+  getDistinctPosts,
+  parsePostsContent,
+  wait,
+  filterDiscussions,
+  filterPostsByAuthor,
+} from '../lib'
 
 type Props = {
   navigation: any,
@@ -24,6 +32,8 @@ export class LastPostsView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.isDarkMode = this.context.theme === 'dark'
+    this.filters = [...this.context.filters]
+    this.blockedUsers = [...this.context.blockedUsers]
     this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
@@ -42,7 +52,10 @@ export class LastPostsView extends Component<Props> {
   async getLastPosts() {
     this.setState({ isFetching: true, posts: [] })
     const res = await this.nyx.getLastPosts(this.state.minRating, this.state.isRatedByFriends)
-    const newPosts = getDistinctPosts(res.posts, [])
+    const filteredPosts = filterDiscussions(res.posts, this.filters) // last posts have discussion_name prop
+    const filteredByAuthor =
+      this.blockedUsers?.length > 0 ? filterPostsByAuthor(filteredPosts, this.blockedUsers) : filteredPosts
+    const newPosts = getDistinctPosts(filteredByAuthor, [])
     const parsedPosts = parsePostsContent(newPosts)
     const images = parsedPosts.flatMap(p => p.parsed.images)
     this.setState({
