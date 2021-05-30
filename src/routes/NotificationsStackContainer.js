@@ -9,7 +9,7 @@ export const NotificationsStackContainer = ({ navigation, route }) => {
   return (
     <NotificationsStack.Navigator
       initialRouteName={'notifications'}
-      screenOptions={NavOptions.screenOptions(context.theme === 'dark')}>
+      screenOptions={NavOptions.screenOptions(context.theme)}>
       <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false }} />
       <NotificationsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </NotificationsStack.Navigator>

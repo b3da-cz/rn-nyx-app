@@ -7,9 +7,7 @@ export const HistoryStackContainer = ({ navigation, route }) => {
   const HistoryStack = createStackNavigator()
   const context = useContext(MainContext)
   return (
-    <HistoryStack.Navigator
-      initialRouteName={'history'}
-      screenOptions={NavOptions.screenOptions(context.theme === 'dark')}>
+    <HistoryStack.Navigator initialRouteName={'history'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <HistoryStack.Screen name={'history'} component={History} options={{ headerShown: false }} />
       <HistoryStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </HistoryStack.Navigator>

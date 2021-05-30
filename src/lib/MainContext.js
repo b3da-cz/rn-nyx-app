@@ -5,6 +5,6 @@ export const MainContext = createContext({
   config: null,
   filters: [],
   blockedUsers: [],
-  theme: 'dark',
+  theme: {},
   refs: {},
 })

@@ -1,9 +1,9 @@
 import React from 'react'
-import { Styling } from '../lib'
 import { View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import { TouchableRipple } from 'react-native-paper'
 import { UserIconComponent } from './UserIconComponent'
+import { useTheme } from '../lib'
 
 export const RatingDetailComponent = ({
   postKey,
@@ -11,19 +11,22 @@ export const RatingDetailComponent = ({
   ratingWidth,
   ratingHeight,
   isPositive,
-  isDarkMode,
   isDisabled = true,
   onPress,
   marginBottom = 0,
   marginTop = 0,
-  borderColor = Styling.colors.secondary,
-  borderWidth = 0,
+  borderColor,
+  borderWidth,
 }) => {
+  const {
+    colors,
+    metrics: { blocks, line },
+  } = useTheme()
   return (
     <TouchableRipple
       disabled={isDisabled}
-      rippleColor={'rgba(18,146,180, 0.3)'}
-      style={[Styling.groups.themeComponent(isDarkMode), { marginBottom, marginTop, borderColor, borderWidth }]}
+      rippleColor={colors.ripple}
+      style={{ marginBottom, marginTop, borderColor, borderWidth }}
       onPress={() => onPress()}>
       <View
         style={{
@@ -36,7 +39,7 @@ export const RatingDetailComponent = ({
           name={isPositive ? 'thumbs-up' : 'thumbs-down'}
           size={ratingWidth / 1.25}
           color={isPositive ? 'green' : 'red'}
-          style={{ marginHorizontal: Styling.metrics.block.small, marginTop: Styling.metrics.block.small }}
+          style={{ marginHorizontal: blocks.medium, marginTop: blocks.medium }}
         />
         {ratings.map(r => (
           <UserIconComponent
@@ -44,9 +47,9 @@ export const RatingDetailComponent = ({
             username={r.username}
             width={ratingWidth}
             height={ratingHeight}
-            borderWidth={1}
-            marginRight={1}
-            marginBottom={1}
+            borderWidth={line}
+            marginRight={line}
+            marginBottom={line}
           />
         ))}
       </View>

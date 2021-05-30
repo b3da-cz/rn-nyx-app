@@ -15,11 +15,12 @@ import Bugfender from '@bugfender/rn-bugfender'
 import { devFilter } from './black-list.json'
 import { LoaderComponent } from './src/component'
 import {
-  Nyx,
-  Storage,
+  createTheme,
+  defaultThemeOptions,
   initFCM,
   MainContext,
-  createTheme,
+  Nyx,
+  Storage,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -55,6 +56,7 @@ const initialConfig = {
   fcmToken: null,
   isFCMSubscribed: false,
   theme: 'system',
+  themeOptions: [...defaultThemeOptions],
 }
 
 const App: () => Node = () => {
@@ -68,9 +70,7 @@ const App: () => Node = () => {
   const [blockedUsers, setBlockedUsers] = useState([])
   const refs = {}
   const systemTheme = useColorScheme()
-  const theme = config.theme === 'system' ? systemTheme : config.theme
-  // const theme = 'dark'
-  // const theme = 'light'
+  const themeType = config.theme === 'system' ? systemTheme : config.theme
 
   useEffect(() => {
     Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
@@ -130,6 +130,7 @@ const App: () => Node = () => {
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
       theme: conf.theme === undefined ? 'system' : conf.theme,
+      themeOptions: conf.themeOptions === undefined ? [...defaultThemeOptions] : conf.themeOptions,
     })
     return conf
   }
@@ -191,22 +192,22 @@ const App: () => Node = () => {
     init()
   }
 
-  const colors = ['cyan', 'teal', 'green']
-  const darkTheme = createTheme(true, ...colors)
-  const lightTheme = createTheme(false, ...colors)
+  const darkTheme = createTheme(true, ...config.themeOptions)
+  const lightTheme = createTheme(false, ...config.themeOptions)
+  const selectedTheme = themeType === 'dark' ? darkTheme : lightTheme
   return (
     <NetworkProvider pingServerUrl={'https://nyx.cz'}>
-      <PaperProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
-        {!isAppLoaded && <LoaderComponent />}
+      <PaperProvider theme={themeType === 'dark' ? darkTheme : lightTheme}>
+        {!isAppLoaded && <LoaderComponent theme={selectedTheme} />}
         {isAppLoaded && isAuthenticated && (
-          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
+          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme: selectedTheme, refs }}>
             <UnreadContextProvider nyx={nyx}>
-              <NavigationContainer theme={theme === 'dark' ? darkTheme : lightTheme}>
+              <NavigationContainer theme={selectedTheme}>
                 <Router
                   config={config}
                   nyx={nyx}
                   refs={refs}
-                  isDarkMode={theme === 'dark'}
+                  theme={selectedTheme}
                   onConfigReload={() => loadConfig()}
                   onFiltersReload={() => loadStorage({ getConfig: false })}
                 />
@@ -217,7 +218,7 @@ const App: () => Node = () => {
         {isAppLoaded && (
           <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
             <LoginView
-              isDarkMode={theme === 'dark'}
+              theme={selectedTheme}
               confirmationCode={confirmationCode}
               onUsername={username => initNyx(username, false)}
               onLogin={() => onLogin()}

@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import { Text, View, LayoutAnimation, FlatList } from 'react-native'
+import { View, LayoutAnimation, FlatList } from 'react-native'
+import { Text } from 'react-native-paper'
 import { UserRowComponent } from '../component'
-import { MainContext, formatDate, LayoutAnimConf, Styling, t } from '../lib'
+import { MainContext, formatDate, LayoutAnimConf, Styling, t, ThemeAware } from '../lib'
 
 type Props = {
   id: number,
@@ -12,13 +13,13 @@ export class DiscussionStatsComponent extends Component<Props> {
     super(props)
     this.state = {
       visits: [],
+      theme: null,
       isFetching: false,
     }
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.getVisits(true)
   }
 
@@ -30,39 +31,28 @@ export class DiscussionStatsComponent extends Component<Props> {
   }
 
   render() {
+    if (!this.state.theme) {
+      return <ThemeAware setTheme={theme => this.setState({ theme })} />
+    }
+    const {
+      colors,
+      metrics: { blocks, fontSizes },
+    } = this.state.theme
     return (
-      <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}>
+      <View style={{ height: '100%' }}>
         {this.state.visits?.length > 0 && (
-          <View style={[Styling.groups.themeComponent(this.isDarkMode), { margin: Styling.metrics.block.small }]}>
-            <View style={[Styling.groups.flexRowSpbCentered, { marginBottom: Styling.metrics.block.small }]}>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {t('stats.visited')}
-              </Text>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {this.state.visits.length}
-              </Text>
+          <View style={[{ margin: blocks.medium }]}>
+            <View style={[Styling.groups.flexRowSpbCentered, { marginBottom: blocks.medium }]}>
+              <Text style={{ fontSize: fontSizes.p }}>{t('stats.visited')}</Text>
+              <Text style={{ fontSize: fontSizes.p }}>{this.state.visits.length}</Text>
             </View>
-            <View style={[Styling.groups.flexRowSpbCentered, { marginBottom: Styling.metrics.block.small }]}>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {t('stats.booked')}
-              </Text>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {this.state.visits.filter(v => v.bookmark).length}
-              </Text>
+            <View style={[Styling.groups.flexRowSpbCentered, { marginBottom: blocks.medium }]}>
+              <Text style={{ fontSize: fontSizes.p }}>{t('stats.booked')}</Text>
+              <Text style={{ fontSize: fontSizes.p }}>{this.state.visits.filter(v => v.bookmark).length}</Text>
             </View>
             <View style={[Styling.groups.flexRowSpbCentered]}>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {t('stats.readLast')}
-              </Text>
-              <Text
-                style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-                {this.state.visits.filter(v => !v.new_posts).length}
-              </Text>
+              <Text style={{ fontSize: fontSizes.p }}>{t('stats.readLast')}</Text>
+              <Text style={{ fontSize: fontSizes.p }}>{this.state.visits.filter(v => !v.new_posts).length}</Text>
             </View>
           </View>
         )}
@@ -72,7 +62,6 @@ export class DiscussionStatsComponent extends Component<Props> {
           keyExtractor={(item, index) => `${item.username}-${item.last_visited_at}`}
           refreshing={this.state.isFetching}
           onRefresh={() => this.getVisits(true)}
-          style={Styling.groups.themeComponent(this.isDarkMode)}
           getItemLayout={(data, index) => {
             return { length: 38, offset: 38 * index, index }
           }}
@@ -81,10 +70,9 @@ export class DiscussionStatsComponent extends Component<Props> {
             <UserRowComponent
               key={`${item.username}-${item.last_visited_at}`}
               user={item}
-              borderLeftWidth={Styling.metrics.block.xsmall}
-              borderColor={item.bookmark ? Styling.colors.primary : 'transparent'}
+              borderLeftWidth={blocks.small}
+              borderColor={item.bookmark ? colors.primary : 'transparent'}
               extraText={`${item.new_posts}  |  ${formatDate(item.last_visited_at)}`}
-              isDarkMode={this.isDarkMode}
               isPressable={false}
             />
           )}

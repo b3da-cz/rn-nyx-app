@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
-import { Text, Image, View, Linking, LayoutAnimation } from 'react-native'
-import { TextInput, TouchableRipple } from 'react-native-paper'
+import { Image, View, Linking, LayoutAnimation } from 'react-native'
+import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import DeviceInfo from 'react-native-device-info'
 import { ButtonComponent, TOSComponent } from '../component'
-import { Styling, t } from '../lib'
+import { t, Theme } from '../lib'
 import Share from 'react-native-share'
 
 type Props = {
-  isDarkMode: boolean,
+  theme: Theme,
   confirmationCode: string,
   onUsername: Function,
   onLogin: Function,
@@ -32,12 +32,15 @@ export class LoginView extends Component<Props> {
 
   render() {
     const { username, areTOSConfirmed } = this.state
-    const { confirmationCode, isDarkMode } = this.props
+    const { confirmationCode, theme } = this.props
     const isUsernameFilledIn = username && username.length > 0
+    if (!theme) {
+      return null
+    }
     if (!areTOSConfirmed) {
       return (
         <TOSComponent
-          isDarkMode={this.props.isDarkMode}
+          theme={theme}
           onConfirm={() => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             this.setState({ areTOSConfirmed: true })
@@ -46,28 +49,26 @@ export class LoginView extends Component<Props> {
       )
     }
     return (
-      <View style={[Styling.groups.themeView(isDarkMode), { flex: 1 }]}>
+      <View style={{ backgroundColor: theme.colors.row, flex: 1 }}>
         <View
-          style={[
-            Styling.groups.themeComponent(isDarkMode),
-            {
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingHorizontal: 5,
-              paddingBottom: 5,
-            },
-          ]}>
+          style={{
+            backgroundColor: theme.colors.background,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 5,
+            paddingBottom: 5,
+          }}>
           <TouchableRipple
-            rippleColor={'rgba(18,146,180, 0.3)'}
+            rippleColor={theme.colors.ripple}
             onPress={() => Linking.openURL('https://github.com/b3da-cz/rn-nyx-app').catch(() => null)}>
             <View>
-              <Text style={[Styling.groups.sectionTitle, Styling.groups.themeComponent(isDarkMode)]}>{t('app')}</Text>
-              <Text style={Styling.groups.themeComponent(isDarkMode)}>{`v${DeviceInfo.getVersion()}`}</Text>
+              <Text style={{ fontSize: theme.metrics.fontSizes.h1 }}>{t('app')}</Text>
+              <Text style={{ fontSize: theme.metrics.fontSizes.small }}>{`v${DeviceInfo.getVersion()}`}</Text>
             </View>
           </TouchableRipple>
           <TouchableRipple
-            rippleColor={'rgba(18,146,180, 0.3)'}
+            rippleColor={theme.colors.ripple}
             onPress={() =>
               Linking.openURL(
                 confirmationCode?.length > 0
@@ -79,7 +80,7 @@ export class LoginView extends Component<Props> {
               style={{
                 width: 50,
                 height: 50,
-                margin: Styling.metrics.block.small,
+                margin: theme.metrics.blocks.medium,
                 opacity: 0.5,
               }}
               resizeMode={'contain'}
@@ -90,24 +91,18 @@ export class LoginView extends Component<Props> {
         {confirmationCode?.length > 0 ? (
           <View>
             <View
-              style={[
-                Styling.groups.themeComponent(isDarkMode),
-                {
-                  marginTop: Styling.metrics.block.small,
-                  marginHorizontal: Styling.metrics.block.small,
-                  fontSize: Styling.metrics.fontSize.large,
-                },
-              ]}>
+              style={{
+                marginTop: theme.metrics.blocks.medium,
+                marginHorizontal: theme.metrics.blocks.medium,
+                fontSize: theme.metrics.fontSizes.h1,
+              }}>
               <Text
                 onPress={() =>
                   Linking.openURL(`https://nyx.cz/profile/${username.toUpperCase()}/settings/authorizations`).catch(
                     () => null,
                   )
                 }
-                style={[
-                  Styling.groups.themeComponent(isDarkMode),
-                  { padding: Styling.metrics.block.medium, fontSize: Styling.metrics.fontSize.large },
-                ]}>
+                style={{ padding: theme.metrics.blocks.large, fontSize: theme.metrics.fontSizes.h3 }}>
                 {t('profile.login.message')}
               </Text>
               <Text
@@ -117,11 +112,7 @@ export class LoginView extends Component<Props> {
                     message: confirmationCode,
                   })
                 }
-                style={[
-                  Styling.groups.themeComponent(isDarkMode),
-                  Styling.groups.sectionTitle,
-                  { padding: Styling.metrics.block.medium },
-                ]}>
+                style={{ padding: theme.metrics.blocks.large, fontSize: theme.metrics.fontSizes.h1 }}>
                 {`"${confirmationCode}"`}
               </Text>
             </View>
@@ -129,14 +120,14 @@ export class LoginView extends Component<Props> {
               label={t('ok')}
               textAlign={'center'}
               borderWidth={1}
-              borderColor={Styling.colors.primary}
-              backgroundColor={isDarkMode ? Styling.colors.black : Styling.colors.white}
-              color={Styling.colors.primary}
-              fontSize={Styling.metrics.fontSize.xxlarge}
-              marginTop={Styling.metrics.block.small}
-              marginHorizontal={Styling.metrics.block.small}
-              width={Styling.metrics.window().width - Styling.metrics.block.small * 2}
-              isDarkMode={isDarkMode}
+              theme={theme}
+              borderColor={theme.colors.primary}
+              backgroundColor={theme.colors.background}
+              color={theme.colors.primary}
+              fontSize={theme.metrics.fontSizes.h1}
+              marginTop={theme.metrics.blocks.medium}
+              marginHorizontal={theme.metrics.blocks.medium}
+              width={theme.metrics.screen.width - theme.metrics.blocks.medium * 2}
               onPress={() => this.login()}
             />
           </View>
@@ -144,10 +135,9 @@ export class LoginView extends Component<Props> {
           <View>
             <TextInput
               style={{
-                backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
-                color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-                marginTop: Styling.metrics.block.small,
-                marginHorizontal: Styling.metrics.block.small,
+                color: theme.colors.text,
+                marginTop: theme.metrics.blocks.medium,
+                marginHorizontal: theme.metrics.blocks.medium,
               }}
               placeholder={t('username')}
               onChangeText={val => this.setState({ username: val })}
@@ -158,21 +148,19 @@ export class LoginView extends Component<Props> {
               label={t('profile.login.do')}
               textAlign={'center'}
               borderWidth={1}
-              borderColor={
-                isUsernameFilledIn ? Styling.colors.primary : isDarkMode ? Styling.colors.black : Styling.colors.white
-              }
-              backgroundColor={isDarkMode ? Styling.colors.black : Styling.colors.white}
-              color={isUsernameFilledIn ? Styling.colors.primary : Styling.colors.darker}
-              fontSize={Styling.metrics.fontSize.xxlarge}
-              marginTop={Styling.metrics.block.small}
-              marginHorizontal={Styling.metrics.block.small}
-              width={Styling.metrics.window().width - Styling.metrics.block.small * 2}
-              isDarkMode={isDarkMode}
+              theme={theme}
+              borderColor={isUsernameFilledIn ? theme.colors.primary : theme.colors.background}
+              backgroundColor={theme.colors.background}
+              color={isUsernameFilledIn ? theme.colors.primary : theme.colors.disabled}
+              fontSize={theme.metrics.fontSizes.h1}
+              marginTop={theme.metrics.blocks.medium}
+              marginHorizontal={theme.metrics.blocks.medium}
+              width={theme.metrics.screen.width - theme.metrics.blocks.medium * 2}
               onPress={() => this.confirmUsername()}
             />
           </View>
         )}
       </View>
-    )
+    );
   }
 }

@@ -1,7 +1,6 @@
-import { Image } from 'react-native'
+import { Dimensions, Image } from 'react-native'
 import Bugfender from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
-import { Styling } from '../lib'
 
 const getImageSizes = async (images, isFullImgSize?: boolean) => {
   return new Promise(async resolve => {
@@ -56,17 +55,17 @@ export const fetchImageSizes = async (posts, isFullImgSize?: boolean, onProgress
   return posts
 }
 
-export const getBlockSizes = async posts => {
+export const getBlockSizes = async (posts, themeBaseFontSize) => {
   try {
     const fontSpecs: TSFontSpecs = {
       fontFamily: undefined,
-      fontSize: 15,
+      fontSize: themeBaseFontSize,
       // fontStyle: 'italic',
       // fontWeight: 'bold',
     }
     const headerSize = 50
     const paddingBottom = 10
-    const screenWidth = Styling.metrics.screen().width - 18 // todo inspect links
+    const screenWidth = Dimensions.get('window').width - 18 // todo inspect links
     let index = 0
     for (const post of posts) {
       const str = post.parsed.clearText || ''
@@ -81,7 +80,7 @@ export const getBlockSizes = async posts => {
           ? post.content_raw?.type === 'advertisement'
             ? 120
             : post.parsed.images
-                .map(img => img.height * (Styling.metrics.screen().width / img.width))
+                .map(img => img.height * (Dimensions.get('window').width / img.width))
                 .reduce((a, b) => a + b)
           : 0
       const codeHeights =
@@ -108,7 +107,7 @@ export const getBlockSizes = async posts => {
         post.content_raw?.type === 'poll'
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.question, post.content_raw?.data?.instructions, '\nrespondents\nvotes'],
-              width: Styling.metrics.window().width - 40,
+              width: Dimensions.get('window').width - 40,
               fontSize: 16,
             })
           : []
@@ -122,7 +121,7 @@ export const getBlockSizes = async posts => {
         post.content_raw?.type === 'advertisement'
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.summary, '\n\naction\nlocation/price'],
-              width: Styling.metrics.window().width - 22,
+              width: Dimensions.get('window').width - 22,
               fontSize: 16,
             })
           : []

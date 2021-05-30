@@ -10,7 +10,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { NotificationIconComponent } from './component'
-import { Styling, NavOptions, showNotificationBanner, subscribeFCM, t, wait } from './lib'
+import { NavOptions, showNotificationBanner, subscribeFCM, t, wait } from './lib'
 import {
   BookmarksStackContainer,
   HistoryStackContainer,
@@ -22,7 +22,7 @@ import {
 } from './routes'
 import { ImageModal, ProfileView, SettingsView } from './view'
 
-export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFiltersReload }) => {
+export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersReload }) => {
   let nav = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   useEffect(() => {
     const sub = subscribeFCM(message => {
@@ -30,13 +30,14 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
       switch (message.type) {
         case 'new_mail':
           if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
-            setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300) // todo setting
+            setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300)
           }
           if (message.isForegroundMsg) {
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: Styling.colors.secondary,
+              tintColor: theme.colors.secondary,
+              textColor: theme.colors.text,
               icon: 'mail',
               onClick: async () => {
                 nav?.navigate('mailStack', { screen: 'mail' })
@@ -55,7 +56,8 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: Styling.colors.primary,
+              tintColor: theme.colors.primary,
+              textColor: theme.colors.text,
               icon: 'corner-down-right',
               onClick: async () => {
                 nav.navigate('notificationsStack', { screen: 'notifications' })
@@ -80,21 +82,12 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
     }
   })
 
-  const getTabIconColor = isFocused =>
-    isFocused && isDarkMode
-      ? Styling.colors.lighter
-      : isFocused && !isDarkMode
-      ? Styling.colors.black
-      : isDarkMode
-      ? Styling.colors.mediumlight
-      : Styling.colors.medium
+  const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
 
   const RootStack = createStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
-  const Profile = ({ navigation }) => (
-    <ProfileView navigation={navigation} />
-  )
+  const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
   const Settings = ({ navigation }) => (
     <SettingsView config={config} onConfigChange={() => onConfigReload()} onFiltersChange={() => onFiltersReload()} />
   )
@@ -122,8 +115,8 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
         //   hitSlop: {height: 60, bottom: 0},
         //   minDeltaY: 0,
         // }}
-        options={{ cardStyle: NavOptions.cardStyle(isDarkMode) }}
-        tabBarOptions={NavOptions.tabBarOptions(isDarkMode)}>
+        options={{ cardStyle: NavOptions.cardStyle(theme) }}
+        tabBarOptions={NavOptions.tabBarOptions(theme)}>
         {config.isHistoryEnabled && (
           <Tab.Screen
             name={'historyStack'}
@@ -188,15 +181,11 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
           component={Profile}
           options={{
             tabBarLabel: ({ focused }) => (
-              <NetworkConsumer>
-                {({ isConnected }) => (
-                  <Icon
-                    name={isConnected ? 'user' : 'wifi-off'}
-                    size={14}
-                    color={isConnected ? getTabIconColor(focused) : 'red'}
-                  />
-                )}
-              </NetworkConsumer>
+              <Icon
+                name={'user'}
+                size={14}
+                color={getTabIconColor(focused)}
+              />
             ),
           }}
         />
@@ -204,10 +193,7 @@ export const Router = ({ config, nyx, refs, isDarkMode, onConfigReload, onFilter
     )
   }
   return (
-    <RootStack.Navigator
-      initialRouteName={'tabs'}
-      mode={'modal'}
-      options={{ cardStyle: NavOptions.cardStyle(isDarkMode) }}>
+    <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} options={{ cardStyle: NavOptions.cardStyle(theme) }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen name={'settings'} component={Settings} options={{ title: t('profile.settings') }} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />

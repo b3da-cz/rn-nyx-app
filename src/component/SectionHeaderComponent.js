@@ -2,31 +2,35 @@ import React from 'react'
 import { Text, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling } from '../lib'
+import { Styling, useTheme } from '../lib'
 
-export const SectionHeaderComponent = ({ title, icon, isDarkMode, isPressable, onPress }) => {
+export const SectionHeaderComponent = ({ title, icon, isPressable, onPress }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   return (
     <TouchableRipple
       disabled={!isPressable}
-      rippleColor={'rgba(18,146,180, 0.3)'}
+      rippleColor={colors.ripple}
       style={{
         width: '100%',
-        backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
-        marginBottom: Styling.metrics.block.xsmall,
-        height: Styling.metrics.block.discussionRowHeight,
+        backgroundColor: colors.tertiary,
+        marginBottom: blocks.small,
+        height: blocks.rowDiscussion,
       }}
       onPress={() => onPress()}>
-      <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: Styling.metrics.block.small }]}>
+      <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.medium }]}>
         <Text
           style={{
-            fontSize: Styling.metrics.fontSize.medium,
-            color: isDarkMode ? Styling.colors.lighter : Styling.colors.black,
-            paddingVertical: 5,
+            fontSize: fontSizes.p,
+            color: colors.text,
+            paddingVertical: blocks.medium,
           }}>
           {title}
         </Text>
         {icon?.length > 0 && (
-          <Icon name={icon} size={14} color={isDarkMode ? Styling.colors.lighter : Styling.colors.black} />
+          <Icon name={icon} size={fontSizes.p} color={colors.text} />
         )}
       </View>
     </TouchableRipple>

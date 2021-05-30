@@ -312,3 +312,20 @@ export const parseNotificationsContent = notifications => {
   }
   return notifications
 }
+
+export const recountDiscussionList = discussions => {
+  try {
+    return discussions.map(d => {
+      const unreadPostCount = Math.max(
+        d.new_posts_count || 0,
+        d.new_replies_count || 0,
+        d.new_images_count || 0,
+        d.new_links_count || 0,
+      ) // new_posts_count is weird sometimes
+      return { ...d, unreadPostCount }
+    })
+  } catch (e) {
+    Bugfender.e('ERROR_PARSER', e.stack)
+  }
+  return discussions
+}

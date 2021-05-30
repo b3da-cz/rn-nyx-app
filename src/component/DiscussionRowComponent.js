@@ -2,43 +2,33 @@ import React from 'react'
 import { View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling } from '../lib'
+import { Styling, useTheme } from '../lib'
 
-export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onPress, onLongPress }) => {
+export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLongPress }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
-  const unreadRowColor = unreads =>
-    (unreads > 0 || isAccented) && isDarkMode
-      ? Styling.colors.white
-      : (unreads > 0 || isAccented) && !isDarkMode
-      ? Styling.colors.black
-      : isDarkMode
-      ? Styling.colors.medium
-      : Styling.colors.mediumlight
-  const unreadPostCount = Math.max(
-    discussion.new_posts_count || 0,
-    discussion.new_replies_count || 0,
-    discussion.new_images_count || 0,
-    discussion.new_links_count || 0,
-  ) // new_posts_count is weird sometimes
+  const unreadPostCount = discussion.unreadPostCount ?? 0
+  const unreadRowColor = unreadPostCount > 0 || isAccented ? colors.text : colors.disabled
   return (
     <TouchableRipple
       key={id}
-      rippleColor={'rgba(18,146,180, 0.3)'}
+      rippleColor={colors.ripple}
       style={{
-        backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-        paddingVertical: 6,
-        paddingLeft: Styling.metrics.block.xsmall,
-        paddingRight: Styling.metrics.block.small,
-        marginBottom: Styling.metrics.block.xsmall,
-        borderColor:
-          unreadPostCount > 0 ? Styling.colors.primary : isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+        backgroundColor: colors.surface,
+        // paddingVertical: 6,
+        paddingLeft: blocks.small,
+        paddingRight: blocks.medium,
+        marginBottom: blocks.small,
+        borderColor: unreadPostCount > 0 ? colors.primary : colors.surface,
         borderLeftWidth: 3,
-        height: Styling.metrics.block.discussionRowHeight,
       }}
       onPress={() => onPress(id)}
       onLongPress={() => (typeof onLongPress === 'function' ? onLongPress(id) : null)}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion }]}>
         <Text
           numberOfLines={1}
           style={[
@@ -48,38 +38,37 @@ export const DiscussionRowComponent = ({ discussion, isDarkMode, isAccented, onP
                 : unreadPostCount > 1000
                 ? '65%'
                 : '75%',
-              fontSize: 14,
-              color: unreadRowColor(unreadPostCount),
+              fontSize: fontSizes.p - 1,
+              color: unreadRowColor,
             },
           ]}>
           {isBookmarksResultType ? discussion.full_name : discussion.discussion_name}
         </Text>
         {isBookmarksResultType && unreadPostCount > 0 && (
-          <Text
-            numberOfLines={1}
-            style={[
-              {
-                // width: '25%',
-                textAlign: 'right',
-                fontSize: 14,
-                color: discussion.new_replies_count > 0 ? Styling.colors.primary : unreadRowColor(unreadPostCount),
-              },
-            ]}>
-            {unreadPostCount}
-            {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}  `}
+          <View style={Styling.groups.flexRowSpbCentered}>
+            <Text
+              numberOfLines={1}
+              style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
+              {unreadPostCount}
+              {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}`}
+            </Text>
             {discussion.new_images_count > 0 ? (
-              <Icon name="image" size={14} color={unreadRowColor(unreadPostCount)} />
-            ) : (
-              ''
-            )}
-            {discussion.new_images_count > 0 ? `${discussion.new_images_count} ` : ''}
+              <Icon name="image" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
+            ) : null}
+            {discussion.new_images_count > 0 ? (
+              <Text style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
+                {discussion.new_images_count}
+              </Text>
+            ) : null}
             {discussion.new_links_count > 0 ? (
-              <Icon name="link" size={14} color={unreadRowColor(unreadPostCount)} />
-            ) : (
-              ''
-            )}
-            {discussion.new_links_count > 0 ? `${discussion.new_links_count}` : ''}
-          </Text>
+              <Icon name="link" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
+            ) : null}
+            {discussion.new_links_count > 0 ? (
+              <Text style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
+                {discussion.new_links_count}
+              </Text>
+            ) : null}
+          </View>
         )}
       </View>
     </TouchableRipple>

@@ -20,7 +20,6 @@ import {
   isDiscussionPermitted,
   MainContext,
   parsePostsContent,
-  Styling,
   t,
   wait,
 } from '../lib'
@@ -63,6 +62,7 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      theme: null,
     }
     this.refScroll = null
     this.refMsgBoxDialog = null
@@ -73,7 +73,6 @@ export class DiscussionView extends Component<Props> {
   componentDidMount() {
     this.config = this.context.config
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
@@ -85,6 +84,7 @@ export class DiscussionView extends Component<Props> {
       this.setState({ isSubmenuVisible: false })
     })
     this.setFocusOnStart()
+    this.setTheme()
     if (this.props.postId > 0 && this.props.showReplies) {
       this.fetchReplies(this.props.id, this.props.postId)
     } else if (this.props.postId > 0) {
@@ -118,6 +118,10 @@ export class DiscussionView extends Component<Props> {
   setFocusOnStart() {
     const isFocused = this.props.navigation.isFocused()
     this.setState({ isSubmenuVisible: isFocused })
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -194,7 +198,8 @@ export class DiscussionView extends Component<Props> {
       // this.setState({ imgPrefetchProgress: { length, done } })
     })
     this.measureMs('images fetched')
-    const finalizedPosts = await getBlockSizes(parsedPostsWImageSizes)
+    const themeBaseFontSize = this.state.theme.metrics.fontSizes.p
+    const finalizedPosts = await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize)
     this.measureMs('layout calculated')
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
@@ -495,19 +500,22 @@ export class DiscussionView extends Component<Props> {
     if (this.props.showStats) {
       return <DiscussionStatsComponent id={this.props.id} nyx={this.nyx} />
     }
-    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
+    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště');
     return (
-      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+      <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.imgPrefetchProgress?.length > 0 && (
           <ProgressBar
             progress={this.state.imgPrefetchProgress.done / (this.state.imgPrefetchProgress.length / 100) / 100}
-            color={Styling.colors.primary}
+            color={theme.colors.primary}
             style={{ height: 3 }}
           />
         )}
         <BookmarkCategoriesDialog
           isVisible={this.state.isCategoryPickerVisible}
-          isDarkMode={this.isDarkMode}
           categories={this.state.bookmarkCategories || []}
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
@@ -517,6 +525,7 @@ export class DiscussionView extends Component<Props> {
           iconOpen={isMarket ? 'close' : 'message'}
           paddingBottom={this.config?.isBottomTabs ? 45 : 0}
           actions={this.getFabActions()}
+          backgroundColor={theme.colors.primary}
           onPress={isOpen => {
             if (isOpen && !isMarket) {
               this.showMsgBox()
@@ -534,7 +543,6 @@ export class DiscussionView extends Component<Props> {
             updated={this.state.advertisementOP.updated}
             isActive={false}
             isDetail={true}
-            isDarkMode={this.isDarkMode}
             onImage={img => this.showImages(img, this.state.advertisementOP.images)}
           />
         )}
@@ -550,11 +558,11 @@ export class DiscussionView extends Component<Props> {
           // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',
-            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+            backgroundColor: theme.colors.background,
           }}
           ListFooterComponent={() =>
             this.state.isFetching &&
-            this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
+            this.state.posts.length > 0 && <ActivityIndicator size="large" color={theme.colors.primary} />
           }
           getItemLayout={(data, index) => ({
             length: data[index].parsed.height,
@@ -568,7 +576,6 @@ export class DiscussionView extends Component<Props> {
               key={item.id}
               post={item}
               nyx={this.nyx}
-              isDarkMode={this.isDarkMode}
               isHeaderInteractive={true}
               isReply={false}
               isUnread={item.new}

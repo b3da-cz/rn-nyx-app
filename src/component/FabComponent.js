@@ -2,14 +2,13 @@ import React, { useCallback, useState } from 'react'
 import { BackHandler } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { FAB, Portal } from 'react-native-paper'
-import { Styling } from '../lib'
 
 export const FabComponent = ({
   isVisible,
   actions = [],
   iconOpen,
   iconClosed = 'plus',
-  backgroundColor = Styling.colors.primary,
+  backgroundColor,
   paddingBottom = 45,
   onPress,
 }) => {
