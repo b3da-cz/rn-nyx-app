@@ -2,40 +2,45 @@ import React from 'react'
 import { View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import { UserRowComponent } from '../component'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
-export const DiceComponent = ({ children, isDarkMode, label, count, sides, rolls, canRoll, onRoll }) => {
+export const DiceComponent = ({ children, label, count, sides, rolls, canRoll, onRoll }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes, line },
+  } = useTheme()
   return (
-    <View style={{ paddingHorizontal: Styling.metrics.block.small }}>
+    <View style={{ paddingHorizontal: blocks.medium }}>
       <Text
         style={{
-          padding: Styling.metrics.block.medium,
-          fontSize: Styling.metrics.fontSize.large,
-          color: Styling.colors.secondary,
+          padding: blocks.large,
+          fontSize: fontSizes.h3,
         }}>
         {label}
       </Text>
       {rolls?.length > 0 &&
-        rolls.map(r => (
-          <UserRowComponent
-            key={r.user.username}
-            user={r.user}
-            isDarkMode={isDarkMode}
-            isPressable={false}
-            extraText={
-              r.rolls?.length > 0 ? `${r.rolls.toString()} [${r.rolls.reduce((a, b) => Number(a) + Number(b))}]` : null
-            }
-            marginBottom={0}
-            marginTop={Styling.metrics.block.small}
-          />
-        ))}
+        rolls
+          .filter(r => r?.user?.username)
+          .map(r => (
+            <UserRowComponent
+              key={`${r.user.username}_roll`}
+              user={r.user}
+              isPressable={false}
+              extraText={
+                r.rolls?.length > 0
+                  ? `${r.rolls.toString()} [${r.rolls.reduce((a, b) => Number(a) + Number(b))}]`
+                  : null
+              }
+              marginBottom={0}
+              marginTop={blocks.medium}
+            />
+          ))}
       {canRoll && (
         <TouchableRipple
-          style={{ padding: Styling.metrics.block.medium, borderWidth: 1, borderColor: Styling.colors.secondary }}
-          rippleColor={'rgba(18,146,180, 0.3)'}
+          style={{ padding: blocks.large, borderWidth: line, borderColor: colors.accent }}
+          rippleColor={colors.ripple}
           onPress={() => onRoll()}>
-          <Text
-            style={{ fontSize: Styling.metrics.fontSize.large, color: Styling.colors.secondary, textAlign: 'center' }}>
+          <Text style={{ fontSize: fontSizes.h3, color: colors.accent, textAlign: 'center' }}>
             {`${count}d${sides}`}
           </Text>
         </TouchableRipple>

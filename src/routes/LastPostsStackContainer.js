@@ -7,9 +7,7 @@ export const LastPostsStackContainer = ({ navigation, route }) => {
   const LastPostsStack = createStackNavigator()
   const context = useContext(MainContext)
   return (
-    <LastPostsStack.Navigator
-      initialRouteName={'last'}
-      screenOptions={NavOptions.screenOptions(context.theme === 'dark')}>
+    <LastPostsStack.Navigator initialRouteName={'last'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <LastPostsStack.Screen name={'last'} component={LastPosts} options={{ headerShown: false }} />
       <LastPostsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </LastPostsStack.Navigator>

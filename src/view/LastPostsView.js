@@ -3,7 +3,6 @@ import { FlatList, View } from 'react-native'
 import { PostComponent, RatingFilterBarComponent } from '../component'
 import {
   MainContext,
-  Styling,
   getDistinctPosts,
   parsePostsContent,
   wait,
@@ -31,7 +30,6 @@ export class LastPostsView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
     this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
@@ -40,6 +38,7 @@ export class LastPostsView extends Component<Props> {
         this.getLastPosts()
       }
     })
+    this.setTheme()
     this.getLastPosts()
   }
 
@@ -47,6 +46,10 @@ export class LastPostsView extends Component<Props> {
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async getLastPosts() {
@@ -85,7 +88,6 @@ export class LastPostsView extends Component<Props> {
     return (
       <View>
         <RatingFilterBarComponent
-          isDarkMode={this.isDarkMode}
           height={50}
           onFilter={(minRating, isRatedByFriends) => this.setFilter(minRating, isRatedByFriends)}
         />
@@ -97,14 +99,13 @@ export class LastPostsView extends Component<Props> {
           onRefresh={() => this.getLastPosts()}
           style={{
             height: '100%',
-            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+            backgroundColor: this.state.theme?.colors?.background,
           }}
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}
               post={item}
               nyx={this.nyx}
-              isDarkMode={this.isDarkMode}
               isHeaderInteractive={false}
               isHeaderPressable={true}
               onHeaderPress={(discussionId, postId) =>

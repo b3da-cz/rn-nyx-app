@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import { Picker } from '@react-native-picker/picker'
 import { ButtonComponent, confirm, FilterSettingsDialog, FormRowToggleComponent } from '../component'
-import { MainContext, Styling, Storage, t, initFCM, unregisterFCM } from '../lib'
+import { defaultThemeOptions, MainContext, Storage, t, initFCM, unregisterFCM } from '../lib'
 
 type Props = {
   config: any,
@@ -18,7 +19,11 @@ export class SettingsView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.setState({ isDarkMode: this.context.theme === 'dark' })
+    this.setTheme()
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async loadSettings() {
@@ -36,7 +41,8 @@ export class SettingsView extends Component<Props> {
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
-      theme: config?.theme || 'system',
+      themeOptions: config?.themeOptions || [...defaultThemeOptions],
+      selectedTheme: config?.theme || 'system',
       isDarkMode: config?.theme === 'dark',
       username: '',
       isVisible: true,
@@ -57,10 +63,23 @@ export class SettingsView extends Component<Props> {
           : 'bookmarksStack'
       this.setState({ [name]: val, initialRouteName: nextInitialRoute })
       conf.initialRouteName = nextInitialRoute
+    } else if (name === 'selectedTheme') {
+      this.setState({ selectedTheme: val })
+      conf.theme = val
     } else {
       this.setState({ [name]: val })
+      conf[name] = val
     }
-    conf[name] = val
+    await Storage.setConfig(conf)
+    this.props.onConfigChange()
+  }
+
+  async setThemeOption(index, val) {
+    const conf = await Storage.getConfig()
+    const themeOptions = [...this.state.themeOptions]
+    themeOptions[index] = val
+    this.setState({ themeOptions })
+    conf.themeOptions = themeOptions
     await Storage.setConfig(conf)
     this.props.onConfigChange()
   }
@@ -104,62 +123,54 @@ export class SettingsView extends Component<Props> {
   }
 
   render() {
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
+    const palette = ['blue', 'cyan', 'coolGray', 'green', 'magenta', 'purple', 'red', 'teal']
+    const fontSizes = [12, 13, 14, 15, 16, 17, 18]
     return (
-      <View style={[Styling.groups.themeComponent(this.state.isDarkMode), { height: '100%' }]}>
-        <ScrollView style={Styling.groups.themeComponent(this.state.isDarkMode)}>
+      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
+        <ScrollView style={{ backgroundColor: theme.colors.background }}>
           <FormRowToggleComponent
             label={t('profile.tabsOnBottom')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isBottomTabs}
             onChange={val => this.setOption('isBottomTabs', val)}
           />
           <FormRowToggleComponent
             label={t('profile.navGestures')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isNavGesturesEnabled}
             onChange={val => this.setOption('isNavGesturesEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('bookmarks')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isBookmarksEnabled}
             onChange={val => this.setOption('isBookmarksEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('history')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isHistoryEnabled}
             onChange={val => this.setOption('isHistoryEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('search.title')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isSearchEnabled}
             onChange={val => this.setOption('isSearchEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('last')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isLastEnabled}
             onChange={val => this.setOption('isLastEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('reminders.title')}
-            isDarkMode={this.state.isDarkMode}
             value={this.state.isRemindersEnabled}
             onChange={val => this.setOption('isRemindersEnabled', val)}
           />
           <View style={{ marginTop: 10, height: 70 }}>
-            <Text
-              style={[
-                Styling.groups.themeComponent(this.state.isDarkMode),
-                { fontSize: 18, backgroundColor: 'transparent' },
-              ]}>
-              {t('profile.initialView')}
-            </Text>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.initialView')}</Text>
             <Picker
               mode={'dropdown'}
-              style={[Styling.groups.themeComponent(this.state.isDarkMode), { color: Styling.colors.primary }]}
               prompt={t('profile.initialView')}
               selectedValue={this.state.initialRouteName}
               onValueChange={route => this.setOption('initialRouteName', route)}>
@@ -168,65 +179,106 @@ export class SettingsView extends Component<Props> {
                 label={t('history')}
                 value={'historyStack'}
                 enabled={this.state.isHistoryEnabled}
-                color={this.state.isHistoryEnabled ? Styling.colors.primary : Styling.colors.darker}
+                color={this.state.isHistoryEnabled ? theme.colors.text : theme.colors.disabled}
               />
               <Picker.Item
                 key={'bookmarksStack'}
                 label={t('bookmarks')}
                 value={'bookmarksStack'}
                 enabled={this.state.isBookmarksEnabled}
-                color={this.state.isBookmarksEnabled ? Styling.colors.primary : Styling.colors.darker}
+                color={this.state.isBookmarksEnabled ? theme.colors.text : theme.colors.disabled}
               />
-              <Picker.Item key={'mailStack'} label={t('mail')} value={'mailStack'} color={Styling.colors.primary} />
+              <Picker.Item key={'mailStack'} label={t('mail')} value={'mailStack'} color={theme.colors.text} />
             </Picker>
           </View>
           <View style={{ marginTop: 10, height: 70 }}>
-            <Text
-              style={[
-                Styling.groups.themeComponent(this.state.isDarkMode),
-                { fontSize: 18, backgroundColor: 'transparent' },
-              ]}>
-              {t('profile.theme')}
-            </Text>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.theme')}</Text>
             <Picker
               mode={'dropdown'}
-              style={[Styling.groups.themeComponent(this.state.isDarkMode), { color: Styling.colors.primary }]}
               prompt={t('profile.theme')}
-              selectedValue={this.state.theme}
-              onValueChange={route => this.setOption('theme', route)}>
-              <Picker.Item key={'system'} label={t('profile.system')} value={'system'} color={Styling.colors.primary} />
-              <Picker.Item key={'dark'} label={t('profile.dark')} value={'dark'} color={Styling.colors.primary} />
-              <Picker.Item key={'light'} label={t('profile.light')} value={'light'} color={Styling.colors.primary} />
+              selectedValue={this.state.selectedTheme}
+              onValueChange={t => this.setOption('selectedTheme', t)}>
+              <Picker.Item key={'system'} label={t('profile.system')} value={'system'} color={theme.colors.text} />
+              <Picker.Item key={'dark'} label={t('profile.dark')} value={'dark'} color={theme.colors.text} />
+              <Picker.Item key={'light'} label={t('profile.light')} value={'light'} color={theme.colors.text} />
+            </Picker>
+          </View>
+          <View style={{ marginTop: 10, height: 70 }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} A`}</Text>
+            <Picker
+              mode={'dropdown'}
+              prompt={`${t('profile.color')} A`}
+              dropdownIconColor={theme.colors.primary}
+              selectedValue={this.state.themeOptions[0]}
+              onValueChange={color => this.setThemeOption(0, color)}>
+              {palette.map(color => (
+                <Picker.Item key={`${color}-a`} label={color} value={color} color={theme.colors.text} />
+              ))}
+            </Picker>
+          </View>
+          <View style={{ marginTop: 10, height: 70 }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} B`}</Text>
+            <Picker
+              mode={'dropdown'}
+              prompt={`${t('profile.color')} B`}
+              dropdownIconColor={theme.colors.secondary}
+              selectedValue={this.state.themeOptions[1]}
+              onValueChange={color => this.setThemeOption(1, color)}>
+              {palette.map(color => (
+                <Picker.Item key={`${color}-b`} label={color} value={color} color={theme.colors.text} />
+              ))}
+            </Picker>
+          </View>
+          <View style={{ marginTop: 10, height: 70 }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} C`}</Text>
+            <Picker
+              mode={'dropdown'}
+              prompt={`${t('profile.color')} C`}
+              dropdownIconColor={theme.colors.tertiary}
+              selectedValue={this.state.themeOptions[2]}
+              onValueChange={color => this.setThemeOption(2, color)}>
+              {palette.map(color => (
+                <Picker.Item key={`${color}-c`} label={color} value={color} color={theme.colors.text} />
+              ))}
+            </Picker>
+          </View>
+          <View style={{ marginTop: 10, height: 70 }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.fontSize')}</Text>
+            <Picker
+              mode={'dropdown'}
+              prompt={t('profile.fontSize')}
+              selectedValue={this.state.themeOptions[3]}
+              onValueChange={size => this.setThemeOption(3, size)}>
+              {fontSizes.map(size => (
+                <Picker.Item key={`${size}-fontSize`} label={`${size}`} value={size} color={theme.colors.text} />
+              ))}
             </Picker>
           </View>
           <ButtonComponent
             label={t('profile.fcm.subscribe.title')}
             icon={'mail'}
             textAlign={'left'}
-            color={Styling.colors.secondary}
-            fontSize={Styling.metrics.fontSize.medium}
-            marginBottom={Styling.metrics.block.small}
-            isDarkMode={this.state.isDarkMode}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
             onPress={() => this.subscribeFCM()}
           />
           <ButtonComponent
             label={t('profile.fcm.unsubscribe.title')}
             icon={'trash-2'}
             textAlign={'left'}
-            color={Styling.colors.secondary}
-            fontSize={Styling.metrics.fontSize.medium}
-            marginBottom={Styling.metrics.block.small}
-            isDarkMode={this.state.isDarkMode}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
             onPress={() => this.unsubscribeFCM()}
           />
           <ButtonComponent
             label={t('profile.logout')}
             icon={'lock'}
             textAlign={'left'}
-            color={Styling.colors.secondary}
-            fontSize={Styling.metrics.fontSize.medium}
-            marginBottom={Styling.metrics.block.small}
-            isDarkMode={this.state.isDarkMode}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
             onPress={() => this.logout()}
           />
         </ScrollView>

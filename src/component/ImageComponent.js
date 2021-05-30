@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useState } from 'react'
 import { Image } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
-export const ImageComponent = ({ src, backgroundColor, width, height, useExactSize, onPress }) => {
+export const ImageComponent = ({ src, width, height, useExactSize, isCoverResizeMode, onPress }) => {
   const [imgWidth, setImgWidth] = useState(width || 0)
   const [imgHeight, setImgHeight] = useState(height || 0)
   useLayoutEffect(() => {
@@ -32,23 +32,26 @@ export const ImageComponent = ({ src, backgroundColor, width, height, useExactSi
       setImgHeight(width / 2.5)
     }
   }, [height, src, useExactSize, width])
+  const {
+    colors,
+    metrics: { blocks },
+  } = useTheme()
   return (
     <TouchableRipple
-      rippleColor={'rgba(18,146,180, 0.3)'}
+      rippleColor={colors.ripple}
       style={{
-        width: imgWidth + 2 * Styling.metrics.block.small,
-        height: imgHeight + 2 * Styling.metrics.block.small,
+        width: imgWidth + 2 * blocks.medium,
+        height: imgHeight + 2 * blocks.medium,
       }}
       onPress={() => onPress()}>
       <Image
         style={{
-          backgroundColor,
+          backgroundColor: 'transparent',
           width: imgWidth,
           height: imgHeight,
-          margin: Styling.metrics.block.small,
+          margin: blocks.medium,
         }}
-        // resizeMode={'cover'} for thumbs
-        resizeMode={'contain'}
+        resizeMode={isCoverResizeMode ? 'cover' : 'contain'}
         source={{ uri: src }}
       />
     </TouchableRipple>

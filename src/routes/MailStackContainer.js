@@ -7,7 +7,7 @@ export const MailStackContainer = ({ navigation, route }) => {
   const MailStack = createStackNavigator()
   const context = useContext(MainContext)
   return (
-    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions(context.theme === 'dark')}>
+    <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <MailStack.Screen name={'mail'} component={Mail} options={{ headerShown: false }} />
       <MailStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </MailStack.Navigator>

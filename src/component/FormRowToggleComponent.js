@@ -1,32 +1,26 @@
-import React, { useCallback, useState } from 'react'
-import { Switch, Text, View } from 'react-native'
-import { Styling } from '../lib'
+import React from 'react'
+import { Switch, View } from 'react-native'
+import { Text } from 'react-native-paper'
+import { useTheme } from '../lib'
 
-export const FormRowToggleComponent = ({
-  isDarkMode,
-  label,
-  value,
-  fontSize = 18,
-  toggleColorActive = Styling.colors.primary,
-  toggleColorInactive = Styling.colors.lighter,
-  paddingVertical = Styling.metrics.block.medium,
-  onChange,
-}) => {
+export const FormRowToggleComponent = ({ label, value, onChange }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   return (
     <View
       style={{
-        paddingVertical,
+        paddingVertical: blocks.medium,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-      <Text
-        style={[Styling.groups.themeComponent(isDarkMode), { fontSize, backgroundColor: 'transparent' }]}
-        onPress={() => onChange(!value)}>
+      <Text style={{ fontSize: fontSizes.p }} onPress={() => onChange(!value)}>
         {label}
       </Text>
       <Switch
-        thumbColor={value ? toggleColorActive : toggleColorInactive}
+        thumbColor={value ? colors.primary : colors.disabled}
         onValueChange={val => onChange(val)}
         value={value}
       />

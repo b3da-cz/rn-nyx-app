@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, Text, View, ScrollView, Image, LayoutAnimation } from 'react-native'
-import { Badge, Button, Dialog, FAB, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
+import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation } from 'react-native'
+import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import Bugfender from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
-import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, Styling, t } from '../lib'
+import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, t } from '../lib'
 
 type Props = {
   nyx: any,
@@ -23,7 +23,6 @@ export class MessageBoxDialog extends Component<Props> {
     this.state = {
       areDetailsShown: false,
       isDialogVisible: false,
-      isDarkMode: false,
       isFetching: false,
       isUploading: false,
       isMenuVisible: false,
@@ -46,14 +45,6 @@ export class MessageBoxDialog extends Component<Props> {
       { title: '600px', value: 600 },
       { title: '400px', value: 400 },
     ]
-  }
-
-  componentDidMount() {
-    this.init()
-  }
-
-  init() {
-    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   showDialog(isFromFab = false) {
@@ -182,7 +173,6 @@ export class MessageBoxDialog extends Component<Props> {
     const {
       areDetailsShown,
       isDialogVisible,
-      isDarkMode,
       isFetching,
       isMenuVisible,
       isUploading,
@@ -194,6 +184,10 @@ export class MessageBoxDialog extends Component<Props> {
       uploadedFiles,
       users,
     } = this.state
+    const {
+      colors,
+      metrics: { blocks, fontSizes },
+    } = this.context.theme
     return (
       <View style={{ position: 'absolute', top: 0, height: '100%', left: 0, right: 0 }}>
         <Dialog
@@ -206,12 +200,11 @@ export class MessageBoxDialog extends Component<Props> {
                 <TextInput
                   numberOfLines={1}
                   textAlignVertical={'center'}
-                  selectionColor={Styling.colors.primary}
+                  selectionColor={colors.primary}
                   onChangeText={val => this.setState({ issueTitle: val })}
                   value={`${issueTitle}`}
                   placeholder={selectedRecipient || `${t('title')} ..`}
                   style={{
-                    backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                     marginBottom: -2,
                     zIndex: 1,
                     height: 42,
@@ -223,12 +216,11 @@ export class MessageBoxDialog extends Component<Props> {
                   <TextInput
                     numberOfLines={1}
                     textAlignVertical={'center'}
-                    selectionColor={Styling.colors.primary}
+                    selectionColor={colors.primary}
                     onChangeText={val => this.searchUsername(val)}
                     value={`${searchPhrase}`}
                     placeholder={selectedRecipient || `${t('username')} ..`}
                     style={{
-                      backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                       marginBottom: -2,
                       zIndex: 1,
                       height: 42,
@@ -236,12 +228,7 @@ export class MessageBoxDialog extends Component<Props> {
                   />
                   {users?.length > 0 &&
                     users.map(u => (
-                      <UserRowComponent
-                        key={u.username}
-                        user={u}
-                        isDarkMode={isDarkMode}
-                        onPress={() => this.selectRecipient(u)}
-                      />
+                      <UserRowComponent key={u.username} user={u} onPress={() => this.selectRecipient(u)} />
                     ))}
                 </View>
               )}
@@ -256,7 +243,6 @@ export class MessageBoxDialog extends Component<Props> {
                   onChangeText={val => this.setState({ message: val })}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
-                  style={{ backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light }}
                 />
               )}
             </ScrollView>
@@ -273,9 +259,7 @@ export class MessageBoxDialog extends Component<Props> {
                   marginTop: 5,
                 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.dark }}>
-                    {t('jpegSize')}
-                  </Text>
+                  <Text>{t('jpegSize')}</Text>
                   <Menu
                     visible={isMenuVisible}
                     statusBarHeight={-150}
@@ -284,9 +268,7 @@ export class MessageBoxDialog extends Component<Props> {
                       <Button
                         onPress={() => (isUploading ? null : this.setState({ isMenuVisible: true }))}
                         uppercase={false}
-                        color={
-                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
-                        }>
+                        color={isUploading ? colors.disabled : colors.text}>
                         {`${selectedSize}${selectedSize !== 'Original' ? 'px' : ''}`}
                       </Button>
                     }>
@@ -306,7 +288,7 @@ export class MessageBoxDialog extends Component<Props> {
                         style={{
                           width: 25,
                           height: 25,
-                          marginRight: Styling.metrics.block.small,
+                          marginRight: blocks.medium,
                         }}
                         resizeMode={'cover'}
                         source={{ uri: `https://nyx.cz${f.thumb_url}` }}
@@ -320,9 +302,7 @@ export class MessageBoxDialog extends Component<Props> {
                         lineHeight={22}
                         paddingHorizontal={0}
                         onPress={() => (isUploading ? null : this.deleteFile(f.id))}
-                        color={
-                          isUploading ? Styling.colors.dark : isDarkMode ? Styling.colors.lighter : Styling.colors.dark
-                        }
+                        color={isUploading ? colors.disabled : colors.text}
                       />
                     </View>
                   ))}
@@ -336,41 +316,35 @@ export class MessageBoxDialog extends Component<Props> {
                   <IconButton
                     icon={'unfold-more-horizontal'}
                     onPress={() => this.toggleDetail(!areDetailsShown)}
-                    rippleColor={'rgba(18,146,180, 0.3)'}
+                    rippleColor={colors.ripple}
                   />
                   {isUploading ? (
-                    <ActivityIndicator size="large" color={Styling.colors.primary} style={{ marginRight: 12 }} />
+                    <ActivityIndicator size="large" color={colors.primary} style={{ marginRight: 12 }} />
                   ) : (
                     <View>
                       {uploadedFiles.length > 0 && (
                         <Badge style={{ position: 'absolute' }}>{uploadedFiles.length}</Badge>
                       )}
-                      <IconButton
-                        icon={'image'}
-                        onPress={() => this.appendFile()}
-                        rippleColor={'rgba(18,146,180, 0.3)'}
-                      />
+                      <IconButton icon={'image'} onPress={() => this.appendFile()} rippleColor={colors.ripple} />
                     </View>
                   )}
                 </View>
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
-                  <Text style={{ color: Styling.colors.lighter, fontSize: Styling.metrics.fontSize.medium }}>
-                    Github issue
-                  </Text>
+                  <Text style={{ fontSize: fontSizes.p }}>Github issue</Text>
                 </View>
               )}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/*<IconButton icon={'backspace'} size={22} onPress={() => setMessage('')} />*/}
                 {isFetching ? (
-                  <ActivityIndicator size="large" color={Styling.colors.primary} />
+                  <ActivityIndicator size="large" color={colors.primary} />
                 ) : (
                   <IconButton
                     icon={'play'}
                     size={27}
-                    color={Styling.colors.primary}
+                    color={colors.primary}
                     onPress={() => this.sendMessage()}
-                    rippleColor={'rgba(18,146,180, 0.3)'}
+                    rippleColor={colors.ripple}
                   />
                 )}
               </View>
@@ -385,7 +359,7 @@ export class MessageBoxDialog extends Component<Props> {
             right: 0,
             bottom: this.props.fabTopPosition === undefined ? this.props.fabBottomPosition || 0 : undefined,
             top: this.props.fabTopPosition,
-            backgroundColor: this.props.fabBackgroundColor || Styling.colors.primary,
+            backgroundColor: this.props.fabBackgroundColor || colors.primary,
           }}
           icon={this.props.fabIcon || 'message'}
           visible={isVisible && !isDialogVisible}

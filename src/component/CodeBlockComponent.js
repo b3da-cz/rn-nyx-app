@@ -1,18 +1,21 @@
 import React from 'react'
 import { Text, View } from 'react-native'
 import { WebView } from 'react-native-webview'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
 export const CodeBlockComponent = ({ html, height, fontSize = 11 }) => {
+  const {
+    metrics: { blocks, screen },
+  } = useTheme()
   return (
     <Text>
       <View style={{ flex: 1 }}>
         <WebView
           style={{
-            width: Styling.metrics.screen().width - Styling.metrics.block.medium,
-            height: height,
+            height,
+            width: screen.width - blocks.large,
             backgroundColor: 'transparent',
-            marginVertical: Styling.metrics.block.small,
+            marginVertical: blocks.medium,
           }}
           source={{
             html: `

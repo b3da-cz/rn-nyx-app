@@ -16,7 +16,6 @@ export class BaseDiscussionListView extends Component<Props> {
   componentDidMount() {
     this.config = this.context.config
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       setTimeout(() => this.getList(), 100)
@@ -43,8 +42,11 @@ export class BaseDiscussionListView extends Component<Props> {
   }
 
   init() {
-    this.setState({ isShowingRead: this.config?.isShowingReadOnLists })
-    this.setState({ shownCategories: this.config?.shownCategories })
+    this.setState({
+      isShowingRead: this.config?.isShowingReadOnLists,
+      shownCategories: this.config?.shownCategories,
+      theme: this.context.theme,
+    })
   }
 
   async getList() {}
@@ -72,17 +74,15 @@ export class BaseDiscussionListView extends Component<Props> {
   }
 
   renderFAB() {
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
     return (
       <FAB
         small={true}
-        style={Styling.groups.fabDiscussionList(this.isDarkMode)}
-        color={
-          !this.state.isShowingRead
-            ? Styling.colors.primary
-            : this.isDarkMode
-            ? Styling.colors.lighter
-            : Styling.colors.darker
-        }
+        style={Styling.groups.fabDiscussionList(theme)}
+        color={!this.state.isShowingRead ? theme.colors.accent : theme.colors.text}
         icon={this.state.isShowingRead ? 'star-outline' : 'star'}
         visible={true}
         onPress={() => this.toggleRead(this.state.isShowingRead)}

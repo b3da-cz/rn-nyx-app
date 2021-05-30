@@ -1,16 +1,19 @@
 import React from 'react'
 import { Text, View } from 'react-native'
 import { WebView } from 'react-native-webview'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
 export const VideoTagComponent = ({ url }) => {
+  const {
+    metrics: { blocks, screen },
+  } = useTheme()
   return (
     <Text>
       <View style={{ flex: 1 }}>
         <WebView
           style={{
-            width: Styling.metrics.screen().width - 2 * Styling.metrics.block.medium,
-            height: Styling.metrics.screen().width - 2 * Styling.metrics.block.medium,
+            width: screen.width - 2 * blocks.large,
+            height: screen.width - 2 * blocks.large,
             backgroundColor: 'transparent',
           }}
           allowsFullscreenVideo={true}

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, LayoutAnimation, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { MessageBoxDialog, PostComponent } from '../component'
-import { MainContext, getDistinctPosts, LayoutAnimConf, Styling, parsePostsContent, t, wait } from '../lib'
+import { MainContext, getDistinctPosts, LayoutAnimConf, parsePostsContent, t, wait } from '../lib'
 
 type Props = {
   onImages: Function,
@@ -30,7 +30,6 @@ export class MailView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
     })
@@ -43,6 +42,7 @@ export class MailView extends Component<Props> {
         this.getLatestMessages()
       }
     })
+    this.setTheme()
     setTimeout(() => this.getLatestMessages(), 100)
   }
 
@@ -56,6 +56,10 @@ export class MailView extends Component<Props> {
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async getLatestMessages() {
@@ -129,12 +133,10 @@ export class MailView extends Component<Props> {
 
   getPickerItemColor(val, hasUnreadMail) {
     return hasUnreadMail
-      ? Styling.colors.secondary
+      ? this.state.theme.colors.accent
       : this.state.activeRecipient === val
-      ? Styling.colors.primary
-      : this.isDarkMode
-      ? Styling.colors.lighter
-      : Styling.colors.darker
+      ? this.state.theme.colors.primary
+      : this.state.theme.colors.text
   }
 
   renderMessage(msg) {
@@ -143,7 +145,6 @@ export class MailView extends Component<Props> {
         key={msg.id}
         post={msg}
         nyx={this.nyx}
-        isDarkMode={this.isDarkMode}
         isReply={msg.incoming}
         isUnread={msg.unread}
         isHeaderInteractive={false}
@@ -157,12 +158,15 @@ export class MailView extends Component<Props> {
   }
 
   render() {
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
     return (
-      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+      <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.conversations && this.state.conversations.length > 0 && (
           <Picker
             mode={'dropdown'}
-            style={[Styling.groups.themeComponent(this.isDarkMode), { color: Styling.colors.primary }]}
             prompt={'Recipient'}
             selectedValue={this.state.activeRecipient}
             onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
@@ -193,13 +197,13 @@ export class MailView extends Component<Props> {
           ref={r => (this.refMsgBoxDialog = r)}
           nyx={this.nyx}
           params={{ mailRecipient: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '' }}
-          fabBackgroundColor={Styling.colors.secondary}
+          fabBackgroundColor={theme.colors.secondary}
           fabIcon={'email'}
           fabBottomPosition={50}
           isVisible={this.state.isMsgBtnVisible}
           onSend={() => this.getLatestMessages()}
         />
       </View>
-    )
+    );
   }
 }

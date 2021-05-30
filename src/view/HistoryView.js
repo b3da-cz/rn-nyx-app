@@ -1,7 +1,7 @@
 import React from 'react'
 import { ScrollView, RefreshControl, View, LayoutAnimation } from 'react-native'
 import { DiscussionRowComponent } from '../component'
-import { filterDiscussions, LayoutAnimConf, Styling } from '../lib'
+import { filterDiscussions, LayoutAnimConf, recountDiscussionList, Styling } from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
@@ -22,15 +22,22 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     this.setState({ isFetching: true })
     const res = await this.nyx.getHistory(this.state.isShowingRead)
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
-    this.setState({ discussions: filterDiscussions(res.discussions, this.filters), isFetching: false })
+    this.setState({
+      discussions: filterDiscussions(recountDiscussionList(res.discussions), this.filters),
+      isFetching: false,
+    })
   }
 
   render() {
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
     return (
-      <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}>
+      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%' }]}
+          style={{ backgroundColor: theme.colors.background, height: '100%' }}
           refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getList()} />}>
           <View>
             {this.state.discussions?.length > 0 &&
@@ -38,7 +45,6 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                 <DiscussionRowComponent
                   key={d.discussion_id}
                   discussion={d}
-                  isDarkMode={this.isDarkMode}
                   onPress={id => this.showDiscussion(id)}
                   onLongPress={id => this.showDiscussionStats(id)}
                 />
@@ -47,6 +53,6 @@ export class HistoryView extends BaseDiscussionListView<Props> {
         </ScrollView>
         {this.renderFAB()}
       </View>
-    )
+    );
   }
 }

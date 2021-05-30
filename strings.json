@@ -147,6 +147,14 @@
     "light": {
       "cs": "Světlé",
       "en": "Light"
+    },
+    "color": {
+      "cs": "Barva",
+      "en": "Color"
+    },
+    "fontSize": {
+      "cs": "Velikost písma",
+      "en": "Font size"
     }
   },
   "delete": {
