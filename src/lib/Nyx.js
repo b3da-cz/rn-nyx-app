@@ -103,6 +103,9 @@ export class Nyx {
       })
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
       return res
@@ -125,6 +128,9 @@ export class Nyx {
       )
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions = res.discussions
       return res
@@ -165,6 +171,9 @@ export class Nyx {
       )
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -200,6 +209,9 @@ export class Nyx {
       )
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       if (!isUnified) {
         this.updateContext(res.context)
       }
@@ -218,6 +230,9 @@ export class Nyx {
       })
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions.forEach((d, i) => {
       //   if (d.discussion_id === id) {
@@ -272,6 +287,9 @@ export class Nyx {
       })
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -288,6 +306,9 @@ export class Nyx {
       })
         .then(resp => resp.json())
         .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -602,6 +623,9 @@ export class Nyx {
       textColor: '#FFFFFF',
       icon: 'alert-circle',
       onClick: async () => {
+        if (msg === 'Invalid token') {
+          this.logout()
+        }
         RNNotificationBanner.Dismiss()
       },
     })

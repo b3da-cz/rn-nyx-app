@@ -212,7 +212,7 @@ export class SettingsView extends Component<Props> {
             value={this.state.isRemindersEnabled}
             onChange={val => this.setOption('isRemindersEnabled', val)}
           />
-          <View style={{ marginTop: 10, height: 70 }}>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
             <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
             {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.initialView')}</Text>*/}
             <Picker
