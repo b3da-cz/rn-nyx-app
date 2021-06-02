@@ -12,15 +12,15 @@ export const ButtonRepliesComponent = ({ count, onPress }) => {
   return (
     <TouchableRipple
       rippleColor={colors.ripple}
-      style={[Styling.groups.flexCentered, { width: blocks.large, height: blocks.large }]}
+      style={[Styling.groups.flexCentered, { width: blocks.large * 2, height: blocks.large * 1.4 }]}
       onPress={() => onPress()}>
       <View style={{ alignItems: 'center' }}>
-        <Icon name={'chevron-up'} size={(fontSizes.p / 3) * 2} color={colors.backdrop} />
+        <Icon name={'chevron-up'} size={(fontSizes.p / 3) * 2} color={colors.accent} />
         <Text
           style={{
-            color: colors.backdrop,
-            fontSize: fontSizes.small * 0.8,
-            marginTop: -(fontSizes.p / 2.5),
+            color: colors.accent,
+            fontSize: fontSizes.small,
+            marginTop: -(fontSizes.p / 3),
           }}>
           {count}
         </Text>

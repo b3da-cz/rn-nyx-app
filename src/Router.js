@@ -5,7 +5,7 @@
 import React, { useEffect } from 'react'
 import 'react-native-gesture-handler'
 import { NetworkConsumer } from 'react-native-offline'
-import { createStackNavigator } from '@react-navigation/stack'
+import { createNativeStackNavigator } from 'react-native-screens/native-stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
@@ -37,7 +37,6 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: theme.colors.secondary,
-              textColor: theme.colors.text,
               icon: 'mail',
               onClick: async () => {
                 nav?.navigate('mailStack', { screen: 'mail' })
@@ -57,7 +56,6 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
               tintColor: theme.colors.primary,
-              textColor: theme.colors.text,
               icon: 'corner-down-right',
               onClick: async () => {
                 nav.navigate('notificationsStack', { screen: 'notifications' })
@@ -84,7 +82,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
 
   const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
 
-  const RootStack = createStackNavigator()
+  const RootStack = createNativeStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
@@ -180,13 +178,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           name={'profile'}
           component={Profile}
           options={{
-            tabBarLabel: ({ focused }) => (
-              <Icon
-                name={'user'}
-                size={14}
-                color={getTabIconColor(focused)}
-              />
-            ),
+            tabBarLabel: ({ focused }) => <Icon name={'user'} size={14} color={getTabIconColor(focused)} />,
           }}
         />
       </Tab.Navigator>
@@ -195,7 +187,11 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
   return (
     <RootStack.Navigator initialRouteName={'tabs'} mode={'modal'} options={{ cardStyle: NavOptions.cardStyle(theme) }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
-      <RootStack.Screen name={'settings'} component={Settings} options={{ title: t('profile.settings') }} />
+      <RootStack.Screen
+        name={'settings'}
+        component={Settings}
+        options={{ title: t('profile.settings'), headerTopInsetEnabled: false }}
+      />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
   )

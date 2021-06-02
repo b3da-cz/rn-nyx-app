@@ -46,9 +46,7 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
         </Text>
         {isBookmarksResultType && unreadPostCount > 0 && (
           <View style={Styling.groups.flexRowSpbCentered}>
-            <Text
-              numberOfLines={1}
-              style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
+            <Text numberOfLines={1} style={{ color: unreadRowColor }}>
               {unreadPostCount}
               {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}`}
             </Text>
@@ -56,17 +54,13 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
               <Icon name="image" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
             ) : null}
             {discussion.new_images_count > 0 ? (
-              <Text style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
-                {discussion.new_images_count}
-              </Text>
+              <Text style={{ color: unreadRowColor }}>{discussion.new_images_count}</Text>
             ) : null}
             {discussion.new_links_count > 0 ? (
               <Icon name="link" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
             ) : null}
             {discussion.new_links_count > 0 ? (
-              <Text style={{ color: discussion.new_replies_count > 0 ? colors.primary : unreadRowColor }}>
-                {discussion.new_links_count}
-              </Text>
+              <Text style={{ color: unreadRowColor }}>{discussion.new_links_count}</Text>
             ) : null}
           </View>
         )}

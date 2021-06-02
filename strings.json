@@ -80,6 +80,10 @@
       "cs": "Nastavení",
       "en": "Settings"
     },
+    "general": {
+      "cs": "Obecné",
+      "en": "General"
+    },
     "fcm": {
       "subscribe": {
         "title": {

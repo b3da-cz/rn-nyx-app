@@ -87,7 +87,7 @@ export const createTheme = (
       medium: baseFontSize / 3,
       large: baseFontSize / 1.333,
       xlarge: baseFontSize * 1.5,
-      rowDiscussion: 32,
+      rowDiscussion: baseFontSize * 2 + 2,
     },
     fontSizes: {
       small: baseFontSize * 0.75,

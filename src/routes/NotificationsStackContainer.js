@@ -1,10 +1,10 @@
 import React, { useContext } from 'react'
-import { createStackNavigator } from '@react-navigation/stack'
+import { createNativeStackNavigator } from 'react-native-screens/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
 import { Discussion, Notifications } from '../routes'
 
 export const NotificationsStackContainer = ({ navigation, route }) => {
-  const NotificationsStack = createStackNavigator()
+  const NotificationsStack = createNativeStackNavigator()
   const context = useContext(MainContext)
   return (
     <NotificationsStack.Navigator

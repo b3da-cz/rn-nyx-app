@@ -2,8 +2,15 @@ import React, { Component } from 'react'
 import { ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { Picker } from '@react-native-picker/picker'
-import { ButtonComponent, confirm, FilterSettingsDialog, FormRowToggleComponent } from '../component'
-import { defaultThemeOptions, MainContext, Storage, t, initFCM, unregisterFCM } from '../lib'
+import {
+  ButtonComponent,
+  ComponentExamplesComponent,
+  confirm,
+  FilterSettingsDialog,
+  FormRowToggleComponent,
+  SectionHeaderComponent,
+} from '../component'
+import { defaultThemeOptions, MainContext, Storage, t, initFCM, unregisterFCM, createTheme } from '../lib'
 
 type Props = {
   config: any,
@@ -22,8 +29,17 @@ export class SettingsView extends Component<Props> {
     this.setTheme()
   }
 
+  // componentWillUnmount() {
+  //   this.props.onConfigChange()
+  // }
+
   setTheme() {
     this.setState({ theme: this.context.theme })
+  }
+
+  previewTheme() {
+    const theme = createTheme(true, ...this.state.themeOptions)
+    this.setState({ theme })
   }
 
   async loadSettings() {
@@ -81,6 +97,7 @@ export class SettingsView extends Component<Props> {
     this.setState({ themeOptions })
     conf.themeOptions = themeOptions
     await Storage.setConfig(conf)
+    // this.previewTheme()
     this.props.onConfigChange()
   }
 
@@ -132,6 +149,34 @@ export class SettingsView extends Component<Props> {
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView style={{ backgroundColor: theme.colors.background }}>
+          <SectionHeaderComponent title={t('profile.general')} backgroundColor={theme.colors.surface} />
+          <ButtonComponent
+            label={t('profile.fcm.subscribe.title')}
+            icon={'mail'}
+            textAlign={'left'}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
+            onPress={() => this.subscribeFCM()}
+          />
+          <ButtonComponent
+            label={t('profile.fcm.unsubscribe.title')}
+            icon={'trash-2'}
+            textAlign={'left'}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
+            onPress={() => this.unsubscribeFCM()}
+          />
+          <ButtonComponent
+            label={t('profile.logout')}
+            icon={'lock'}
+            textAlign={'left'}
+            color={theme.colors.accent}
+            fontSize={theme.metrics.fontSizes.p}
+            marginBottom={theme.metrics.blocks.medium}
+            onPress={() => this.logout()}
+          />
           <FormRowToggleComponent
             label={t('profile.tabsOnBottom')}
             value={this.state.isBottomTabs}
@@ -168,7 +213,8 @@ export class SettingsView extends Component<Props> {
             onChange={val => this.setOption('isRemindersEnabled', val)}
           />
           <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.initialView')}</Text>
+            <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.initialView')}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={t('profile.initialView')}
@@ -180,6 +226,7 @@ export class SettingsView extends Component<Props> {
                 value={'historyStack'}
                 enabled={this.state.isHistoryEnabled}
                 color={this.state.isHistoryEnabled ? theme.colors.text : theme.colors.disabled}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
               />
               <Picker.Item
                 key={'bookmarksStack'}
@@ -187,24 +234,51 @@ export class SettingsView extends Component<Props> {
                 value={'bookmarksStack'}
                 enabled={this.state.isBookmarksEnabled}
                 color={this.state.isBookmarksEnabled ? theme.colors.text : theme.colors.disabled}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
               />
-              <Picker.Item key={'mailStack'} label={t('mail')} value={'mailStack'} color={theme.colors.text} />
+              <Picker.Item
+                key={'mailStack'}
+                label={t('mail')}
+                value={'mailStack'}
+                color={theme.colors.text}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
+              />
             </Picker>
           </View>
-          <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.theme')}</Text>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={t('profile.theme')} backgroundColor={theme.colors.surface} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.theme')}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={t('profile.theme')}
               selectedValue={this.state.selectedTheme}
               onValueChange={t => this.setOption('selectedTheme', t)}>
-              <Picker.Item key={'system'} label={t('profile.system')} value={'system'} color={theme.colors.text} />
-              <Picker.Item key={'dark'} label={t('profile.dark')} value={'dark'} color={theme.colors.text} />
-              <Picker.Item key={'light'} label={t('profile.light')} value={'light'} color={theme.colors.text} />
+              <Picker.Item
+                key={'system'}
+                label={t('profile.system')}
+                value={'system'}
+                color={theme.colors.text}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
+              />
+              <Picker.Item
+                key={'dark'}
+                label={t('profile.dark')}
+                value={'dark'}
+                color={theme.colors.text}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
+              />
+              <Picker.Item
+                key={'light'}
+                label={t('profile.light')}
+                value={'light'}
+                color={theme.colors.text}
+                style={{ fontSize: theme.metrics.fontSizes.p }}
+              />
             </Picker>
           </View>
-          <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} A`}</Text>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={`${t('profile.color')} A`} backgroundColor={theme.colors.primary} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} A`}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={`${t('profile.color')} A`}
@@ -212,12 +286,19 @@ export class SettingsView extends Component<Props> {
               selectedValue={this.state.themeOptions[0]}
               onValueChange={color => this.setThemeOption(0, color)}>
               {palette.map(color => (
-                <Picker.Item key={`${color}-a`} label={color} value={color} color={theme.colors.text} />
+                <Picker.Item
+                  key={`${color}-a`}
+                  label={color}
+                  value={color}
+                  color={theme.colors.text}
+                  style={{ fontSize: theme.metrics.fontSizes.p }}
+                />
               ))}
             </Picker>
           </View>
-          <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} B`}</Text>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={`${t('profile.color')} B`} backgroundColor={theme.colors.secondary} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} B`}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={`${t('profile.color')} B`}
@@ -225,12 +306,19 @@ export class SettingsView extends Component<Props> {
               selectedValue={this.state.themeOptions[1]}
               onValueChange={color => this.setThemeOption(1, color)}>
               {palette.map(color => (
-                <Picker.Item key={`${color}-b`} label={color} value={color} color={theme.colors.text} />
+                <Picker.Item
+                  key={`${color}-b`}
+                  label={color}
+                  value={color}
+                  color={theme.colors.text}
+                  style={{ fontSize: theme.metrics.fontSizes.p }}
+                />
               ))}
             </Picker>
           </View>
-          <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} C`}</Text>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={`${t('profile.color')} C`} backgroundColor={theme.colors.tertiary} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{`${t('profile.color')} C`}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={`${t('profile.color')} C`}
@@ -238,49 +326,36 @@ export class SettingsView extends Component<Props> {
               selectedValue={this.state.themeOptions[2]}
               onValueChange={color => this.setThemeOption(2, color)}>
               {palette.map(color => (
-                <Picker.Item key={`${color}-c`} label={color} value={color} color={theme.colors.text} />
+                <Picker.Item
+                  key={`${color}-c`}
+                  label={color}
+                  value={color}
+                  color={theme.colors.text}
+                  style={{ fontSize: theme.metrics.fontSizes.p }}
+                />
               ))}
             </Picker>
           </View>
-          <View style={{ marginTop: 10, height: 70 }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.fontSize')}</Text>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={t('profile.fontSize')} backgroundColor={theme.colors.surface} />
+            {/*<Text style={{ fontSize: theme.metrics.fontSizes.h3 }}>{t('profile.fontSize')}</Text>*/}
             <Picker
               mode={'dropdown'}
               prompt={t('profile.fontSize')}
               selectedValue={this.state.themeOptions[3]}
               onValueChange={size => this.setThemeOption(3, size)}>
               {fontSizes.map(size => (
-                <Picker.Item key={`${size}-fontSize`} label={`${size}`} value={size} color={theme.colors.text} />
+                <Picker.Item
+                  key={`${size}-fontSize`}
+                  label={`${size}`}
+                  value={size}
+                  color={theme.colors.text}
+                  style={{ fontSize: theme.metrics.fontSizes.p }}
+                />
               ))}
             </Picker>
           </View>
-          <ButtonComponent
-            label={t('profile.fcm.subscribe.title')}
-            icon={'mail'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.subscribeFCM()}
-          />
-          <ButtonComponent
-            label={t('profile.fcm.unsubscribe.title')}
-            icon={'trash-2'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.unsubscribeFCM()}
-          />
-          <ButtonComponent
-            label={t('profile.logout')}
-            icon={'lock'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.logout()}
-          />
+          <ComponentExamplesComponent />
         </ScrollView>
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
       </View>

@@ -2,7 +2,7 @@ import { devFilter, parental as blackListParental } from '../../black-list.json'
 
 const blackList = (additionalFilters: string[]): string[] =>
   (additionalFilters || []).includes(devFilter)
-    ? [...additionalFilters]
+    ? [...additionalFilters.filter(f => !f.includes(devFilter))]
     : [...blackListParental, ...(additionalFilters || [])]
 
 export const filterDiscussions = (list: any[], filters?: string[]): any[] => {
@@ -22,7 +22,7 @@ export const filterPostsByAuthor = (list: any[], blockedUsers: string[]): any[] 
 }
 
 const filter = (str: string, filters?: string[]): boolean => {
-  if (!str || str?.length === 0) {
+  if (!str || str?.length === 0 || blackList(filters).length === 0) {
     return true
   }
   const normalized = str

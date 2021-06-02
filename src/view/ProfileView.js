@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { IconButton } from 'react-native-paper'
-import { MessageBoxDialog, UserIconComponent, UserRowComponent } from '../component'
+import { MessageBoxDialog, SectionHeaderComponent, UserIconComponent, UserRowComponent } from '../component'
 import { formatDate, MainContext, t, LayoutAnimConf } from '../lib'
 
 type Props = {
@@ -65,8 +65,8 @@ export class ProfileView extends Component<Props> {
             rippleColor={theme.colors.ripple}
           />
         </View>
-        <View style={{ marginBottom: theme.metrics.blocks.medium }}>
-          <Text style={{ fontSize: theme.metrics.fontSizes.p }}>{t('friends')}</Text>
+        <View>
+          <SectionHeaderComponent title={t('friends')} backgroundColor={theme.colors.tertiary} />
         </View>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -74,6 +74,9 @@ export class ProfileView extends Component<Props> {
           refreshControl={
             <RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getActiveFriends()} />
           }>
+          {activeFriends?.length === 0 && (
+            <SectionHeaderComponent title={t('empty')} backgroundColor={theme.colors.surface} />
+          )}
           {activeFriends?.length > 0 &&
             activeFriends.map(u => (
               <UserRowComponent
@@ -84,8 +87,6 @@ export class ProfileView extends Component<Props> {
                 } | ${formatDate(u.last_activity).substr(12)}`}
                 theme={theme}
                 isPressable={false}
-                marginBottom={0}
-                marginTop={theme.metrics.blocks.small}
               />
             ))}
         </ScrollView>

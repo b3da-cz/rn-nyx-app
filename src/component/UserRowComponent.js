@@ -23,7 +23,7 @@ export const UserRowComponent = ({
   }
   const {
     colors,
-    metrics: { blocks },
+    metrics: { blocks, fontSizes },
   } = th
   return (
     <TouchableRipple
@@ -40,12 +40,19 @@ export const UserRowComponent = ({
         marginTop,
       }}
       onPress={() => onPress()}>
-      <View style={[Styling.groups.flexRowSpbCentered, { height: 35 - 2 * blocks.medium }]}>
+      <View style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion - 2 * blocks.medium }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {withIcon && <UserIconComponent username={user.username} width={20} height={25} marginRight={10} />}
-          <Text>{user.username}</Text>
+          {withIcon && (
+            <UserIconComponent
+              username={user.username}
+              width={blocks.medium * 4}
+              height={blocks.medium * 5}
+              marginRight={10}
+            />
+          )}
+          <Text style={{ fontSize: fontSizes.p }}>{user.username}</Text>
         </View>
-        {extraText?.length > 0 && <Text>{extraText}</Text>}
+        {extraText?.length > 0 && <Text style={{ fontSize: fontSizes.p }}>{extraText}</Text>}
       </View>
     </TouchableRipple>
   )

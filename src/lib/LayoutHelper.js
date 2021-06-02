@@ -63,6 +63,9 @@ export const getBlockSizes = async (posts, themeBaseFontSize) => {
       // fontStyle: 'italic',
       // fontWeight: 'bold',
     }
+    if (themeBaseFontSize > 16) {
+      fontSpecs.fontWeight = 'bold'
+    }
     const headerSize = 50
     const paddingBottom = 10
     const screenWidth = Dimensions.get('window').width - 18 // todo inspect links
@@ -80,7 +83,16 @@ export const getBlockSizes = async (posts, themeBaseFontSize) => {
           ? post.content_raw?.type === 'advertisement'
             ? 120
             : post.parsed.images
-                .map(img => img.height * (Dimensions.get('window').width / img.width))
+                .map(img => {
+                  let w = Dimensions.get('window').width - 20
+                  const isYtPreview = img.src.includes('youtu')
+                  if (img.width > 0 && img.width < w && !isYtPreview) {
+                    // w = img.width // todo cant do this while prefetching thumbnail sizes
+                  } else if (isYtPreview) {
+                    w = w * 0.8
+                  }
+                  return img.height * (w / img.width) + 20
+                })
                 .reduce((a, b) => a + b)
           : 0
       const codeHeights =

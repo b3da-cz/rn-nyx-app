@@ -4,7 +4,7 @@ import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { Styling, useTheme } from '../lib'
 
-export const SectionHeaderComponent = ({ title, icon, isPressable, onPress }) => {
+export const SectionHeaderComponent = ({ title, icon, backgroundColor, isPressable, onPress }) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -15,7 +15,7 @@ export const SectionHeaderComponent = ({ title, icon, isPressable, onPress }) =>
       rippleColor={colors.ripple}
       style={{
         width: '100%',
-        backgroundColor: colors.tertiary,
+        backgroundColor: backgroundColor || colors.tertiary,
         marginBottom: blocks.small,
         height: blocks.rowDiscussion,
       }}
@@ -29,9 +29,7 @@ export const SectionHeaderComponent = ({ title, icon, isPressable, onPress }) =>
           }}>
           {title}
         </Text>
-        {icon?.length > 0 && (
-          <Icon name={icon} size={fontSizes.p} color={colors.text} />
-        )}
+        {icon?.length > 0 && <Icon name={icon} size={fontSizes.p} color={colors.text} />}
       </View>
     </TouchableRipple>
   )

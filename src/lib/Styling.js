@@ -65,16 +65,17 @@ export const NavOptions = {
       backgroundColor: theme.colors.background,
       height: 50,
     },
-    headerTintColor: theme.colors.text,
+    headerTitleStyle: { fontSize: theme.metrics.fontSizes.h3 },
+    // headerTintColor: theme.colors.text,
   }),
   cardStyle: theme => ({ backgroundColor: theme.colors.background }),
 }
 
-export const discussionScreenOptions = { headerShown: true, title: '' }
+export const discussionScreenOptions = { headerShown: true, title: '', headerTopInsetEnabled: false }
 
 export const LayoutAnimConf = {
   spring: {
-    duration: 500,
+    duration: 300,
     create: {
       type: 'linear',
       property: 'opacity',
@@ -90,7 +91,7 @@ export const LayoutAnimConf = {
     },
   },
   easeInEaseOut: {
-    duration: 300,
+    duration: 150,
     create: {
       type: 'easeInEaseOut',
       property: 'opacity',

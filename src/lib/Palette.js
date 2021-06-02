@@ -92,7 +92,21 @@ const IBMColorPalette = {
   green10: 'rgb(222, 251, 230)',
 }
 
-const withAlpha = (rgb: string, alpha: number): string => rgb.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
+export const withAlpha = (rgb: string, alpha: number): string =>
+  rgb.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
+
+export const rgbToHex = rgbStr => {
+  const [r, g, b] = rgbStr.replace('rgb(', '').replace(')', '').split(', ')
+  return (
+    '#' +
+    [r, g, b]
+      .map(x => {
+        const hex = Number(x).toString(16)
+        return hex.length === 1 ? '0' + hex : hex
+      })
+      .join('')
+  )
+}
 
 export const createPalette = (
   isDarkTheme: boolean,

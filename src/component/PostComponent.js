@@ -60,7 +60,6 @@ export class PostComponent extends Component<Props> {
         isReply={true}
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
         {reply.text}
-        {!reply.text.startsWith('[') ? ': ' : ' '}
       </TextComponent>
     )
   }
@@ -82,7 +81,7 @@ export class PostComponent extends Component<Props> {
             }
           })
         }}>
-        {`${link.text} `}
+        {`${link.text}`}
       </TextComponent>
     )
   }
@@ -95,7 +94,10 @@ export class PostComponent extends Component<Props> {
     if (!img?.src || this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
-    const w = this.context.theme.metrics.screen.width - 2 * this.context.theme.metrics.blocks.large
+    let w = this.context.theme.metrics.screen.width - 2 * this.context.theme.metrics.blocks.large
+    // if (img.width > 0 && img.width < w) {
+    //   w = img.width // todo cant do this while prefetching thumbnail sizes
+    // }
     if (!img.src.includes('img.youtube.com')) {
       return (
         <ImageComponent
@@ -140,7 +142,7 @@ export class PostComponent extends Component<Props> {
       return
     }
     const key = generateUuidV4()
-    return <TextComponent key={key}>{`${text} `}</TextComponent>
+    return <TextComponent key={key}>{`${text}${text.endsWith('\n') ? '' : ' '}`}</TextComponent>
   }
 
   renderDice() {
