@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { ProgressBar } from 'react-native-paper'
-import Bugfender from '@bugfender/rn-bugfender'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
@@ -11,16 +10,14 @@ import {
   PostComponent,
 } from '../component'
 import {
-  fetchImageSizes,
   filterPostsByAuthor,
   filterPostsByContent,
   formatDate,
-  getBlockSizes,
   getDistinctPosts,
   isDiscussionPermitted,
   MainContext,
   parsePostsContent,
-  Styling,
+  preparePosts,
   t,
   wait,
 } from '../lib'
@@ -63,6 +60,7 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      theme: null,
     }
     this.refScroll = null
     this.refMsgBoxDialog = null
@@ -73,7 +71,6 @@ export class DiscussionView extends Component<Props> {
   componentDidMount() {
     this.config = this.context.config
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
@@ -85,6 +82,7 @@ export class DiscussionView extends Component<Props> {
       this.setState({ isSubmenuVisible: false })
     })
     this.setFocusOnStart()
+    this.setTheme()
     if (this.props.postId > 0 && this.props.showReplies) {
       this.fetchReplies(this.props.id, this.props.postId)
     } else if (this.props.postId > 0) {
@@ -118,6 +116,10 @@ export class DiscussionView extends Component<Props> {
   setFocusOnStart() {
     const isFocused = this.props.navigation.isFocused()
     this.setState({ isSubmenuVisible: isFocused })
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -164,11 +166,7 @@ export class DiscussionView extends Component<Props> {
   async jumpToLastSeen() {
     await wait(20)
     const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
-    const isPostInFetchedRange = this.state.posts[this.state.posts.length - 1]?.id > this.state.lastSeenPostId // if true && postIndex == undefined ? DI or deleted
-    this.scrollToPost(
-      postIndex !== undefined ? postIndex : isPostInFetchedRange ? 0 : this.state.posts.length - 5,
-      false,
-    )
+    this.scrollToPost(postIndex !== undefined ? postIndex : 0, false)
   }
 
   async fetchDiscussion(idOrQueryString) {
@@ -177,7 +175,7 @@ export class DiscussionView extends Component<Props> {
     }
     // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
-    this.measureMs()
+    // this.measureMs()
     const res = await this.nyx.getDiscussion(idOrQueryString)
     this.getAdvertisementOP(
       res?.discussion_common?.advertisement_specific_data?.advertisement,
@@ -187,38 +185,30 @@ export class DiscussionView extends Component<Props> {
       this.blockedUsers?.length > 0
         ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
         : filterPostsByContent(res.posts, this.filters)
-    const newPosts = getDistinctPosts(filteredPosts, this.state.posts)
-    const parsedPosts = parsePostsContent(newPosts)
-    this.measureMs('parsed')
-    const parsedPostsWImageSizes = await fetchImageSizes(parsedPosts, false, ({ length, done }) => {
-      // this.setState({ imgPrefetchProgress: { length, done } })
-    })
-    this.measureMs('images fetched')
-    const finalizedPosts = await getBlockSizes(parsedPostsWImageSizes)
-    this.measureMs('layout calculated')
+    const themeBaseFontSize = this.state.theme.metrics.fontSizes.p
+    const nextPosts = await preparePosts(filteredPosts, this.state.posts, true, themeBaseFontSize)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
-    this.measureMs(`end [${finalizedPosts.length}] ${idOrQueryString} - ${title.substr(0, 40)}`, true)
     if (!isDiscussionPermitted(title, this.filters)) {
       alert('Blocked content')
       return this.props.navigation.goBack()
     }
     let header = res?.discussion_common?.discussion_specific_data?.header
     if (header?.length > 0) {
-      header = parsePostsContent(header)
+      header = await preparePosts(header, [], true, themeBaseFontSize)
     }
     const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
     const uploadedFiles = res?.discussion_common?.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = finalizedPosts.flatMap(p => p.parsed.images)
+    const images = nextPosts.flatMap(p => p.parsed.images)
     this.setState({
       title,
       images,
       isBooked,
       header,
       lastSeenPostId,
-      posts: finalizedPosts,
+      posts: nextPosts,
       isFetching: false,
       imgPrefetchProgress: { length: 0, done: 0 },
       hasBoard: res.discussion_common?.discussion?.has_home,
@@ -236,17 +226,18 @@ export class DiscussionView extends Component<Props> {
       console.warn(res)
       return
     }
-    const parsedBoard = parsePostsContent(res.items)
+    const themeBaseFontSize = this.state.theme.metrics.fontSizes.p
+    const board = await preparePosts(res.items, [], true, themeBaseFontSize)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
     const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = parsedBoard.flatMap(p => p.parsed.images)
+    const images = board.flatMap(p => p.parsed.images)
     this.setState({
       title,
       images,
       isBooked,
-      posts: parsedBoard,
+      posts: board,
       isFetching: false,
     })
     this.onDiscussionFetched(title)
@@ -439,22 +430,6 @@ export class DiscussionView extends Component<Props> {
     })
   }
 
-  measureMs(action: string, isEnd?: boolean): void {
-    if (!this.timing) {
-      this.timing = {}
-      this.timerStart = +new Date()
-    } else {
-      this.timing[action] = +new Date() - this.timerStart
-      this.timerStart = +new Date()
-    }
-    if (isEnd) {
-      // console.warn(this.timing) // TODO: remove
-      Bugfender.d('DISCUSSION_TIMING', JSON.stringify(this.timing))
-      this.timing = null
-      this.timerStart = null
-    }
-  }
-
   getFabActions() {
     const { isBooked, hasBoard, isBoardVisible, hasHeader, isHeaderVisible } = this.state
     const { navigation } = this.props
@@ -495,19 +470,22 @@ export class DiscussionView extends Component<Props> {
     if (this.props.showStats) {
       return <DiscussionStatsComponent id={this.props.id} nyx={this.nyx} />
     }
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
     const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
     return (
-      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+      <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.imgPrefetchProgress?.length > 0 && (
           <ProgressBar
             progress={this.state.imgPrefetchProgress.done / (this.state.imgPrefetchProgress.length / 100) / 100}
-            color={Styling.colors.primary}
+            color={theme.colors.primary}
             style={{ height: 3 }}
           />
         )}
         <BookmarkCategoriesDialog
           isVisible={this.state.isCategoryPickerVisible}
-          isDarkMode={this.isDarkMode}
           categories={this.state.bookmarkCategories || []}
           onCancel={() => this.setState({ isCategoryPickerVisible: false })}
           onCategoryId={id => this.bookmarkDiscussion(id)}
@@ -517,6 +495,7 @@ export class DiscussionView extends Component<Props> {
           iconOpen={isMarket ? 'close' : 'message'}
           paddingBottom={this.config?.isBottomTabs ? 45 : 0}
           actions={this.getFabActions()}
+          backgroundColor={theme.colors.primary}
           onPress={isOpen => {
             if (isOpen && !isMarket) {
               this.showMsgBox()
@@ -534,7 +513,6 @@ export class DiscussionView extends Component<Props> {
             updated={this.state.advertisementOP.updated}
             isActive={false}
             isDetail={true}
-            isDarkMode={this.isDarkMode}
             onImage={img => this.showImages(img, this.state.advertisementOP.images)}
           />
         )}
@@ -550,17 +528,20 @@ export class DiscussionView extends Component<Props> {
           // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',
-            backgroundColor: this.isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
+            backgroundColor: theme.colors.background,
           }}
           ListFooterComponent={() =>
             this.state.isFetching &&
-            this.state.posts.length > 0 && <ActivityIndicator size="large" color={Styling.colors.primary} />
+            this.state.posts.length > 0 && <ActivityIndicator size="large" color={theme.colors.primary} />
           }
-          getItemLayout={(data, index) => ({
-            length: data[index].parsed.height,
-            offset: data[index].parsed.offset - data[index].parsed.height,
-            index,
-          })}
+          getItemLayout={(data, index) => {
+            const length = data[index].parsed.height || 300
+            return {
+              length,
+              offset: data[index].parsed.offset - length,
+              index,
+            }
+          }}
           initialNumToRender={30}
           onScrollToIndexFailed={error => this.onScrollToIndexFailed(error)}
           renderItem={({ item }) => (
@@ -568,7 +549,6 @@ export class DiscussionView extends Component<Props> {
               key={item.id}
               post={item}
               nyx={this.nyx}
-              isDarkMode={this.isDarkMode}
               isHeaderInteractive={true}
               isReply={false}
               isUnread={item.new}

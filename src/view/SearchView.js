@@ -22,6 +22,7 @@ export class SearchView extends Component<Props> {
       advertisements: [],
       users: [],
       isFetching: false,
+      theme: null,
     }
   }
 
@@ -32,7 +33,7 @@ export class SearchView extends Component<Props> {
   init() {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
-    this.setState({ isDarkMode: this.context.theme === 'dark' })
+    this.setState({ theme: this.context.theme })
   }
 
   setSearchPhrase(searchPhrase, andDoSearch = true) {
@@ -76,8 +77,12 @@ export class SearchView extends Component<Props> {
   }
 
   render() {
+    const { theme } = this.state
+    if (!theme) {
+      return null
+    }
     return (
-      <View style={[Styling.groups.themeComponent(this.state.isDarkMode), { height: '100%' }]}>
+      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <Searchbar
           placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
@@ -88,10 +93,10 @@ export class SearchView extends Component<Props> {
           stickySectionHeadersEnabled={true}
           initialNumToRender={30}
           keyExtractor={(item, index) => item.id}
-          style={{ marginTop: Styling.metrics.block.xsmall }}
+          style={{ marginTop: theme.metrics.blocks.small }}
           refreshing={this.state.isFetching}
           renderSectionHeader={({ section: { title } }) => (
-            <SectionHeaderComponent isDarkMode={this.state.isDarkMode} title={title} />
+            <SectionHeaderComponent title={title} />
           )}
           renderItem={({ item, section: { title } }) => {
             switch (title) {
@@ -103,7 +108,6 @@ export class SearchView extends Component<Props> {
                   <DiscussionRowComponent
                     key={item.id}
                     discussion={item}
-                    isDarkMode={this.state.isDarkMode}
                     isAccented={true}
                     onPress={discussionId => this.props.onNavigation({ discussionId })}
                   />
@@ -113,7 +117,6 @@ export class SearchView extends Component<Props> {
                   <UserRowComponent
                     key={item.username}
                     user={item}
-                    isDarkMode={this.state.isDarkMode}
                     onPress={() => this.props.onUserSelected(item.username)}
                   />
                 )
@@ -121,6 +124,6 @@ export class SearchView extends Component<Props> {
           }}
         />
       </View>
-    )
+    );
   }
 }

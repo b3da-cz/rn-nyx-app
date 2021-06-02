@@ -1,13 +1,12 @@
 import React from 'react'
 import { Image } from 'react-native'
-import { Styling } from '../lib'
 
 export const UserIconComponent = ({
   username,
   width = 32, // height / width === 1.25 (original 50 * 40)
   height = 40,
-  borderColor = Styling.colors.lighter,
-  borderWidth = 1,
+  borderColor,
+  borderWidth = 0,
   marginTop = 0,
   marginBottom = 0,
   marginRight = 0,
@@ -34,5 +33,5 @@ export const UserIconComponent = ({
       resizeMode={'contain'}
       source={{ uri: `https://nyx.cz/${username[0]}/${username}.gif` }}
     />
-  );
+  )
 }

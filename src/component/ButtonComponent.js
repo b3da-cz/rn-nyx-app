@@ -1,56 +1,53 @@
 import React from 'react'
-import { Styling } from '../lib'
-import { Text } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
-import { TouchableRipple } from 'react-native-paper'
+import { Text, TouchableRipple } from 'react-native-paper'
+import { useTheme } from '../lib'
 
 export const ButtonComponent = ({
   label,
   icon,
-  isDarkMode,
+  theme,
   isDisabled,
   onPress,
+  color,
+  backgroundColor = 'transparent',
+  borderColor,
+  fontSize,
+  paddingHorizontal,
   width = '100%',
   textAlign = 'center',
-  color = Styling.colors.primary,
-  backgroundColor,
-  fontSize = Styling.metrics.fontSize.xlarge,
   marginBottom = 0,
   marginTop = 0,
   marginHorizontal = 0,
-  borderColor = Styling.colors.secondary,
   borderWidth = 0,
   lineHeight = 50,
-  paddingHorizontal = 5,
 }) => {
+  let th = { ...useTheme() }
+  if (!th.metrics) {
+    // we are inside Portal
+    th = theme || console.error('btn in portal without theme prop') //todo
+  }
+  const {
+    colors,
+    metrics: { blocks },
+  } = th
   return (
     <TouchableRipple
       disabled={isDisabled}
-      rippleColor={'rgba(18,146,180, 0.3)'}
+      rippleColor={colors.ripple}
       style={[
-        Styling.groups.themeComponent(isDarkMode),
-        {
-          width,
-          fontSize,
-          marginBottom,
-          marginTop,
-          marginHorizontal,
-          borderColor,
-          borderWidth,
-          backgroundColor,
-          lineHeight,
-        },
+        { width, marginBottom, marginTop, marginHorizontal, borderColor, borderWidth, backgroundColor, lineHeight },
       ]}
       onPress={() => onPress()}>
       <Text
         style={{
-          color,
           fontSize,
           textAlign,
           lineHeight,
-          paddingHorizontal,
+          color: color || colors.text,
+          paddingHorizontal: paddingHorizontal || blocks.medium,
         }}>
-        {icon?.length > 0 && <Icon name={icon} size={fontSize} color={color} />}
+        {icon?.length > 0 && <Icon name={icon} size={fontSize} color={color || colors.text} />}
         {icon?.length > 0 && ' '}
         {`${label}`}
       </Text>

@@ -2,9 +2,10 @@ import React from 'react'
 import { View } from 'react-native'
 import { Badge } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling, UnreadContext } from '../lib'
+import { UnreadContext, useTheme } from '../lib'
 
 export const NotificationIconComponent = ({ color, isMail = false }) => {
+  const { colors } = useTheme()
   return (
     <UnreadContext.Consumer>
       {({ messages, posts }) => {
@@ -18,7 +19,7 @@ export const NotificationIconComponent = ({ color, isMail = false }) => {
                   position: 'absolute',
                   top: -10,
                   right: -10,
-                  backgroundColor: isMail ? Styling.colors.secondary : Styling.colors.primary,
+                  backgroundColor: isMail ? colors.secondary : colors.primary,
                 }}>
                 {unreads}
               </Badge>

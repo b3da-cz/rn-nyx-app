@@ -1,12 +1,12 @@
 import messaging from '@react-native-firebase/messaging'
 import { Storage } from '../lib'
 
-export const initFCM = async (nyx, config, isAuthenticated) => {
+export const initFCM = async (nyx, config, isAuthenticated, isForced) => {
   if (!isAuthenticated) {
     return
   }
   try {
-    if (!config.isFCMSubscribed) {
+    if (!config.isFCMSubscribed || isForced) {
       const fcmToken = await messaging().getToken()
       const subFCMRes = await nyx.subscribeForFCM(fcmToken)
       config.fcmToken = fcmToken

@@ -24,7 +24,6 @@ export class RemindersView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       setTimeout(() => this.getReminders(), 100)
@@ -35,6 +34,7 @@ export class RemindersView extends Component<Props> {
         this.getReminders()
       }
     })
+    this.setTheme()
     setTimeout(() => this.getReminders(), 100)
   }
 
@@ -45,6 +45,10 @@ export class RemindersView extends Component<Props> {
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async getReminders() {
@@ -102,8 +106,9 @@ export class RemindersView extends Component<Props> {
   }
 
   render() {
+    const { theme } = this.state
     return (
-      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+      <View style={{ backgroundColor: theme?.colors?.background }}>
         <SectionList
           sections={this.state.sectionedReminders}
           stickySectionHeadersEnabled={true}
@@ -112,14 +117,13 @@ export class RemindersView extends Component<Props> {
           refreshing={this.state.isFetching}
           onRefresh={() => this.getReminders()}
           renderSectionHeader={({ section: { title } }) => (
-            <SectionHeaderComponent isDarkMode={this.isDarkMode} title={title} />
+            <SectionHeaderComponent title={title} />
           )}
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}
               post={item}
               nyx={this.nyx}
-              isDarkMode={this.isDarkMode}
               isHeaderInteractive={false}
               isReply={false}
               isUnread={item.new}

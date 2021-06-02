@@ -1,7 +1,7 @@
-import Bugfender from '@bugfender/rn-bugfender'
-import he from 'he'
-import { parse } from 'node-html-parser'
-import { generateUuidV4 } from '../lib'
+import Bugfender from '@bugfender/rn-bugfender';
+import he from 'he';
+import {parse} from 'node-html-parser';
+import {fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts} from '../lib';
 
 export const TOKEN = {
   // meh todo
@@ -235,14 +235,7 @@ export class Parser {
     this.clearTextWithUrls = ''
     this.contentParts.forEach((p, i) => {
       if (p?.length > 3 && !p.startsWith('###')) {
-        if (p.startsWith(':')) {
-          p = p.substring(1)
-        }
-        if (p.startsWith('<br>')) {
-          p = p.substring(4)
-        }
         p = this.replaceHtmlEntitiesAndTags(p)
-        // const withoutWhitespaces = p.replace(/\s+/g, '')
         if (!p || (p && (p.length === 0 || p === ' ' || p === '\n'))) {
           this.contentParts.splice(i, 1)
         } else {
@@ -311,4 +304,31 @@ export const parseNotificationsContent = notifications => {
     Bugfender.e('ERROR_PARSER', e.stack)
   }
   return notifications
+}
+
+export const recountDiscussionList = discussions => {
+  try {
+    return discussions.map(d => {
+      const unreadPostCount = Math.max(
+        d.new_posts_count || 0,
+        d.new_replies_count || 0,
+        d.new_images_count || 0,
+        d.new_links_count || 0,
+      ) // new_posts_count is weird sometimes
+      return { ...d, unreadPostCount }
+    })
+  } catch (e) {
+    Bugfender.e('ERROR_PARSER', e.stack)
+  }
+  return discussions
+}
+
+export const preparePosts = async (newPosts, oldPosts = [], calculateSizes = false, themeBaseFontSize) => {
+  const distinctPosts = getDistinctPosts(newPosts, oldPosts)
+  const parsedPosts = parsePostsContent(distinctPosts)
+  if (calculateSizes) {
+    const parsedPostsWImageSizes = await fetchImageSizes(parsedPosts, false)
+    return await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize)
+  }
+  return parsedPosts
 }

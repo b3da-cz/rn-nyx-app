@@ -15,12 +15,12 @@ import Bugfender from '@bugfender/rn-bugfender'
 import { devFilter } from './black-list.json'
 import { LoaderComponent } from './src/component'
 import {
-  Nyx,
-  Storage,
+  createTheme,
+  defaultThemeOptions,
   initFCM,
   MainContext,
-  CustomDarkTheme,
-  CustomLightTheme,
+  Nyx,
+  Storage,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -56,6 +56,7 @@ const initialConfig = {
   fcmToken: null,
   isFCMSubscribed: false,
   theme: 'system',
+  themeOptions: [...defaultThemeOptions],
 }
 
 const App: () => Node = () => {
@@ -69,9 +70,7 @@ const App: () => Node = () => {
   const [blockedUsers, setBlockedUsers] = useState([])
   const refs = {}
   const systemTheme = useColorScheme()
-  const theme = config.theme === 'system' ? systemTheme : config.theme
-  // const theme = 'dark'
-  // const theme = 'light'
+  const themeType = config.theme === 'system' ? systemTheme : config.theme
 
   useEffect(() => {
     Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
@@ -110,6 +109,9 @@ const App: () => Node = () => {
     if (auth) {
       auth.isConfirmed = true
       await Storage.setAuth(auth)
+      await Storage.setConfig(config)
+      await wait(300)
+      await initFCM(nyx, config, true, true)
     }
     setIsAuthenticated(true)
   }
@@ -131,6 +133,7 @@ const App: () => Node = () => {
       fcmToken: conf.fcmToken || null,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
       theme: conf.theme === undefined ? 'system' : conf.theme,
+      themeOptions: conf.themeOptions === undefined ? [...defaultThemeOptions] : conf.themeOptions,
     })
     return conf
   }
@@ -155,14 +158,14 @@ const App: () => Node = () => {
 
   const handleDeepLink = async url => {
     if (url === 'nnn://setdevfilters') {
-      const f = await Storage.getFilters()
+      const f = (await Storage.getFilters()) || []
       f.unshift(devFilter)
       await Storage.setFilters(f)
       setFilters(f)
       await wait(300)
       alert('dev filter')
     } else if (url === 'nnn://setprodfilters') {
-      const f = await Storage.getFilters()
+      const f = (await Storage.getFilters()) || []
       const nextF = f.filter(s => s !== devFilter)
       await Storage.setFilters(nextF)
       setFilters(nextF)
@@ -192,19 +195,22 @@ const App: () => Node = () => {
     init()
   }
 
+  const darkTheme = createTheme(true, ...config.themeOptions)
+  const lightTheme = createTheme(false, ...config.themeOptions)
+  const selectedTheme = themeType === 'dark' ? darkTheme : lightTheme
   return (
     <NetworkProvider pingServerUrl={'https://nyx.cz'}>
-      <PaperProvider theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-        {!isAppLoaded && <LoaderComponent />}
+      <PaperProvider theme={themeType === 'dark' ? darkTheme : lightTheme}>
+        {!isAppLoaded && <LoaderComponent theme={selectedTheme} />}
         {isAppLoaded && isAuthenticated && (
-          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
+          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme: selectedTheme, refs }}>
             <UnreadContextProvider nyx={nyx}>
-              <NavigationContainer theme={theme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+              <NavigationContainer theme={selectedTheme}>
                 <Router
                   config={config}
                   nyx={nyx}
                   refs={refs}
-                  isDarkMode={theme === 'dark'}
+                  theme={selectedTheme}
                   onConfigReload={() => loadConfig()}
                   onFiltersReload={() => loadStorage({ getConfig: false })}
                 />
@@ -215,7 +221,7 @@ const App: () => Node = () => {
         {isAppLoaded && (
           <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
             <LoginView
-              isDarkMode={theme === 'dark'}
+              theme={selectedTheme}
               confirmationCode={confirmationCode}
               onUsername={username => initNyx(username, false)}
               onLogin={() => onLogin()}

@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import { LayoutAnimation, ScrollView, Text, View } from 'react-native'
-import { Dialog, FAB, TextInput, IconButton } from 'react-native-paper'
+import { LayoutAnimation, ScrollView, View } from 'react-native'
+import { Dialog, FAB, Text, TextInput, IconButton } from 'react-native-paper'
 import { UserRowComponent } from '../component'
-import { LayoutAnimConf, MainContext, Styling, Storage, t } from '../lib'
+import { LayoutAnimConf, MainContext, Styling, Storage, t, ThemeAware } from '../lib'
 
 type Props = {
   onUpdate: Function,
@@ -13,7 +13,6 @@ export class FilterSettingsDialog extends Component<Props> {
     super(props)
     this.state = {
       isDialogVisible: false,
-      isDarkMode: false,
       isFetching: false,
       phrase: '',
       filters: [],
@@ -29,7 +28,6 @@ export class FilterSettingsDialog extends Component<Props> {
 
   init() {
     this.nyx = this.context.nyx
-    this.setState({ isDarkMode: this.context.theme === 'dark' })
   }
 
   showDialog() {
@@ -87,38 +85,34 @@ export class FilterSettingsDialog extends Component<Props> {
   }
 
   render() {
-    const { isDialogVisible, isDarkMode, isFetching, phrase, users, blockedUsers, filters, usernameToFind } = this.state
+    if (!this.state.theme) {
+      return <ThemeAware setTheme={theme => this.setState({ theme })} />
+    }
+    const { colors } = this.state.theme
+    const { isDialogVisible, isFetching, phrase, users, blockedUsers, filters, usernameToFind } = this.state
     return (
       <View style={{ position: 'absolute', top: 0, height: '100%', left: 0, right: 0 }}>
-        <Dialog
-          visible={isDialogVisible}
-          onDismiss={() => this.onUpdate()}
-          style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
-          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 5, paddingBottom: 0 }}>
+        <Dialog visible={isDialogVisible} onDismiss={() => this.onUpdate()} style={Styling.groups.dialogMargin}>
+          <Dialog.ScrollArea style={Styling.groups.dialogPadding}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>
               <View>
                 <View style={Styling.groups.flexRowSpbCentered}>
                   <TextInput
                     numberOfLines={1}
                     textAlignVertical={'center'}
-                    selectionColor={Styling.colors.primary}
+                    selectionColor={colors.primary}
                     onChangeText={val => this.setState({ phrase: val })}
                     value={`${phrase}`}
                     placeholder={`${t('filter.title')} ..`}
                     style={{
-                      backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                       marginBottom: 3,
                       height: 42,
                       width: '85%',
                     }}
                   />
-                  <IconButton
-                    icon={'play'}
-                    onPress={() => this.addFilter(phrase)}
-                    rippleColor={'rgba(18,146,180, 0.3)'}
-                  />
+                  <IconButton icon={'play'} onPress={() => this.addFilter(phrase)} rippleColor={colors.ripple} />
                 </View>
-                <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker, marginBottom: 5 }}>
+                <Text style={{ marginBottom: 5 }}>
                   {t('filter.phrases')} {filters?.length === 0 && `[${t('empty')}]`}
                 </Text>
                 {filters?.length > 0 &&
@@ -127,7 +121,6 @@ export class FilterSettingsDialog extends Component<Props> {
                       key={`${f}-${i}`}
                       user={{ username: f }}
                       withIcon={false}
-                      isDarkMode={isDarkMode}
                       onPress={() => this.removeFilter(f)}
                     />
                   ))}
@@ -136,49 +129,32 @@ export class FilterSettingsDialog extends Component<Props> {
                 <TextInput
                   numberOfLines={1}
                   textAlignVertical={'center'}
-                  selectionColor={Styling.colors.primary}
+                  selectionColor={colors.primary}
                   onChangeText={val => this.searchUsername(val)}
                   value={`${usernameToFind}`}
                   placeholder={`${t('username')} ..`}
                   style={{
-                    backgroundColor: isDarkMode ? Styling.colors.dark : Styling.colors.light,
                     marginBottom: 3,
                     height: 42,
                   }}
                 />
-                <Text style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker, marginBottom: 5 }}>
+                <Text style={{ marginBottom: 5 }}>
                   {t('filter.users')} {blockedUsers?.length === 0 && `[${t('empty')}]`}
                 </Text>
                 {users?.length > 0 &&
                   users.map(u => (
-                    <UserRowComponent
-                      key={u.username}
-                      user={u}
-                      isDarkMode={isDarkMode}
-                      onPress={() => this.blockUser(u.username)}
-                    />
+                    <UserRowComponent key={u.username} user={u} onPress={() => this.blockUser(u.username)} />
                   ))}
                 {blockedUsers?.length > 0 &&
                   blockedUsers.map(u => (
-                    <UserRowComponent
-                      key={u}
-                      user={{ username: u }}
-                      isDarkMode={isDarkMode}
-                      onPress={() => this.unblockUser(u)}
-                    />
+                    <UserRowComponent key={u} user={{ username: u }} onPress={() => this.unblockUser(u)} />
                   ))}
               </View>
             </ScrollView>
           </Dialog.ScrollArea>
         </Dialog>
         <FAB
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            bottom: 0,
-            backgroundColor: Styling.colors.medium,
-          }}
+          style={[Styling.groups.fabDialogFilter, { backgroundColor: colors.primary }]}
           icon={'filter'}
           visible={!isDialogVisible}
           onPress={() => this.showDialog()}

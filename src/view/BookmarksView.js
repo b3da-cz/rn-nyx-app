@@ -1,7 +1,7 @@
 import React from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
-import { filterDiscussions, LayoutAnimConf, Styling } from '../lib'
+import { filterDiscussions, LayoutAnimConf, recountDiscussionList } from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
@@ -28,7 +28,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       const reminderCount = res.reminder_count || 0
       const sectionedBookmarks = res.bookmarks.map(b => ({
         title: b.category.category_name,
-        data: filterDiscussions(b.bookmarks, this.filters),
+        data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
       }))
       const shownBookmarks = [...sectionedBookmarks]
       const shownCategories = this.state.shownCategories ?? Array.from(new Set(sectionedBookmarks.map(b => b.title)))
@@ -67,9 +67,12 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
   }
 
   render() {
-    const { shownCategories, shownBookmarks, isFetching } = this.state
+    const { shownCategories, shownBookmarks, theme, isFetching } = this.state
+    if (!theme) {
+      return null
+    }
     return (
-      <View style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}>
+      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <SectionList
           sections={shownBookmarks}
           stickySectionHeadersEnabled={true}
@@ -82,7 +85,6 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
           // }}
           renderSectionHeader={({ section: { title } }) => (
             <SectionHeaderComponent
-              isDarkMode={this.isDarkMode}
               title={title}
               icon={shownCategories.includes(title) ? null : 'plus'}
               isPressable={true}
@@ -93,7 +95,6 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             <DiscussionRowComponent
               key={item.discussion_id}
               discussion={item}
-              isDarkMode={this.isDarkMode}
               onPress={id => this.showDiscussion(id)}
               onLongPress={id => this.showDiscussionStats(id)}
             />
@@ -101,6 +102,6 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         />
         {this.renderFAB()}
       </View>
-    )
+    );
   }
 }

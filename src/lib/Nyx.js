@@ -1,7 +1,7 @@
 import DeviceInfo from 'react-native-device-info'
-import Bugfender from '@bugfender/rn-bugfender'
 import { confirm } from '../component'
-import { Storage, t } from '../lib'
+import { t, showNotificationBanner, Storage } from '../lib'
+import { RNNotificationBanner } from 'react-native-notification-banner'
 
 export class Nyx {
   constructor(username?) {
@@ -69,7 +69,9 @@ export class Nyx {
         headers: {
           'User-Agent': this.userAgent,
         },
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
       this.auth = {
         username: this.username,
         token: res.token,
@@ -85,7 +87,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/delete_token/${this.auth.token}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('delete token', e)
     }
@@ -96,7 +100,12 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/bookmarks${includingSeen ? '/all' : ''}`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions = res?.bookmarks ? res.bookmarks.flatMap(b => b.bookmarks) : []
       return res
@@ -116,7 +125,12 @@ export class Nyx {
           method: 'GET',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions = res.discussions
       return res
@@ -131,7 +145,9 @@ export class Nyx {
       const res = await fetch('https://nyx.cz/api/status', {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
       if (res && !res.error) {
         this.updateContext(res)
         return res
@@ -152,7 +168,12 @@ export class Nyx {
           method: 'GET',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -166,7 +187,9 @@ export class Nyx {
       return await fetch('https://nyx.cz/api/last/discussions', {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get last discussions', e)
     }
@@ -183,7 +206,12 @@ export class Nyx {
           method: 'GET',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       if (!isUnified) {
         this.updateContext(res.context)
       }
@@ -199,7 +227,12 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/discussion/${id}`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       // this.store.discussions.forEach((d, i) => {
       //   if (d.discussion_id === id) {
@@ -223,7 +256,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${id}/content/home`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get discussion', e)
     }
@@ -235,7 +270,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${id}/stats`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get discussion stats', e)
     }
@@ -247,7 +284,12 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/mail${queryString}`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -261,7 +303,12 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/${type}/reminders`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
+      if (res.error) {
+        return this.catchFetchError(res)
+      }
       this.updateContext(res.context)
       return res
     } catch (e) {
@@ -275,7 +322,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/${!discussionId ? 'mail' : `discussion/${discussionId}`}/waiting_files`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get waiting files', e)
     }
@@ -287,7 +336,9 @@ export class Nyx {
       return await fetch('https://nyx.cz/api/notifications', {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get notifications', e)
     }
@@ -299,7 +350,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}`, {
         method: 'GET',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('get rating', e)
     }
@@ -312,7 +365,9 @@ export class Nyx {
       const res = await fetch(`https://nyx.cz/api/discussion/${post.discussion_id}/rating/${post.id}/${vote}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
       if (res.error && res.code === 'NeedsConfirmation') {
         const isConfirmed = await confirm(t('confirm'), res.message)
         if (isConfirmed) {
@@ -336,7 +391,9 @@ export class Nyx {
           method: 'POST',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('cast vote', e)
     }
@@ -348,7 +405,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/report/${postId}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('report post', e)
     }
@@ -364,7 +423,9 @@ export class Nyx {
         body: Object.keys(data)
           .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
           .join('&'),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('send private message', e)
     }
@@ -381,7 +442,9 @@ export class Nyx {
           method: 'POST',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('bookmark discussion', e)
     }
@@ -393,7 +456,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${discussionId}/dice/${postId}/roll`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('roll dice', e)
     }
@@ -405,7 +470,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${discussionId}/content/dice/${contentId}/roll`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('roll dice in header', e)
     }
@@ -417,7 +484,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${discussionId}/poll/${postId}/vote/${answers.toString()}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('vote in poll', e)
     }
@@ -432,7 +501,9 @@ export class Nyx {
           method: 'POST',
           headers: this.getHeaders(),
         },
-      ).then(resp => resp.json())
+      )
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('vote in header poll', e)
     }
@@ -448,7 +519,9 @@ export class Nyx {
         body: Object.keys(data)
           .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
           .join('&'),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('post to discussion', e)
     }
@@ -460,7 +533,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/discussion/${discussionId}/delete/${postId}`, {
         method: 'DELETE',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('delete post', e)
     }
@@ -479,7 +554,9 @@ export class Nyx {
           Authorization: `Bearer ${this.auth.token}`,
         },
         body: formData,
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('upload file', e)
     }
@@ -491,7 +568,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/file/delete/${fileId}`, {
         method: 'DELETE',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('delete file', e)
     }
@@ -503,7 +582,9 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/register_for_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('fcm sub', e)
     }
@@ -515,14 +596,38 @@ export class Nyx {
       return await fetch(`https://nyx.cz/api/deregister_notifications/${this.auth.token}/Nnn/${fcmToken}`, {
         method: 'POST',
         headers: this.getHeaders(),
-      }).then(resp => resp.json())
+      })
+        .then(resp => resp.json())
+        .catch(e => this.catchFetchError(e))
     } catch (e) {
       this.logError('fcm sub', e)
     }
     return null
   }
 
+  catchFetchError(error) {
+    this.showNotification(error.message)
+    return { discussions: [], context: {}, posts: [], error: error.message }
+  }
+
   logError(method, error) {
-    Bugfender.e('ERROR_NYX', method + ' | ' + error.stack)
+    console.warn(method + ' | ' + error.stack) // TODO: remove
+    return this.catchFetchError(error)
+  }
+
+  showNotification(msg) {
+    showNotificationBanner({
+      title: 'Error',
+      body: msg,
+      tintColor: '#FF0000',
+      textColor: '#FFFFFF',
+      icon: 'alert-circle',
+      onClick: async () => {
+        if (msg === 'Invalid token') {
+          this.logout()
+        }
+        RNNotificationBanner.Dismiss()
+      },
+    })
   }
 }

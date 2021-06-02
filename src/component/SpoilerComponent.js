@@ -1,10 +1,14 @@
 import React, { useState } from 'react'
 import { ScrollView } from 'react-native'
 import { Dialog, Portal, Text } from 'react-native-paper'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
-export const SpoilerComponent = ({ children, text, isDarkMode }) => {
+export const SpoilerComponent = ({ text }) => {
   const [isVisible, setIsVisible] = useState(false)
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   return (
     <Text>
       <Portal>
@@ -13,9 +17,8 @@ export const SpoilerComponent = ({ children, text, isDarkMode }) => {
             <ScrollView>
               <Text
                 style={{
-                  padding: Styling.metrics.block.medium,
-                  fontSize: 15,
-                  color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+                  padding: blocks.large,
+                  fontSize: fontSizes.p,
                 }}>
                 {text}
               </Text>
@@ -23,7 +26,7 @@ export const SpoilerComponent = ({ children, text, isDarkMode }) => {
           </Dialog.ScrollArea>
         </Dialog>
       </Portal>
-      <Text onPress={() => setIsVisible(true)} style={{ fontSize: 15, color: Styling.colors.secondary }}>
+      <Text onPress={() => setIsVisible(true)} style={{ fontSize: fontSizes.p, color: colors.link }}>
         {`SPOILER `}
       </Text>
     </Text>

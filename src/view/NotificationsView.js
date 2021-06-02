@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
-import { FlatList, Image, View } from 'react-native'
+import { FlatList, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { PostComponent, RatingDetailComponent } from '../component'
-import { MainContext, parseNotificationsContent, Styling } from '../lib'
+import { MainContext, parseNotificationsContent } from '../lib'
 
 type Props = {
   navigation: any,
@@ -24,13 +24,13 @@ export class NotificationsView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
         this.getNotifications()
       }
     })
+    this.setTheme()
     this.getNotifications()
   }
 
@@ -38,6 +38,10 @@ export class NotificationsView extends Component<Props> {
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async getNotifications() {
@@ -61,18 +65,21 @@ export class NotificationsView extends Component<Props> {
 
   renderItem(item) {
     const { replies, thumbs_up } = item.details
+    const {
+      colors,
+      metrics: { blocks },
+    } = this.state.theme
     return (
       <View
         key={`${item.data.id}_container`}
-        style={[
-          Styling.groups.themeView(this.isDarkMode),
-          { borderBottomWidth: 2, borderColor: Styling.colors.primary },
-        ]}>
+        style={{
+          borderBottomWidth: blocks.medium,
+          borderColor: colors.background,
+        }}>
         <PostComponent
           key={item.data.id}
           post={item.data}
           nyx={this.nyx}
-          isDarkMode={this.isDarkMode}
           isHeaderInteractive={false}
           isHeaderPressable={true}
           onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
@@ -83,9 +90,8 @@ export class NotificationsView extends Component<Props> {
           <RatingDetailComponent
             postKey={item.data.id}
             ratings={thumbs_up}
-            ratingWidth={32}
-            ratingHeight={40}
-            isDarkMode={this.isDarkMode}
+            ratingWidth={(blocks.large * 3) / 1.25}
+            ratingHeight={blocks.large * 3}
             isPositive={true}
           />
         )}
@@ -95,32 +101,31 @@ export class NotificationsView extends Component<Props> {
   }
 
   renderReply(post) {
+    const {
+      colors,
+      metrics: { fontSizes },
+    } = this.state.theme
     return (
       <View style={{ flexDirection: 'row' }} key={`${post.id}${post.discussionId}`}>
         <TouchableRipple
           key={post.id}
           disabled={false}
           onPress={() => this.showPost(post.discussion_id, post.id)}
-          rippleColor={'rgba(18,146,180, 0.73)'}
+          rippleColor={colors.ripple}
           style={{
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white,
+            backgroundColor: colors.background,
             zIndex: 1,
           }}>
-          <Icon
-            name={'corner-down-right'}
-            size={20}
-            color={this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
-          />
+          <Icon name={'corner-down-right'} size={fontSizes.h2} color={colors.disabled} />
         </TouchableRipple>
         <View style={{ flex: 5 }}>
           <PostComponent
             key={post.id}
             post={post}
             nyx={this.nyx}
-            isDarkMode={this.isDarkMode}
             isHeaderInteractive={false}
             isHeaderPressable={true}
             onHeaderPress={(discussionId, postId) => this.showPost(discussionId, postId)}
@@ -132,36 +137,17 @@ export class NotificationsView extends Component<Props> {
     )
   }
 
-  renderRating(rating) {
-    return (
-      <View
-        key={rating.inserted_at}
-        style={{
-          maxWidth: 16,
-          maxHeight: 24,
-          marginRight: 3,
-          marginBottom: 3,
-          borderColor: 'red',
-          // borderWidth: 1,
-        }}>
-        <Image
-          style={{ width: 16, height: 24 }}
-          resizeMethod={'scale'}
-          resizeMode={'center'}
-          source={{ uri: `https://nyx.cz/${rating.username[0]}/${rating.username}.gif` }}
-        />
-      </View>
-    )
-  }
-
   render() {
+    if (!this.state.theme) {
+      return null
+    }
     return (
       <FlatList
-        style={{ backgroundColor: this.isDarkMode ? Styling.colors.black : Styling.colors.white }}
+        style={{ backgroundColor: this.state.theme.colors.background }}
         ref={r => (this.refScroll = r)}
         data={this.state.posts}
         extraData={this.state}
-        keyExtractor={(item, index) => `${item.id}`}
+        keyExtractor={(item, index) => `${item.data.id}`}
         refreshing={this.state.isFetching}
         onRefresh={() => this.getNotifications()}
         renderItem={({ item }) => this.renderItem(item)}

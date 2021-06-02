@@ -2,10 +2,9 @@ import React, { useState } from 'react'
 import { View } from 'react-native'
 import { Text, ProgressBar } from 'react-native-paper'
 import { ButtonComponent, UserRowComponent } from '../component'
-import { Styling } from '../lib'
+import { useTheme } from '../lib'
 
 export const PollComponent = ({
-  isDarkMode,
   label,
   instructions,
   answers,
@@ -17,6 +16,10 @@ export const PollComponent = ({
   onVote,
 }) => {
   const [selected, setSelected] = useState([])
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   const onAnswer = key => {
     if (selected.includes(key)) {
       setSelected([...selected].filter(k => k !== key))
@@ -29,21 +32,19 @@ export const PollComponent = ({
     }
   }
   return (
-    <View style={{ paddingHorizontal: Styling.metrics.block.small }}>
+    <View style={{ paddingHorizontal: blocks.medium }}>
       <Text
         style={{
-          padding: Styling.metrics.block.medium,
-          fontSize: Styling.metrics.fontSize.large,
-          color: Styling.colors.secondary,
+          padding: blocks.large,
+          fontSize: fontSizes.h3,
         }}>
         {label}
       </Text>
       <Text
         style={{
-          paddingHorizontal: Styling.metrics.block.medium,
-          paddingBottom: Styling.metrics.block.medium,
-          fontSize: Styling.metrics.fontSize.medium,
-          color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
+          paddingHorizontal: blocks.large,
+          paddingBottom: blocks.large,
+          fontSize: fontSizes.p,
         }}>
         {`${instructions ? instructions : ''}`}
         {`${totalVotes > 0 ? `\n\n${totalVotes} votes` : ''}`}
@@ -51,13 +52,7 @@ export const PollComponent = ({
       </Text>
       {votes?.length > 0 &&
         votes.map(r => (
-          <UserRowComponent
-            key={r.user.username}
-            user={r.user}
-            isDarkMode={isDarkMode}
-            isPressable={false}
-            extraText={r.answer}
-          />
+          <UserRowComponent key={r.user.username} user={r.user} isPressable={false} extraText={r.answer} />
         ))}
       {answers &&
         Object.keys(answers).length > 0 &&
@@ -65,36 +60,21 @@ export const PollComponent = ({
           <View key={key}>
             <ButtonComponent
               isDisabled={!canVote}
-              label={answers[key].answer}
+              label={`${answers[key].answer}   ${answers[key].result?.respondents_count || ''}`}
               textAlign={'left'}
               borderWidth={1}
-              borderColor={
-                selected.includes(key)
-                  ? Styling.colors.secondary
-                  : isDarkMode
-                  ? Styling.colors.black
-                  : Styling.colors.white
-              }
-              backgroundColor={
-                selected.includes(key)
-                  ? isDarkMode
-                    ? Styling.colors.darker
-                    : Styling.colors.lighter
-                  : isDarkMode
-                  ? Styling.colors.black
-                  : Styling.colors.white
-              }
-              color={Styling.colors.secondary}
-              fontSize={Styling.metrics.fontSize.medium}
-              marginTop={answers[key].result ? 0 : Styling.metrics.block.small}
+              borderColor={selected.includes(key) ? colors.accent : colors.background}
+              // backgroundColor={selected.includes(key) ? colors.primary : colors.background}
+              color={colors.accent}
+              fontSize={fontSizes.p}
+              marginTop={answers[key].result ? 0 : blocks.medium}
               marginBottom={0}
-              isDarkMode={isDarkMode}
               onPress={() => onAnswer(key)}
             />
             {!!answers[key].result && (
               <ProgressBar
                 progress={answers[key].result.respondents_count / (totalVotes / 100) / 100}
-                color={answers[key].result.is_my_vote ? Styling.colors.primary : Styling.colors.darker}
+                color={answers[key].result.is_my_vote ? colors.accent : colors.primary}
                 // style={{ height: 10 }}
               />
             )}
@@ -102,15 +82,15 @@ export const PollComponent = ({
         ))}
       {canVote && (
         <ButtonComponent
+          isDisabled={!selected.length}
           label={`Vote! [ max ${allowedAnswers} answer${allowedAnswers > 1 ? 's' : ''} ]`}
           icon={'x-square'}
           textAlign={'center'}
           borderWidth={1}
-          backgroundColor={isDarkMode ? Styling.colors.black : Styling.colors.white}
-          color={Styling.colors.secondary}
-          fontSize={Styling.metrics.fontSize.large}
-          marginTop={Styling.metrics.block.medium}
-          isDarkMode={isDarkMode}
+          borderColor={selected.length ? colors.accent : colors.disabled}
+          color={selected.length ? colors.accent : colors.disabled}
+          fontSize={fontSizes.h3}
+          marginTop={blocks.large}
           onPress={() => onVote(selected)}
         />
       )}

@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
-import { LayoutAnimation, RefreshControl, ScrollView, Text, View } from 'react-native'
+import { LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import { IconButton } from 'react-native-paper'
-import { LoaderComponent, MessageBoxDialog, UserIconComponent, UserRowComponent } from '../component'
-import { formatDate, MainContext, Styling, t, LayoutAnimConf } from '../lib'
+import { MessageBoxDialog, SectionHeaderComponent, UserIconComponent, UserRowComponent } from '../component'
+import { formatDate, MainContext, t, LayoutAnimConf } from '../lib'
 
 type Props = {
   navigation: any,
@@ -20,13 +21,17 @@ export class ProfileView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.isDarkMode = this.context.theme === 'dark'
     this.getUsername()
+    this.setTheme()
     this.getActiveFriends()
   }
 
   getUsername() {
     this.setState({ username: this.nyx.auth.username })
+  }
+
+  setTheme() {
+    this.setState({ theme: this.context.theme })
   }
 
   async getActiveFriends() {
@@ -37,45 +42,41 @@ export class ProfileView extends Component<Props> {
   }
 
   render() {
-    const { activeFriends, isFetching, username } = this.state
+    const { activeFriends, theme, username } = this.state
+    if (!theme) {
+      return null
+    }
     return (
-      <View style={[Styling.groups.themeComponent(this.isDarkMode), { height: '100%', padding: 5 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: Styling.metrics.block.large }}>
+      <View style={{ backgroundColor: theme.colors.background, height: '100%', padding: theme.metrics.blocks.medium }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.metrics.blocks.xlarge }}>
           <UserIconComponent username={username} marginRight={10} />
           <View>
-            <Text
-              style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.xxlarge }]}>
+            <Text style={{ backgroundColor: theme.colors.background, fontSize: theme.metrics.fontSizes.h1 }}>
               {username}
             </Text>
-            <Text
-              style={[
-                Styling.groups.themeComponent(this.isDarkMode),
-                { fontSize: Styling.metrics.fontSize.small, marginTop: -5 },
-              ]}>
-              {`v${this.nyx?.appVersion}`}
-            </Text>
+            <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
           </View>
           <IconButton
             icon={'cog-outline'}
             size={24}
-            color={this.isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+            color={theme.colors.text}
             style={{ marginLeft: 'auto', marginTop: -20, marginRight: 10 }}
             onPress={() => this.props.navigation.push('settings')}
-            rippleColor={'rgba(18,146,180, 0.3)'}
+            rippleColor={theme.colors.ripple}
           />
         </View>
-        <View style={{ marginBottom: Styling.metrics.block.small }}>
-          <Text style={[Styling.groups.themeComponent(this.isDarkMode), { fontSize: Styling.metrics.fontSize.medium }]}>
-            {t('friends')}
-          </Text>
+        <View>
+          <SectionHeaderComponent title={t('friends')} backgroundColor={theme.colors.tertiary} />
         </View>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          style={Styling.groups.themeComponent(this.isDarkMode)}
+          style={{ backgroundColor: theme.colors.background }}
           refreshControl={
             <RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getActiveFriends()} />
           }>
-          {isFetching && <LoaderComponent />}
+          {activeFriends?.length === 0 && (
+            <SectionHeaderComponent title={t('empty')} backgroundColor={theme.colors.surface} />
+          )}
           {activeFriends?.length > 0 &&
             activeFriends.map(u => (
               <UserRowComponent
@@ -84,10 +85,8 @@ export class ProfileView extends Component<Props> {
                 extraText={`${u.location?.length > 0 ? u.location.substr(0, 20) : '...'} | ${
                   u.last_access_method
                 } | ${formatDate(u.last_activity).substr(12)}`}
-                isDarkMode={this.isDarkMode}
+                theme={theme}
                 isPressable={false}
-                marginBottom={0}
-                marginTop={Styling.metrics.block.xsmall}
               />
             ))}
         </ScrollView>
@@ -95,7 +94,7 @@ export class ProfileView extends Component<Props> {
           ref={r => (this.refMsgBoxDialog = r)}
           nyx={this.nyx}
           params={{ isGitIssue: true }}
-          fabBackgroundColor={Styling.colors.secondary}
+          fabBackgroundColor={theme.colors.tertiary}
           fabIcon={'github'}
           fabTopPosition={0}
           isVisible={false}

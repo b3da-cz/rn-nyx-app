@@ -12,12 +12,12 @@ import {
   RatingDetailDialogComponent,
   UserIconComponent,
 } from '../component'
-import { formatDate, LayoutAnimConf, Nyx, Styling, t } from '../lib'
+import { formatDate, LayoutAnimConf, Nyx, t, Theme } from '../lib'
 
 type Props = {
   post: Object,
   nyx: Nyx,
-  isDarkMode: boolean,
+  theme: Theme,
   isReply: boolean,
   isUnread: boolean,
   isInteractive: boolean,
@@ -40,8 +40,8 @@ export class PostHeaderComponent extends Component<Props> {
         positive: [],
         negative: [],
       },
-      ratingWidth: Styling.metrics.screen().width / 20,
-      ratingHeight: (Styling.metrics.screen().width / 20) * 1.25,
+      ratingWidth: 20,
+      ratingHeight: 25,
     }
     this.refSwipeable = null
   }
@@ -149,7 +149,13 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   render() {
-    const { post, isDarkMode } = this.props
+    const {
+      post,
+      theme: {
+        colors,
+        metrics: { blocks, fontSizes },
+      },
+    } = this.props
     if (post.location === 'header' || post.location === 'home') {
       return null
     }
@@ -168,14 +174,12 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_reply`}
                 icon={'corner-down-right'}
-                color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
                 onPress={() => this.onReply()}
               />
             ),
             <ButtonSquareComponent
               key={`${post.id}_btn_share`}
               icon={'share'}
-              color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
               onPress={() => this.onShare()}
               onLongPress={() => this.onShare(true)}
             />,
@@ -183,9 +187,7 @@ export class PostHeaderComponent extends Component<Props> {
               <ButtonSquareComponent
                 key={`${post.id}_btn_remind`}
                 icon={'bell'}
-                color={
-                  post.reminder ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker
-                }
+                color={post.reminder ? colors.primary : null}
                 onPress={() => this.setReminder(post)}
               />
             ),
@@ -236,9 +238,9 @@ export class PostHeaderComponent extends Component<Props> {
           onRef={r => (this.refSwipeable = r)}>
           <TouchableRipple
             disabled={!this.props.isPressable}
-            style={{ backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter }}
+            style={{ backgroundColor: this.props.isUnread ? colors.tertiary : colors.card }}
             onPress={() => this.props.onPress(post.discussion_id, post.id)}
-            rippleColor={'rgba(18,146,180, 0.73)'}>
+            rippleColor={colors.ripple}>
             <View
               style={{
                 flexDirection: 'row',
@@ -246,13 +248,9 @@ export class PostHeaderComponent extends Component<Props> {
                 alignItems: 'center',
                 paddingHorizontal: 3,
                 paddingVertical: 3,
-                borderTopColor: isDarkMode ? Styling.colors.darker : Styling.colors.light,
+                borderTopColor: colors.disabled,
                 // borderTopWidth: 1,
-                borderLeftColor: this.props.isUnread
-                  ? Styling.colors.primary
-                  : isDarkMode
-                  ? Styling.colors.darker
-                  : Styling.colors.light,
+                borderLeftColor: this.props.isUnread ? colors.primary : colors.card,
                 borderLeftWidth: 3,
               }}>
               <View
@@ -263,59 +261,42 @@ export class PostHeaderComponent extends Component<Props> {
                   width: post.replies?.length > 0 && this.props.isInteractive ? '70%' : '80%',
                 }}>
                 {this.props.isReply && (
-                  <Icon
-                    name={'corner-down-right'}
-                    size={20}
-                    color={isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
-                    style={{ marginRight: Styling.metrics.block.small }}
-                  />
+                  <Icon name={'corner-down-right'} size={20} style={{ marginRight: blocks.medium }} />
                 )}
                 {post.username?.length > 0 && <UserIconComponent username={post.username} marginRight={10} />}
                 <View>
                   <Text
-                    style={[
-                      Styling.groups.link(),
-                      {
-                        color: this.props.isUnread
-                          ? Styling.colors.primary
-                          : isDarkMode
-                          ? Styling.colors.white
-                          : Styling.colors.black,
-                      },
-                    ]}
+                    style={{
+                      color: this.props.isUnread ? colors.text : colors.faded,
+                      fontSize: fontSizes.h3,
+                    }}
                     numberOfLines={1}>
                     {post.username?.length > 0 ? post.username : ''}
                     {post.replies?.length > 0 && this.props.isInteractive ? (
-                      <ButtonRepliesComponent
-                        count={post.replies.length}
-                        isDarkMode={isDarkMode}
-                        onPress={() => this.showReplies(post)}
-                      />
+                      <ButtonRepliesComponent count={post.replies.length} onPress={() => this.showReplies(post)} />
                     ) : (
                       ' '
                     )}
 
                     {post.discussion_name?.length > 0 && (
-                      <Text
-                        style={{ color: isDarkMode ? Styling.colors.lighter : Styling.colors.darker, fontSize: 16 }}>
-                        - {post.discussion_name}
-                      </Text>
+                      <Text style={{ color: colors.text, fontSize: fontSizes.p }}>- {post.discussion_name}</Text>
                     )}
                     {post.activity && (
-                      <Text style={{ color: Styling.colors.medium, fontSize: 12 }}>
-                        {`[${post.activity.last_activity.substr(11)}|${post.activity.last_access_method[0]}]`}
-                        {post.activity.location}
+                      <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>
+                        {`[${post.activity.last_activity.substr(11)} `}
+                        {post.activity.last_access_method === 'Web' ? (
+                          <Icon name={'globe'} size={fontSizes.small} style={{ marginRight: blocks.medium }} />
+                        ) : (
+                          <Icon name={'smartphone'} size={fontSizes.small} style={{ marginRight: blocks.medium }} />
+                        )}
+                        {` ${post.activity.location}]`}
                       </Text>
                     )}
                   </Text>
                   <Text
                     style={{
-                      color: this.props.isUnread
-                        ? Styling.colors.primary
-                        : isDarkMode
-                        ? Styling.colors.lighter
-                        : Styling.colors.darker,
-                      fontSize: 11,
+                      color: colors.faded,
+                      fontSize: fontSizes.small,
                     }}>
                     {post?.inserted_at?.length > 0 && formatDate(post.inserted_at)}
                   </Text>
@@ -324,7 +305,6 @@ export class PostHeaderComponent extends Component<Props> {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 {post.rating !== undefined && (
                   <RatingDetailDialogComponent
-                    isDarkMode={isDarkMode}
                     isDisabled={!this.props.isInteractive}
                     onPress={() => this.getRating(post)}
                     postKey={post.id}
@@ -338,7 +318,7 @@ export class PostHeaderComponent extends Component<Props> {
                   <ButtonSquareComponent
                     icon={'bell'}
                     height={40}
-                    color={post.reminder ? Styling.colors.primary : Styling.colors.lighter}
+                    color={post.reminder ? colors.primary : null}
                     onPress={() => this.setReminder(post)}
                   />
                 )}
@@ -351,7 +331,6 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.positive}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={isDarkMode}
             isPositive={true}
           />
         )}
@@ -360,7 +339,6 @@ export class PostHeaderComponent extends Component<Props> {
             ratings={this.state.ratings.negative}
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
-            isDarkMode={isDarkMode}
             isPositive={false}
           />
         )}

@@ -6616,10 +6616,9 @@ react-native-iphone-x-helper@^1.3.0, react-native-iphone-x-helper@^1.3.1:
   resolved "https://registry.yarnpkg.com/react-native-iphone-x-helper/-/react-native-iphone-x-helper-1.3.1.tgz#20c603e9a0e765fd6f97396638bdeb0e5a60b010"
   integrity sha512-HOf0jzRnq2/aFUcdCJ9w9JGzN3gdEg0zFE4FyYlp4jtidqU03D5X7ZegGKfT1EWteR0gPBGp9ye5T5FvSWi9Yg==
 
-react-native-notification-banner@^2.0.0:
+"react-native-notification-banner@git+ssh://git@github.com:b3da-cz/react-native-notification-banner.git#fix-text-color":
   version "2.0.0"
-  resolved "https://registry.yarnpkg.com/react-native-notification-banner/-/react-native-notification-banner-2.0.0.tgz#52533f912a9b2618f4018bb09622fa43ee1d69bd"
-  integrity sha512-kaYsSVLh9TsQ6NMBeJRWL2aINCFfOHoYXo2FHtFta+W4K79dSpqtsQ2KEXA17MJsIylrfsD1mmY9BbNg6JU8lg==
+  resolved "git+ssh://git@github.com:b3da-cz/react-native-notification-banner.git#eb75bfff39743796279bbec77b526f842c2199ea"
 
 react-native-offline@^5.8.0:
   version "5.8.0"
@@ -6655,10 +6654,10 @@ react-native-safe-area-context@^3.2.0:
   resolved "https://registry.yarnpkg.com/react-native-safe-area-context/-/react-native-safe-area-context-3.2.0.tgz#06113c6b208f982d68ab5c3cebd199ca93db6941"
   integrity sha512-k2Nty4PwSnrg9HwrYeeE+EYqViYJoOFwEy9LxL5RIRfoqxAq/uQXNGwpUg2/u4gnKpBbEPa9eRh15KKMe/VHkA==
 
-react-native-screens@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-3.1.1.tgz#2cd4496c5e3ed1ffbaf77962b8fcc10be3af2158"
-  integrity sha512-cjhK85T8LQ7uqqmwvLb8FKNk1RfgJd1jtbUm1lOxUmJreFki5Wh2SUlx0DAvNG35U6quGD15KPYRducGa+M04g==
+react-native-screens@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-3.3.0.tgz#d4464a96620b85d09e46bd6865b5f48456c244f0"
+  integrity sha512-ni11jC6I9cFVXdLIDwkgafDHw/STXUNzkR5Fx3w8Wikdzi8gfTEan2kiOm7aS42d2F/LXddZ6i74Z2em0L6LPQ==
 
 react-native-share@^6.0.1:
   version "6.0.1"

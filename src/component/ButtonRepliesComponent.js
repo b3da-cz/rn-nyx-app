@@ -2,21 +2,25 @@ import React from 'react'
 import { View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { Styling } from '../lib'
+import { Styling, useTheme } from '../lib'
 
-export const ButtonRepliesComponent = ({ count, isDarkMode, onPress }) => {
+export const ButtonRepliesComponent = ({ count, onPress }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   return (
     <TouchableRipple
-      rippleColor={'rgba(18,146,180, 0.3)'}
-      style={[Styling.groups.squareBtn, { width: 20, height: 20, backgroundColor: 'inherit' }]}
+      rippleColor={colors.ripple}
+      style={[Styling.groups.flexCentered, { width: blocks.large * 2, height: blocks.large * 1.4 }]}
       onPress={() => onPress()}>
       <View style={{ alignItems: 'center' }}>
-        <Icon name={'chevron-up'} size={10} color={isDarkMode ? Styling.colors.mediumlight : Styling.colors.medium} />
+        <Icon name={'chevron-up'} size={(fontSizes.p / 3) * 2} color={colors.accent} />
         <Text
           style={{
-            color: isDarkMode ? Styling.colors.mediumlight : Styling.colors.medium,
-            fontSize: 15,
-            marginTop: -4,
+            color: colors.accent,
+            fontSize: fontSizes.small,
+            marginTop: -(fontSizes.p / 3),
           }}>
           {count}
         </Text>

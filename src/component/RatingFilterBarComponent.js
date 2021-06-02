@@ -3,12 +3,17 @@ import { LayoutAnimation, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, ButtonSquareComponent } from '../component'
-import { LayoutAnimConf, Styling, wait } from '../lib'
+import { LayoutAnimConf, Styling, useTheme, wait } from '../lib'
 
-export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
+export const RatingFilterBarComponent = ({ onFilter }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [minimumRating, setMinimumRating] = useState(0)
   const [fromFriends, setFromFriends] = useState(false)
+
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
 
   const openFilter = () => {
     LayoutAnimation.configureNext(LayoutAnimConf.spring)
@@ -23,23 +28,19 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
     setIsOpen(false)
   }
   const getColorForMinRating = rating => {
-    return minimumRating === rating
-      ? Styling.colors.primary
-      : isDarkMode
-      ? Styling.colors.lighter
-      : Styling.colors.darker
+    return minimumRating === rating ? colors.text : colors.disabled
   }
 
   return (
     <TouchableRipple
       disabled={isOpen}
-      rippleColor={'rgba(18,146,180, 0.3)'}
+      rippleColor={colors.ripple}
       style={
         isOpen
           ? [
               Styling.groups.shadow,
               {
-                backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
+                backgroundColor: colors.background,
                 position: 'absolute',
                 top: 0,
                 right: 0,
@@ -57,8 +58,8 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
                 right: 0,
                 zIndex: 1,
                 margin: 16,
-                backgroundColor: isDarkMode ? Styling.colors.darker : Styling.colors.lighter,
-                marginBottom: Styling.metrics.block.xsmall,
+                backgroundColor: colors.background,
+                marginBottom: blocks.small,
                 width: 42,
                 height: 42,
                 borderRadius: 25,
@@ -69,31 +70,21 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
       onPress={() => openFilter()}>
       <View>
         {!isOpen && (
-          <Icon
-            name={'thumbs-up'}
-            size={16}
-            color={
-              fromFriends || minimumRating > 0
-                ? Styling.colors.primary
-                : isDarkMode
-                ? Styling.colors.lighter
-                : Styling.colors.darker
-            }
-          />
+          <Icon name={'thumbs-up'} size={16} color={fromFriends || minimumRating > 0 ? colors.accent : colors.text} />
         )}
         {isOpen && (
           <View style={{ flexDirection: 'row' }}>
             <ButtonSquareComponent
               icon={'users'}
-              size={Styling.metrics.fontSize.large}
-              color={fromFriends ? Styling.colors.primary : isDarkMode ? Styling.colors.lighter : Styling.colors.darker}
+              size={fontSizes.p}
+              color={fromFriends ? colors.text : colors.disabled}
               onPress={() => setFilter(0, !fromFriends)}
             />
             <ButtonComponent
               label={'0'}
               color={getColorForMinRating(0)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={50}
               onPress={() => setFilter(0, false)}
             />
@@ -101,7 +92,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+10'}
               color={getColorForMinRating(10)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={50}
               onPress={() => setFilter(10, false)}
             />
@@ -109,7 +100,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+25'}
               color={getColorForMinRating(25)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={50}
               onPress={() => setFilter(25, false)}
             />
@@ -117,7 +108,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+50'}
               color={getColorForMinRating(50)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={50}
               onPress={() => setFilter(50, false)}
             />
@@ -125,7 +116,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+100'}
               color={getColorForMinRating(100)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={65}
               onPress={() => setFilter(100, false)}
             />
@@ -133,7 +124,7 @@ export const RatingFilterBarComponent = ({ isDarkMode, onFilter }) => {
               label={'+200'}
               color={getColorForMinRating(200)}
               backgroundColor={'inherit'}
-              fontSize={Styling.metrics.fontSize.large}
+              fontSize={fontSizes.p}
               width={65}
               onPress={() => setFilter(200, false)}
             />

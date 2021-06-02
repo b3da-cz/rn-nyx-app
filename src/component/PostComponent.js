@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import { Text, Linking, View } from 'react-native'
+import { Linking, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import {
   AdvertisementComponent,
   CodeBlockComponent,
@@ -8,15 +9,15 @@ import {
   PostHeaderComponent,
   ImageComponent,
   SpoilerComponent,
+  TextComponent,
   VideoYoutubeComponent,
   VideoTagComponent,
 } from '../component'
-import { Nyx, TOKEN, Styling, generateUuidV4 } from '../lib'
+import { Nyx, TOKEN, generateUuidV4, MainContext } from '../lib'
 
 type Props = {
   post: Object,
   nyx: Nyx,
-  isDarkMode: boolean,
   isReply?: boolean,
   isUnread?: boolean,
   isHeaderInteractive: boolean,
@@ -34,6 +35,7 @@ type Props = {
   onPollVote?: Function,
 }
 export class PostComponent extends Component<Props> {
+  static contextType = MainContext
   constructor(props) {
     super(props)
     this.state = {
@@ -42,27 +44,31 @@ export class PostComponent extends Component<Props> {
     }
   }
 
-  shouldComponentUpdate(nextProps) {
-    return this.props.post.rating !== nextProps.post.rating || this.props.post.reminder !== nextProps.post.reminder
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
+    return (
+      this.props.post.rating !== nextProps.post.rating ||
+      this.props.post.reminder !== nextProps.post.reminder ||
+      this.context.theme !== nextContext.theme
+    )
   }
 
   renderReply(reply) {
     return (
-      <Text
+      <TextComponent
         key={reply.id}
-        style={{ color: Styling.colors.primary, fontSize: 15 }}
+        isPressable={true}
+        isReply={true}
         onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
         {reply.text}
-        {!reply.text.startsWith('[') ? ': ' : ' '}
-      </Text>
+      </TextComponent>
     )
   }
 
   renderLink(link) {
     return (
-      <Text
+      <TextComponent
         key={link.id}
-        style={{ color: Styling.colors.secondary, fontSize: 15 }}
+        isPressable={true}
         onPress={() => {
           Linking.openURL(link.url).catch(() => {
             if (link.url.startsWith('/discussion/')) {
@@ -75,20 +81,23 @@ export class PostComponent extends Component<Props> {
             }
           })
         }}>
-        {`${link.text} `}
-      </Text>
+        {`${link.text}`}
+      </TextComponent>
     )
   }
 
   renderSpoiler({ id, text }) {
-    return <SpoilerComponent key={id} text={text} isDarkMode={this.props.isDarkMode} />
+    return <SpoilerComponent key={id} text={text} />
   }
 
   renderImage(img) {
     if (!img?.src || this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
-    const w = Math.min(Styling.metrics.screen().width, Styling.metrics.screen().height) - 20
+    let w = this.context.theme.metrics.screen.width - 2 * this.context.theme.metrics.blocks.large
+    // if (img.width > 0 && img.width < w) {
+    //   w = img.width // todo cant do this while prefetching thumbnail sizes
+    // }
     if (!img.src.includes('img.youtube.com')) {
       return (
         <ImageComponent
@@ -97,7 +106,6 @@ export class PostComponent extends Component<Props> {
           width={w}
           height={img.height > 0 ? img.height * (w / img.width) : undefined}
           useExactSize={img.width > 0}
-          backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
           onPress={() => this.props.onImage(img)}
         />
       )
@@ -116,15 +124,12 @@ export class PostComponent extends Component<Props> {
         videoId={ytBlock.videoId}
         videoLink={ytBlock.link}
         previewSrc={img && img.src}
-        width={Styling.metrics.screen().width - 20}
-        height={(Styling.metrics.screen().width - 20) / 1.777}
-        backgroundColor={this.props.isDarkMode ? Styling.colors.black : Styling.colors.white}
       />
     )
   }
 
   renderVideoBlock(video) {
-    return <VideoTagComponent key={video.id} height={Styling.metrics.screen().width + 200} url={video.link} />
+    return <VideoTagComponent key={video.id} url={video.link} />
   }
 
   renderTextNode(text) {
@@ -137,27 +142,13 @@ export class PostComponent extends Component<Props> {
       return
     }
     const key = generateUuidV4()
-    return (
-      <Text
-        key={key}
-        style={[
-          {
-            color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-            fontSize: 15,
-            paddingVertical: 2,
-            paddingHorizontal: 5,
-          },
-        ]}>
-        {`${text} `}
-      </Text>
-    )
+    return <TextComponent key={key}>{`${text}${text.endsWith('\n') ? '' : ' '}`}</TextComponent>
   }
 
   renderDice() {
     const { post } = this.props
     return (
       <DiceComponent
-        isDarkMode={this.props.isDarkMode}
         label={post?.content_raw?.data?.reason}
         count={post?.content_raw?.data?.dice_count}
         sides={post?.content_raw?.data?.dice_sides}
@@ -172,7 +163,6 @@ export class PostComponent extends Component<Props> {
     const { post } = this.props
     return (
       <PollComponent
-        isDarkMode={this.props.isDarkMode}
         label={post?.content_raw?.data?.question}
         instructions={post?.content_raw?.data?.instructions}
         answers={post?.content_raw?.data?.answers}
@@ -225,7 +215,6 @@ export class PostComponent extends Component<Props> {
         price={price}
         updated={updated}
         isActive={post.content_raw?.data?.state === 'active'}
-        isDarkMode={this.props.isDarkMode}
         onPress={() => this.props.onDiscussionDetailShow(post.content_raw?.data?.discussion_id)}
         onImage={img => this.props.onImage(img, images)}
       />
@@ -240,8 +229,9 @@ export class PostComponent extends Component<Props> {
         </View>
       )
     }
-    const { post, isDarkMode } = this.props
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers, videos } = this.props.post.parsed
+    const { post } = this.props
+    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers, videos } = post.parsed
+    const { colors } = this.context.theme
     const hasTextTypeBlock = () =>
       post?.content_raw?.type !== 'advertisement' &&
       contentParts?.length > 0 &&
@@ -257,15 +247,14 @@ export class PostComponent extends Component<Props> {
       <View
         style={{
           height: post?.parsed?.height,
-          paddingBottom: post?.parsed?.height > 0 ? undefined : 15,
-          backgroundColor: isDarkMode ? Styling.colors.black : Styling.colors.white,
-          borderColor: 'red',
+          paddingBottom: post?.parsed?.height > 0 ? undefined : 10,
+          backgroundColor: colors.background,
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,
         }}>
         <PostHeaderComponent
           post={post}
           nyx={this.props.nyx}
-          isDarkMode={isDarkMode}
+          theme={this.context.theme}
           isReply={this.props.isReply}
           isUnread={this.props.isUnread}
           isInteractive={this.props.isHeaderInteractive}
@@ -287,11 +276,7 @@ export class PostComponent extends Component<Props> {
           }
         />
         {hasTextTypeBlock() && (
-          <Text
-            style={{
-              color: this.props.isDarkMode ? Styling.colors.lighter : Styling.colors.darker,
-              paddingHorizontal: 5,
-            }}>
+          <Text style={{ paddingHorizontal: 5, paddingTop: 5 }}>
             {post?.content_raw?.type !== 'advertisement' &&
               contentParts?.length > 0 &&
               contentParts.map(part => {
@@ -313,7 +298,7 @@ export class PostComponent extends Component<Props> {
               })}
           </Text>
         )}
-        <View style={[Styling.groups.themeComponent(isDarkMode), { paddingHorizontal: 5, flex: 1 }]}>
+        <View style={{ paddingHorizontal: 5 }}>
           {post?.content_raw?.type !== 'advertisement' &&
             contentParts?.length > 0 &&
             contentParts.map(part => {
