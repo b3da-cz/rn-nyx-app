@@ -1,5 +1,5 @@
 // IBM Elements color palette (https://www.ibm.com/design/language/elements/color/)
-const IBMColorPalette = {
+export const IBMColorPalette = {
   black: 'rgb(0, 0, 0)',
   white: 'rgb(255, 255, 255)',
 

@@ -10,7 +10,16 @@ import {
   FormRowToggleComponent,
   SectionHeaderComponent,
 } from '../component'
-import { defaultThemeOptions, MainContext, Storage, t, initFCM, unregisterFCM, createTheme } from '../lib'
+import {
+  defaultThemeOptions,
+  MainContext,
+  Storage,
+  t,
+  IBMColorPalette,
+  initFCM,
+  unregisterFCM,
+  createTheme,
+} from '../lib'
 
 type Props = {
   config: any,
@@ -225,7 +234,7 @@ export class SettingsView extends Component<Props> {
                 label={t('history')}
                 value={'historyStack'}
                 enabled={this.state.isHistoryEnabled}
-                color={this.state.isHistoryEnabled ? theme.colors.text : theme.colors.disabled}
+                color={this.state.isHistoryEnabled ? theme.colors.link : theme.colors.disabled}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
               <Picker.Item
@@ -233,14 +242,14 @@ export class SettingsView extends Component<Props> {
                 label={t('bookmarks')}
                 value={'bookmarksStack'}
                 enabled={this.state.isBookmarksEnabled}
-                color={this.state.isBookmarksEnabled ? theme.colors.text : theme.colors.disabled}
+                color={this.state.isBookmarksEnabled ? theme.colors.link : theme.colors.disabled}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
               <Picker.Item
                 key={'mailStack'}
                 label={t('mail')}
                 value={'mailStack'}
-                color={theme.colors.text}
+                color={theme.colors.link}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
             </Picker>
@@ -257,21 +266,21 @@ export class SettingsView extends Component<Props> {
                 key={'system'}
                 label={t('profile.system')}
                 value={'system'}
-                color={theme.colors.text}
+                color={theme.colors.link}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
               <Picker.Item
                 key={'dark'}
                 label={t('profile.dark')}
                 value={'dark'}
-                color={theme.colors.text}
+                color={theme.colors.link}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
               <Picker.Item
                 key={'light'}
                 label={t('profile.light')}
                 value={'light'}
-                color={theme.colors.text}
+                color={theme.colors.link}
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
             </Picker>
@@ -290,7 +299,7 @@ export class SettingsView extends Component<Props> {
                   key={`${color}-a`}
                   label={color}
                   value={color}
-                  color={theme.colors.text}
+                  color={IBMColorPalette[`${color}60`]}
                   style={{ fontSize: theme.metrics.fontSizes.p }}
                 />
               ))}
@@ -310,7 +319,7 @@ export class SettingsView extends Component<Props> {
                   key={`${color}-b`}
                   label={color}
                   value={color}
-                  color={theme.colors.text}
+                  color={IBMColorPalette[`${color}60`]}
                   style={{ fontSize: theme.metrics.fontSizes.p }}
                 />
               ))}
@@ -330,7 +339,7 @@ export class SettingsView extends Component<Props> {
                   key={`${color}-c`}
                   label={color}
                   value={color}
-                  color={theme.colors.text}
+                  color={IBMColorPalette[`${color}60`]}
                   style={{ fontSize: theme.metrics.fontSizes.p }}
                 />
               ))}
@@ -349,7 +358,7 @@ export class SettingsView extends Component<Props> {
                   key={`${size}-fontSize`}
                   label={`${size}`}
                   value={size}
-                  color={theme.colors.text}
+                  color={theme.colors.link}
                   style={{ fontSize: theme.metrics.fontSizes.p }}
                 />
               ))}
