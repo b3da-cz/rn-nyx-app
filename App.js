@@ -157,14 +157,14 @@ const App: () => Node = () => {
 
   const handleDeepLink = async url => {
     if (url === 'nnn://setdevfilters') {
-      const f = await Storage.getFilters()
+      const f = (await Storage.getFilters()) || []
       f.unshift(devFilter)
       await Storage.setFilters(f)
       setFilters(f)
       await wait(300)
       alert('dev filter')
     } else if (url === 'nnn://setprodfilters') {
-      const f = await Storage.getFilters()
+      const f = (await Storage.getFilters()) || []
       const nextF = f.filter(s => s !== devFilter)
       await Storage.setFilters(nextF)
       setFilters(nextF)
