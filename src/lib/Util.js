@@ -78,7 +78,7 @@ export const formatDate = str => {
   return `${d}.${m}.${y}  ${str.substring(11)}`
 }
 
-export const showNotificationBanner = ({ title, body, textColor = '#FFF', tintColor, icon, onClick }) => {
+export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tintColor, icon, onClick }) => {
   RNNotificationBanner.Show({
     title,
     subTitle: body,

@@ -113,7 +113,7 @@ export class SettingsView extends Component<Props> {
       return
     }
     this.setState({ isFetching: true })
-    await initFCM(this.nyx, this.props.config, true)
+    await initFCM(this.nyx, this.props.config, true, true)
     this.setState({ isFetching: false })
   }
 

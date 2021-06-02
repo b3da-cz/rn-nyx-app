@@ -10,7 +10,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { NotificationIconComponent } from './component'
-import { NavOptions, showNotificationBanner, subscribeFCM, t, wait } from './lib'
+import { NavOptions, rgbToHex, showNotificationBanner, subscribeFCM, t, wait } from './lib'
 import {
   BookmarksStackContainer,
   HistoryStackContainer,
@@ -36,7 +36,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: theme.colors.secondary,
+              tintColor: rgbToHex(theme.colors.secondary),
               icon: 'mail',
               onClick: async () => {
                 nav?.navigate('mailStack', { screen: 'mail' })
@@ -55,7 +55,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: theme.colors.primary,
+              tintColor: rgbToHex(theme.colors.primary),
               icon: 'corner-down-right',
               onClick: async () => {
                 nav.navigate('notificationsStack', { screen: 'notifications' })

@@ -110,7 +110,8 @@ const App: () => Node = () => {
       auth.isConfirmed = true
       await Storage.setAuth(auth)
       await Storage.setConfig(config)
-      await initFCM(nyx, config, true)
+      await wait(300)
+      await initFCM(nyx, config, true, true)
     }
     setIsAuthenticated(true)
   }
