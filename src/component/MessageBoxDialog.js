@@ -137,8 +137,10 @@ export class MessageBoxDialog extends Component<Props> {
     this.setState({ areDetailsShown })
   }
 
-  addText(text) {
-    this.setState({ message: `${this.state.message}${text}` })
+  addText(text, addNewline = false) {
+    this.setState({
+      message: `${this.state.message}${addNewline && this.state.message?.length > 0 ? '\n' : ''}${text}`,
+    })
   }
 
   async sendMessage() {
@@ -325,7 +327,7 @@ export class MessageBoxDialog extends Component<Props> {
                       {uploadedFiles.length > 0 && (
                         <Badge style={{ position: 'absolute' }}>{uploadedFiles.length}</Badge>
                       )}
-                      <IconButton icon={'image'} onPress={() => this.appendFile()} rippleColor={colors.ripple} />
+                      <IconButton icon={'file'} onPress={() => this.appendFile()} rippleColor={colors.ripple} />
                     </View>
                   )}
                 </View>
@@ -334,6 +336,34 @@ export class MessageBoxDialog extends Component<Props> {
                   <Text style={{ fontSize: fontSizes.p }}>Github issue</Text>
                 </View>
               )}
+              <View style={{ height: '70%', width: 1, borderLeftWidth: 1, borderColor: colors.disabled }} />
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: '50%' }}>
+                <IconButton
+                  icon={'link'}
+                  size={17}
+                  onPress={() => this.addText('<a href=""></a>', true)}
+                  rippleColor={colors.ripple}
+                />
+                <IconButton
+                  icon={'image'}
+                  size={17}
+                  onPress={() => this.addText('<img src="" title="" alt="">', true)}
+                  rippleColor={colors.ripple}
+                />
+                <IconButton
+                  icon={'lock'}
+                  size={17}
+                  onPress={() => this.addText('<div class="spoiler"></div>', true)}
+                  rippleColor={colors.ripple}
+                />
+                {/*<IconButton*/}
+                {/*  icon={'close'}*/}
+                {/*  size={17}*/}
+                {/*  color={'red'}*/}
+                {/*  onPress={() => this.setState({ message: '' })}*/}
+                {/*  rippleColor={colors.ripple}*/}
+                {/*/>*/}
+              </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/*<IconButton icon={'backspace'} size={22} onPress={() => setMessage('')} />*/}
                 {isFetching ? (

@@ -49,7 +49,7 @@ export const withPortal = <P>(Component: FC<P>) => (props: P) => (
 export const pickFileAndResizeJpegs = async size => {
   try {
     const file = await DocumentPicker.pick({
-      type: [DocumentPicker.types.images],
+      type: [DocumentPicker.types.allFiles],
     })
     // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
     let resized = null
