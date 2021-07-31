@@ -159,6 +159,10 @@
     "fontSize": {
       "cs": "Velikost písma",
       "en": "Font size"
+    },
+    "padding": {
+      "cs": "Padding",
+      "en": "Padding"
     }
   },
   "delete": {

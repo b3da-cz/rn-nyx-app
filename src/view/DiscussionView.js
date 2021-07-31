@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList, View } from 'react-native'
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native'
 import { ProgressBar } from 'react-native-paper'
 import {
   AdvertisementComponent,
@@ -521,10 +521,15 @@ export class DiscussionView extends Component<Props> {
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
           extraData={this.state}
           keyExtractor={(item, index) => `${item.uuid}`}
-          refreshing={this.state.isFetching}
-          onRefresh={() => this.loadDiscussionTop()}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.isFetching}
+              onRefresh={() => this.loadDiscussionTop()}
+              colors={[theme.colors.primary, theme.colors.secondary, theme.colors.tertiary]}
+            />
+          }
           // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',

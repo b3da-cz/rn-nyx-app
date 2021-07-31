@@ -120,7 +120,7 @@ export const getBlockSizes = async (posts, themeBaseFontSize) => {
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.question, post.content_raw?.data?.instructions, '\nrespondents\nvotes'],
               width: Dimensions.get('window').width - 40,
-              fontSize: 16,
+              fontSize: themeBaseFontSize,
             })
           : []
       const pollHeight =

@@ -36,14 +36,26 @@ export const ButtonComponent = ({
       disabled={isDisabled}
       rippleColor={colors.ripple}
       style={[
-        { width, marginBottom, marginTop, marginHorizontal, borderColor, borderWidth, backgroundColor, lineHeight },
+        {
+          width,
+          marginBottom,
+          marginTop,
+          marginHorizontal,
+          borderColor,
+          borderWidth,
+          backgroundColor,
+          height: lineHeight,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        },
       ]}
       onPress={() => onPress()}>
       <Text
         style={{
           fontSize,
           textAlign,
-          lineHeight,
+          width: '100%',
           color: color || colors.text,
           paddingHorizontal: paddingHorizontal || blocks.medium,
         }}>

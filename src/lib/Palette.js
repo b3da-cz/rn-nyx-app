@@ -119,7 +119,7 @@ export const createPalette = (
   background: isDarkTheme ? IBMColorPalette.black : IBMColorPalette.white,
   border: IBMColorPalette[`coolGray${isDarkTheme ? '80' : '30'}`],
   card: IBMColorPalette[`coolGray${isDarkTheme ? '90' : '10'}`],
-  disabled: withAlpha(IBMColorPalette[`coolGray${isDarkTheme ? '10' : '90'}`], 0.35),
+  disabled: withAlpha(IBMColorPalette[`coolGray${isDarkTheme ? '10' : '90'}`], 0.5),
   error: IBMColorPalette[`red${isDarkTheme ? '70' : '60'}`],
   notification: IBMColorPalette[`${primaryColor}${isDarkTheme ? '80' : '30'}`],
   onBackground: IBMColorPalette[`${primaryColor}${isDarkTheme ? '10' : '100'}`],

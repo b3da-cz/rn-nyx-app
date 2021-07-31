@@ -1,7 +1,7 @@
-import Bugfender from '@bugfender/rn-bugfender';
-import he from 'he';
-import {parse} from 'node-html-parser';
-import {fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts} from '../lib';
+import Bugfender from '@bugfender/rn-bugfender'
+import he from 'he'
+import { parse } from 'node-html-parser'
+import { fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts } from '../lib'
 
 export const TOKEN = {
   // meh todo
@@ -236,7 +236,7 @@ export class Parser {
     this.contentParts.forEach((p, i) => {
       if (p?.length > 3 && !p.startsWith('###')) {
         p = this.replaceHtmlEntitiesAndTags(p)
-        if (!p || (p && (p.length === 0 || p === ' ' || p === '\n'))) {
+        if (!p || (p && p.length === 0)) {
           this.contentParts.splice(i, 1)
         } else {
           this.contentParts[i] = p
@@ -323,7 +323,7 @@ export const recountDiscussionList = discussions => {
   return discussions
 }
 
-export const preparePosts = async (newPosts, oldPosts = [], calculateSizes = false, themeBaseFontSize) => {
+export const preparePosts = async (newPosts, oldPosts = [], calculateSizes = false, themeBaseFontSize?) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {

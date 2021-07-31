@@ -75,7 +75,7 @@ export const formatDate = str => {
   const y = str.substr(0, 4)
   const m = str.substr(5, 2)
   const d = str.substr(8, 2)
-  return `${d}.${m}.${y}  ${str.substring(11)}`
+  return `${d}.${m}.${y}  ${str.substr(11)}`
 }
 
 export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tintColor, icon, onClick }) => {
