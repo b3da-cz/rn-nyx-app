@@ -165,7 +165,8 @@ export class DiscussionView extends Component<Props> {
 
   async jumpToLastSeen() {
     await wait(20)
-    const postIndex = this.getPostIndexById(this.state.lastSeenPostId)
+    // const postIndex = this.getPostIndexById(this.state.lastSeenPostId) // lastSeen doesn't have to be there, so:
+    const postIndex = Math.min(this.state.posts?.filter(p => p.new).length, this.state.posts?.length - 5)
     this.scrollToPost(postIndex !== undefined ? postIndex : 0, false)
   }
 
