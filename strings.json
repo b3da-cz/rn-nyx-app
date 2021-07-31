@@ -301,6 +301,10 @@
     "cs": "Souhlasím",
     "en": "Agree"
   },
+  "coppied": {
+    "cs": "Zkopírováno do schránky",
+    "en": "Coppied to clipboard"
+  },
   "exit": {
     "cs": "Zavřít",
     "en": "Exit"

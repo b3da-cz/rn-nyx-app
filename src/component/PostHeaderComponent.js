@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
-import { LayoutAnimation, Text, View } from 'react-native'
+import { LayoutAnimation, Text, ToastAndroid, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
+import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
 import {
   ButtonRepliesComponent,
@@ -60,10 +61,8 @@ export class PostHeaderComponent extends Component<Props> {
   onShare(isContent = false) {
     try {
       if (isContent) {
-        Share.open({
-          title: 'Content',
-          message: this.props.post.parsed.clearTextWithUrls,
-        })
+        Clipboard.setString(this.props.post.parsed.clearTextWithUrls)
+        ToastAndroid.showWithGravity(t('coppied'), ToastAndroid.LONG, ToastAndroid.BOTTOM)
       } else {
         Share.open({
           title: 'Link',
@@ -178,11 +177,11 @@ export class PostHeaderComponent extends Component<Props> {
               />
             ),
             <ButtonSquareComponent
-              key={`${post.id}_btn_share`}
-              icon={'share'}
-              onPress={() => this.onShare()}
-              onLongPress={() => this.onShare(true)}
+              key={`${post.id}_btn_share_content`}
+              icon={'copy'}
+              onPress={() => this.onShare(true)}
             />,
+            <ButtonSquareComponent key={`${post.id}_btn_share`} icon={'share'} onPress={() => this.onShare()} />,
             post.can_be_reminded && (
               <ButtonSquareComponent
                 key={`${post.id}_btn_remind`}

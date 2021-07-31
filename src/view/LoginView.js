@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
-import { Image, View, Linking, LayoutAnimation } from 'react-native'
+import { Image, View, Linking, LayoutAnimation, ToastAndroid } from 'react-native'
 import { Text, TextInput, TouchableRipple } from 'react-native-paper'
+import Clipboard from '@react-native-clipboard/clipboard'
 import DeviceInfo from 'react-native-device-info'
 import { ButtonComponent, TOSComponent } from '../component'
 import { t, Theme } from '../lib'
-import Share from 'react-native-share'
 
 type Props = {
   theme: Theme,
@@ -106,12 +106,10 @@ export class LoginView extends Component<Props> {
                 {t('profile.login.message')}
               </Text>
               <Text
-                onPress={() =>
-                  Share.open({
-                    title: 'Confirmation code',
-                    message: confirmationCode,
-                  })
-                }
+                onPress={() => {
+                  Clipboard.setString(confirmationCode)
+                  ToastAndroid.showWithGravity(t('coppied'), ToastAndroid.LONG, ToastAndroid.BOTTOM)
+                }}
                 style={{ padding: theme.metrics.blocks.large, fontSize: theme.metrics.fontSizes.h1 }}>
                 {`"${confirmationCode}"`}
               </Text>
@@ -161,6 +159,6 @@ export class LoginView extends Component<Props> {
           </View>
         )}
       </View>
-    );
+    )
   }
 }
