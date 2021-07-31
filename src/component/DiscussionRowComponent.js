@@ -12,7 +12,7 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
   const isBookmarksResultType = discussion.discussion_id
   const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
   const unreadPostCount = discussion.unreadPostCount ?? 0
-  const unreadRowColor = unreadPostCount > 0 || isAccented ? colors.text : colors.disabled
+  const textColor = unreadPostCount > 0 || isAccented ? colors.text : colors.disabled
   return (
     <TouchableRipple
       key={id}
@@ -39,28 +39,28 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
                 ? '65%'
                 : '75%',
               fontSize: fontSizes.p - 1,
-              color: unreadRowColor,
+              color: textColor,
             },
           ]}>
           {isBookmarksResultType ? discussion.full_name : discussion.discussion_name}
         </Text>
         {isBookmarksResultType && unreadPostCount > 0 && (
           <View style={Styling.groups.flexRowSpbCentered}>
-            <Text numberOfLines={1} style={{ color: unreadRowColor }}>
+            <Text numberOfLines={1} style={{ color: textColor }}>
               {unreadPostCount}
               {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}`}
             </Text>
             {discussion.new_images_count > 0 ? (
-              <Icon name="image" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
+              <Icon name="image" size={14} style={{ paddingLeft: blocks.medium }} color={textColor} />
             ) : null}
             {discussion.new_images_count > 0 ? (
-              <Text style={{ color: unreadRowColor }}>{discussion.new_images_count}</Text>
+              <Text style={{ color: textColor }}>{discussion.new_images_count}</Text>
             ) : null}
             {discussion.new_links_count > 0 ? (
-              <Icon name="link" size={14} style={{ paddingLeft: blocks.medium }} color={unreadRowColor} />
+              <Icon name="link" size={14} style={{ paddingLeft: blocks.medium }} color={textColor} />
             ) : null}
             {discussion.new_links_count > 0 ? (
-              <Text style={{ color: unreadRowColor }}>{discussion.new_links_count}</Text>
+              <Text style={{ color: textColor }}>{discussion.new_links_count}</Text>
             ) : null}
           </View>
         )}

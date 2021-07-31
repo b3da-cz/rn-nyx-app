@@ -195,22 +195,20 @@ const App: () => Node = () => {
     init()
   }
 
-  const darkTheme = createTheme(true, ...config.themeOptions)
-  const lightTheme = createTheme(false, ...config.themeOptions)
-  const selectedTheme = themeType === 'dark' ? darkTheme : lightTheme
+  const theme = createTheme(themeType === 'dark', ...config.themeOptions)
   return (
     <NetworkProvider pingServerUrl={'https://nyx.cz'}>
-      <PaperProvider theme={themeType === 'dark' ? darkTheme : lightTheme}>
-        {!isAppLoaded && <LoaderComponent theme={selectedTheme} />}
+      <PaperProvider theme={theme}>
+        {!isAppLoaded && <LoaderComponent theme={theme} />}
         {isAppLoaded && isAuthenticated && (
-          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme: selectedTheme, refs }}>
+          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
             <UnreadContextProvider nyx={nyx}>
-              <NavigationContainer theme={selectedTheme}>
+              <NavigationContainer theme={theme}>
                 <Router
                   config={config}
                   nyx={nyx}
                   refs={refs}
-                  theme={selectedTheme}
+                  theme={theme}
                   onConfigReload={() => loadConfig()}
                   onFiltersReload={() => loadStorage({ getConfig: false })}
                 />
@@ -221,7 +219,7 @@ const App: () => Node = () => {
         {isAppLoaded && (
           <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
             <LoginView
-              theme={selectedTheme}
+              theme={theme}
               confirmationCode={confirmationCode}
               onUsername={username => initNyx(username, false)}
               onLogin={() => onLogin()}

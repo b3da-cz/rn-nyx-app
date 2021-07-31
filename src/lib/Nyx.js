@@ -606,8 +606,9 @@ export class Nyx {
   }
 
   catchFetchError(error) {
-    this.showNotification(error.message)
-    return { discussions: [], context: {}, posts: [], error: error.message }
+    const msg = error?.message || 'Chyba spojení'
+    this.showNotification(msg)
+    return { discussions: [], context: {}, posts: [], error: msg }
   }
 
   logError(method, error) {

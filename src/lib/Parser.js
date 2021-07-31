@@ -1,7 +1,7 @@
-import Bugfender from '@bugfender/rn-bugfender';
-import he from 'he';
-import {parse} from 'node-html-parser';
-import {fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts} from '../lib';
+import Bugfender from '@bugfender/rn-bugfender'
+import he from 'he'
+import { parse } from 'node-html-parser'
+import { fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts } from '../lib'
 
 export const TOKEN = {
   // meh todo
@@ -78,8 +78,8 @@ export class Parser {
     let content = this.contentRaw
     this.spoilers.forEach(s => (content = content.replace(s.raw, `${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
     this.replies.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
-    this.links.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
     this.images.forEach(i => (content = content.replace(i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
+    this.links.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
     this.codeBlocks.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
     this.ytBlocks.forEach(y => (content = content.replace(y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
     this.videos.forEach(v => (content = content.replace(v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
@@ -236,7 +236,7 @@ export class Parser {
     this.contentParts.forEach((p, i) => {
       if (p?.length > 3 && !p.startsWith('###')) {
         p = this.replaceHtmlEntitiesAndTags(p)
-        if (!p || (p && (p.length === 0 || p === ' ' || p === '\n'))) {
+        if (!p || (p && p.length === 0)) {
           this.contentParts.splice(i, 1)
         } else {
           this.contentParts[i] = p
@@ -323,7 +323,7 @@ export const recountDiscussionList = discussions => {
   return discussions
 }
 
-export const preparePosts = async (newPosts, oldPosts = [], calculateSizes = false, themeBaseFontSize) => {
+export const preparePosts = async (newPosts, oldPosts = [], calculateSizes = false, themeBaseFontSize?) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {

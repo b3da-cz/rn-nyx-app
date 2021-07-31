@@ -364,6 +364,24 @@ export class SettingsView extends Component<Props> {
               ))}
             </Picker>
           </View>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+            <SectionHeaderComponent title={t('profile.padding')} backgroundColor={theme.colors.surface} />
+            <Picker
+              mode={'dropdown'}
+              prompt={t('profile.padding')}
+              selectedValue={this.state.themeOptions[4]}
+              onValueChange={size => this.setThemeOption(4, size)}>
+              {fontSizes.map(size => (
+                <Picker.Item
+                  key={`${size}-padding`}
+                  label={`${size}`}
+                  value={size}
+                  color={theme.colors.link}
+                  style={{ fontSize: theme.metrics.fontSizes.p }}
+                />
+              ))}
+            </Picker>
+          </View>
           <ComponentExamplesComponent />
         </ScrollView>
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />

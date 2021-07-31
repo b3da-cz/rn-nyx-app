@@ -67,6 +67,7 @@ export const createTheme = (
   secondaryColor: string,
   tertiaryColor: string,
   baseFontSize = 15,
+  baseBlockSize = 15,
   animationScale = 1,
   roundness = 4,
   mode = 'adaptive',
@@ -81,13 +82,13 @@ export const createTheme = (
     thin: { fontFamily: 'sans-serif-thin', fontWeight: 'normal' },
   },
   metrics: {
-    line: Math.max(1, baseFontSize / 15),
+    line: Math.max(1, baseBlockSize / 15),
     blocks: {
-      small: baseFontSize / 5,
-      medium: baseFontSize / 3,
-      large: baseFontSize / 1.333,
-      xlarge: baseFontSize * 1.5,
-      rowDiscussion: baseFontSize * 2 + 2,
+      small: baseBlockSize / 5,
+      medium: baseBlockSize / 3,
+      large: baseBlockSize / 1.333,
+      xlarge: baseBlockSize * 1.5,
+      rowDiscussion: baseBlockSize * 2 + 2,
     },
     fontSizes: {
       small: baseFontSize * 0.75,
@@ -117,4 +118,4 @@ export const ThemeAware = ({ setTheme }) => {
   return null
 }
 
-export const defaultThemeOptions = ['cyan', 'teal', 'coolGray', 15]
+export const defaultThemeOptions = ['cyan', 'teal', 'coolGray', 15, 15]

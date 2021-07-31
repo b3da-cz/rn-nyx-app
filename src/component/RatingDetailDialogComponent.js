@@ -51,12 +51,7 @@ export const RatingDetailDialogComponent = ({
               {ratingsNegative?.length > 0 && (
                 <View>
                   <View style={Styling.groups.flexRowSpbCentered}>
-                    <Icon
-                      name={'thumbs-down'}
-                      size={30}
-                      color={'red'}
-                      style={{ marginHorizontal: blocks.medium, marginTop: blocks.medium }}
-                    />
+                    <Icon name={'thumbs-down'} size={fontSizes.h1} color={'red'} />
                     <Text style={{ fontSize: fontSizes.h3 }}>{ratingsNegative.length}</Text>
                   </View>
                   {ratingsNegative.map(r => (

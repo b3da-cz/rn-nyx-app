@@ -19,11 +19,15 @@ export class NotificationsView extends Component<Props> {
       isFetching: false,
     }
     this.refScroll = null
+    this.navFocusListener = null
     this.navTabPressListener = null
   }
 
   componentDidMount() {
     this.nyx = this.context.nyx
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      setTimeout(() => this.getNotifications(), 100)
+    })
     this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
@@ -35,6 +39,9 @@ export class NotificationsView extends Component<Props> {
   }
 
   componentWillUnmount() {
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }

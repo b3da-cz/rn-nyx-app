@@ -159,6 +159,10 @@
     "fontSize": {
       "cs": "Velikost písma",
       "en": "Font size"
+    },
+    "padding": {
+      "cs": "Padding",
+      "en": "Padding"
     }
   },
   "delete": {
@@ -296,6 +300,10 @@
   "agree": {
     "cs": "Souhlasím",
     "en": "Agree"
+  },
+  "coppied": {
+    "cs": "Zkopírováno do schránky",
+    "en": "Coppied to clipboard"
   },
   "exit": {
     "cs": "Zavřít",

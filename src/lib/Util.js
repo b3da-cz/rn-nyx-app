@@ -49,7 +49,7 @@ export const withPortal = <P>(Component: FC<P>) => (props: P) => (
 export const pickFileAndResizeJpegs = async size => {
   try {
     const file = await DocumentPicker.pick({
-      type: [DocumentPicker.types.images],
+      type: [DocumentPicker.types.allFiles],
     })
     // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
     let resized = null
@@ -75,7 +75,7 @@ export const formatDate = str => {
   const y = str.substr(0, 4)
   const m = str.substr(5, 2)
   const d = str.substr(8, 2)
-  return `${d}.${m}.${y}  ${str.substring(11)}`
+  return `${d}.${m}.${y}  ${str.substr(11)}`
 }
 
 export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tintColor, icon, onClick }) => {
