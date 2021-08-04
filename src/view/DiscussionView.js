@@ -4,6 +4,7 @@ import { ProgressBar } from 'react-native-paper'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
+  DiscussionFilterBarComponent,
   DiscussionStatsComponent,
   FabComponent,
   MessageBoxDialog,
@@ -50,6 +51,9 @@ export class DiscussionView extends Component<Props> {
       board: [],
       bookmarkCategories: [],
       lastSeenPostId: null,
+      filterText: '',
+      filterRating: 0,
+      filterUser: '',
       hasBoard: false,
       hasHeader: false,
       imgPrefetchProgress: { length: 0, done: 0 },
@@ -170,13 +174,23 @@ export class DiscussionView extends Component<Props> {
     this.scrollToPost(postIndex !== undefined ? postIndex : 0, false)
   }
 
-  async fetchDiscussion(idOrQueryString) {
-    if (this.state.isFetching) {
+  async fetchDiscussion(idOrQueryString, clearPosts = false) {
+    const { isFetching, filterText, filterRating, filterUser } = this.state
+    if (isFetching) {
       return 0
     }
     // console.warn('fetch ', idOrQueryString) // TODO: remove
     this.setState({ isFetching: true })
     // this.measureMs()
+    if (filterUser?.length) {
+      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}user=${filterUser}`
+    }
+    if (filterText?.length) {
+      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}text=${filterText}`
+    }
+    if (filterRating !== 0) {
+      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
+    }
     const res = await this.nyx.getDiscussion(idOrQueryString)
     this.getAdvertisementOP(
       res?.discussion_common?.advertisement_specific_data?.advertisement,
@@ -187,7 +201,7 @@ export class DiscussionView extends Component<Props> {
         ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
         : filterPostsByContent(res.posts, this.filters)
     const themeBaseFontSize = this.state.theme.metrics.fontSizes.p
-    const nextPosts = await preparePosts(filteredPosts, this.state.posts, true, themeBaseFontSize)
+    const nextPosts = await preparePosts(filteredPosts, clearPosts ? [] : this.state.posts, true, themeBaseFontSize)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
@@ -259,6 +273,12 @@ export class DiscussionView extends Component<Props> {
         updated: formatDate(ad.refreshed_at),
       },
     })
+  }
+
+  async setFilters({ user, text, rating }) {
+    this.setState({ filterUser: user, filterText: text, filterRating: rating })
+    await wait()
+    await this.fetchDiscussion(this.state.discussionId ? this.state.discussionId : this.props.id, true)
   }
 
   getStoredPostById(postId) {
@@ -503,6 +523,12 @@ export class DiscussionView extends Component<Props> {
             }
           }}
         />
+        <DiscussionFilterBarComponent
+          nyx={this.nyx}
+          discussionTitle={this.state.title}
+          onFilter={({ user, text, rating }) => this.setFilters({ user, text, rating })}
+          onBack={() => this.props.navigation.goBack()}
+        />
         {this.state.advertisementOP && (
           <AdvertisementComponent
             action={this.state.advertisementOP.action}
@@ -534,6 +560,7 @@ export class DiscussionView extends Component<Props> {
           // scrollEnabled={!this.state.isSwiping}
           style={{
             height: '100%',
+            marginTop: 50,
             backgroundColor: theme.colors.background,
           }}
           ListFooterComponent={() =>

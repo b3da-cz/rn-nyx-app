@@ -51,6 +51,10 @@
     "do": {
       "cs": "Hledat",
       "en": "Search"
+    },
+    "clear": {
+      "cs": "Smazat",
+      "en": "Clear"
     }
   },
   "reminders": {

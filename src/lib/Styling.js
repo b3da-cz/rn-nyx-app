@@ -71,7 +71,7 @@ export const NavOptions = {
   cardStyle: theme => ({ backgroundColor: theme.colors.background }),
 }
 
-export const discussionScreenOptions = { headerShown: true, title: '', headerTopInsetEnabled: false }
+export const discussionScreenOptions = { headerShown: false, title: '', headerTopInsetEnabled: false }
 
 export const LayoutAnimConf = {
   spring: {

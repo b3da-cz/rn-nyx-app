@@ -1,7 +1,7 @@
 import DeviceInfo from 'react-native-device-info'
+import { RNNotificationBanner } from 'react-native-notification-banner'
 import { confirm } from '../component'
 import { t, showNotificationBanner, Storage } from '../lib'
-import { RNNotificationBanner } from 'react-native-notification-banner'
 
 export class Nyx {
   constructor(username?) {
@@ -197,6 +197,9 @@ export class Nyx {
   }
 
   async search({ phrase, isUnified = false, isUsername = false, limit = 20 }) {
+    if (isUsername && phrase?.length < 2) {
+      return
+    }
     try {
       const res = await fetch(
         `https://nyx.cz/api/search${isUnified ? '/unified' : isUsername ? '/username/' : ''}${
