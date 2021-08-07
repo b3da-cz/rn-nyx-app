@@ -2,7 +2,7 @@
 
 ### Klient pro Nyx.cz psany v React-Native, (prechodne nnn)
 
-### [diskuze](https://nyx.cz/discussion/271373)
+### [diskuze](https://nyx.cz/discussion/271373), [nyx-api.js](https://github.com/b3da-cz/nyx-api)
 
 #### Chcete-li si appku zbuildit sami, budete potrebovat [par malickosti](https://reactnative.dev/docs/environment-setup) (React Native CLI quickstart)
 
