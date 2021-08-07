@@ -51,6 +51,10 @@
     "do": {
       "cs": "Hledat",
       "en": "Search"
+    },
+    "clear": {
+      "cs": "Smazat",
+      "en": "Clear"
     }
   },
   "reminders": {
@@ -135,6 +139,10 @@
     "initialView": {
       "cs": "Start aplikace na",
       "en": "Initial view"
+    },
+    "isUnreadToggleEnabled": {
+      "cs": "Přepínátka nepřečtených klubů",
+      "en": "Unread topic toggles"
     },
     "theme": {
       "cs": "Barevné schema",
