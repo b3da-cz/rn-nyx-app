@@ -140,6 +140,10 @@
       "cs": "Start aplikace na",
       "en": "Initial view"
     },
+    "isUnreadToggleEnabled": {
+      "cs": "Přepínátka nepřečtených klubů",
+      "en": "Unread topic toggles"
+    },
     "theme": {
       "cs": "Barevné schema",
       "en": "Color theme"
