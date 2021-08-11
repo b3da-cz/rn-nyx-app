@@ -126,7 +126,7 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async ratePost(post, vote) {
-    const res = await this.props.nyx.api.ratePost(post, post.my_rating?.includes(vote) ? 'remove' : vote)
+    const res = await this.props.nyx.ratePost(post, post.my_rating?.includes(vote) ? 'remove' : vote)
     this.refSwipeable?.recenter()
     typeof this.props.onPostRated === 'function' ? this.props.onPostRated(res) : null
   }

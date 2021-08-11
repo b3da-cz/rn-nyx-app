@@ -13,10 +13,11 @@ import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import Bugfender from '@bugfender/rn-bugfender'
 import { devFilter } from './black-list.json'
-import { LoaderComponent } from './src/component'
+import { confirm, LoaderComponent } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
+  importTheme,
   initialConfig,
   initFCM,
   MainContext,
@@ -156,6 +157,20 @@ const App: () => ReactNode = () => {
       setFilters(nextF)
       await wait(300)
       alert('prod filter')
+    } else if (url.includes('nnn://theme::')) {
+      // const themeOptions = JSON.parse(decodeURIComponent(url.split('::')[1]))
+      const themeOptions = importTheme(url)
+      if (!themeOptions?.primaryColor) {
+        return alert('Chyba formátu nastavení')
+      }
+      const isConfirmed = await confirm('Nastavit vzhled?', JSON.stringify(themeOptions, undefined, 2))
+      if (themeOptions?.primaryColor && isConfirmed) {
+        const c = (await Storage.getConfig()) || []
+        const nextC = { ...c, themeOptions }
+        await Storage.setConfig(nextC)
+        setConfig(nextC)
+        await wait(300)
+      }
     }
   }
 

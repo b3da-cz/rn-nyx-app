@@ -1,7 +1,7 @@
 import { createContext, Context } from 'react'
 import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
-import { defaultThemeOptions, DefaultThemeOptions } from './Theme'
+import { defaultThemeOptions, ThemeOptions } from './Theme'
 
 export type MainContextConfig = {
   isLoaded: boolean
@@ -19,7 +19,7 @@ export type MainContextConfig = {
   fcmToken?: string
   isFCMSubscribed: boolean
   theme: string
-  themeOptions: DefaultThemeOptions
+  themeOptions: ThemeOptions
 }
 
 type MainContext = {

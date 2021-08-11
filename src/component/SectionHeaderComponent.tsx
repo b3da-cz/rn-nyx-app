@@ -27,12 +27,13 @@ export const SectionHeaderComponent = ({ title, icon, backgroundColor, isPressab
         height: blocks.rowDiscussion,
       }}
       onPress={() => (typeof onPress === 'function' ? onPress() : null)}>
-      <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.medium }]}>
+      <View
+        style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion, paddingHorizontal: blocks.medium }]}>
         <Text
           style={{
             fontSize: fontSizes.p,
             color: colors.text,
-            paddingVertical: blocks.medium,
+            // paddingVertical: blocks.medium,
           }}>
           {title}
         </Text>

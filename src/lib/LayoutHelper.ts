@@ -57,6 +57,7 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
 
 export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => {
   try {
+    themeBaseFontSize = themeBaseFontSize > 15 ? themeBaseFontSize : themeBaseFontSize * 1.075
     const fontSpecs: TSFontSpecs = {
       fontFamily: undefined,
       fontSize: themeBaseFontSize,
@@ -66,9 +67,9 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
     if (themeBaseFontSize > 16) {
       fontSpecs.fontWeight = 'bold'
     }
-    const headerSize = 50
-    const paddingBottom = 10
-    const screenWidth = Dimensions.get('window').width - 18 // todo inspect links
+    const headerSize = themeBaseFontSize * 3.3
+    const paddingBottom = themeBaseFontSize / 2
+    const screenWidth = Dimensions.get('window').width - 12
     let index = 0
     for (const post of posts) {
       const str = post.parsed.clearText || ''
@@ -84,7 +85,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             ? 120
             : post.parsed.images
                 .map(img => {
-                  let w = Dimensions.get('window').width - 20
+                  let w = screenWidth
                   const isYtPreview = img.src.includes('youtu')
                   if (img.width > 0 && img.width < w && !isYtPreview) {
                     // w = img.width // todo cant do this while prefetching thumbnail sizes
@@ -148,7 +149,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         headerSize +
         videoHeight +
         paddingBottom
-      post.parsed.height = height < 80 ? 80 : height
+      post.parsed.height = height < 75 ? 75 : height
       post.parsed.offset = posts
         .filter((_, i) => i <= index)
         .map(p => p.parsed.height)

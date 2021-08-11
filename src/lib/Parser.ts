@@ -252,7 +252,7 @@ export class Parser {
     this.clearText = ''
     this.clearTextWithUrls = ''
     this.contentParts.forEach((p, i) => {
-      if (p?.length > 3 && !p.startsWith('###')) {
+      if (p?.length > 0 && !p.startsWith('###')) {
         p = this.replaceHtmlEntitiesAndTags(p)
         if (!p || (p && p.length === 0)) {
           this.contentParts.splice(i, 1)
@@ -264,11 +264,11 @@ export class Parser {
       } else if (p?.length > 3 && p.startsWith(TOKEN.REPLY)) {
         const link = this.replies.filter(l => l.id === p.replace(TOKEN.REPLY, ''))[0]
         this.clearText += `${link.text} `
-        this.clearTextWithUrls += `[${link.text}](${link.url})`
+        this.clearTextWithUrls += `[${link.text}]( ${link.url} )`
       } else if (p?.length > 3 && p.startsWith(TOKEN.LINK)) {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
         this.clearText += `${link.text} `
-        this.clearTextWithUrls += `[${link.text}](${link.url})`
+        this.clearTextWithUrls += `[${link.text}]( ${link.url} )`
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
         this.clearTextWithUrls += `${img.src}`
@@ -341,7 +341,12 @@ export const recountDiscussionList = discussions => {
   return discussions
 }
 
-export const preparePosts = async (newPosts: any[], oldPosts: any[] = [], calculateSizes = false, themeBaseFontSize?) => {
+export const preparePosts = async (
+  newPosts: any[],
+  oldPosts: any[] = [],
+  calculateSizes = false,
+  themeBaseFontSize?,
+) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {

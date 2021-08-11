@@ -68,7 +68,8 @@ export type ThemeInit = {
   primaryColor: string
   secondaryColor: string
   tertiaryColor: string
-  surfaceColor: string
+  surfaceColor?: string
+  backgroundColor?: string
   baseFontSize?: number
   baseBlockSize?: number
   animationScale?: number
@@ -82,6 +83,7 @@ export const createTheme = ({
   secondaryColor,
   tertiaryColor,
   surfaceColor,
+  backgroundColor,
   baseFontSize = 15,
   baseBlockSize = 15,
   animationScale = 1,
@@ -89,7 +91,7 @@ export const createTheme = ({
   mode = 'adaptive',
 }: ThemeInit): Theme => ({
   animation: { scale: animationScale },
-  colors: createPalette(isDarkTheme, primaryColor, secondaryColor, tertiaryColor, surfaceColor),
+  colors: createPalette(isDarkTheme, primaryColor, secondaryColor, tertiaryColor, surfaceColor, backgroundColor),
   dark: true,
   fonts: {
     light: { fontFamily: 'sans-serif-light', fontWeight: 'normal' },
@@ -133,22 +135,46 @@ export const ThemeAware = ({ setTheme }) => {
   return null
 }
 
-export type DefaultThemeOptions = {
+export type ThemeOptions = {
   isDarkTheme: boolean
   primaryColor: string
   secondaryColor: string
   tertiaryColor: string
-  surfaceColor: string
+  surfaceColor?: string
+  backgroundColor?: string
   baseFontSize: number
   baseBlockSize: number
 }
 
-export const defaultThemeOptions: DefaultThemeOptions = {
+export const defaultThemeOptions: ThemeOptions = {
   isDarkTheme: true,
   primaryColor: 'cyan',
   secondaryColor: 'teal',
   tertiaryColor: 'teal',
   surfaceColor: 'coolGray',
+  backgroundColor: undefined,
   baseFontSize: 15,
   baseBlockSize: 15,
+}
+
+export const exportTheme = (themeOptions): string =>
+  `nnn://theme::${themeOptions.isDarkTheme},${themeOptions.primaryColor},${themeOptions.secondaryColor},${themeOptions.tertiaryColor},${themeOptions.surfaceColor},${themeOptions.backgroundColor},${themeOptions.baseFontSize},${themeOptions.baseBlockSize}`
+
+export const importTheme = (url: string): ThemeOptions => {
+  let o
+  try {
+    o = url.split('::')[1].split(',')
+  } catch (e) {
+    o = Array(8)
+  }
+  return {
+    isDarkTheme: o[0] === 'true',
+    primaryColor: o[1],
+    secondaryColor: o[2],
+    tertiaryColor: o[3],
+    surfaceColor: o[4] === 'undefined' ? undefined : o[4],
+    backgroundColor: o[5] === 'undefined' ? undefined : o[5],
+    baseFontSize: Number(o[6]),
+    baseBlockSize: Number(o[7]),
+  }
 }

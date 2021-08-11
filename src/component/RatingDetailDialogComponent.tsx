@@ -32,7 +32,7 @@ export const RatingDetailDialogComponent = ({
             <ScrollView style={{ marginVertical: 5 }}>
               {ratingsPositive?.length > 0 && (
                 <View>
-                  <View style={Styling.groups.flexRowSpbCentered}>
+                  <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
                     <Icon name={'thumbs-up'} size={fontSizes.h1} color={'green'} />
                     <Text style={{ fontSize: fontSizes.p }}>{ratingsPositive.length}</Text>
                   </View>
@@ -50,7 +50,7 @@ export const RatingDetailDialogComponent = ({
               )}
               {ratingsNegative?.length > 0 && (
                 <View>
-                  <View style={Styling.groups.flexRowSpbCentered}>
+                  <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
                     <Icon name={'thumbs-down'} size={fontSizes.h1} color={'red'} />
                     <Text style={{ fontSize: fontSizes.h3 }}>{ratingsNegative.length}</Text>
                   </View>

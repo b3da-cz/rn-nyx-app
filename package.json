@@ -45,7 +45,7 @@
     "@react-navigation/stack": "^5.14.4",
     "he": "^1.2.0",
     "node-html-parser": "^3.1.5",
-    "nyx-api": "^0.2.0",
+    "nyx-api": "^0.2.2",
     "react": "16.13.1",
     "react-native": "0.63.4",
     "react-native-autoheight-webview": "^1.5.8",

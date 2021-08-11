@@ -113,11 +113,16 @@ export const createPalette = (
   primaryColor: string,
   secondaryColor: string,
   tertiaryColor: string,
-  surfaceColor: string,
+  surfaceColor?: string,
+  backgroundColor?: string,
 ) => ({
   accent: IBMColorPalette[`${primaryColor}${isDarkTheme ? '50' : '70'}`],
   backdrop: withAlpha(IBMColorPalette.coolGray100, 0.5),
-  background: isDarkTheme ? IBMColorPalette.black : IBMColorPalette.white,
+  background: backgroundColor
+    ? IBMColorPalette[backgroundColor]
+    : isDarkTheme
+    ? IBMColorPalette.black
+    : IBMColorPalette.white,
   border: IBMColorPalette[`coolGray${isDarkTheme ? '80' : '30'}`],
   card: IBMColorPalette[`coolGray${isDarkTheme ? '90' : '10'}`],
   disabled: withAlpha(IBMColorPalette[`coolGray${isDarkTheme ? '10' : '90'}`], 0.5),
@@ -130,13 +135,20 @@ export const createPalette = (
   secondary: IBMColorPalette[`${secondaryColor}${isDarkTheme ? '70' : '60'}`],
   tertiary: IBMColorPalette[`${tertiaryColor}${isDarkTheme ? '80' : '30'}`],
   surface:
-    IBMColorPalette[
-      `${surfaceColor}${surfaceColor !== 'black' && surfaceColor !== 'white' ? (isDarkTheme ? '100' : '10') : ''}`
-    ],
+    surfaceColor === undefined
+      ? IBMColorPalette[`coolGray${isDarkTheme ? '100' : '10'}`]
+      : IBMColorPalette[
+          `${surfaceColor}${surfaceColor !== 'black' && surfaceColor !== 'white' ? (isDarkTheme ? '100' : '10') : ''}`
+        ],
   text: isDarkTheme ? IBMColorPalette.white : IBMColorPalette.black,
   faded: IBMColorPalette[`coolGray${isDarkTheme ? '20' : '80'}`],
   link: IBMColorPalette[`${secondaryColor}${isDarkTheme ? '50' : '70'}`],
   ripple: withAlpha(IBMColorPalette[`${primaryColor}${isDarkTheme ? '50' : '60'}`], 0.4),
-  row: IBMColorPalette[`coolGray${isDarkTheme ? '90' : '20'}`],
+  row:
+    surfaceColor === undefined
+      ? undefined
+      : IBMColorPalette[
+          `${surfaceColor}${surfaceColor !== 'black' && surfaceColor !== 'white' ? (isDarkTheme ? '100' : '10') : ''}`
+        ],
   transparent: 'transparent',
 })

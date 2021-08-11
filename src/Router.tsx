@@ -20,7 +20,7 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import { ImageModal, ProfileView, SettingsView } from './view'
+import { AboutView, ImageModal, ProfileView, SettingsView, ThemeView } from './view'
 
 type Props = {
   config: any
@@ -94,9 +94,11 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
   const Tab = createMaterialTopTabNavigator()
 
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
+  const About = ({ navigation }) => <AboutView navigation={navigation} />
   const Settings = () => (
     <SettingsView config={config} onConfigChange={() => onConfigReload()} onFiltersChange={() => onFiltersReload()} />
   )
+  const ThemeScreen = () => <ThemeView config={config} onConfigChange={() => onConfigReload()} />
 
   const Gallery = ({ navigation, route }) => {
     const { images, imgIndex } = route.params
@@ -199,6 +201,16 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         name={'settings'}
         component={Settings}
         options={{ title: t('profile.settings'), headerTopInsetEnabled: false }}
+      />
+      <RootStack.Screen
+        name={'theme'}
+        component={ThemeScreen}
+        options={{ title: t('profile.theme'), headerTopInsetEnabled: false }}
+      />
+      <RootStack.Screen
+        name={'about'}
+        component={About}
+        options={{ title: t('profile.about'), headerTopInsetEnabled: false }}
       />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
