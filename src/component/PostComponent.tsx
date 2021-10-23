@@ -320,7 +320,7 @@ export class PostComponent extends Component<Props> {
           blocks.map(block => {
             if (block.isText) {
               return (
-                <Text style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'red' }}>
+                <Text style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'red' }} key={generateUuidV4()}>
                   {block.blocks.map(part => {
                     if (part.startsWith(TOKEN.REPLY)) {
                       const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
@@ -342,7 +342,7 @@ export class PostComponent extends Component<Props> {
               )
             } else {
               return (
-                <View style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'blue' }}>
+                <View style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'blue' }} key={generateUuidV4()}>
                   {block.blocks.map(part => {
                     if (part.startsWith(TOKEN.IMG)) {
                       const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
