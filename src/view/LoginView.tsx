@@ -114,7 +114,11 @@ export class LoginView extends Component<Props> {
                   Clipboard.setString(confirmationCode)
                   ToastAndroid.showWithGravity(t('coppied'), ToastAndroid.LONG, ToastAndroid.BOTTOM)
                 }}
-                style={{ padding: theme.metrics.blocks.large, fontSize: theme.metrics.fontSizes.h1 }}>
+                style={{
+                  padding: theme.metrics.blocks.large,
+                  fontSize: theme.metrics.fontSizes.h1,
+                  fontFamily: 'monospace',
+                }}>
                 {`"${confirmationCode}"`}
               </Text>
             </View>

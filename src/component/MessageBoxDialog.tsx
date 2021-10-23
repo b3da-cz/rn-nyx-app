@@ -124,7 +124,7 @@ export class MessageBoxDialog extends Component<Props> {
       }
       this.setState({ isUploading: true })
       const res = await this.props.nyx.api.uploadFile(file, this.props.params?.discussionId)
-      if (res && res.id > 0) {
+      if (res?.id && res.id > 0) {
         LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
         this.setState({
           isUploading: false,

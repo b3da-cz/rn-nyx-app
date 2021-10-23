@@ -12,11 +12,11 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import Bugfender from '@bugfender/rn-bugfender'
-import { devFilter } from './black-list.json'
-import { LoaderComponent } from './src/component'
+import { confirm, LoaderComponent } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
+  importTheme,
   initialConfig,
   initFCM,
   MainContext,
@@ -142,20 +142,22 @@ const App: () => ReactNode = () => {
   })
 
   const handleDeepLink = async (url: string) => {
-    if (url === 'nnn://setdevfilters') {
-      const f = (await Storage.getFilters()) || []
-      f.unshift(devFilter)
-      await Storage.setFilters(f)
-      setFilters(f)
-      await wait(300)
-      alert('dev filter')
-    } else if (url === 'nnn://setprodfilters') {
-      const f = (await Storage.getFilters()) || []
-      const nextF = f.filter((s: string) => s !== devFilter)
-      await Storage.setFilters(nextF)
-      setFilters(nextF)
-      await wait(300)
-      alert('prod filter')
+    if (url === 'nnn://setdevfilters' || url === 'nnn://setprodfilters') {
+      alert('dev version without blacklist')
+    } else if (url.includes('nnn://theme::')) {
+      // const themeOptions = JSON.parse(decodeURIComponent(url.split('::')[1]))
+      const themeOptions = importTheme(url)
+      if (!themeOptions?.primaryColor) {
+        return alert('Chyba formátu nastavení')
+      }
+      const isConfirmed = await confirm('Nastavit vzhled?', JSON.stringify(themeOptions, undefined, 2))
+      if (themeOptions?.primaryColor && isConfirmed) {
+        const c = (await Storage.getConfig()) || []
+        const nextC = { ...c, themeOptions }
+        await Storage.setConfig(nextC)
+        setConfig(nextC)
+        await wait(300)
+      }
     }
   }
 

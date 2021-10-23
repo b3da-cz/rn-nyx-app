@@ -1,10 +1,3 @@
-import { devFilter, parental as blackListParental } from '../../black-list.json'
-
-const blackList = (additionalFilters?: string[]): string[] =>
-  (additionalFilters || []).includes(devFilter)
-    ? [...(additionalFilters || []).filter(f => !f.includes(devFilter))]
-    : [...blackListParental, ...(additionalFilters || [])]
-
 export const filterDiscussions = (list: any[], filters?: string[]): any[] => {
   return list.filter(d => filter(d.full_name?.length ? d.full_name : d.discussion_name, filters))
 }
@@ -22,14 +15,15 @@ export const filterPostsByAuthor = (list: any[], blockedUsers: string[]): any[] 
 }
 
 const filter = (str: string, filters?: string[]): boolean => {
-  if (!str || str?.length === 0 || blackList(filters).length === 0) {
+  filters = filters && filters.length > 0 ? filters : []
+  if (!str || str?.length === 0 || filters.length === 0) {
     return true
   }
   const normalized = str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-  for (const phrase of blackList(filters)) {
+  for (const phrase of filters) {
     if (normalized?.length > 0 && normalized.includes(phrase)) {
       return false
     }

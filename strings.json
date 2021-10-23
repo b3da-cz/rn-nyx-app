@@ -80,6 +80,10 @@
     }
   },
   "profile": {
+    "about": {
+      "cs": "O aplikaci",
+      "en": "About"
+    },
     "settings": {
       "cs": "Nastavení",
       "en": "Settings"
@@ -135,6 +139,10 @@
     "navGestures": {
       "cs": "Navigační gesta",
       "en": "Navigation gestures"
+    },
+    "sections": {
+      "cs": "Sekce",
+      "en": "Sections"
     },
     "initialView": {
       "cs": "Start aplikace na",

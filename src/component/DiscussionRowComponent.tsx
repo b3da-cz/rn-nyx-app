@@ -24,12 +24,12 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
       key={id}
       rippleColor={colors.ripple}
       style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.row,
         // paddingVertical: 6,
         paddingLeft: blocks.small,
         paddingRight: blocks.medium,
         marginBottom: blocks.small,
-        borderColor: unreadPostCount > 0 ? colors.primary : colors.surface,
+        borderColor: unreadPostCount > 0 ? colors.primary : colors.row,
         borderLeftWidth: 3,
       }}
       onPress={() => (typeof onPress === 'function' ? onPress(id) : null)}

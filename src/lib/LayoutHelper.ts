@@ -1,13 +1,15 @@
 import { Dimensions, Image } from 'react-native'
 import Bugfender from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
+// import { prefetchImageSize } from './ImageSizeHelper'
 
 const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
   return new Promise(async resolve => {
     try {
       const nextImages: any[] = []
       for (const img of images) {
-        const { width, height } = await getImageSize(isFullImgSize ? img.src : img.thumb)
+        const { width, height } = await getImageSize(isFullImgSize ? img.src : img.thumb) // RNImage.getSize()
+        // const { width, height } = await prefetchImageSize(isFullImgSize ? img.src : img.thumb) // Image prefetch helper
         nextImages.push({
           ...img,
           width,
@@ -57,6 +59,7 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
 
 export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => {
   try {
+    themeBaseFontSize = themeBaseFontSize > 15 ? themeBaseFontSize : themeBaseFontSize * 1.075
     const fontSpecs: TSFontSpecs = {
       fontFamily: undefined,
       fontSize: themeBaseFontSize,
@@ -66,12 +69,15 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
     if (themeBaseFontSize > 16) {
       fontSpecs.fontWeight = 'bold'
     }
-    const headerSize = 50
-    const paddingBottom = 10
-    const screenWidth = Dimensions.get('window').width - 18 // todo inspect links
+    const headerSize = themeBaseFontSize * 3.3
+    const paddingBottom = themeBaseFontSize / 2
+    const screenWidth = Dimensions.get('window').width - 12
     let index = 0
     for (const post of posts) {
-      const str = post.parsed.clearText || ''
+      const str =
+        (themeBaseFontSize < 15 && post.parsed.clearText?.length > 20
+          ? `\n${post.parsed.clearText}`
+          : post.parsed.clearText) || ''
       const textHeights = await rnTextSize.flatHeights({
         text: [str],
         width: screenWidth,
@@ -84,7 +90,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             ? 120
             : post.parsed.images
                 .map(img => {
-                  let w = Dimensions.get('window').width - 20
+                  let w = screenWidth
                   const isYtPreview = img.src.includes('youtu')
                   if (img.width > 0 && img.width < w && !isYtPreview) {
                     // w = img.width // todo cant do this while prefetching thumbnail sizes
@@ -138,9 +144,20 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             })
           : []
       const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 : 0
+      const discussionRequestTextHeights =
+        post.content_raw?.type === 'discussion_request'
+          ? await rnTextSize.flatHeights({
+              text: [post.parsed.clearText],
+              width: Dimensions.get('window').width + 100,
+              fontSize: 10,
+            })
+          : []
+      const discussionRequestHeight =
+        discussionRequestTextHeights.length > 0 ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 : 0
       const videoHeight = post.parsed?.videos?.length > 0 ? post.parsed.videos.length * screenWidth : 0
       const height =
         (adHeight > 0 ? adHeight : textHeight) +
+        discussionRequestHeight +
         imagesHeight +
         codeBlocksHeight +
         diceHeight +
@@ -148,7 +165,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         headerSize +
         videoHeight +
         paddingBottom
-      post.parsed.height = height < 80 ? 80 : height
+      post.parsed.height = height < 75 ? 75 : height
       post.parsed.offset = posts
         .filter((_, i) => i <= index)
         .map(p => p.parsed.height)

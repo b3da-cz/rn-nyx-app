@@ -17,6 +17,7 @@ export const FormRowToggleComponent = ({ label, value, onChange }: Props) => {
     <View
       style={{
         paddingVertical: blocks.medium,
+        paddingHorizontal: blocks.medium,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

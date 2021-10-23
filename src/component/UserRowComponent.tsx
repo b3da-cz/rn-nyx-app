@@ -43,7 +43,7 @@ export const UserRowComponent = ({
       key={user.username}
       rippleColor={colors.ripple}
       style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.row,
         paddingVertical: blocks.medium,
         paddingHorizontal: blocks.medium,
         borderLeftWidth,

@@ -66,10 +66,26 @@ export class ProfileView extends Component<Props> {
             <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
           </View>
           <IconButton
-            icon={'cog-outline'}
+            icon={'github'}
             size={24}
             color={theme.colors.text}
             style={{ marginLeft: 'auto', marginTop: -20, marginRight: 10 }}
+            onPress={() => this.props.navigation.push('about')}
+            rippleColor={theme.colors.ripple}
+          />
+          <IconButton
+            icon={'palette-advanced'}
+            size={24}
+            color={theme.colors.text}
+            style={{ marginTop: -20, marginRight: 10 }}
+            onPress={() => this.props.navigation.push('theme')}
+            rippleColor={theme.colors.ripple}
+          />
+          <IconButton
+            icon={'cog-outline'}
+            size={24}
+            color={theme.colors.text}
+            style={{ marginTop: -20, marginRight: 10 }}
             onPress={() => this.props.navigation.push('settings')}
             rippleColor={theme.colors.ripple}
           />

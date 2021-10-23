@@ -17,7 +17,9 @@ export class Nyx {
     } | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
     this.api = new NyxApi({ appName: this.userAgent })
     this.api.onError.subscribe().then(msg => {
-      this.showNotification(msg)
+      if (!msg.includes('Hlas bude pro uživatele viditelný.')) {
+        this.showNotification(msg)
+      }
     })
   }
 
