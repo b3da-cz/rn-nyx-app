@@ -1,13 +1,15 @@
 import { Dimensions, Image } from 'react-native'
 import Bugfender from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
+// import { prefetchImageSize } from './ImageSizeHelper'
 
 const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
   return new Promise(async resolve => {
     try {
       const nextImages: any[] = []
       for (const img of images) {
-        const { width, height } = await getImageSize(isFullImgSize ? img.src : img.thumb)
+        const { width, height } = await getImageSize(isFullImgSize ? img.src : img.thumb) // RNImage.getSize()
+        // const { width, height } = await prefetchImageSize(isFullImgSize ? img.src : img.thumb) // Image prefetch helper
         nextImages.push({
           ...img,
           width,
@@ -72,7 +74,10 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
     const screenWidth = Dimensions.get('window').width - 12
     let index = 0
     for (const post of posts) {
-      const str = post.parsed.clearText || ''
+      const str =
+        (themeBaseFontSize < 15 && post.parsed.clearText?.length > 20
+          ? `\n${post.parsed.clearText}`
+          : post.parsed.clearText) || ''
       const textHeights = await rnTextSize.flatHeights({
         text: [str],
         width: screenWidth,
@@ -139,9 +144,20 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             })
           : []
       const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 : 0
+      const discussionRequestTextHeights =
+        post.content_raw?.type === 'discussion_request'
+          ? await rnTextSize.flatHeights({
+              text: [post.parsed.clearText],
+              width: Dimensions.get('window').width + 100,
+              fontSize: 10,
+            })
+          : []
+      const discussionRequestHeight =
+        discussionRequestTextHeights.length > 0 ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 : 0
       const videoHeight = post.parsed?.videos?.length > 0 ? post.parsed.videos.length * screenWidth : 0
       const height =
         (adHeight > 0 ? adHeight : textHeight) +
+        discussionRequestHeight +
         imagesHeight +
         codeBlocksHeight +
         diceHeight +

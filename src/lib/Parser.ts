@@ -26,6 +26,7 @@ export class Parser {
   isTokenized: boolean
   html: HTMLElement | any
   advertisement: any
+  discussionRequest: any
   spoilers: any[] = []
   replies: any[] = []
   links: any[] = []
@@ -55,6 +56,9 @@ export class Parser {
     if (this.type === 'advertisement') {
       this.parseAdvertisement()
     }
+    if (this.type === 'discussion_request') {
+      this.parseDiscussionRequest()
+    }
     if (!this.isParsed) {
       this.getBlocksFromHtml()
     }
@@ -64,6 +68,7 @@ export class Parser {
     return {
       advertisement: this.advertisement,
       contentParts: this.contentParts,
+      discussionRequest: this.discussionRequest,
       spoilers: this.spoilers,
       replies: this.replies,
       links: this.links,
@@ -246,6 +251,14 @@ export class Parser {
       price: this.replaceHtmlEntitiesAndTags(this.html.querySelector('div.price').innerText),
       updated: this.html.querySelector('div.updated').innerText,
     }
+  }
+
+  parseDiscussionRequest() {
+    // html parser doesn't handle this as valid html, even if it renders.. TODO: voting buttons
+    this.discussionRequest = this.contentRaw?.replace('<tr><td>akce<td><button type=button name=vote_for><span class=\'icon-entypo icon-up-bold\'></span> hlas pro</button><button type=button name=vote_against><span class=\'icon-entypo icon-down-bold\'></span> hlas proti</button></tr>', '')
+    this.clearText = this.replaceHtmlEntitiesAndTags(this.discussionRequest)
+    this.isParsed = true
+    this.isTokenized = true
   }
 
   finalizeText() {

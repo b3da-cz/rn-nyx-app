@@ -69,7 +69,7 @@
     "react-native-text-size": "^4.0.0-rc.1",
     "react-native-vector-icons": "^8.1.0",
     "react-native-webview": "^11.4.0",
-    "react-native-youtube-iframe": "^2.0.1",
+    "react-native-youtube-iframe": "^2.1.2",
     "rn-fetch-blob": "^0.12.0"
   },
   "devDependencies": {

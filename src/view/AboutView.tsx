@@ -73,7 +73,7 @@ export class AboutView extends Component<Props> {
               <SectionHeaderComponent
                 title={'Podporovatelé'}
                 backgroundColor={theme.colors.surface}
-                icon={'plus'}
+                // icon={'plus'}
                 // isPressable={true} // todo gplay terms https://support.google.com/googleplay/android-developer/answer/9858738?hl=en
                 // onPress={() => Linking.openURL('https://www.buymeacoffee.com/b3da').catch(() => null)}
               />
