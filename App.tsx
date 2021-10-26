@@ -28,6 +28,8 @@ import {
 } from './src/lib'
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
+// @ts-ignore
+import { gplayTestId } from './keys.json'
 
 LogBox.ignoreLogs([
   'Animated.event',
@@ -80,6 +82,10 @@ const App: () => ReactNode = () => {
     Bugfender.setDeviceString('@username', username)
     Bugfender.d('INFO', 'App: Nyx initialized')
     setNyx(nyx)
+    if (username?.toLowerCase() === gplayTestId.toLowerCase()) {
+      await onLogin()
+      return true
+    }
     if (isAutologin) {
       setIsAuthenticated(res.isConfirmed)
     } else {

@@ -3,6 +3,8 @@ import { RNNotificationBanner } from 'react-native-notification-banner'
 import { confirm } from '../component'
 import { t, showNotificationBanner, Storage } from '../lib'
 import NyxApi from 'nyx-api'
+// @ts-ignore
+import { gplayTestId, gplayTestToken } from '../../keys.json'
 
 export class Nyx {
   api: NyxApi
@@ -35,6 +37,11 @@ export class Nyx {
         confirmationCode: null,
         isConfirmed: false,
       }
+    }
+    if (username?.toLowerCase() === gplayTestId.toLowerCase()) {
+      auth.token = gplayTestToken
+      auth.isConfirmed = true
+      await Storage.setAuth(auth)
     }
 
     if ((!auth.token || auth.token === 'undefined') && this.username) {
