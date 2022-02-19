@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { WebView } from 'react-native-webview'
+import rnTextSize from 'react-native-text-size'
 import { useTheme } from '../lib'
 
 type Props = {
@@ -9,15 +10,27 @@ type Props = {
   fontSize?: number
 }
 export const CodeBlockComponent = ({ html, height, fontSize = 11 }: Props) => {
+  const [h, setH] = useState<number>(height)
+  useEffect(() => {
+    if (!height) {
+      rnTextSize
+        .flatHeights({
+          text: [html],
+          width: 99999,
+          fontSize,
+        })
+        .then(res => setH(res[0]))
+    }
+  })
   const {
     metrics: { blocks, screen },
   } = useTheme()
-  return (
+  return !h ? null : (
     <Text>
       <View style={{ flex: 1 }}>
         <WebView
           style={{
-            height,
+            height: h,
             width: screen.width - blocks.large,
             backgroundColor: 'transparent',
             marginVertical: blocks.medium,

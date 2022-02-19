@@ -214,7 +214,14 @@ export class MessageBoxDialog extends Component<Props> {
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}
           style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
-          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 5, paddingBottom: 0 }}>
+          <Dialog.ScrollArea
+            style={{
+              paddingLeft: 5,
+              paddingRight: 5,
+              paddingTop: 5,
+              paddingBottom: 0,
+              maxHeight: isMenuVisible ? '69%' : '86%',
+            }}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>
               {!!params?.isGitIssue && (
                 <TextInput
@@ -256,7 +263,6 @@ export class MessageBoxDialog extends Component<Props> {
                 <TextInput
                   ref={r => (this.refMsgBox = r)}
                   multiline={true}
-                  numberOfLines={3}
                   textAlignVertical={'top'}
                   // selection={msgBoxSelection}
                   // onSelectionChange={({ nativeEvent: { selection } }) => setMsgBoxSelection(selection)} // portal!! wtf
