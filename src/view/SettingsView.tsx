@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ScrollView, View } from 'react-native'
+import {ScrollView, Text, View} from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import {
   ButtonComponent,
@@ -237,6 +237,7 @@ export class SettingsView extends Component<Props> {
                 style={{ fontSize: theme.metrics.fontSizes.p }}
               />
             </Picker>
+            <Text style={{ width: '100%', height: 60, position: 'absolute', bottom: 0, left: 0 }}> </Text>
           </View>
         </ScrollView>
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />

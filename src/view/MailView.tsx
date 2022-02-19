@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, LayoutAnimation, View } from 'react-native'
+import { FlatList, LayoutAnimation, View, Text } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { MessageBoxDialog, PostComponent } from '../component'
 import { MainContext, getDistinctPosts, LayoutAnimConf, parsePostsContent, t, Theme, wait, Nyx } from '../lib'
@@ -176,21 +176,24 @@ export class MailView extends Component<Props> {
     return (
       <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.conversations && this.state.conversations.length > 0 && (
-          <Picker
-            mode={'dropdown'}
-            prompt={'Recipient'}
-            selectedValue={this.state.activeRecipient}
-            onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
-            <Picker.Item key={'all'} label={t('all')} value={'all'} color={this.getPickerItemColor('all')} />
-            {this.state.conversations.map(c => (
-              <Picker.Item
-                key={c.username}
-                label={`${c.username}`}
-                value={c.username}
-                color={this.getPickerItemColor(c.username, c.has_unread_mail)}
-              />
-            ))}
-          </Picker>
+          <View>
+            <Picker
+              mode={'dropdown'}
+              prompt={'Recipient'}
+              selectedValue={this.state.activeRecipient}
+              onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
+              <Picker.Item key={'all'} label={t('all')} value={'all'} color={this.getPickerItemColor('all')} />
+              {this.state.conversations.map(c => (
+                <Picker.Item
+                  key={c.username}
+                  label={`${c.username}`}
+                  value={c.username}
+                  color={this.getPickerItemColor(c.username, c.has_unread_mail)}
+                />
+              ))}
+            </Picker>
+            <Text style={{ width: '100%', height: 60, position: 'absolute', bottom: 0, left: 0 }}> </Text>
+          </View>
         )}
         <FlatList
           style={{ height: '100%' }}
