@@ -61,7 +61,7 @@ export class SettingsView extends Component<Props> {
       isSearchEnabled: config?.isSearchEnabled !== undefined ? !!config.isSearchEnabled : true,
       isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
-      isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? true : !!config.isNavGesturesEnabled,
+      isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
