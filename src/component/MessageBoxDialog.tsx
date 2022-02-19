@@ -189,6 +189,9 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   render() {
+    if (!this.context?.colors?.ripple) {
+      return null // todo ios
+    }
     const { isVisible, params } = this.props
     const {
       areDetailsShown,
