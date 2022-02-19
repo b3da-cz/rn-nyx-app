@@ -71,15 +71,11 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
     }
     const headerSize = themeBaseFontSize * 3.3
     const paddingBottom = themeBaseFontSize / 2
-    const screenWidth = Dimensions.get('window').width - 12
+    const screenWidth = Dimensions.get('window').width - (themeBaseFontSize > 16 ? 12 : 2)
     let index = 0
     for (const post of posts) {
-      const str =
-        (themeBaseFontSize < 15 && post.parsed.clearText?.length > 20
-          ? `\n${post.parsed.clearText}`
-          : post.parsed.clearText) || ''
       const textHeights = await rnTextSize.flatHeights({
-        text: [str],
+        text: [post.parsed.clearText],
         width: screenWidth,
         ...fontSpecs,
       })

@@ -6050,10 +6050,10 @@ nwsapi@^2.2.0:
   resolved "https://registry.yarnpkg.com/nwsapi/-/nwsapi-2.2.0.tgz#204879a9e3d068ff2a55139c2c772780681a38b7"
   integrity sha512-h2AatdwYH+JHiZpv7pt/gSX1XoRGb7L/qSIeuqA6GwYoF9w1vP1cw42TO0aI2pNyshRK5893hNSl+1//vHK7hQ==
 
-nyx-api@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/nyx-api/-/nyx-api-0.2.2.tgz#11a512c9efa906502d886f314f0521619ce3e3a3"
-  integrity sha512-XAqWWKIP8i5q7Wq/VZTC40r3Tcs6LgvSSinbME3xPpaYjx+v+dyfqUf8ttci+7trwcbTGDNDfdXf00em0J46OA==
+nyx-api@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/nyx-api/-/nyx-api-0.3.1.tgz#9af2c46cb15411cf69d9614820916ed0e2fa2bfc"
+  integrity sha512-PvqCQ2Qt8ah3wernSwL+RA6Qu6YcKFkFPN6GjQg2qZyRes2ccrmpkWfctfV1r8qQXHsbpAJGOCXh/2n0TQWIog==
 
 oauth-sign@~0.9.0:
   version "0.9.0"

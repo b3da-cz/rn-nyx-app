@@ -30,6 +30,7 @@ type State = {
   users: any[]
   searchPhrase: string
   selectedRecipient?: string
+  lastTypingNotificationTs: number
 }
 export class MessageBoxDialog extends Component<Props> {
   static contextType = MainContext
@@ -52,6 +53,7 @@ export class MessageBoxDialog extends Component<Props> {
       users: [],
       searchPhrase: '',
       selectedRecipient: undefined,
+      lastTypingNotificationTs: 0,
     }
     this.refMsgBox = null
     this.sizes = [
@@ -83,6 +85,19 @@ export class MessageBoxDialog extends Component<Props> {
     })
     if (andFocus) {
       this.refMsgBox?.focus()
+    }
+  }
+
+  onMessageChange(val: string) {
+    this.setState({ message: val })
+    this.sendTypingNotification()
+  }
+
+  async sendTypingNotification() {
+    const now = +new Date()
+    if (this.state.selectedRecipient && now > this.state.lastTypingNotificationTs + 5000) {
+      this.setState({ lastTypingNotificationTs: now })
+      await this.props.nyx.api.sendTypingNotification(this.state.selectedRecipient)
     }
   }
 
@@ -189,7 +204,7 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   render() {
-    if (!this.context?.colors?.ripple) {
+    if (!this.context?.theme?.colors?.ripple) {
       return null // todo ios
     }
     const { isVisible, params } = this.props
@@ -269,7 +284,7 @@ export class MessageBoxDialog extends Component<Props> {
                   textAlignVertical={'top'}
                   // selection={msgBoxSelection}
                   // onSelectionChange={({ nativeEvent: { selection } }) => setMsgBoxSelection(selection)} // portal!! wtf
-                  onChangeText={val => this.setState({ message: val })}
+                  onChangeText={val => this.onMessageChange(val)}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
                 />
