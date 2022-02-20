@@ -67,8 +67,8 @@ export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'f
       }
       const base64 = await fetchFile(url, true)
       Share.open({
-        title: 'Share image',
-        message: `Share image ${url}`,
+        title: '',
+        message: `${url}`,
         url: `data:${type};base64,${base64}`,
         type,
         failOnCancel: false,

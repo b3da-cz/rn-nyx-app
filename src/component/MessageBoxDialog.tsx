@@ -30,6 +30,7 @@ type State = {
   users: any[]
   searchPhrase: string
   selectedRecipient?: string
+  lastTypingNotificationTs: number
 }
 export class MessageBoxDialog extends Component<Props> {
   static contextType = MainContext
@@ -52,6 +53,7 @@ export class MessageBoxDialog extends Component<Props> {
       users: [],
       searchPhrase: '',
       selectedRecipient: undefined,
+      lastTypingNotificationTs: 0,
     }
     this.refMsgBox = null
     this.sizes = [
@@ -83,6 +85,19 @@ export class MessageBoxDialog extends Component<Props> {
     })
     if (andFocus) {
       this.refMsgBox?.focus()
+    }
+  }
+
+  onMessageChange(val: string) {
+    this.setState({ message: val })
+    this.sendTypingNotification()
+  }
+
+  async sendTypingNotification() {
+    const now = +new Date()
+    if (this.state.selectedRecipient && now > this.state.lastTypingNotificationTs + 5000) {
+      this.setState({ lastTypingNotificationTs: now })
+      await this.props.nyx.api.sendTypingNotification(this.state.selectedRecipient)
     }
   }
 
@@ -189,6 +204,9 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   render() {
+    if (!this.context?.theme?.colors?.ripple) {
+      return null // todo ios
+    }
     const { isVisible, params } = this.props
     const {
       areDetailsShown,
@@ -214,7 +232,14 @@ export class MessageBoxDialog extends Component<Props> {
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}
           style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
-          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 5, paddingBottom: 0 }}>
+          <Dialog.ScrollArea
+            style={{
+              paddingLeft: 5,
+              paddingRight: 5,
+              paddingTop: 5,
+              paddingBottom: 0,
+              maxHeight: isMenuVisible ? '69%' : '86%',
+            }}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>
               {!!params?.isGitIssue && (
                 <TextInput
@@ -256,11 +281,10 @@ export class MessageBoxDialog extends Component<Props> {
                 <TextInput
                   ref={r => (this.refMsgBox = r)}
                   multiline={true}
-                  numberOfLines={3}
                   textAlignVertical={'top'}
                   // selection={msgBoxSelection}
                   // onSelectionChange={({ nativeEvent: { selection } }) => setMsgBoxSelection(selection)} // portal!! wtf
-                  onChangeText={val => this.setState({ message: val })}
+                  onChangeText={val => this.onMessageChange(val)}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
                 />

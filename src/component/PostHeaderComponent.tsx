@@ -333,6 +333,7 @@ export class PostHeaderComponent extends Component<Props> {
                 {post.reminder && (
                   <ButtonSquareComponent
                     icon={'bell'}
+                    width={20}
                     height={40}
                     color={post.reminder ? colors.primary : undefined}
                     onPress={() => this.setReminder(post)}

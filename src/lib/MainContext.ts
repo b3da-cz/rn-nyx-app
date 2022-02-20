@@ -39,7 +39,7 @@ export const initialConfig: MainContextConfig = {
   isSearchEnabled: true,
   isLastEnabled: true,
   isRemindersEnabled: true,
-  isNavGesturesEnabled: true,
+  isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isUnreadToggleEnabled: true,
   initialRouteName: 'historyStack',

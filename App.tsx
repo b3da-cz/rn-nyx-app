@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { Linking, LogBox, Modal, Platform, UIManager } from 'react-native'
+import { Linking, LogBox, Modal, Platform, UIManager, SafeAreaView } from 'react-native'
 import useColorScheme from 'react-native/Libraries/Utilities/useColorScheme'
 import 'react-native-gesture-handler'
 import { NetworkProvider } from 'react-native-offline'
@@ -13,6 +13,9 @@ import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import Bugfender from '@bugfender/rn-bugfender'
 import { confirm, LoaderComponent } from './src/component'
+// import Feather from 'react-native-vector-icons/Feather'
+// Feather.loadFont()
+
 import {
   createTheme,
   defaultThemeOptions,
@@ -116,7 +119,7 @@ const App: () => ReactNode = () => {
       isSearchEnabled: conf?.isSearchEnabled !== undefined ? !!conf.isSearchEnabled : true,
       isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,
       isRemindersEnabled: conf?.isRemindersEnabled !== undefined ? !!conf.isRemindersEnabled : true,
-      isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? true : !!conf.isNavGesturesEnabled,
+      isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isUnreadToggleEnabled: conf.isUnreadToggleEnabled === undefined ? true : !!conf.isUnreadToggleEnabled,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
@@ -190,37 +193,39 @@ const App: () => ReactNode = () => {
 
   const theme = createTheme({ ...config.themeOptions, isDarkTheme: themeType === 'dark' })
   return (
-    <NetworkProvider pingServerUrl={'https://nyx.cz'}>
-      <PaperProvider theme={theme}>
-        {!isAppLoaded && <LoaderComponent theme={theme} />}
-        {isAppLoaded && isAuthenticated && (
-          <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
-            <UnreadContextProvider>
-              <NavigationContainer theme={theme}>
-                <Router
-                  config={config}
-                  nyx={nyx}
-                  refs={refs}
-                  theme={theme}
-                  onConfigReload={() => loadConfig()}
-                  onFiltersReload={() => loadStorage({ getConfig: false })}
-                />
-              </NavigationContainer>
-            </UnreadContextProvider>
-          </MainContext.Provider>
-        )}
-        {isAppLoaded && (
-          <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
-            <LoginView
-              theme={theme}
-              confirmationCode={confirmationCode}
-              onUsername={username => initNyx(username, false)}
-              onLogin={() => onLogin()}
-            />
-          </Modal>
-        )}
-      </PaperProvider>
-    </NetworkProvider>
+    <SafeAreaView style={{ flex: 1 }}>
+      <NetworkProvider pingServerUrl={'https://nyx.cz'}>
+        <PaperProvider theme={theme}>
+          {!isAppLoaded && <LoaderComponent theme={theme} />}
+          {isAppLoaded && isAuthenticated && (
+            <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
+              <UnreadContextProvider>
+                <NavigationContainer theme={theme}>
+                  <Router
+                    config={config}
+                    nyx={nyx}
+                    refs={refs}
+                    theme={theme}
+                    onConfigReload={() => loadConfig()}
+                    onFiltersReload={() => loadStorage({ getConfig: false })}
+                  />
+                </NavigationContainer>
+              </UnreadContextProvider>
+            </MainContext.Provider>
+          )}
+          {isAppLoaded && (
+            <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
+              <LoginView
+                theme={theme}
+                confirmationCode={confirmationCode}
+                onUsername={username => initNyx(username, false)}
+                onLogin={() => onLogin()}
+              />
+            </Modal>
+          )}
+        </PaperProvider>
+      </NetworkProvider>
+    </SafeAreaView>
   )
 }
 
