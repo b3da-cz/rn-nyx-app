@@ -7,13 +7,13 @@ export const locale =
     : NativeModules.I18nManager.localeIdentifier
 
 const loc = locale.substr(0, 2)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const s = { ...strings } // eval cant see imported
 
-export const t = key => {
+export function t(key) {
+  // @ts-ignore
+  this.s = { ...strings } // eval cant see imported
   try {
     const keys = key.split('.')
-    let res = 's'
+    let res = 'this.s'
     if (keys?.length > 1) {
       for (const k of keys) {
         res += `['${k}']`

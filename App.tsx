@@ -40,6 +40,7 @@ LogBox.ignoreLogs([
   'componentWillMount has',
   'Reanimated 2',
   'Require cycle: node_modules/',
+  'new NativeEventEmitter',
 ]) // Ignore log notifications from Swipeable todo
 
 if (Platform.OS === 'android') {
