@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { Linking, LogBox, Modal, Platform, UIManager, SafeAreaView } from 'react-native'
+import { Linking, LogBox, Platform, UIManager, SafeAreaView } from 'react-native'
 import useColorScheme from 'react-native/Libraries/Utilities/useColorScheme'
 import 'react-native-gesture-handler'
 import { NetworkProvider } from 'react-native-offline'
@@ -41,6 +41,7 @@ LogBox.ignoreLogs([
   'Reanimated 2',
   'Require cycle: node_modules/',
   'new NativeEventEmitter',
+  "EventEmitter.removeListener('change', ...)",
 ]) // Ignore log notifications from Swipeable todo
 
 if (Platform.OS === 'android') {
@@ -214,15 +215,13 @@ const App: () => ReactNode = () => {
               </UnreadContextProvider>
             </MainContext.Provider>
           )}
-          {isAppLoaded && (
-            <Modal visible={!isAuthenticated} transparent={false} animationType={'fade'} onRequestClose={() => null}>
-              <LoginView
-                theme={theme}
-                confirmationCode={confirmationCode}
-                onUsername={username => initNyx(username, false)}
-                onLogin={() => onLogin()}
-              />
-            </Modal>
+          {isAppLoaded && !isAuthenticated && (
+            <LoginView
+              theme={theme}
+              confirmationCode={confirmationCode}
+              onUsername={username => initNyx(username, false)}
+              onLogin={() => onLogin()}
+            />
           )}
         </PaperProvider>
       </NetworkProvider>

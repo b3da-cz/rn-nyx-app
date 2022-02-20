@@ -104,7 +104,14 @@ export class FilterSettingsDialog extends Component<Props> {
     const { colors } = this.state.theme
     const { isDialogVisible, phrase, users, blockedUsers, filters, usernameToFind } = this.state
     return (
-      <View style={{ position: 'absolute', top: 0, height: '100%', left: 0, right: 0 }}>
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          height: isDialogVisible ? '100%' : 100,
+          left: isDialogVisible ? 0 : undefined,
+          right: 0,
+        }}>
         <Dialog visible={isDialogVisible} onDismiss={() => this.onUpdate()} style={Styling.groups.dialogMargin}>
           <Dialog.ScrollArea style={Styling.groups.dialogPadding}>
             <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>

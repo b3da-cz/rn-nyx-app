@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
-import { FlatList, LayoutAnimation, View, Text } from 'react-native'
-import { Picker } from '@react-native-picker/picker'
-import { MessageBoxDialog, PostComponent } from '../component'
-import { MainContext, getDistinctPosts, LayoutAnimConf, parsePostsContent, t, Theme, wait, Nyx } from '../lib'
+import { FlatList, LayoutAnimation, View } from 'react-native'
+import { FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
+import { MainContext, getDistinctPosts, LayoutAnimConf, parsePostsContent, Theme, wait, Nyx } from '../lib'
 
 type Props = {
   onImages: Function
@@ -108,7 +107,7 @@ export class MailView extends Component<Props> {
   }
 
   async onConversationSelected(username) {
-    this.setState({ isFetching: true, messages: [] })
+    this.setState({ isFetching: true, isSelectingRecipient: false, messages: [] })
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx?.api.getMail(queryString)
     const parsedMessages = parsePostsContent(res?.posts)
@@ -145,9 +144,9 @@ export class MailView extends Component<Props> {
   getPickerItemColor(val, hasUnreadMail?: boolean) {
     return hasUnreadMail
       ? this.state.theme!.colors.accent
-      : this.state.activeRecipient === val
-      ? this.state.theme!.colors.primary
-      : this.state.theme!.colors.text
+      : // : this.state.activeRecipient === val
+        // ? this.state.theme!.colors.primary
+        this.state.theme!.colors.text
   }
 
   renderMessage(msg) {
@@ -169,31 +168,26 @@ export class MailView extends Component<Props> {
   }
 
   render() {
-    const { theme } = this.state
+    const { activeRecipient, conversations, theme } = this.state
     if (!theme) {
       return null
     }
     return (
       <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.conversations && this.state.conversations.length > 0 && (
-          <View>
-            <Picker
-              mode={'dropdown'}
-              prompt={'Recipient'}
-              selectedValue={this.state.activeRecipient}
-              onValueChange={activeRecipient => this.onConversationSelected(activeRecipient)}>
-              <Picker.Item key={'all'} label={t('all')} value={'all'} color={this.getPickerItemColor('all')} />
-              {this.state.conversations.map(c => (
-                <Picker.Item
-                  key={c.username}
-                  label={`${c.username}`}
-                  value={c.username}
-                  color={this.getPickerItemColor(c.username, c.has_unread_mail)}
-                />
-              ))}
-            </Picker>
-            <Text style={{ width: '100%', height: 60, position: 'absolute', bottom: 0, left: 0 }}> </Text>
-          </View>
+          <FormRowSelectComponent
+            hasAll={true}
+            value={activeRecipient}
+            onSelect={val => this.onConversationSelected(val)}
+            options={conversations.map(c => ({
+              value: c.username,
+              icon: c.has_unread_mail
+                ? 'message-alert'
+                : c.incoming
+                ? 'message-arrow-right-outline'
+                : 'message-outline',
+            }))}
+          />
         )}
         <FlatList
           style={{ height: '100%' }}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { LayoutAnimation, ScrollView, View } from 'react-native'
+import { LayoutAnimation, Platform, ScrollView, View } from 'react-native'
 import { IconButton, Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, LoaderComponent, UserRowComponent } from '../component'
@@ -69,33 +69,20 @@ export const DiscussionFilterBarComponent = ({ discussionTitle, nyx, onFilter, o
     <View style={Styling.groups.flexRowSpbCentered}>
       <TouchableRipple
         rippleColor={colors.ripple}
-        style={
-          isOpen
-            ? [
-                Styling.groups.shadow,
-                {
-                  backgroundColor: colors.background,
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  zIndex: 1,
-                  width: '100%',
-                },
-              ]
-            : [
-                Styling.groups.shadow,
-                {
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  zIndex: 1,
-                  width: '100%',
-                  backgroundColor: colors.background,
-                  marginBottom: blocks.small,
-                  height: 50,
-                },
-              ]
-        }
+        style={[
+          Styling.groups.shadow,
+          {
+            backgroundColor: colors.background,
+            position: Platform.OS === 'android' || !isOpen ? 'absolute' : 'static',
+            top: 0,
+
+            right: 0,
+            zIndex: 1,
+            width: '100%',
+            marginBottom: Platform.OS === 'android' ? blocks.small : -50,
+            height: isOpen ? 'auto' : 50,
+          },
+        ]}
         onPress={() => toggleFilter()}>
         <View>
           <View style={Styling.groups.flexRowSpbCentered}>
