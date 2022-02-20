@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
-import {ScrollView, Text, View} from 'react-native'
-import { Picker } from '@react-native-picker/picker'
+import { ScrollView, View } from 'react-native'
 import {
   ButtonComponent,
   confirm,
   FilterSettingsDialog,
+  FormRowSelectComponent,
   FormRowToggleComponent,
   SectionHeaderComponent,
 } from '../component'
@@ -206,39 +206,16 @@ export class SettingsView extends Component<Props> {
             value={!!this.state.isRemindersEnabled}
             onChange={val => this.setOption('isRemindersEnabled', val)}
           />
-          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
-            <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
-            <Picker
-              mode={'dropdown'}
-              prompt={t('profile.initialView')}
-              selectedValue={this.state.initialRouteName}
-              onValueChange={route => this.setOption('initialRouteName', route)}>
-              <Picker.Item
-                key={'historyStack'}
-                label={t('history')}
-                value={'historyStack'}
-                enabled={this.state.isHistoryEnabled}
-                color={this.state.isHistoryEnabled ? theme.colors.link : theme.colors.disabled}
-                style={{ fontSize: theme.metrics.fontSizes.p }}
-              />
-              <Picker.Item
-                key={'bookmarksStack'}
-                label={t('bookmarks')}
-                value={'bookmarksStack'}
-                enabled={this.state.isBookmarksEnabled}
-                color={this.state.isBookmarksEnabled ? theme.colors.link : theme.colors.disabled}
-                style={{ fontSize: theme.metrics.fontSizes.p }}
-              />
-              <Picker.Item
-                key={'mailStack'}
-                label={t('mail')}
-                value={'mailStack'}
-                color={theme.colors.link}
-                style={{ fontSize: theme.metrics.fontSizes.p }}
-              />
-            </Picker>
-            <Text style={{ width: '100%', height: 60, position: 'absolute', bottom: 0, left: 0 }}> </Text>
-          </View>
+          <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
+          <FormRowSelectComponent
+            value={t(`${this.state.initialRouteName}`.replace('Stack', ''))}
+            onSelect={route => this.setOption('initialRouteName', route)}
+            options={[
+              { value: 'historyStack', label: t('history'), disabled: !this.state.isHistoryEnabled },
+              { value: 'bookmarksStack', label: t('bookmarks'), disabled: !this.state.isBookmarksEnabled },
+              { value: 'mailStack', label: t('mail') },
+            ]}
+          />
         </ScrollView>
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
       </View>

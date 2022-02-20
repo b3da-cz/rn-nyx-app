@@ -68,7 +68,7 @@ export const AdvertisementComponent = ({
           </View>
           <Text style={{ fontSize: fontSizes.p }}>{title}</Text>
           <Text style={{ fontSize: fontSizes.p }}>{summary}</Text>
-          {shipping && shipping.length > 0 && (
+          {!!shipping && shipping.length > 0 && (
             <Text
               style={{
                 fontSize: fontSizes.p,

@@ -25,7 +25,7 @@
     "release-apk": "react-native run-android --variant=release",
     "release-aab": "cd android && ./gradlew bundleRelease && cd ..",
     "clean": "cd android && ./gradlew clean && cd ..",
-    "pods": "arch -x86_64 pod update && arch -x86_64 pod install",
+    "pods": "cd ios && arch -x86_64 pod update && arch -x86_64 pod install && cd ..",
     "test": "jest",
     "lint": "eslint .",
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
@@ -39,7 +39,6 @@
     "@react-native-community/netinfo": "^6.0.0",
     "@react-native-firebase/app": "^11.3.0",
     "@react-native-firebase/messaging": "^11.3.0",
-    "@react-native-picker/picker": "^1.15.0",
     "@react-navigation/material-bottom-tabs": "^5.3.15",
     "@react-navigation/material-top-tabs": "^5.3.15",
     "@react-navigation/native": "^5.9.4",

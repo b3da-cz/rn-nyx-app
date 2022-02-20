@@ -227,7 +227,14 @@ export class MessageBoxDialog extends Component<Props> {
       metrics: { blocks, fontSizes },
     } = this.context.theme
     return (
-      <View style={{ position: 'absolute', top: 0, height: '100%', left: 0, right: 0 }}>
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          height: isDialogVisible ? '100%' : 100,
+          left: isDialogVisible ? 0 : undefined,
+          right: 0,
+        }}>
         <Dialog
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}

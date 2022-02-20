@@ -2,8 +2,7 @@ import React, { Component } from 'react'
 import { ScrollView, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { FAB } from 'react-native-paper'
-import { Picker } from '@react-native-picker/picker'
-import { ComponentExamplesComponent, SectionHeaderComponent } from '../component'
+import { ComponentExamplesComponent, FormRowSelectComponent, SectionHeaderComponent } from '../component'
 import {
   defaultThemeOptions,
   exportTheme,
@@ -101,202 +100,102 @@ export class ThemeView extends Component<Props> {
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView style={{ backgroundColor: theme.colors.background }}>
-          <View style={{ height: theme.metrics.blocks.rowDiscussion + 50 }}>
+          <View style={{ height: theme.metrics.blocks.rowDiscussion + 33 }}>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ width: '33.333%' }}>
                 <SectionHeaderComponent title={t('profile.theme')} backgroundColor={theme.colors.surface} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={t('profile.theme')}
-                  selectedValue={this.state.selectedTheme}
-                  onValueChange={t => this.setSelectedTheme(t)}>
-                  <Picker.Item
-                    key={'system'}
-                    label={t('profile.system')}
-                    value={'system'}
-                    color={theme.colors.link}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  <Picker.Item
-                    key={'dark'}
-                    label={t('profile.dark')}
-                    value={'dark'}
-                    color={theme.colors.link}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  <Picker.Item
-                    key={'light'}
-                    label={t('profile.light')}
-                    value={'light'}
-                    color={theme.colors.link}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                </Picker>
+                <FormRowSelectComponent
+                  value={t(`profile.${this.state.selectedTheme}`)}
+                  onSelect={t => this.setSelectedTheme(t)}
+                  options={[
+                    { value: 'system', label: t('profile.system') },
+                    { value: 'dark', label: t('profile.dark') },
+                    { value: 'light', label: t('profile.light') },
+                  ]}
+                  width={theme.metrics.screen.width / 3}
+                />
               </View>
               <View style={{ width: '33.333%' }}>
                 <SectionHeaderComponent title={t('profile.fontSize')} backgroundColor={theme.colors.surface} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={t('profile.fontSize')}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.baseFontSize}
-                  onValueChange={size => this.setThemeOption('baseFontSize', size)}>
-                  {fontSizes.map(size => (
-                    <Picker.Item
-                      key={`${size}-fontSize`}
-                      label={`${size}`}
-                      value={size}
-                      color={theme.colors.link}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${this.state && this.state.themeOptions && this.state.themeOptions.baseFontSize}`}
+                  onSelect={size => this.setThemeOption('baseFontSize', Number(size))}
+                  options={fontSizes.map(s => ({ value: `${s}` }))}
+                  width={theme.metrics.screen.width / 3}
+                />
               </View>
               <View style={{ width: '33.333%' }}>
                 <SectionHeaderComponent title={t('profile.padding')} backgroundColor={theme.colors.surface} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={t('profile.padding')}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.baseBlockSize}
-                  onValueChange={size => this.setThemeOption('baseBlockSize', size)}>
-                  {fontSizes.map(size => (
-                    <Picker.Item
-                      key={`${size}-padding`}
-                      label={`${size}`}
-                      value={size}
-                      color={theme.colors.link}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${this.state && this.state.themeOptions && this.state.themeOptions.baseBlockSize}`}
+                  onSelect={size => this.setThemeOption('baseBlockSize', Number(size))}
+                  options={fontSizes.map(s => ({ value: `${s}` }))}
+                  width={theme.metrics.screen.width / 3}
+                />
               </View>
             </View>
           </View>
-          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 50 }}>
+          <View style={{ marginTop: 10, height: theme.metrics.blocks.rowDiscussion + 33 }}>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ width: '20%' }}>
                 <SectionHeaderComponent title={`${t('profile.color')} A`} backgroundColor={theme.colors.primary} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={`${t('profile.color')} A`}
-                  dropdownIconColor={theme.colors.primary}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.primaryColor}
-                  onValueChange={color => this.setThemeOption('primaryColor', color)}>
-                  {palette.map(color => (
-                    <Picker.Item
-                      key={`${color}-a`}
-                      label={color}
-                      value={color}
-                      color={IBMColorPalette[`${color}60`]}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${this.state && this.state.themeOptions && this.state.themeOptions.primaryColor}`}
+                  onSelect={c => this.setThemeOption('primaryColor', c)}
+                  options={palette.map(c => ({ value: `${c}`, color: IBMColorPalette[`${c}60`] }))}
+                  width={theme.metrics.screen.width / 5}
+                />
               </View>
               <View style={{ width: '20%' }}>
                 <SectionHeaderComponent title={`${t('profile.color')} B`} backgroundColor={theme.colors.secondary} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={`${t('profile.color')} B`}
-                  dropdownIconColor={theme.colors.secondary}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.secondaryColor}
-                  onValueChange={color => this.setThemeOption('secondaryColor', color)}>
-                  {palette.map(color => (
-                    <Picker.Item
-                      key={`${color}-b`}
-                      label={color}
-                      value={color}
-                      color={IBMColorPalette[`${color}60`]}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${this.state && this.state.themeOptions && this.state.themeOptions.secondaryColor}`}
+                  onSelect={c => this.setThemeOption('secondaryColor', c)}
+                  options={palette.map(c => ({ value: `${c}`, color: IBMColorPalette[`${c}60`] }))}
+                  width={theme.metrics.screen.width / 5}
+                />
               </View>
               <View style={{ width: '20%' }}>
                 <SectionHeaderComponent title={`${t('profile.color')} C`} backgroundColor={theme.colors.tertiary} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={`${t('profile.color')} C`}
-                  dropdownIconColor={theme.colors.tertiary}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.tertiaryColor}
-                  onValueChange={color => this.setThemeOption('tertiaryColor', color)}>
-                  {palette.map(color => (
-                    <Picker.Item
-                      key={`${color}-c`}
-                      label={color}
-                      value={color}
-                      color={IBMColorPalette[`${color}60`]}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${this.state && this.state.themeOptions && this.state.themeOptions.tertiaryColor}`}
+                  onSelect={c => this.setThemeOption('tertiaryColor', c)}
+                  options={palette.map(c => ({ value: `${c}`, color: IBMColorPalette[`${c}60`] }))}
+                  width={theme.metrics.screen.width / 5}
+                />
               </View>
               <View style={{ width: '20%' }}>
                 <SectionHeaderComponent title={`${t('profile.color')} D`} backgroundColor={theme.colors.surface} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={`${t('profile.color')} D`}
-                  dropdownIconColor={theme.colors.text}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.surfaceColor}
-                  onValueChange={color => this.setThemeOption('surfaceColor', color)}>
-                  <Picker.Item
-                    key={'transparent-d'}
-                    label={'transparent'}
-                    value={undefined}
-                    color={theme.colors.text}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  <Picker.Item
-                    key={'black-d'}
-                    label={'black'}
-                    value={'black'}
-                    color={theme.colors.text}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  <Picker.Item
-                    key={'white-d'}
-                    label={'white'}
-                    value={'white'}
-                    color={theme.colors.text}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  {palette.map(color => (
-                    <Picker.Item
-                      key={`${color}-d`}
-                      label={color}
-                      value={color}
-                      color={IBMColorPalette[`${color}60`]}
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${
+                    (this.state && this.state.themeOptions && this.state.themeOptions.surfaceColor) || 'transparent'
+                  }`}
+                  onSelect={c => this.setThemeOption('surfaceColor', c === 'transparent' ? undefined : c)}
+                  options={[
+                    { value: 'transparent' },
+                    { value: 'black', color: 'black' },
+                    { value: 'white', color: 'gray' },
+                    ...palette.map(c => ({ value: `${c}`, color: IBMColorPalette[`${c}60`] })),
+                  ]}
+                  width={theme.metrics.screen.width / 5}
+                />
               </View>
               <View style={{ width: '20%' }}>
                 <SectionHeaderComponent title={`${t('profile.color')} E`} backgroundColor={theme.colors.surface} />
-                <Picker
-                  mode={'dropdown'}
-                  prompt={`${t('profile.color')} E`}
-                  dropdownIconColor={theme.colors.text}
-                  selectedValue={this.state && this.state.themeOptions && this.state.themeOptions.backgroundColor}
-                  onValueChange={color => this.setThemeOption('backgroundColor', color)}>
-                  <Picker.Item
-                    key={'default-e'}
-                    label={'default'}
-                    value={undefined}
-                    color={theme.colors.text}
-                    style={{ fontSize: theme.metrics.fontSizes.p }}
-                  />
-                  {Object.keys(IBMColorPalette).map(color => (
-                    <Picker.Item
-                      key={`${color}-e`}
-                      label={color}
-                      value={color}
-                      color={
-                        this.state?.themeOptions?.backgroundColor === color ? theme.colors.text : IBMColorPalette[color]
-                      }
-                      style={{ fontSize: theme.metrics.fontSizes.p }}
-                    />
-                  ))}
-                </Picker>
+                <FormRowSelectComponent
+                  value={`${
+                    (this.state && this.state.themeOptions && this.state.themeOptions.backgroundColor) || 'default'
+                  }`}
+                  onSelect={c => this.setThemeOption('backgroundColor', c === 'default' ? undefined : c)}
+                  options={[
+                    { value: 'default' },
+                    ...Object.keys(IBMColorPalette).map(c => ({
+                      value: `${c}`,
+                      color: c === 'white' ? 'gray' : IBMColorPalette[`${c}`],
+                    })),
+                  ]}
+                  width={theme.metrics.screen.width / 5}
+                />
               </View>
             </View>
           </View>

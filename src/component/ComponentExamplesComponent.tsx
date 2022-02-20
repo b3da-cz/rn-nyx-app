@@ -105,7 +105,7 @@ export const ComponentExamplesComponent = ({ nyx }) => {
   const parser2 = new Parser(examplePostRead.content)
   examplePostRead.parsed = parser2.parse()
   return (
-    <View style={{ marginTop: 10, borderWidth: 10, borderColor: '#000' }}>
+    <View style={{ marginTop: 10, borderWidth: 0, borderColor: '#000' }}>
       <SectionHeaderComponent title={'Example Section Header [theme preview]'} />
       {exampleDiscussions.map(d => (
         <DiscussionRowComponent key={d.discussion_id} discussion={d} onPress={() => previewNotification(false)} />

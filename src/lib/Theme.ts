@@ -95,8 +95,9 @@ export const createTheme = ({
   dark: true,
   fonts: {
     light: { fontFamily: 'sans-serif-light', fontWeight: 'normal' },
-    medium: { fontFamily: 'sans-serif-medium', fontWeight: 'normal' },
+    medium: { fontFamily: 'Verdana', fontWeight: 'normal' },
     regular: { fontFamily: 'Verdana', fontWeight: 'normal' },
+    // medium: { fontFamily: 'sans-serif-medium', fontWeight: 'normal' },
     // regular: { fontFamily: 'sans-serif', fontWeight: 'normal' },
     thin: { fontFamily: 'sans-serif-thin', fontWeight: 'normal' },
   },

@@ -276,6 +276,8 @@ PODS:
     - React-Core
   - react-native-netinfo (6.0.0):
     - React-Core
+  - react-native-pager-view (5.4.11):
+    - React-Core
   - react-native-safe-area-context (3.2.0):
     - React-Core
   - react-native-webview (11.4.0):
@@ -360,8 +362,6 @@ PODS:
     - React-Core
   - RNCMaskedView (0.1.10):
     - React
-  - RNCPicker (1.15.0):
-    - React-Core
   - RNDeviceInfo (8.1.0):
     - React-Core
   - RNFBApp (11.3.0):
@@ -375,7 +375,7 @@ PODS:
     - React-Core
   - RNImageHelper (0.0.3):
     - React
-  - RNReanimated (2.1.0):
+  - RNReanimated (2.4.1):
     - DoubleConversion
     - FBLazyVector
     - FBReactNativeSpec
@@ -401,7 +401,6 @@ PODS:
     - React-RCTNetwork
     - React-RCTSettings
     - React-RCTText
-    - React-RCTVibration
     - ReactCommon/turbomodule/core
     - Yoga
   - RNScreens (3.3.0):
@@ -439,6 +438,7 @@ DEPENDENCIES:
   - react-native-document-picker (from `../node_modules/react-native-document-picker`)
   - react-native-image-resizer (from `../node_modules/react-native-image-resizer`)
   - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
+  - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -460,7 +460,6 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-community/masked-view`)"
-  - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
   - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
@@ -531,6 +530,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-resizer"
   react-native-netinfo:
     :path: "../node_modules/@react-native-community/netinfo"
+  react-native-pager-view:
+    :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-webview:
@@ -573,8 +574,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-clipboard/clipboard"
   RNCMaskedView:
     :path: "../node_modules/@react-native-community/masked-view"
-  RNCPicker:
-    :path: "../node_modules/@react-native-picker/picker"
   RNDeviceInfo:
     :path: "../node_modules/react-native-device-info"
   RNFBApp:
@@ -632,6 +631,7 @@ SPEC CHECKSUMS:
   react-native-document-picker: 2e6ecd112c48215e36431734d902f35201ffab0a
   react-native-image-resizer: 13ac4af788f88af36d0353a1324401ebabd04fe4
   react-native-netinfo: e849fc21ca2f4128a5726c801a82fc6f4a6db50d
+  react-native-pager-view: 7f00d63688f7df9fad86dfb0154814419cc5eb8d
   react-native-safe-area-context: f0906bf8bc9835ac9a9d3f97e8bde2a997d8da79
   react-native-webview: 4dfb534e9600b87fe667c5ca4fe09149383218b9
   React-perflogger: 3c9bb7372493e49036f07a82c44c8cf65cbe88db
@@ -653,13 +653,12 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 9b7605e899f9acb2fba33e87952c529731265453
   RNCClipboard: ddd4d291537f1667209c9c405aaa4307297e252e
   RNCMaskedView: 5a8ec07677aa885546a0d98da336457e2bea557f
-  RNCPicker: 5256da29a92406cac439ac6605719e233714a86a
   RNDeviceInfo: 677a08eaafcfac4e85d2d2aab68a3708ff261c04
   RNFBApp: 7762bda61ae7be53309d0c929119af32eaad82f4
   RNFBMessaging: 6d0f2494244459056777ef5f966c97aec94525f4
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
   RNImageHelper: efb1e1b39f0e19a40b8873c2c1c9614c0dd150ed
-  RNReanimated: 1ac4d8a3ead7497e1ab3fd011b0120943ffff868
+  RNReanimated: 32c91e28f5780937b8efc07ddde1bab8d373fe0b
   RNScreens: bf59f17fbf001f1025243eeed5f19419d3c11ef2
   RNShare: 755de6bac084428f8fd8fb54c376f126f40e560c
   RNTextSize: 7efa06531c6bb7ab6ed070b4ce0d1248cf06fcdf
