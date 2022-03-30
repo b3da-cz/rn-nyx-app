@@ -24,7 +24,7 @@
     "start": "react-native start",
     "release-apk": "react-native run-android --variant=release",
     "release-aab": "cd android && ./gradlew bundleRelease && cd ..",
-    "clean": "cd android && ./gradlew clean && cd ..",
+    "clean": "cd android && ./gradlew clean && cd ../ios && xcodebuild clean && cd ..",
     "pods": "cd ios && arch -x86_64 pod update && arch -x86_64 pod install && cd ..",
     "test": "jest",
     "lint": "eslint .",

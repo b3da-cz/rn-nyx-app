@@ -41,7 +41,10 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
       }))
       const shownBookmarks = [...sectionedBookmarks]
-      const shownCategories = this.state.shownCategories ?? Array.from(new Set(sectionedBookmarks.map(b => b.title)))
+      const shownCategories =
+        this.state.shownCategories.length > 0
+          ? this.state.shownCategories
+          : Array.from(new Set(sectionedBookmarks.map(b => b.title)))
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
       this.setState({ reminderCount, sectionedBookmarks, shownBookmarks, shownCategories, isFetching: false })
       this.filterCategories(shownCategories, true)
