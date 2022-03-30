@@ -138,7 +138,7 @@ export class PostComponent extends Component<Props> {
     return <VideoTagComponent key={video.id} url={video.link} />
   }
 
-  renderTextNode(text) {
+  renderTextNode(text: string, isBold?: boolean, isItalic?: boolean) {
     if (
       this.props.post?.content_raw?.type === 'dice' ||
       this.props.post?.content_raw?.type === 'poll' ||
@@ -149,9 +149,9 @@ export class PostComponent extends Component<Props> {
     }
     const key = generateUuidV4()
     return (
-      <TextComponent key={key}>{`${text.startsWith(':') ? text.substring(1) : text}${
-        text.endsWith('\n') ? '' : ' '
-      }`}</TextComponent>
+      <TextComponent key={key} isBold={isBold} isItalic={isItalic}>{`${
+        text.startsWith(': ') ? text.substring(2) : text
+      }${text.endsWith('\n') ? '' : ' '}`}</TextComponent>
     )
   }
 
@@ -248,13 +248,26 @@ export class PostComponent extends Component<Props> {
       )
     }
     const { post } = this.props
-    const { contentParts, links, replies, images, codeBlocks, ytBlocks, spoilers, videos } = post.parsed
+    const {
+      contentParts,
+      links,
+      replies,
+      images,
+      codeBlocks,
+      textsBold,
+      textsItalic,
+      ytBlocks,
+      spoilers,
+      videos,
+    } = post.parsed
     const { colors } = this.context.theme
     const isTextType = part =>
       part.startsWith(TOKEN.REPLY) ||
       part.startsWith(TOKEN.LINK) ||
       part.startsWith(TOKEN.SPOILER) ||
       part.startsWith(TOKEN.CODE) ||
+      part.startsWith(TOKEN.TEXT_BOLD) ||
+      part.startsWith(TOKEN.TEXT_ITALIC) ||
       (part?.length > 0 && !part.startsWith('###'))
     type ParentBlock = { isText: boolean; blocks: string[] }
     const blocks: ParentBlock[] = []
@@ -334,7 +347,13 @@ export class PostComponent extends Component<Props> {
                     } else if (part.startsWith(TOKEN.CODE)) {
                       const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
                       return this.renderCodeBlock(codeBlock)
-                    } else if (part?.length > 0 && !part.startsWith('###') && part !== '\n') {
+                    } else if (part.startsWith(TOKEN.TEXT_BOLD)) {
+                      const textBold = textsBold.filter(c => c.id === part.replace(TOKEN.TEXT_BOLD, ''))[0]
+                      return this.renderTextNode(textBold.text, true)
+                    } else if (part.startsWith(TOKEN.TEXT_ITALIC)) {
+                      const textItalic = textsItalic.filter(c => c.id === part.replace(TOKEN.TEXT_ITALIC, ''))[0]
+                      return this.renderTextNode(textItalic.text, false, true)
+                    } else if (part?.length > 0 && !part.startsWith('###')) {
                       return this.renderTextNode(part)
                     }
                   })}

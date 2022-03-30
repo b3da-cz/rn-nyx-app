@@ -107,7 +107,7 @@ export class MailView extends Component<Props> {
   }
 
   async onConversationSelected(username) {
-    this.setState({ isFetching: true, isSelectingRecipient: false, messages: [] })
+    this.setState({ isFetching: true, messages: [] })
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx?.api.getMail(queryString)
     const parsedMessages = parsePostsContent(res?.posts)

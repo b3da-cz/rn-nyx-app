@@ -7,6 +7,8 @@ export const TOKEN = {
   // meh todo
   SPLIT: '//######//',
   SPOILER: '###S#',
+  TEXT_BOLD: '###TB#',
+  TEXT_ITALIC: '###TI#',
   REPLY: '###R#',
   LINK: '###L#',
   IMG: '###I#',
@@ -32,6 +34,8 @@ export class Parser {
   links: any[] = []
   images: any[] = []
   codeBlocks: any[] = []
+  textsBold: any[] = []
+  textsItalic: any[] = []
   ytBlocks: any[] = []
   videos: any[] = []
   ytBlocksToDelete: any[] = []
@@ -74,6 +78,8 @@ export class Parser {
       links: this.links,
       images: this.images.filter(img => !img.src.includes('/images/play')),
       codeBlocks: this.codeBlocks,
+      textsBold: this.textsBold,
+      textsItalic: this.textsItalic,
       ytBlocks: this.ytBlocks,
       videos: this.videos,
       clearText: this.clearText,
@@ -89,6 +95,8 @@ export class Parser {
     this.links = this.getLinks()
     this.images = this.getImages()
     this.codeBlocks = this.getCodeBlocks()
+    this.textsBold = this.getTextBold()
+    this.textsItalic = this.getTextItalic()
     this.ytBlocks = this.getVideosYoutube()
     this.videos = this.getVideoTags() || []
     this.ytBlocksToDelete = this.getYtBlocksForCleanup()
@@ -104,6 +112,8 @@ export class Parser {
     this.images.forEach(i => (content = content.replace(i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
     this.links.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
     this.codeBlocks.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
+    this.textsBold.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.TEXT_BOLD}${c.id}${T.SPLIT}`)))
+    this.textsItalic.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.TEXT_ITALIC}${c.id}${T.SPLIT}`)))
     this.ytBlocks.forEach(y => (content = content.replace(y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
     this.videos.forEach(v => (content = content.replace(v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
     this.ytBlocksToDelete.forEach(y => (content = content.replace(y.raw, '')))
@@ -189,6 +199,22 @@ export class Parser {
     }))
   }
 
+  getTextBold() {
+    return this.html.querySelectorAll('b, strong').map(t => ({
+      id: generateUuidV4(),
+      raw: t.toString(),
+      text: this.replaceHtmlEntitiesAndTags(t.innerText || ''),
+    }))
+  }
+
+  getTextItalic() {
+    return this.html.querySelectorAll('i, em').map(t => ({
+      id: generateUuidV4(),
+      raw: t.toString(),
+      text: this.replaceHtmlEntitiesAndTags(t.innerText || ''),
+    }))
+  }
+
   getVideosYoutube() {
     const ytBlocks = this.html
       .querySelectorAll('a')
@@ -219,7 +245,6 @@ export class Parser {
   }
 
   getVideoTags() {
-    // todo prefetch height.. possible?
     return this.html.querySelectorAll('video').map(v => ({
       id: generateUuidV4(),
       raw: v.toString(),
