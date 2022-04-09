@@ -5,6 +5,7 @@ import Swipeable from 'react-native-swipeable-row'
 import Icon from 'react-native-vector-icons/Feather'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
+import { RNNotificationBanner } from 'react-native-notification-banner'
 import {
   ButtonRepliesComponent,
   ButtonSquareComponent,
@@ -13,7 +14,7 @@ import {
   RatingDetailDialogComponent,
   UserIconComponent,
 } from '../component'
-import { formatDate, LayoutAnimConf, Nyx, t, Theme } from '../lib'
+import { formatDate, LayoutAnimConf, Nyx, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
 
 type Props = {
   post: any
@@ -155,6 +156,16 @@ export class PostHeaderComponent extends Component<Props> {
       if (this.refSwipeable) {
         this.refSwipeable.recenter()
       }
+      showNotificationBanner({
+        title: 'Thank you!',
+        body: 'Possible violation reported',
+        tintColor: rgbToHex(this.props.theme.colors.tertiary),
+        textColor: rgbToHex(this.props.theme.colors.text),
+        icon: 'heart',
+        onClick: async () => {
+          RNNotificationBanner.Dismiss()
+        },
+      })
     }
   }
 
@@ -337,6 +348,15 @@ export class PostHeaderComponent extends Component<Props> {
                     height={40}
                     color={post.reminder ? colors.primary : undefined}
                     onPress={() => this.setReminder(post)}
+                  />
+                )}
+                {!this.props.isInteractive && (
+                  <ButtonSquareComponent
+                    icon={'alert-triangle'}
+                    width={20}
+                    height={40}
+                    color={'red'}
+                    onPress={() => this.reportPost(post)}
                   />
                 )}
               </View>

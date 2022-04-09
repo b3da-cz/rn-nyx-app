@@ -3,7 +3,7 @@ import { Image, View, Linking, LayoutAnimation, ToastAndroid } from 'react-nativ
 import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 import DeviceInfo from 'react-native-device-info'
-import { ButtonComponent, TOSComponent } from '../component'
+import { ButtonComponent, TOSComponent, TutorialComponent } from '../component'
 import { t, Theme } from '../lib'
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
 type State = {
   username: string
   areTOSConfirmed: boolean
+  isTutorialDone: boolean
 }
 export class LoginView extends Component<Props> {
   state: Readonly<State>
@@ -23,6 +24,7 @@ export class LoginView extends Component<Props> {
     this.state = {
       username: '',
       areTOSConfirmed: false,
+      isTutorialDone: false,
     }
   }
 
@@ -36,7 +38,7 @@ export class LoginView extends Component<Props> {
   }
 
   render() {
-    const { username, areTOSConfirmed } = this.state
+    const { username, areTOSConfirmed, isTutorialDone } = this.state
     const { confirmationCode, theme } = this.props
     const isUsernameFilledIn = username && username.length > 0
     if (!theme) {
@@ -49,6 +51,17 @@ export class LoginView extends Component<Props> {
           onConfirm={() => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
             this.setState({ areTOSConfirmed: true })
+          }}
+        />
+      )
+    }
+    if (!isTutorialDone) {
+      return (
+        <TutorialComponent
+          theme={theme}
+          onConfirm={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+            this.setState({ isTutorialDone: true })
           }}
         />
       )

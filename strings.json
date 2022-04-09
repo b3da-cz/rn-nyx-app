@@ -324,5 +324,47 @@
   "exit": {
     "cs": "Zavřít",
     "en": "Exit"
+  },
+  "actions": {
+    "swipe": {
+      "cs": "Swipnutí hlavičky příspěvku otevře nabídku akcí",
+      "en": "Reveal actions by swiping post header"
+    },
+    "reply": {
+      "cs": "Odpovědět",
+      "en": "Reply"
+    },
+    "copy": {
+      "cs": "Kopírovat obsah příspěvku",
+      "en": "Copy post content"
+    },
+    "share": {
+      "cs": "Sdílet obsah příspěvku",
+      "en": "Share post content"
+    },
+    "remind": {
+      "cs": "Uložit do upomínek",
+      "en": "Set reminder"
+    },
+    "delete": {
+      "cs": "Smazat",
+      "en": "Delete"
+    },
+    "report": {
+      "cs": "Nahlásit nevhodný obsah",
+      "en": "Report violating content"
+    },
+    "rateUp": {
+      "cs": "Hodnotit pozitivně",
+      "en": "Upvote"
+    },
+    "rateDown": {
+      "cs": "Hodnotit negativně",
+      "en": "Downvote"
+    },
+    "complete": {
+      "cs": "Pokračovat",
+      "en": "Continue"
+    }
   }
 }

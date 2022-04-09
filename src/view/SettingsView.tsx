@@ -138,24 +138,24 @@ export class SettingsView extends Component<Props> {
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView style={{ backgroundColor: theme.colors.background }}>
           <SectionHeaderComponent title={t('profile.general')} backgroundColor={theme.colors.surface} />
-          <ButtonComponent
-            label={t('profile.fcm.subscribe.title')}
-            icon={'mail'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.subscribeFCM()}
-          />
-          <ButtonComponent
-            label={t('profile.fcm.unsubscribe.title')}
-            icon={'trash-2'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.unsubscribeFCM()}
-          />
+          {/*<ButtonComponent*/}
+          {/*  label={t('profile.fcm.subscribe.title')}*/}
+          {/*  icon={'mail'}*/}
+          {/*  textAlign={'left'}*/}
+          {/*  color={theme.colors.accent}*/}
+          {/*  fontSize={theme.metrics.fontSizes.p}*/}
+          {/*  marginBottom={theme.metrics.blocks.medium}*/}
+          {/*  onPress={() => this.subscribeFCM()}*/}
+          {/*/>*/}
+          {/*<ButtonComponent*/}
+          {/*  label={t('profile.fcm.unsubscribe.title')}*/}
+          {/*  icon={'trash-2'}*/}
+          {/*  textAlign={'left'}*/}
+          {/*  color={theme.colors.accent}*/}
+          {/*  fontSize={theme.metrics.fontSizes.p}*/}
+          {/*  marginBottom={theme.metrics.blocks.medium}*/}
+          {/*  onPress={() => this.unsubscribeFCM()}*/}
+          {/*/>*/}
           <ButtonComponent
             label={t('profile.logout')}
             icon={'lock'}
