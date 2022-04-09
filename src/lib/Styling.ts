@@ -11,10 +11,16 @@ export const Styling: any = {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    squareBtnBorder: {
+      borderWidth: 1,
+      marginBottom: 5,
+      marginRight: 10,
+    },
     flexCentered: {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    flexRowCentered: { flexDirection: 'row', alignItems: 'center' },
     flexRowSpbCentered: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     shadow: {
       shadowColor: '#000',
