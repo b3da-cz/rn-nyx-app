@@ -51,6 +51,9 @@ export const TutorialComponent = ({ theme, onConfirm }) => {
         onRightButtonsOpenRelease={onRightSwipe}
         leftButtons={[
           <View style={Styling.groups.squareBtn}>
+            <Icon name={'corner-down-right'} size={fontSizes.h2} color={colors.text} />
+          </View>,
+          <View style={Styling.groups.squareBtn}>
             <Icon name={'copy'} size={fontSizes.h2} color={colors.text} />
           </View>,
           <View style={Styling.groups.squareBtn}>
