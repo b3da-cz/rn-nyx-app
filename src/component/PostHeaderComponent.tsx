@@ -350,7 +350,7 @@ export class PostHeaderComponent extends Component<Props> {
                     onPress={() => this.setReminder(post)}
                   />
                 )}
-                {!this.props.isInteractive && (
+                {!this.props.isInteractive && post.id > 0 && (
                   <ButtonSquareComponent
                     icon={'alert-triangle'}
                     width={20}
