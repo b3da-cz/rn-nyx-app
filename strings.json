@@ -152,6 +152,10 @@
       "cs": "Přepínátka nepřečtených klubů",
       "en": "Unread topic toggles"
     },
+    "isSwipeablePostHeader": {
+      "cs": "Swipovací hlavička příspěvku",
+      "en": "Swipeable post header"
+    },
     "theme": {
       "cs": "Barevné schema",
       "en": "Color theme"

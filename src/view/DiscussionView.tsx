@@ -333,7 +333,7 @@ export class DiscussionView extends Component<Props> {
     try {
       if (postIndex > 1) {
         setTimeout(() => {
-          this.refScroll.scrollToIndex({ index: postIndex - 1, viewPosition: 0, animated })
+          this.refScroll?.scrollToIndex({ index: postIndex - 1, viewPosition: 0, animated })
         }, 20)
       }
     } catch (e) {
@@ -351,7 +351,7 @@ export class DiscussionView extends Component<Props> {
   onScrollToIndexFailed(error) {
     const offset = error.averageItemLength * error.highestMeasuredFrameIndex
     this.refScroll.scrollToOffset({ offset })
-    setTimeout(() => this.refScroll.scrollToIndex({ index: error.index }), 200)
+    setTimeout(() => this.refScroll?.scrollToIndex({ index: error.index }), 200)
   }
 
   showPost(discussionId, postId) {
