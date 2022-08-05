@@ -7,6 +7,7 @@ import {
   DiceComponent,
   PollComponent,
   PostHeaderComponent,
+  PostHeaderSwipeableComponent,
   ImageComponent,
   SpoilerComponent,
   TextComponent,
@@ -291,6 +292,7 @@ export class PostComponent extends Component<Props> {
         }
       })
     }
+    const { isSwipeablePostHeader } = this.context.config
     return (
       <View
         style={{
@@ -299,34 +301,58 @@ export class PostComponent extends Component<Props> {
           backgroundColor: colors.background,
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,
         }}>
-        <PostHeaderComponent
-          post={post}
-          nyx={this.props.nyx}
-          theme={this.context.theme}
-          isReply={!!this.props.isReply}
-          isUnread={!!this.props.isUnread}
-          isInteractive={!!this.props.isHeaderInteractive}
-          isPressable={!!this.props.isHeaderPressable}
-          onPress={(discussionId, postId) =>
-            typeof this.props.onHeaderPress === 'function' ? this.props.onHeaderPress(discussionId, postId) : null
-          }
-          onReply={(discussionId, postId, username) =>
-            typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
-          }
-          onRepliesShow={(discussionId, postId) =>
-            typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(discussionId, postId) : null
-          }
-          onDelete={postId => (typeof this.props.onDelete === 'function' ? this.props.onDelete(postId) : null)}
-          onPostRated={updatedPost =>
-            typeof this.props.onPostRated === 'function' ? this.props.onPostRated(updatedPost) : null
-          }
-          onReminder={(p, isReminder) =>
-            typeof this.props.onReminder === 'function' ? this.props.onReminder(p, isReminder) : null
-          }
-          onSwipe={isSwiping =>
-            typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
-          }
-        />
+        {isSwipeablePostHeader || !this.props.isHeaderInteractive ? (
+          <PostHeaderSwipeableComponent
+            post={post}
+            nyx={this.props.nyx}
+            theme={this.context.theme}
+            isReply={!!this.props.isReply}
+            isUnread={!!this.props.isUnread}
+            isInteractive={!!this.props.isHeaderInteractive}
+            isPressable={!!this.props.isHeaderPressable}
+            onPress={(discussionId, postId) =>
+              typeof this.props.onHeaderPress === 'function' ? this.props.onHeaderPress(discussionId, postId) : null
+            }
+            onReply={(discussionId, postId, username) =>
+              typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
+            }
+            onRepliesShow={(discussionId, postId) =>
+              typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(discussionId, postId) : null
+            }
+            onDelete={postId => (typeof this.props.onDelete === 'function' ? this.props.onDelete(postId) : null)}
+            onPostRated={updatedPost =>
+              typeof this.props.onPostRated === 'function' ? this.props.onPostRated(updatedPost) : null
+            }
+            onReminder={(p, isReminder) =>
+              typeof this.props.onReminder === 'function' ? this.props.onReminder(p, isReminder) : null
+            }
+            onSwipe={isSwiping =>
+              typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
+            }
+          />
+        ) : (
+          <PostHeaderComponent
+            post={post}
+            nyx={this.props.nyx}
+            theme={this.context.theme}
+            isReply={!!this.props.isReply}
+            isUnread={!!this.props.isUnread}
+            isInteractive={!!this.props.isHeaderInteractive}
+            onReply={(discussionId, postId, username) =>
+              typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
+            }
+            onRepliesShow={(discussionId, postId) =>
+              typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(discussionId, postId) : null
+            }
+            onDelete={postId => (typeof this.props.onDelete === 'function' ? this.props.onDelete(postId) : null)}
+            onPostRated={updatedPost =>
+              typeof this.props.onPostRated === 'function' ? this.props.onPostRated(updatedPost) : null
+            }
+            onReminder={(p, isReminder) =>
+              typeof this.props.onReminder === 'function' ? this.props.onReminder(p, isReminder) : null
+            }
+          />
+        )}
         <View style={{ height: 5 }} />
         {post?.content_raw?.type !== 'advertisement' &&
           blocks.length > 0 &&

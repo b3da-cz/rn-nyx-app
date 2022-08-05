@@ -25,6 +25,7 @@ type State = {
   isRemindersEnabled: boolean
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
+  isSwipeablePostHeader: boolean
   initialRouteName: string
   theme: Theme
   username: string
@@ -63,6 +64,7 @@ export class SettingsView extends Component<Props> {
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
+      isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
       isVisible: true,
@@ -179,6 +181,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.isUnreadToggleEnabled')}
             value={!!this.state.isUnreadToggleEnabled}
             onChange={val => this.setOption('isUnreadToggleEnabled', val)}
+          />
+          <FormRowToggleComponent
+            label={t('profile.isSwipeablePostHeader')}
+            value={!!this.state.isSwipeablePostHeader}
+            onChange={val => this.setOption('isSwipeablePostHeader', val)}
           />
           <SectionHeaderComponent title={t('profile.sections')} backgroundColor={theme.colors.surface} />
           <FormRowToggleComponent

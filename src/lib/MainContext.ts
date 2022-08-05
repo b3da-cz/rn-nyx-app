@@ -13,6 +13,7 @@ export type MainContextConfig = {
   isRemindersEnabled: boolean
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
+  isSwipeablePostHeader: boolean
   isUnreadToggleEnabled: boolean
   initialRouteName: string
   shownCategories: string[]
@@ -41,6 +42,7 @@ export const initialConfig: MainContextConfig = {
   isRemindersEnabled: true,
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
+  isSwipeablePostHeader: true,
   isUnreadToggleEnabled: true,
   initialRouteName: 'historyStack',
   shownCategories: [],
