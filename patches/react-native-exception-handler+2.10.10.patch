@@ -1,0 +1,39 @@
+diff --git a/node_modules/react-native-exception-handler/android/build.gradle b/node_modules/react-native-exception-handler/android/build.gradle
+index c1dca20..26154ab 100644
+--- a/node_modules/react-native-exception-handler/android/build.gradle
++++ b/node_modules/react-native-exception-handler/android/build.gradle
+@@ -1,14 +1,4 @@
+ 
+-buildscript {
+-    repositories {
+-        jcenter()
+-    }
+-
+-    dependencies {
+-       
+-    }
+-}
+-
+ apply plugin: 'com.android.library'
+ 
+ 
+@@ -23,6 +13,7 @@ def getExtValue(rootProject,key,defaultValue ) {
+ }
+ 
+ android {
++    namespace "com.masteratul.exceptionhandler"
+     compileSdkVersion getExtValue(rootProject,'compileSdkVersion',23)
+     buildToolsVersion getExtValue(rootProject,'buildToolsVersion', "23.0.1")
+ 
+diff --git a/node_modules/react-native-exception-handler/android/src/main/AndroidManifest.xml b/node_modules/react-native-exception-handler/android/src/main/AndroidManifest.xml
+index 58dfc7b..193187d 100644
+--- a/node_modules/react-native-exception-handler/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-exception-handler/android/src/main/AndroidManifest.xml
+@@ -1,6 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.masteratul.exceptionhandler">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ 
+     <application>
+         <activity android:name=".DefaultErrorScreen">

@@ -1,0 +1,61 @@
+diff --git a/node_modules/react-native-paper/src/components/Modal.tsx b/node_modules/react-native-paper/src/components/Modal.tsx
+index 89734d0..fb53508 100644
+--- a/node_modules/react-native-paper/src/components/Modal.tsx
++++ b/node_modules/react-native-paper/src/components/Modal.tsx
+@@ -156,11 +156,10 @@ function Modal({
+   };
+ 
+   const removeListeners = () => {
+-    if (subscription.current?.remove) {
+-      subscription.current?.remove();
+-    } else {
+-      BackHandler.removeEventListener('hardwareBackPress', handleBack);
+-    }
++    // RN 0.79 removed BackHandler.removeEventListener; the subscription is the
++    // only removal mechanism, and when none exists there is nothing to remove.
++    subscription.current?.remove();
++    subscription.current = undefined;
+   };
+ 
+   const hideModal = () => {
+diff --git a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx b/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
+index 28d2771..7e1a492 100644
+--- a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
++++ b/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
+@@ -21,31 +21,11 @@ export default function useIsKeyboardShown({ onShow, onHide }: Props) {
+     }
+ 
+     return () => {
+-      if (Platform.OS === 'ios') {
+-        if (willShowSubscription?.remove) {
+-          willShowSubscription.remove();
+-        } else {
+-          Keyboard.removeListener('keyboardWillShow', onShow);
+-        }
+-
+-        if (willHideSubscription?.remove) {
+-          willHideSubscription.remove();
+-        } else {
+-          Keyboard.removeListener('keyboardWillHide', onHide);
+-        }
+-      } else {
+-        if (didShowSubscription?.remove) {
+-          didShowSubscription.remove();
+-        } else {
+-          Keyboard.removeListener('keyboardDidShow', onShow);
+-        }
+-
+-        if (didHideSubscription?.remove) {
+-          didHideSubscription.remove();
+-        } else {
+-          Keyboard.removeListener('keyboardDidHide', onHide);
+-        }
+-      }
++      // RN 0.71 removed Keyboard.removeListener; subscriptions handle removal.
++      willShowSubscription?.remove();
++      willHideSubscription?.remove();
++      didShowSubscription?.remove();
++      didHideSubscription?.remove();
+     };
+   }, [onHide, onShow]);
+ }
