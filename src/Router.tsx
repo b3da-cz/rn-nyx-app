@@ -3,9 +3,8 @@
  * @flow
  */
 import React, { useEffect } from 'react'
-import 'react-native-gesture-handler'
 // import { NetworkConsumer } from 'react-native-offline'
-import { createNativeStackNavigator } from 'react-native-screens/native-stack'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
@@ -111,8 +110,6 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
       <Tab.Navigator
         initialRouteName={config.initialRouteName}
         tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
-        lazy={true}
-        swipeEnabled={config.isNavGesturesEnabled}
         // gestureHandlerProps={{
         //   wip, needs more testing
         //   maxPointers: 1,
@@ -124,7 +121,11 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         //   minDeltaY: 0,
         // }}
         // options={{ cardStyle: NavOptions.cardStyle(theme) }}
-        tabBarOptions={NavOptions.tabBarOptions(theme)}>
+        screenOptions={{
+          lazy: true,
+          swipeEnabled: config.isNavGesturesEnabled,
+          ...NavOptions.tabBarOptions(theme),
+        }}>
         {config.isHistoryEnabled && (
           <Tab.Screen
             name={'historyStack'}
@@ -200,17 +201,17 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
       <RootStack.Screen
         name={'settings'}
         component={Settings}
-        options={{ title: t('profile.settings'), headerTopInsetEnabled: false }}
+        options={{ title: t('profile.settings') }}
       />
       <RootStack.Screen
         name={'theme'}
         component={ThemeScreen}
-        options={{ title: t('profile.theme'), headerTopInsetEnabled: false }}
+        options={{ title: t('profile.theme') }}
       />
       <RootStack.Screen
         name={'about'}
         component={About}
-        options={{ title: t('profile.about'), headerTopInsetEnabled: false }}
+        options={{ title: t('profile.about') }}
       />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>

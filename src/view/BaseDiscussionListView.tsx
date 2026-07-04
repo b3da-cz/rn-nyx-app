@@ -24,7 +24,7 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       setTimeout(() => this.getList(), 100)
     })
-    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+    this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
         this.getList()

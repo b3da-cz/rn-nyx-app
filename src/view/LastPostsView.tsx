@@ -46,7 +46,7 @@ export class LastPostsView extends Component<Props> {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
-    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+    this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
         this.getLastPosts()

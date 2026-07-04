@@ -32,8 +32,9 @@ export const FabComponent = ({
           return false
         }
       }
-      BackHandler.addEventListener('hardwareBackPress', onBackPress)
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress)
+      // RN 0.79 removed BackHandler.removeEventListener; use the subscription instead
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress)
+      return () => subscription.remove()
     }, [isOpen]),
   )
 

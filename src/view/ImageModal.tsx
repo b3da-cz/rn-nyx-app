@@ -1,9 +1,8 @@
 import React from 'react'
-import { Modal, TouchableOpacity, PermissionsAndroid, Platform } from 'react-native'
+import { Modal, TouchableOpacity } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import ImageViewer from 'react-native-image-zoom-viewer'
-// import CameraRoll from '@react-native-community/cameraroll' // todo on requestLegacyExternalStorage fix
-import RNFetchBlob from 'rn-fetch-blob'
+import RNFetchBlob from 'react-native-blob-util'
 import Share from 'react-native-share'
 import { LoaderComponent } from '../component'
 import { t } from '../lib'
@@ -16,20 +15,7 @@ type Props = {
   onExit: Function
 }
 export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'fade', onExit }: Props) => {
-  const hasWritePermission = async () => {
-    const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-    const hasPermission = await PermissionsAndroid.check(permission)
-    if (hasPermission) {
-      return true
-    }
-    const status = await PermissionsAndroid.request(permission)
-    return status === 'granted'
-  }
-
   const fetchFile = async (url, asBase64?) => {
-    if (Platform.OS === 'android' && !(await hasWritePermission())) {
-      return
-    }
     return await RNFetchBlob.config({
       fileCache: true,
     })

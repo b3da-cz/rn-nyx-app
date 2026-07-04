@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation } from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
-import Bugfender from '@bugfender/rn-bugfender'
+import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, UserRowComponent } from '../component'
 import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, t, Nyx } from '../lib'
 
@@ -145,9 +145,9 @@ export class MessageBoxDialog extends Component<Props> {
           isUploading: false,
           uploadedFiles: this.state.uploadedFiles?.length ? [...this.state.uploadedFiles, res] : [res],
         })
-        Bugfender.d('INFO', 'upload file ok')
+        Bugfender.log('INFO', 'upload file ok')
       } else {
-        Bugfender.w('WARNING', 'upload file not ok? ' + (res?.error ? res.error : ''))
+        Bugfender.warn('WARNING', 'upload file not ok? ' + (res?.error ? res.error : ''))
       }
     } catch (e) {
       console.warn(e)

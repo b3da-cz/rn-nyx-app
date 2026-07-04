@@ -8,21 +8,23 @@ import App from './App'
 import { name as appName } from './app.json'
 import { bugfender as bugfenderKey } from './keys.json'
 import { setJSExceptionHandler, setNativeExceptionHandler } from 'react-native-exception-handler'
-import Bugfender from '@bugfender/rn-bugfender'
+import { Bugfender } from '@bugfender/rn-bugfender'
 import messaging from '@react-native-firebase/messaging'
 
-Bugfender.init(bugfenderKey)
+if (bugfenderKey) {
+  Bugfender.init({ appKey: bugfenderKey, overrideConsoleMethods: false })
+}
 
 const exceptionhandler = (error, isFatal) => {
   if (isFatal) {
-    Bugfender.e('ERROR_FATAL', error.stack)
+    Bugfender.error('ERROR_FATAL', error.stack)
   } else {
-    Bugfender.e('ERROR', error.stack)
+    Bugfender.error('ERROR', error.stack)
   }
 }
 setJSExceptionHandler(exceptionhandler, true)
 setNativeExceptionHandler(exceptionString => {
-  Bugfender.e('ERROR_NATIVE', exceptionString)
+  Bugfender.error('ERROR_NATIVE', exceptionString)
 })
 
 messaging().setBackgroundMessageHandler(async remoteMessage => {

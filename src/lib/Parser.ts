@@ -1,4 +1,4 @@
-import Bugfender from '@bugfender/rn-bugfender'
+import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
 import { fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts } from '../lib'
@@ -343,7 +343,7 @@ export const parsePostsContent = posts => {
       }
     }
   } catch (e) {
-    Bugfender.e('ERROR_PARSER', e.stack)
+    Bugfender.error('ERROR_PARSER', e.stack)
   }
   return posts
 }
@@ -357,7 +357,7 @@ export const parseNotificationsContent = notifications => {
       }
     }
   } catch (e) {
-    Bugfender.e('ERROR_PARSER', e.stack)
+    Bugfender.error('ERROR_PARSER', e.stack)
   }
   return notifications
 }
@@ -374,7 +374,7 @@ export const recountDiscussionList = discussions => {
       return { ...d, unreadPostCount }
     })
   } catch (e) {
-    Bugfender.e('ERROR_PARSER', e.stack)
+    Bugfender.error('ERROR_PARSER', e.stack)
   }
   return discussions
 }

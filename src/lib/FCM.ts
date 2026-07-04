@@ -7,6 +7,7 @@ export const initFCM = async (nyx: Nyx, config: any, isAuthenticated: boolean, i
   }
   try {
     if (!config.isFCMSubscribed || isForced) {
+      await messaging().requestPermission() // POST_NOTIFICATIONS runtime prompt on Android 13+
       const fcmToken = await messaging().getToken()
       const subFCMRes = await nyx.api.subscribeForFCM(fcmToken, 'Nnn')
       config.fcmToken = fcmToken

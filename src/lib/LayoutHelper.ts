@@ -1,5 +1,5 @@
 import { Dimensions, Image } from 'react-native'
-import Bugfender from '@bugfender/rn-bugfender'
+import { Bugfender } from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
 // import { prefetchImageSize } from './ImageSizeHelper'
 
@@ -52,7 +52,7 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
     }
   } catch (e) {
     console.warn(e) // TODO: remove
-    Bugfender.e('ERROR_LAYOUT_HELPER', e.stack)
+    Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)
   }
   return posts
 }
@@ -171,7 +171,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
     }
   } catch (e) {
     console.warn(e) // TODO: remove
-    Bugfender.e('ERROR_LAYOUT_HELPER', e.stack)
+    Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)
   }
   return posts
 }

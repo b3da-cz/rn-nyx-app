@@ -4,14 +4,13 @@
  */
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { Linking, LogBox, Platform, UIManager, SafeAreaView } from 'react-native'
-import useColorScheme from 'react-native/Libraries/Utilities/useColorScheme'
-import 'react-native-gesture-handler'
+import { Linking, LogBox, Platform, UIManager, useColorScheme } from 'react-native'
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { NetworkProvider } from 'react-native-offline'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
-import Bugfender from '@bugfender/rn-bugfender'
+import { Bugfender } from '@bugfender/rn-bugfender'
 import { confirm, LoaderComponent } from './src/component'
 // import Feather from 'react-native-vector-icons/Feather'
 // Feather.loadFont()
@@ -84,8 +83,8 @@ const App: () => ReactNode = () => {
       setConfirmationCode(undefined)
       setIsAuthenticated(false)
     })
-    Bugfender.setDeviceString('@username', username)
-    Bugfender.d('INFO', 'App: Nyx initialized')
+    Bugfender.setDeviceKey('@username', username || '')
+    Bugfender.log('INFO', 'App: Nyx initialized')
     setNyx(nyx)
     if (username?.toLowerCase() === gplayTestId.toLowerCase()) {
       await onLogin()
@@ -195,8 +194,9 @@ const App: () => ReactNode = () => {
 
   const theme = createTheme({ ...config.themeOptions, isDarkTheme: themeType === 'dark' })
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <NetworkProvider pingServerUrl={'https://nyx.cz'}>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top', 'bottom']}>
+        <NetworkProvider pingServerUrl={'https://nyx.cz'}>
         <PaperProvider theme={theme}>
           {!isAppLoaded && <LoaderComponent theme={theme} />}
           {isAppLoaded && isAuthenticated && (
@@ -224,8 +224,9 @@ const App: () => ReactNode = () => {
             />
           )}
         </PaperProvider>
-      </NetworkProvider>
-    </SafeAreaView>
+        </NetworkProvider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 
