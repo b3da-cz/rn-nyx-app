@@ -104,20 +104,36 @@ export class Parser {
     this.isParsed = true
   }
 
+  // node-html-parser normalizes attribute whitespace when serializing nodes, so
+  // node.toString() may not appear verbatim in the original content (e.g. nyx
+  // emits "<video  width=..." with a double space). Exact replace would then
+  // silently drop the element; fall back to a whitespace-tolerant match.
+  replaceRaw(content: string, raw: string, replacement: string) {
+    if (content.includes(raw)) {
+      return content.replace(raw, replacement)
+    }
+    try {
+      const pattern = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')
+      return content.replace(new RegExp(pattern), replacement)
+    } catch (e) {
+      return content
+    }
+  }
+
   tokenizeContent() {
     const T = TOKEN
     let content = this.contentRaw
-    this.spoilers.forEach(s => (content = content.replace(s.raw, `${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
-    this.replies.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
-    this.images.forEach(i => (content = content.replace(i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
-    this.links.forEach(l => (content = content.replace(l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
-    this.codeBlocks.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
-    this.textsBold.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.TEXT_BOLD}${c.id}${T.SPLIT}`)))
-    this.textsItalic.forEach(c => (content = content.replace(c.raw, `${T.SPLIT}${T.TEXT_ITALIC}${c.id}${T.SPLIT}`)))
-    this.ytBlocks.forEach(y => (content = content.replace(y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
-    this.videos.forEach(v => (content = content.replace(v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
-    this.ytBlocksToDelete.forEach(y => (content = content.replace(y.raw, '')))
-    this.pcBlocksToDelete.forEach(p => (content = content.replace(p.raw, '')))
+    this.spoilers.forEach(s => (content = this.replaceRaw(content, s.raw, `${T.SPLIT}${T.SPOILER}${s.id}${T.SPLIT}`)))
+    this.replies.forEach(l => (content = this.replaceRaw(content, l.raw, `${T.SPLIT}${T.REPLY}${l.id}${T.SPLIT}`)))
+    this.images.forEach(i => (content = this.replaceRaw(content, i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
+    this.links.forEach(l => (content = this.replaceRaw(content, l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
+    this.codeBlocks.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
+    this.textsBold.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_BOLD}${c.id}${T.SPLIT}`)))
+    this.textsItalic.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_ITALIC}${c.id}${T.SPLIT}`)))
+    this.ytBlocks.forEach(y => (content = this.replaceRaw(content, y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
+    this.videos.forEach(v => (content = this.replaceRaw(content, v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
+    this.ytBlocksToDelete.forEach(y => (content = this.replaceRaw(content, y.raw, '')))
+    this.pcBlocksToDelete.forEach(p => (content = this.replaceRaw(content, p.raw, '')))
     this.contentParts = content.split(T.SPLIT)
     this.finalizeText()
     this.contentTemplate = content
@@ -248,7 +264,9 @@ export class Parser {
     return this.html.querySelectorAll('video').map(v => ({
       id: generateUuidV4(),
       raw: v.toString(),
-      link: v.getAttribute('src') ?? v.querySelector('source')?.getAttribute('src'),
+      // nyx-hosted files have relative src; the video WebView renders inline
+      // HTML with no base URL, so relative links would silently fail to load
+      link: this.fixLink(v.getAttribute('src') ?? v.querySelector('source')?.getAttribute('src')),
     }))
   }
 
