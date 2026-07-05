@@ -239,25 +239,22 @@ export class Parser {
           a.getAttribute('href') &&
           (a.getAttribute('href').includes('youtube') || a.getAttribute('href').includes('youtu.be')),
       )
-      .map(a => ({
-        id: generateUuidV4(),
-        raw: a.toString(),
-        text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
-        link: a.getAttribute('href'),
-        videoId:
-          a.getAttribute('href') && a.getAttribute('href').includes('youtube')
-            ? a.getAttribute('href').replace('https://www.youtube.com/watch?v=', '').split('&')[0]
-            : a.getAttribute('href') && a.getAttribute('href').includes('youtu.be')
-            ? a.getAttribute('href').replace('https://youtu.be/', '')
-            : 'error',
-      }))
-    return ytBlocks.map(b => {
-      let videoId = b.videoId
-      if (b.videoId.split('?').length > 1) {
-        videoId = b.videoId.split('?')[0]
-      }
-      return { ...b, videoId }
-    })
+      .map(a => {
+        const href = a.getAttribute('href')
+        // extract the video id from any of the link shapes: www.youtube.com,
+        // m.youtube.com, bare youtube.com (watch/shorts/embed/live) and youtu.be
+        const idMatch = href.match(
+          /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]+)/,
+        )
+        return {
+          id: generateUuidV4(),
+          raw: a.toString(),
+          text: this.replaceHtmlEntitiesAndTags(a.innerText || ''),
+          link: href,
+          videoId: idMatch ? idMatch[1] : 'error',
+        }
+      })
+    return ytBlocks
   }
 
   getVideoTags() {
