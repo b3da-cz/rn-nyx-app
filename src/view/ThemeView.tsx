@@ -3,6 +3,7 @@ import { ScrollView, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { FAB } from 'react-native-paper'
 import {
+  androidStackBottomInset,
   ComponentExamplesComponent,
   FormRowSelectComponent,
   SafeBottom,
@@ -206,7 +207,7 @@ export class ThemeView extends Component<Props> {
           </View>
           <ComponentExamplesComponent nyx={this.nyx} />
         </ScrollView>
-        <SafeBottom>
+        <SafeBottom min={androidStackBottomInset}>
           {insetBottom => (
             <FAB
               style={{

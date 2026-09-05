@@ -1,12 +1,23 @@
 import React, { useCallback, useState } from 'react'
-import { BackHandler } from 'react-native'
+import { BackHandler, Platform } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FAB, Portal } from 'react-native-paper'
 
-export const SafeBottom = ({ children }: { children: (bottom: number) => React.ReactNode }) => {
+// API 35+ draws edge-to-edge even when RN edgeToEdgeEnabled=false, and
+// useSafeAreaInsets().bottom is often 0. Stack screens (theme/settings)
+// have no tab bar, so FABs need this fallback to clear the gesture bar.
+export const androidStackBottomInset = Platform.OS === 'android' ? 48 : 0
+
+export const SafeBottom = ({
+  children,
+  min = 0,
+}: {
+  children: (bottom: number) => React.ReactNode
+  min?: number
+}) => {
   const { bottom } = useSafeAreaInsets()
-  return <>{children(bottom)}</>
+  return <>{children(Math.max(bottom, min))}</>
 }
 
 type Props = {
