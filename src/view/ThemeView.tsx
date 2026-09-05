@@ -2,7 +2,12 @@ import React, { Component } from 'react'
 import { ScrollView, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { FAB } from 'react-native-paper'
-import { ComponentExamplesComponent, FormRowSelectComponent, SectionHeaderComponent } from '../component'
+import {
+  ComponentExamplesComponent,
+  FormRowSelectComponent,
+  SafeBottom,
+  SectionHeaderComponent,
+} from '../component'
 import {
   defaultThemeOptions,
   exportTheme,
@@ -201,18 +206,22 @@ export class ThemeView extends Component<Props> {
           </View>
           <ComponentExamplesComponent nyx={this.nyx} />
         </ScrollView>
-        <FAB
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            bottom: 0,
-            backgroundColor: theme.colors.primary,
-          }}
-          icon={'export'}
-          visible={true}
-          onPress={() => this.exportTheme()}
-        />
+        <SafeBottom>
+          {insetBottom => (
+            <FAB
+              style={{
+                position: 'absolute',
+                margin: 16,
+                right: 0,
+                bottom: insetBottom,
+                backgroundColor: theme.colors.primary,
+              }}
+              icon={'export'}
+              visible={true}
+              onPress={() => this.exportTheme()}
+            />
+          )}
+        </SafeBottom>
       </View>
     )
   }

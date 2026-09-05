@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation } from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
-import { ButtonComponent, confirm, UserRowComponent } from '../component'
+import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
 import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, t, Nyx } from '../lib'
 
 type Props = {
@@ -432,20 +432,27 @@ export class MessageBoxDialog extends Component<Props> {
             </View>
           </Dialog.Actions>
         </Dialog>
-        <FAB
-          small={this.props.params.isGitIssue}
-          style={{
-            position: 'absolute',
-            margin: 16,
-            right: 0,
-            bottom: this.props.fabTopPosition === undefined ? this.props.fabBottomPosition || 0 : undefined,
-            top: this.props.fabTopPosition,
-            backgroundColor: this.props.fabBackgroundColor || colors.primary,
-          }}
-          icon={this.props.fabIcon || 'message'}
-          visible={isVisible && !isDialogVisible}
-          onPress={() => this.showDialog(true)}
-        />
+        <SafeBottom>
+          {insetBottom => (
+            <FAB
+              small={this.props.params.isGitIssue}
+              style={{
+                position: 'absolute',
+                margin: 16,
+                right: 0,
+                bottom:
+                  this.props.fabTopPosition === undefined
+                    ? (this.props.fabBottomPosition || 0) + insetBottom
+                    : undefined,
+                top: this.props.fabTopPosition,
+                backgroundColor: this.props.fabBackgroundColor || colors.primary,
+              }}
+              icon={this.props.fabIcon || 'message'}
+              visible={isVisible && !isDialogVisible}
+              onPress={() => this.showDialog(true)}
+            />
+          )}
+        </SafeBottom>
       </View>
     )
   }

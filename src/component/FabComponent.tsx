@@ -1,7 +1,13 @@
 import React, { useCallback, useState } from 'react'
 import { BackHandler } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FAB, Portal } from 'react-native-paper'
+
+export const SafeBottom = ({ children }: { children: (bottom: number) => React.ReactNode }) => {
+  const { bottom } = useSafeAreaInsets()
+  return <>{children(bottom)}</>
+}
 
 type Props = {
   isVisible: boolean
@@ -22,6 +28,7 @@ export const FabComponent = ({
   onPress,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
+  const { bottom: insetBottom } = useSafeAreaInsets()
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -53,7 +60,7 @@ export const FabComponent = ({
             setIsOpen(false)
           }
         }}
-        style={{ paddingBottom }}
+        style={{ paddingBottom: paddingBottom + insetBottom }}
       />
     </Portal>
   )
