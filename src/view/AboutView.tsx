@@ -62,18 +62,20 @@ export class AboutView extends Component<Props> {
             {'Děkuji všem, kteří se podíleli na testování a ladění prvních vydání aplikace, či přispěli svým kódem později, zejména pak IDs níže.' +
               '\nTaké bych rád poděkoval těm, kteří se rozhodli podpořit vývoj aplikace na buymeacoffee.'}
           </Text>
-          <SectionHeaderComponent title={'Contributors'} backgroundColor={theme.colors.surface} />
-          {contributors.map(contributor => (
-            <UserRowComponent user={{ username: contributor }} key={`contributor-${contributor}`} />
-          ))}
           <View style={{ flexDirection: 'row' }}>
-            <View style={{ width: '50%' }}>
+            <View style={{ width: '33.333%' }}>
               <SectionHeaderComponent title={'Testeři'} backgroundColor={theme.colors.surface} />
               {testers.map(tester => (
                 <UserRowComponent user={{ username: tester }} key={`tester-${tester}`} />
               ))}
             </View>
-            <View style={{ width: '50%' }}>
+            <View style={{ width: '33.333%' }}>
+              <SectionHeaderComponent title={'Contributors'} backgroundColor={theme.colors.surface} />
+              {contributors.map(contributor => (
+                <UserRowComponent user={{ username: contributor }} key={`contributor-${contributor}`} />
+              ))}
+            </View>
+            <View style={{ width: '33.333%' }}>
               <SectionHeaderComponent
                 title={'Podporovatelé'}
                 backgroundColor={theme.colors.surface}
