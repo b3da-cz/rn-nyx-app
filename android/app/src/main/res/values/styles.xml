@@ -6,8 +6,11 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
-    <style name="BootTheme" parent="AppTheme">
-        <item name="android:background">@drawable/bootsplash</item>
+    <!-- react-native-bootsplash v6 theme -->
+    <style name="BootTheme" parent="Theme.BootSplash">
+        <item name="bootSplashBackground">@color/bootsplash_background</item>
+        <item name="bootSplashLogo">@mipmap/bootsplash_logo</item>
+        <item name="postBootSplashTheme">@style/AppTheme</item>
     </style>
 
 </resources>

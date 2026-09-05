@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, ScrollView, View } from 'react-native'
 import { Dialog, FAB, Text, TextInput, IconButton } from 'react-native-paper'
-import { UserRowComponent } from '../component'
+import { androidStackBottomInset, SafeBottom, UserRowComponent } from '../component'
 import { LayoutAnimConf, MainContext, Nyx, Styling, Storage, t, Theme, ThemeAware } from '../lib'
 
 type Props = {
@@ -104,10 +104,12 @@ export class FilterSettingsDialog extends Component<Props> {
     const { colors } = this.state.theme
     const { isDialogVisible, phrase, users, blockedUsers, filters, usernameToFind } = this.state
     return (
+      <SafeBottom min={androidStackBottomInset}>
+        {insetBottom => (
       <View
         style={{
           position: 'absolute',
-          bottom: 0,
+          bottom: insetBottom,
           height: isDialogVisible ? '100%' : 100,
           left: isDialogVisible ? 0 : undefined,
           right: 0,
@@ -180,6 +182,8 @@ export class FilterSettingsDialog extends Component<Props> {
           onPress={() => this.showDialog()}
         />
       </View>
+        )}
+      </SafeBottom>
     )
   }
 }

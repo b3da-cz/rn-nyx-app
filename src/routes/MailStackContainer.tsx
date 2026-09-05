@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { createNativeStackNavigator } from 'react-native-screens/native-stack'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
 import { Discussion, Mail } from '../routes'
 

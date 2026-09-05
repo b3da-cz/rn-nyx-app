@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { Dimensions } from 'react-native'
-import { useTheme as rnnUseTheme } from '@react-navigation/native'
+import { DefaultTheme as rnnDefaultTheme, useTheme as rnnUseTheme } from '@react-navigation/native'
 import { createPalette } from './Palette'
 
 type FontType = {
   fontFamily: string
-  fontWeight: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | undefined
+  fontWeight: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'
 }
 export type Theme = {
   animation: { scale: number }
@@ -38,6 +38,8 @@ export type Theme = {
     medium: FontType
     regular: FontType
     thin: FontType
+    bold: FontType
+    heavy: FontType
   }
   metrics: {
     line: number
@@ -100,6 +102,9 @@ export const createTheme = ({
     // medium: { fontFamily: 'sans-serif-medium', fontWeight: 'normal' },
     // regular: { fontFamily: 'sans-serif', fontWeight: 'normal' },
     thin: { fontFamily: 'sans-serif-thin', fontWeight: 'normal' },
+    // react-navigation v7 theme requires bold/heavy entries
+    bold: { fontFamily: 'Verdana', fontWeight: 'bold' },
+    heavy: { fontFamily: 'Verdana', fontWeight: 'bold' },
   },
   metrics: {
     line: Math.max(1, baseBlockSize / 15),
@@ -126,7 +131,16 @@ export const createTheme = ({
   roundness,
 })
 
-export const useTheme = (): Theme => <Theme>rnnUseTheme()
+// react-navigation v7 throws outside NavigationContainer; v5 returned its default theme.
+// Restore the v5 behavior for components rendered outside the container (Loader, Login),
+// which detect the incomplete theme and fall back to their theme prop.
+export const useTheme = (): Theme => {
+  try {
+    return <Theme>rnnUseTheme()
+  } catch (e) {
+    return <Theme>(<unknown>rnnDefaultTheme)
+  }
+}
 
 // helper for class components
 export const ThemeAware = ({ setTheme }) => {

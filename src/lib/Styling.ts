@@ -51,33 +51,39 @@ export const Styling: any = {
 
 export const NavOptions = {
   tabBarOptions: theme => ({
-    style: {
+    tabBarStyle: {
       height: 45,
       backgroundColor: theme.colors.background,
     },
-    labelStyle: {
+    tabBarLabelStyle: {
       fontSize: 8,
     },
-    indicatorStyle: {
+    tabBarIndicatorStyle: {
       backgroundColor: theme.colors.primary,
       height: 3,
     },
-    // tabStyle: { width: tabBarWidth - (notificationsBarWidth / tabBarItemCount) },
-    pressColor: theme.colors.ripple,
-    activeTintColor: theme.colors.primary,
+    // tabBarItemStyle: { width: tabBarWidth - (notificationsBarWidth / tabBarItemCount) },
+    tabBarPressColor: theme.colors.ripple,
+    tabBarActiveTintColor: theme.colors.primary,
   }),
   screenOptions: (theme): any => ({
     headerStyle: {
       backgroundColor: theme.colors.background,
-      height: 50,
     },
     headerTitleStyle: { fontSize: theme.metrics.fontSizes.h3 },
-    // headerTintColor: theme.colors.text,
+    // App already insets the status bar via SafeAreaView. Native-stack v7
+    // otherwise adds the same inset again (headerTopInsetEnabled is derived
+    // from this flag), which made settings/theme/about headers twice as tall.
+    statusBarTranslucent: false,
   }),
   cardStyle: (theme): any => ({ backgroundColor: theme.colors.background }),
 }
 
-export const discussionScreenOptions = { headerShown: false, title: '', headerTopInsetEnabled: false }
+export const discussionScreenOptions = {
+  headerShown: false,
+  title: '',
+  statusBarTranslucent: false,
+}
 
 export const LayoutAnimConf: any = {
   spring: {

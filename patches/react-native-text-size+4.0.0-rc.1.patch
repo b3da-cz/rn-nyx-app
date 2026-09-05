@@ -1,0 +1,66 @@
+diff --git a/node_modules/react-native-text-size/android/build.gradle b/node_modules/react-native-text-size/android/build.gradle
+index 2617bd7..b35c713 100644
+--- a/node_modules/react-native-text-size/android/build.gradle
++++ b/node_modules/react-native-text-size/android/build.gradle
+@@ -5,7 +5,7 @@ def getPackageVersion() {
+ }
+ 
+ def safeExtGet(prop, fallback) {
+-    return rootProject.ext.hasProperty(prop) ? rootProject.ext.get(prop) : fallback
++    return rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+ }
+ 
+ def _buildToolsVersion  = safeExtGet('buildToolsVersion', '28.0.3')
+@@ -13,19 +13,10 @@ def _compileSdkVersion  = safeExtGet('compileSdkVersion', 28)
+ def _targetSdkVersion   = safeExtGet('targetSdkVersion', 28)
+ def _minSdkVersion      = safeExtGet('minSdkVersion', 16)
+ 
+-buildscript {
+-    repositories {
+-        google()
+-        jcenter()
+-    }
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:3.4.1'
+-    }
+-}
+-
+ apply plugin: 'com.android.library'
+ 
+ android {
++    namespace "com.github.amarcruz.rntextsize"
+     compileSdkVersion _compileSdkVersion
+     buildToolsVersion _buildToolsVersion
+ 
+@@ -43,7 +34,7 @@ android {
+ repositories {
+     mavenLocal()
+     google()
+-    jcenter()
++    mavenCentral()
+     maven {
+         // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+         url "$rootDir/../node_modules/react-native/android"
+diff --git a/node_modules/react-native-text-size/android/src/main/AndroidManifest.xml b/node_modules/react-native-text-size/android/src/main/AndroidManifest.xml
+index 7ec9e8c..f4b498e 100644
+--- a/node_modules/react-native-text-size/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-text-size/android/src/main/AndroidManifest.xml
+@@ -1,4 +1,3 @@
+ 
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-          package="com.github.amarcruz.rntextsize">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ </manifest>
+diff --git a/node_modules/react-native-text-size/android/src/main/java/com/github/amarcruz/rntextsize/RNTextSizeConf.java b/node_modules/react-native-text-size/android/src/main/java/com/github/amarcruz/rntextsize/RNTextSizeConf.java
+index 462ecd9..744bf3d 100644
+--- a/node_modules/react-native-text-size/android/src/main/java/com/github/amarcruz/rntextsize/RNTextSizeConf.java
++++ b/node_modules/react-native-text-size/android/src/main/java/com/github/amarcruz/rntextsize/RNTextSizeConf.java
+@@ -11,7 +11,7 @@ import com.facebook.react.bridge.ReadableArray;
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.bridge.ReadableType;
+ import com.facebook.react.uimanager.PixelUtil;
+-import com.facebook.react.views.text.ReactFontManager;
++import com.facebook.react.common.assets.ReactFontManager;
+ 
+ import java.util.Map;
+ 

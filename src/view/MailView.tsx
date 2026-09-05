@@ -46,7 +46,7 @@ export class MailView extends Component<Props> {
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
-    this.navTabPressListener = this.props.navigation.dangerouslyGetParent().addListener('tabPress', () => {
+    this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
       if (isFocused && !this.state.isFetching) {
         this.getLatestMessages()

@@ -1,7 +1,7 @@
 import React, { FC } from 'react'
 // import { Portal } from 'react-native-paper'
 import DocumentPicker from 'react-native-document-picker'
-import ImageResizer, { Response as RNIRResponse } from 'react-native-image-resizer'
+import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-image-resizer'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 
@@ -48,7 +48,7 @@ export const wait = async (ms = 100) => {
 
 export const pickFileAndResizeJpegs = async size => {
   try {
-    const file = await DocumentPicker.pick({
+    const file = await DocumentPicker.pickSingle({
       type: [DocumentPicker.types.allFiles],
     })
     // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
