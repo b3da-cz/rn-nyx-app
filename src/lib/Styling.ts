@@ -71,12 +71,19 @@ export const NavOptions = {
       backgroundColor: theme.colors.background,
     },
     headerTitleStyle: { fontSize: theme.metrics.fontSizes.h3 },
-    // headerTintColor: theme.colors.text,
+    // App already insets the status bar via SafeAreaView. Native-stack v7
+    // otherwise adds the same inset again (headerTopInsetEnabled is derived
+    // from this flag), which made settings/theme/about headers twice as tall.
+    statusBarTranslucent: false,
   }),
   cardStyle: (theme): any => ({ backgroundColor: theme.colors.background }),
 }
 
-export const discussionScreenOptions = { headerShown: false, title: '' }
+export const discussionScreenOptions = {
+  headerShown: false,
+  title: '',
+  statusBarTranslucent: false,
+}
 
 export const LayoutAnimConf: any = {
   spring: {

@@ -196,7 +196,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
     )
   }
   return (
-    <RootStack.Navigator initialRouteName={'tabs'}>
+    <RootStack.Navigator initialRouteName={'tabs'} screenOptions={NavOptions.screenOptions(theme)}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen
         name={'settings'}
