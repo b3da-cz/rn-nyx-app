@@ -8,7 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { NotificationIconComponent } from './component'
+import { NotificationIconComponent, StackHeaderComponent } from './component'
 import { NavOptions, Nyx, rgbToHex, showNotificationBanner, subscribeFCM, t, Theme, wait } from './lib'
 import {
   BookmarksStackContainer,
@@ -196,7 +196,12 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
     )
   }
   return (
-    <RootStack.Navigator initialRouteName={'tabs'} screenOptions={NavOptions.screenOptions(theme)}>
+    <RootStack.Navigator
+      initialRouteName={'tabs'}
+      screenOptions={{
+        ...NavOptions.screenOptions(theme),
+        header: props => <StackHeaderComponent {...props} theme={theme} />,
+      }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
       <RootStack.Screen
         name={'settings'}
