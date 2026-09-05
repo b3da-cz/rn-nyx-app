@@ -3,7 +3,7 @@ import { Linking, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { LinkComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { MainContext, Theme, Nyx } from '../lib'
-import { testers, supporters } from '../../credits.json'
+import { contributors, testers, supporters } from '../../credits.json'
 
 type Props = {
   navigation: any
@@ -59,9 +59,13 @@ export class AboutView extends Component<Props> {
             Klub věnovaný vývoji
           </LinkComponent>
           <Text style={{ padding: 5 }}>
-            {'Děkuji všem, kteří se podíleli na testování a ladění prvních vydání aplikace, zejména pak ID níže.' +
+            {'Děkuji všem, kteří se podíleli na testování a ladění prvních vydání aplikace, či přispěli svým kódem později, zejména pak IDs níže.' +
               '\nTaké bych rád poděkoval těm, kteří se rozhodli podpořit vývoj aplikace na buymeacoffee.'}
           </Text>
+          <SectionHeaderComponent title={'Contributors'} backgroundColor={theme.colors.surface} />
+          {contributors.map(contributor => (
+            <UserRowComponent user={{ username: contributor }} key={`contributor-${contributor}`} />
+          ))}
           <View style={{ flexDirection: 'row' }}>
             <View style={{ width: '50%' }}>
               <SectionHeaderComponent title={'Testeři'} backgroundColor={theme.colors.surface} />
