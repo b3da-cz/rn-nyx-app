@@ -122,6 +122,7 @@ const App: () => ReactNode = () => {
       isRemindersEnabled: conf?.isRemindersEnabled !== undefined ? !!conf.isRemindersEnabled : true,
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
+      isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,
       isUnreadToggleEnabled: conf.isUnreadToggleEnabled === undefined ? true : !!conf.isUnreadToggleEnabled,
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
       shownCategories: conf.shownCategories || [],

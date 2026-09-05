@@ -322,6 +322,14 @@ export class Parser {
         const link = this.links.filter(l => l.id === p.replace(TOKEN.LINK, ''))[0]
         this.clearText += `${link.text} `
         this.clearTextWithUrls += `[${link.text}]( ${link.url} )`
+      } else if (p?.length > 3 && p.startsWith(TOKEN.TEXT_BOLD)) {
+        const text = this.textsBold.filter(l => l.id === p.replace(TOKEN.TEXT_BOLD, ''))[0]
+        this.clearText += `${text.text} `
+        this.clearTextWithUrls += `${text.text} `
+      } else if (p?.length > 3 && p.startsWith(TOKEN.TEXT_ITALIC)) {
+        const text = this.textsItalic.filter(l => l.id === p.replace(TOKEN.TEXT_ITALIC, ''))[0]
+        this.clearText += `${text.text} `
+        this.clearTextWithUrls += `${text.text} `
       } else if (p?.length > 3 && p.startsWith(TOKEN.IMG)) {
         const img = this.images.filter(l => l.id === p.replace(TOKEN.IMG, ''))[0]
         this.clearTextWithUrls += `${img.src}`

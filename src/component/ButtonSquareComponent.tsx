@@ -15,10 +15,10 @@ type Props = {
   marginBottom?: number
   marginTop?: number
   borderWidth?: number
-  width?: number
+  width?: number | string
   height?: number
 }
-export const ButtonSquareComponent = ({
+export const ButtonSquareComponent: React.FC<Props> = ({
   icon,
   isDisabled,
   onPress,
