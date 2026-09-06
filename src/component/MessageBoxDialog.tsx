@@ -1,5 +1,13 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation } from 'react-native'
+import {
+  ActivityIndicator,
+  View,
+  ScrollView,
+  Image,
+  LayoutAnimation,
+  Keyboard,
+  Dimensions,
+} from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
@@ -31,12 +39,16 @@ type State = {
   searchPhrase: string
   selectedRecipient?: string
   lastTypingNotificationTs: number
+  keyboardHeight: number
 }
 export class MessageBoxDialog extends Component<Props> {
   static contextType = MainContext
   state: Readonly<State>
   refMsgBox: any
+  refScroll: any
   sizes: any
+  keyboardShowSub?: { remove: () => void }
+  keyboardHideSub?: { remove: () => void }
   constructor(props) {
     super(props)
     this.state = {
@@ -54,8 +66,10 @@ export class MessageBoxDialog extends Component<Props> {
       searchPhrase: '',
       selectedRecipient: undefined,
       lastTypingNotificationTs: 0,
+      keyboardHeight: 0,
     }
     this.refMsgBox = null
+    this.refScroll = null
     this.sizes = [
       { title: 'Original', value: 'Original' },
       { title: null, value: null },
@@ -65,6 +79,20 @@ export class MessageBoxDialog extends Component<Props> {
       { title: '600px', value: 600 },
       { title: '400px', value: 400 },
     ]
+  }
+
+  componentDidMount() {
+    this.keyboardShowSub = Keyboard.addListener('keyboardDidShow', e => {
+      this.setState({ keyboardHeight: e.endCoordinates.height })
+    })
+    this.keyboardHideSub = Keyboard.addListener('keyboardDidHide', () => {
+      this.setState({ keyboardHeight: 0 })
+    })
+  }
+
+  componentWillUnmount() {
+    this.keyboardShowSub?.remove()
+    this.keyboardHideSub?.remove()
   }
 
   showDialog(isFromFab = false) {
@@ -221,11 +249,15 @@ export class MessageBoxDialog extends Component<Props> {
       selectedSize,
       uploadedFiles,
       users,
+      keyboardHeight,
     } = this.state
     const {
       colors,
       metrics: { blocks, fontSizes },
     } = this.context.theme
+    const windowHeight = Dimensions.get('window').height
+    const dialogMaxHeight =
+      keyboardHeight > 0 ? windowHeight - keyboardHeight - 24 : isMenuVisible ? windowHeight * 0.69 : windowHeight * 0.86
     return (
       <View
         style={{
@@ -238,16 +270,38 @@ export class MessageBoxDialog extends Component<Props> {
         <Dialog
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}
-          style={{ marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }}>
+          style={
+            keyboardHeight > 0
+              ? {
+                  position: 'absolute',
+                  left: 5,
+                  right: 5,
+                  bottom: keyboardHeight,
+                  marginVertical: 0,
+                  marginHorizontal: 0,
+                  maxHeight: dialogMaxHeight,
+                  zIndex: 1,
+                }
+              : { marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }
+          }>
           <Dialog.ScrollArea
             style={{
               paddingLeft: 5,
               paddingRight: 5,
               paddingTop: 5,
               paddingBottom: 0,
-              maxHeight: isMenuVisible ? '69%' : '86%',
+              maxHeight: keyboardHeight > 0 ? dialogMaxHeight - 56 : isMenuVisible ? '69%' : '86%',
             }}>
-            <ScrollView keyboardDismissMode={'on-drag'} keyboardShouldPersistTaps={'always'}>
+            <ScrollView
+              ref={r => (this.refScroll = r)}
+              keyboardDismissMode={'on-drag'}
+              keyboardShouldPersistTaps={'always'}
+              automaticallyAdjustKeyboardInsets={true}
+              onContentSizeChange={() => {
+                if (keyboardHeight > 0) {
+                  this.refScroll?.scrollToEnd({ animated: false })
+                }
+              }}>
               {!!params?.isGitIssue && (
                 <TextInput
                   numberOfLines={1}
