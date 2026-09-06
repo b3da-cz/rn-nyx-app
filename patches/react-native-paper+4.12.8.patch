@@ -18,6 +18,36 @@ index 89734d0..fb53508 100644
    };
  
    const hideModal = () => {
+diff --git a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx b/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
+index 2342881..2e0752a 100644
+--- a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
++++ b/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
+@@ -14,7 +14,7 @@ import color from 'color';
+ import { withTheme } from '../../core/theming';
+ 
+ const ANDROID_VERSION_LOLLIPOP = 21;
+-const ANDROID_VERSION_PIE = 28;
++const ANDROID_VERSION_MARSHMALLOW = 23;
+ 
+ type Props = React.ComponentProps<typeof TouchableWithoutFeedback> & {
+   borderless?: boolean;
+@@ -48,12 +48,12 @@ const TouchableRipple = ({
+       .rgb()
+       .string();
+ 
+-  // A workaround for ripple on Android P is to use useForeground + overflow: 'hidden'
++  // Draw the ripple in the foreground on all Android touchables, not just
++  // borderless ones. On RN 0.81 the bounded *background* ripple no longer
++  // paints, so every TouchableRipple lost its ripple; foreground works.
+   // https://github.com/facebook/react-native/issues/6480
+   const useForeground =
+-    Platform.OS === 'android' &&
+-    Platform.Version >= ANDROID_VERSION_PIE &&
+-    borderless;
++    Platform.OS === 'android' && Platform.Version >= ANDROID_VERSION_MARSHMALLOW;
+ 
+   if (TouchableRipple.supported) {
+     return (
 diff --git a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx b/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
 index 28d2771..7e1a492 100644
 --- a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
