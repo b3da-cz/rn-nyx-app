@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, ToastAndroid, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
-import Swipeable from 'react-native-swipeable-row'
+import { Swipeable } from 'react-native-gesture-handler'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
 import { RNNotificationBanner } from 'react-native-notification-banner'
@@ -61,7 +61,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     if (typeof this.props.onReply === 'function') {
       this.props.onReply(this.props.post.discussion_id, this.props.post.id, this.props.post.username)
     }
-    setTimeout(() => this.refSwipeable.recenter(), 300)
+    setTimeout(() => this.refSwipeable?.close(), 300)
   }
 
   onShare(isContent = false) {
@@ -75,7 +75,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           message: `https://nyx.cz/discussion/${this.props.post.discussion_id}/id/${this.props.post.id}`,
         })
       }
-      setTimeout(() => this.refSwipeable.recenter(), 300)
+      setTimeout(() => this.refSwipeable?.close(), 300)
     } catch (e) {
       console.warn(e)
     }
@@ -105,7 +105,9 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
       return
     }
     if (bounceRight) {
-      this.refSwipeable?.bounceRight()
+      // gesture-handler has no bounce; briefly reveal the rate actions instead
+      this.refSwipeable?.openRight()
+      setTimeout(() => this.refSwipeable?.close(), 400)
     }
     const ratingsMixed = await this.props.nyx.api.getRating(post)
     if (!ratingsMixed || !Array.isArray(ratingsMixed)) {
@@ -121,13 +123,13 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
 
   async ratePost(post, vote) {
     const res = await this.props.nyx.ratePost(post, post.my_rating?.includes(vote) ? 'remove' : vote)
-    this.refSwipeable?.recenter()
+    this.refSwipeable?.close()
     typeof this.props.onPostRated === 'function' ? this.props.onPostRated(res) : null
   }
 
   async setReminder(post) {
     await this.props.nyx.api.setReminder(post.discussion_id, post.id, !post.reminder)
-    this.refSwipeable?.recenter()
+    this.refSwipeable?.close()
     typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
   }
 
@@ -136,7 +138,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     if (res) {
       await this.props.nyx.api.deletePost(post.discussion_id, post.id)
       if (this.refSwipeable) {
-        this.refSwipeable.recenter()
+        this.refSwipeable.close()
       }
       this.props.onDelete(post.id)
     }
@@ -147,7 +149,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     if (res) {
       await this.props.nyx.api.reportPost(post.id)
       if (this.refSwipeable) {
-        this.refSwipeable.recenter()
+        this.refSwipeable.close()
       }
       showNotificationBanner({
         title: 'Thank you!',
@@ -177,80 +179,75 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     return (
       <View>
         <Swipeable
-          onSwipeStart={e => {
-            e.preventDefault()
-            e.stopPropagation()
-            return false
+          ref={r => {
+            this.refSwipeable = r
           }}
-          // onSwipeStart={() => this.props.onSwipe(true)}
-          // onSwipeRelease={() => this.props.onSwipe(false)}
-          leftButtons={[
-            !post.parsed?.advertisement && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_reply`}
-                icon={'corner-down-right'}
-                onPress={() => this.onReply()}
-              />
-            ),
-            <ButtonSquareComponent
-              key={`${post.id}_btn_share_content`}
-              icon={'copy'}
-              onPress={() => this.onShare(true)}
-            />,
-            <ButtonSquareComponent key={`${post.id}_btn_share`} icon={'share'} onPress={() => this.onShare()} />,
-            post.can_be_reminded && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_remind`}
-                icon={'bell'}
-                color={post.reminder ? colors.primary : undefined}
-                onPress={() => this.setReminder(post)}
-              />
-            ),
-            post.can_be_deleted && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_delete`}
-                icon={'trash-2'}
-                color={'red'}
-                onPress={() => this.deletePost(post)}
-              />
-            ),
-            <ButtonSquareComponent
-              key={`${post.id}_btn_report`}
-              icon={'alert-triangle'}
-              color={'red'}
-              onPress={() => this.reportPost(post)}
-            />,
-          ].filter(b => !!b)}
-          leftButtonContainerStyle={{ alignItems: 'flex-end' }}
-          leftButtonWidth={50}
-          rightButtonWidth={50}
-          rightButtons={
-            post.can_be_rated
-              ? [
+          enabled={this.props.isInteractive}
+          friction={2}
+          overshootFriction={8}
+          leftThreshold={40}
+          rightThreshold={40}
+          renderLeftActions={() => (
+            <View style={{ flexDirection: 'row' }}>
+              {[
+                !post.parsed?.advertisement && (
                   <ButtonSquareComponent
-                    key={`${post.id}_btn_thumbs_up`}
-                    icon={'thumbs-up'}
-                    color={'green'}
-                    onPress={() => this.ratePost(post, 'positive')}
-                  />,
+                    key={`${post.id}_btn_reply`}
+                    icon={'corner-down-right'}
+                    onPress={() => this.onReply()}
+                  />
+                ),
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_share_content`}
+                  icon={'copy'}
+                  onPress={() => this.onShare(true)}
+                />,
+                <ButtonSquareComponent key={`${post.id}_btn_share`} icon={'share'} onPress={() => this.onShare()} />,
+                post.can_be_reminded && (
                   <ButtonSquareComponent
-                    key={`${post.id}_btn_thumbs_down`}
-                    icon={'thumbs-down'}
+                    key={`${post.id}_btn_remind`}
+                    icon={'bell'}
+                    color={post.reminder ? colors.primary : undefined}
+                    onPress={() => this.setReminder(post)}
+                  />
+                ),
+                post.can_be_deleted && (
+                  <ButtonSquareComponent
+                    key={`${post.id}_btn_delete`}
+                    icon={'trash-2'}
                     color={'red'}
-                    onPress={() => this.ratePost(post, 'negative')}
-                  />,
-                ]
-              : [<View />]
-          }
-          // onRightButtonsActivate={() => this.getRating(post)}
-          rightButtonContainerStyle={{
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-start',
-            flexWrap: 'wrap',
-          }}
-          disable={!this.props.isInteractive}
-          onRef={r => (this.refSwipeable = r)}>
+                    onPress={() => this.deletePost(post)}
+                  />
+                ),
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_report`}
+                  icon={'alert-triangle'}
+                  color={'red'}
+                  onPress={() => this.reportPost(post)}
+                />,
+              ].filter(b => !!b)}
+            </View>
+          )}
+          renderRightActions={
+            post.can_be_rated
+              ? () => (
+                  <View style={{ flexDirection: 'row' }}>
+                    <ButtonSquareComponent
+                      key={`${post.id}_btn_thumbs_up`}
+                      icon={'thumbs-up'}
+                      color={'green'}
+                      onPress={() => this.ratePost(post, 'positive')}
+                    />
+                    <ButtonSquareComponent
+                      key={`${post.id}_btn_thumbs_down`}
+                      icon={'thumbs-down'}
+                      color={'red'}
+                      onPress={() => this.ratePost(post, 'negative')}
+                    />
+                  </View>
+                )
+              : undefined
+          }>
           <TouchableRipple
             disabled={!this.props.isPressable}
             style={{ backgroundColor: this.props.isUnread ? colors.tertiary : colors.card }}

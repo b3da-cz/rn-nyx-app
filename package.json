@@ -31,6 +31,7 @@
     "postversion": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
   },
   "dependencies": {
+    "@bam.tech/react-native-image-resizer": "^3.0.11",
     "@bugfender/rn-bugfender": "^5.0.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-clipboard/clipboard": "^1.16.3",
@@ -51,8 +52,8 @@
     "react-native-device-info": "^14.1.1",
     "react-native-document-picker": "^9.3.1",
     "react-native-exception-handler": "^2.10.10",
+    "react-native-gesture-handler": "^2.32.0",
     "react-native-image-helper": "^0.0.3",
-    "@bam.tech/react-native-image-resizer": "^3.0.11",
     "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-notification-banner": "file:vendor/react-native-notification-banner",
     "react-native-offline": "^6.0.2",
