@@ -83,6 +83,11 @@ export const discussionScreenOptions = {
   headerShown: false,
   title: '',
   statusBarTranslucent: false,
+  // Native-stack v7 enables a horizontal swipe-back gesture that swallowed the
+  // left/right post-header swipe (reply, rate, ...). Disable the screen gesture
+  // so horizontal drags reach the post's Swipeable; back is via header/hardware.
+  gestureEnabled: false,
+  fullScreenGestureEnabled: false,
 }
 
 export const LayoutAnimConf: any = {

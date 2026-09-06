@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Linking, LogBox, Platform, UIManager, useColorScheme } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { NetworkProvider } from 'react-native-offline'
 import { NavigationContainer } from '@react-navigation/native'
@@ -195,6 +196,7 @@ const App: () => ReactNode = () => {
 
   const theme = createTheme({ ...config.themeOptions, isDarkTheme: themeType === 'dark' })
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top', 'bottom']}>
         <NetworkProvider pingServerUrl={'https://nyx.cz'}>
@@ -228,6 +230,7 @@ const App: () => ReactNode = () => {
         </NetworkProvider>
       </SafeAreaView>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }
 
