@@ -15,6 +15,7 @@ import {
   filterPostsByContent,
   formatDate,
   getDistinctPosts,
+  toGalleryImages,
   isDiscussionPermitted,
   MainContext,
   Nyx,
@@ -224,7 +225,8 @@ export class DiscussionView extends Component<Props> {
       idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
     }
     const res = await this.nyx?.api.getDiscussion(idOrQueryString)
-    if (!res?.posts) {
+    if (!res?.posts?.length) {
+      this.setState({ isFetching: false })
       return 0
     }
     this.getAdvertisementOP(
@@ -359,8 +361,8 @@ export class DiscussionView extends Component<Props> {
   }
 
   showImages(image, imageList?) {
-    const imgIndex = imageList?.length > 0 ? imageList.indexOf(image) : this.state.images.indexOf(image)
-    const images = imageList?.length > 0 ? imageList : this.state.images.map(img => ({ url: img?.src }))
+    const sourceList = imageList?.length > 0 ? imageList : this.state.images
+    const { images, imgIndex } = toGalleryImages(image, sourceList)
     this.props.onImages(images, imgIndex)
   }
 

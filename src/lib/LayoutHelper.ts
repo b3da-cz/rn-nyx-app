@@ -45,7 +45,10 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
     let i = 0
     for (const post of posts) {
       if (post.parsed.images?.length > 0 && post.content_raw?.type !== 'advertisement') {
-        post.parsed.images = await getImageSizes(post.parsed.images, isFullImgSize)
+        const needsSizes = post.parsed.images.some(img => !img.width || !img.height)
+        if (needsSizes) {
+          post.parsed.images = await getImageSizes(post.parsed.images, isFullImgSize)
+        }
       }
       i++
       typeof onProgress === 'function' ? onProgress({ length: posts.length, done: i }) : null // + ~4s in debug :( .. what about Promise.allSettled() ?

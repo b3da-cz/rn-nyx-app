@@ -5,6 +5,18 @@ import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-i
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 
+export const toGalleryImages = (image: any, list: any[] = []) => {
+  const images = (list || [])
+    .map(img => ({ url: img?.url || img?.src }))
+    .filter(img => !!img.url)
+  const key = image?.url || image?.src
+  let imgIndex = images.findIndex(img => img.url === key)
+  if (imgIndex < 0) {
+    imgIndex = 0
+  }
+  return { images, imgIndex }
+}
+
 export const generateUuidV4 = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0,

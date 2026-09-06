@@ -15,6 +15,10 @@ type Props = {
   onExit: Function
 }
 export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'fade', onExit }: Props) => {
+  const urls = (images || [])
+    .map(img => ({ ...img, url: img?.url || img?.src }))
+    .filter(img => !!img.url)
+  const index = urls.length ? Math.min(Math.max(0, imgIndex || 0), urls.length - 1) : 0
   const fetchFile = async (url, asBase64?) => {
     return await RNFetchBlob.config({
       fileCache: true,
@@ -73,8 +77,9 @@ export const ImageModal = ({ isShowing, images, imgIndex = 0, animationType = 'f
         <Icon name="x" size={24} color="#ccc" />
       </TouchableOpacity>
       <ImageViewer
-        imageUrls={images}
-        index={imgIndex}
+        key={`${index}-${urls.length}-${urls[index]?.url || ''}`}
+        imageUrls={urls}
+        index={index}
         doubleClickInterval={300}
         onSave={img => share(img)}
         loadingRender={() => <LoaderComponent />}
