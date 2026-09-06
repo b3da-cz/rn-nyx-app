@@ -56,6 +56,8 @@ export const ImageComponent = ({ src, width, height, useExactSize, isCoverResize
       style={{
         width: imgWidth + 2 * blocks.medium,
         height: boxHeight + 2 * blocks.medium,
+        overflow: 'hidden',
+        borderRadius: roundness,
       }}
       onPress={() => onPress()}>
       <View

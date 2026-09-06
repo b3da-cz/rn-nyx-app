@@ -19,10 +19,22 @@ index 89734d0..fb53508 100644
  
    const hideModal = () => {
 diff --git a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx b/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
-index 2342881..2e0752a 100644
+index 2342881..62f2de1 100644
 --- a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
 +++ b/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
-@@ -14,7 +14,7 @@ import color from 'color';
+@@ -3,10 +3,9 @@ import {
+   BackgroundPropType,
+   StyleProp,
+   Platform,
++  Pressable,
+   TouchableHighlight,
+-  TouchableNativeFeedback,
+   TouchableWithoutFeedback,
+-  View,
+   ViewStyle,
+   StyleSheet,
+ } from 'react-native';
+@@ -14,7 +13,7 @@ import color from 'color';
  import { withTheme } from '../../core/theming';
  
  const ANDROID_VERSION_LOLLIPOP = 21;
@@ -31,14 +43,14 @@ index 2342881..2e0752a 100644
  
  type Props = React.ComponentProps<typeof TouchableWithoutFeedback> & {
    borderless?: boolean;
-@@ -48,12 +48,12 @@ const TouchableRipple = ({
+@@ -48,29 +47,32 @@ const TouchableRipple = ({
        .rgb()
        .string();
  
 -  // A workaround for ripple on Android P is to use useForeground + overflow: 'hidden'
-+  // Draw the ripple in the foreground on all Android touchables, not just
-+  // borderless ones. On RN 0.81 the bounded *background* ripple no longer
-+  // paints, so every TouchableRipple lost its ripple; foreground works.
++  // RN 0.81 no longer paints TouchableNativeFeedback's *background* ripple.
++  // Pressable + foreground ripple draws on top of opaque children (rows,
++  // images, headers). overflow: 'hidden' is required for that path.
    // https://github.com/facebook/react-native/issues/6480
    const useForeground =
 -    Platform.OS === 'android' &&
@@ -47,7 +59,38 @@ index 2342881..2e0752a 100644
 +    Platform.OS === 'android' && Platform.Version >= ANDROID_VERSION_MARSHMALLOW;
  
    if (TouchableRipple.supported) {
++    const androidRipple =
++      background != null
++        ? background
++        : {
++            color: calculatedRippleColor,
++            borderless,
++            foreground: useForeground,
++          };
++
      return (
+-      <TouchableNativeFeedback
++      <Pressable
+         {...rest}
+         disabled={disabled}
+-        useForeground={useForeground}
+-        background={
+-          background != null
+-            ? background
+-            : TouchableNativeFeedback.Ripple(calculatedRippleColor, borderless)
+-        }
++        android_ripple={androidRipple}
++        style={[styles.overflowHidden, style]}
+       >
+-        <View style={[borderless && styles.overflowHidden, style]}>
+-          {React.Children.only(children)}
+-        </View>
+-      </TouchableNativeFeedback>
++        {React.Children.only(children)}
++      </Pressable>
+     );
+   }
+ 
 diff --git a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx b/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx
 index 28d2771..7e1a492 100644
 --- a/node_modules/react-native-paper/src/utils/useIsKeyboardShown.tsx

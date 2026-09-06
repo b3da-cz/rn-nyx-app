@@ -252,10 +252,11 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           disable={!this.props.isInteractive}
           onRef={r => (this.refSwipeable = r)}>
           <TouchableRipple
-            disabled={!this.props.isPressable}
             style={{ backgroundColor: this.props.isUnread ? colors.tertiary : colors.card }}
             onPress={() =>
-              typeof this.props.onPress === 'function' ? this.props.onPress(post.discussion_id, post.id) : null
+              this.props.isPressable && typeof this.props.onPress === 'function'
+                ? this.props.onPress(post.discussion_id, post.id)
+                : null
             }
             rippleColor={colors.ripple}>
             <PostHeaderCommonComponent
