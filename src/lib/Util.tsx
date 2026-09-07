@@ -5,10 +5,41 @@ import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-i
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 
+// ImageViewer treats IImageInfo width/height as the display size and never
+// scales up, so discussion thumbnail layout sizes must not be forwarded.
+const toGalleryImage = (img: any, post?: any) => {
+  const url = img?.url || img?.src
+  if (!url) {
+    return null
+  }
+  const next: any = { url }
+  if (post) {
+    next.postId = post.id
+    next.discussionId = post.discussion_id
+    next.myRating = post.my_rating
+    next.canBeRated = !!post.can_be_rated
+  } else {
+    if (img.postId != null) {
+      next.postId = img.postId
+    }
+    if (img.discussionId != null) {
+      next.discussionId = img.discussionId
+    }
+    if (img.myRating != null) {
+      next.myRating = img.myRating
+    }
+    if (img.canBeRated != null) {
+      next.canBeRated = img.canBeRated
+    }
+  }
+  return next
+}
+
+export const galleryImagesFromPosts = (posts: any[] = []) =>
+  posts.flatMap(p => (p.parsed?.images || []).map(img => toGalleryImage(img, p))).filter(img => !!img)
+
 export const toGalleryImages = (image: any, list: any[] = []) => {
-  const images = (list || [])
-    .map(img => ({ url: img?.url || img?.src }))
-    .filter(img => !!img.url)
+  const images = (list || []).map(img => toGalleryImage(img)).filter(img => !!img)
   const key = image?.url || image?.src
   let imgIndex = images.findIndex(img => img.url === key)
   if (imgIndex < 0) {

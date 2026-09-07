@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { DiscussionView } from '../view'
 
 export const Discussion = ({ navigation, route }) => {
+  const viewRef = useRef<DiscussionView>(null)
   const { discussionId, postId, showBoard, showHeader, showReplies, showStats, jumpToLastSeen } = route.params
   return (
     <DiscussionView
-      // ref={r => setRef('DiscussionView', r)} // todo forwardRef
+      ref={viewRef}
       navigation={navigation}
       id={discussionId}
       postId={postId}
@@ -15,7 +16,14 @@ export const Discussion = ({ navigation, route }) => {
       showStats={showStats}
       jumpToLastSeen={jumpToLastSeen}
       onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
-      onImages={(images, imgIndex) => navigation.navigate('gallery', { images, imgIndex })}
+      onImages={(images, imgIndex) =>
+        navigation.navigate('gallery', {
+          images,
+          imgIndex,
+          onClose: (focusPostId: number) => viewRef.current?.scrollToPostById(focusPostId),
+          onRated: (updatedPost: any) => viewRef.current?.onPostRated(updatedPost),
+        })
+      }
     />
   )
 }

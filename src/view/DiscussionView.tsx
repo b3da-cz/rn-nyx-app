@@ -16,6 +16,7 @@ import {
   formatDate,
   getDistinctPosts,
   toGalleryImages,
+  galleryImagesFromPosts,
   isDiscussionPermitted,
   MainContext,
   Nyx,
@@ -253,7 +254,7 @@ export class DiscussionView extends Component<Props> {
     const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
     const uploadedFiles = res?.discussion_common?.waiting_files || []
     const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = nextPosts.flatMap(p => p.parsed.images)
+    const images = galleryImagesFromPosts(nextPosts)
     this.setState({
       title,
       images,
@@ -283,7 +284,7 @@ export class DiscussionView extends Component<Props> {
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
     const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = board.flatMap(p => p.parsed.images)
+    const images = galleryImagesFromPosts(board)
     this.setState({
       title,
       images,
@@ -343,6 +344,20 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
+  scrollToPostById(postId) {
+    const postIndex = this.getPostIndexById(postId)
+    if (postIndex === undefined || postIndex === null || !this.refScroll) {
+      return
+    }
+    setTimeout(() => {
+      try {
+        this.refScroll?.scrollToIndex({ index: postIndex, viewPosition: 0, animated: false })
+      } catch (e) {
+        console.warn(e)
+      }
+    }, 50)
+  }
+
   scrollToTop(animated = false) {
     this.refScroll.scrollToOffset({
       index: 0,
@@ -352,8 +367,8 @@ export class DiscussionView extends Component<Props> {
 
   onScrollToIndexFailed(error) {
     const offset = error.averageItemLength * error.highestMeasuredFrameIndex
-    this.refScroll.scrollToOffset({ offset })
-    setTimeout(() => this.refScroll?.scrollToIndex({ index: error.index }), 200)
+    this.refScroll.scrollToOffset({ offset, animated: false })
+    setTimeout(() => this.refScroll?.scrollToIndex({ index: error.index, animated: false }), 200)
   }
 
   showPost(discussionId, postId) {
@@ -361,7 +376,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   showImages(image, imageList?) {
-    const sourceList = imageList?.length > 0 ? imageList : this.state.images
+    const sourceList = imageList?.length > 0 ? imageList : galleryImagesFromPosts(this.state.posts)
     const { images, imgIndex } = toGalleryImages(image, sourceList)
     this.props.onImages(images, imgIndex)
   }
@@ -396,7 +411,7 @@ export class DiscussionView extends Component<Props> {
       post.my_rating = updatedPost.my_rating
       post.rating = updatedPost.rating
       const posts = getDistinctPosts([post], this.state.posts)
-      this.setState({ posts })
+      this.setState({ posts, images: galleryImagesFromPosts(posts) })
     }
   }
 

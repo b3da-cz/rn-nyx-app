@@ -8,6 +8,8 @@ import {
   wait,
   filterDiscussions,
   filterPostsByAuthor,
+  galleryImagesFromPosts,
+  toGalleryImages,
   Nyx,
   Theme,
 } from '../lib'
@@ -74,7 +76,7 @@ export class LastPostsView extends Component<Props> {
       this.blockedUsers?.length > 0 ? filterPostsByAuthor(filteredPosts, this.blockedUsers) : filteredPosts
     const newPosts = getDistinctPosts(filteredByAuthor, [])
     const parsedPosts = parsePostsContent(newPosts)
-    const images = parsedPosts.flatMap(p => p.parsed.images)
+    const images = galleryImagesFromPosts(parsedPosts)
     this.setState({
       posts: parsedPosts,
       images,
@@ -93,8 +95,7 @@ export class LastPostsView extends Component<Props> {
   }
 
   showImages(image) {
-    const imgIndex = this.state.images.indexOf(image)
-    const images = this.state.images.map(img => ({ url: img.src }))
+    const { images, imgIndex } = toGalleryImages(image, galleryImagesFromPosts(this.state.posts))
     this.props.onImages(images, imgIndex)
   }
 

@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
@@ -29,6 +29,33 @@ type Props = {
   onConfigReload: Function
   onFiltersReload: Function
 }
+
+const Gallery = ({ navigation, route }) => {
+  const { images, imgIndex, onClose, onRated } = route.params || {}
+  const currentIndexRef = useRef(imgIndex || 0)
+  useEffect(() => {
+    const unsub = navigation.addListener('beforeRemove', () => {
+      const img = images?.[currentIndexRef.current]
+      if (img?.postId != null) {
+        onClose?.(img.postId)
+      }
+    })
+    return unsub
+  }, [navigation, images, onClose])
+  return (
+    <ImageModal
+      images={images}
+      imgIndex={imgIndex}
+      isShowing={true}
+      onIndexChange={i => {
+        currentIndexRef.current = i
+      }}
+      onRated={onRated}
+      onExit={() => navigation.goBack()}
+    />
+  )
+}
+
 export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersReload }: Props) => {
   let nav: any = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
   useEffect(() => {
@@ -98,11 +125,6 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
     <SettingsView config={config} onConfigChange={() => onConfigReload()} onFiltersChange={() => onFiltersReload()} />
   )
   const ThemeScreen = () => <ThemeView config={config} onConfigChange={() => onConfigReload()} />
-
-  const Gallery = ({ navigation, route }) => {
-    const { images, imgIndex } = route.params
-    return <ImageModal images={images} imgIndex={imgIndex} isShowing={true} onExit={() => navigation.goBack()} />
-  }
 
   const TabContainer = ({ navigation }) => {
     nav = navigation

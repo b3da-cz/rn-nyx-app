@@ -1,11 +1,12 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useContext, useMemo, useRef, useState } from 'react'
 import { StyleSheet, ToastAndroid, TouchableOpacity, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
+import FA from 'react-native-vector-icons/FontAwesome'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import RNFetchBlob from 'react-native-blob-util'
 import Share from 'react-native-share'
 import { LoaderComponent } from '../component'
-import { t } from '../lib'
+import { MainContext, t } from '../lib'
 
 type Props = {
   isShowing?: boolean
@@ -13,6 +14,8 @@ type Props = {
   imgIndex?: number
   animationType?: 'fade' | 'none' | 'slide' | undefined
   onExit: Function
+  onIndexChange?: (index: number) => void
+  onRated?: (updatedPost: any) => void
 }
 
 const mimeFromUrl = (url: string) => {
@@ -30,23 +33,100 @@ const mimeFromUrl = (url: string) => {
   }
 }
 
-export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit }: Props) => {
+const isPositiveRating = (rating?: string | null) => !!rating && `${rating}`.includes('positive')
+const isNegativeRating = (rating?: string | null) => !!rating && `${rating}`.includes('negative')
+
+const ratingsFromImages = (images: any[] = []) => {
+  const next: Record<string, string | undefined> = {}
+  for (const img of images) {
+    if (img?.postId != null && img.myRating != null) {
+      next[String(img.postId)] = img.myRating
+    }
+  }
+  return next
+}
+
+export const ImageModal = ({
+  isShowing = true,
+  images,
+  imgIndex = 0,
+  onExit,
+  onIndexChange,
+  onRated,
+}: Props) => {
+  const { nyx } = useContext(MainContext) as any
   const sharing = useRef(false)
+  const ratingLock = useRef(false)
   const urls = useMemo(
     () =>
       (images || [])
-        .map(img => ({ ...img, url: img?.url || img?.src }))
-        .filter(img => !!img.url),
+        .map(img => {
+          const url = img?.url || img?.src
+          if (!url) {
+            return null
+          }
+          const next = { ...img, url }
+          delete next.width
+          delete next.height
+          return next
+        })
+        .filter(img => !!img),
     [images],
   )
   const index = urls.length ? Math.min(Math.max(0, imgIndex || 0), urls.length - 1) : 0
+  const [currentIndex, setCurrentIndex] = useState(index)
+  const [ratingsByPost, setRatingsByPost] = useState<Record<string, string | undefined>>(() =>
+    ratingsFromImages(images),
+  )
 
-  const urlAt = (i?: number) => {
+  const setIndex = (i?: number) => {
+    const next = urls.length ? Math.min(Math.max(0, i || 0), urls.length - 1) : 0
+    setCurrentIndex(next)
+    onIndexChange?.(next)
+  }
+
+  const imgAt = (i?: number) => {
     if (!urls.length) {
       return undefined
     }
-    const safe = Math.min(Math.max(0, i || 0), urls.length - 1)
-    return urls[safe]?.url
+    return urls[Math.min(Math.max(0, i || 0), urls.length - 1)]
+  }
+
+  const ratingOf = (img: any) => {
+    if (!img) {
+      return undefined
+    }
+    const key = img.postId != null ? String(img.postId) : ''
+    if (key && Object.prototype.hasOwnProperty.call(ratingsByPost, key)) {
+      return ratingsByPost[key]
+    }
+    return img.myRating
+  }
+
+  const rateImage = async (img: any, vote: 'positive' | 'negative') => {
+    if (!nyx || !img?.postId || img.canBeRated === false || ratingLock.current) {
+      return
+    }
+    const rating = ratingOf(img) as string | undefined
+    ratingLock.current = true
+    try {
+      const post = {
+        id: img.postId,
+        discussion_id: img.discussionId,
+        my_rating: rating,
+      }
+      const nextVote = rating?.includes(vote) ? 'remove' : vote
+      const res = await nyx.ratePost(post, nextVote)
+      if (res?.error) {
+        return
+      }
+      setRatingsByPost(prev => ({ ...prev, [String(img.postId)]: res?.my_rating ?? '' }))
+      onRated?.(res)
+    } catch (e) {
+      console.warn(e)
+    } finally {
+      ratingLock.current = false
+    }
   }
 
   const share = async (url?: string) => {
@@ -57,7 +137,6 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit }: P
     try {
       const href = url.startsWith('//') ? `https:${url}` : url
       const hinted = mimeFromUrl(href)
-      // fileCache + gzip Content-Length mismatch throws "Download interrupted."
       const resp = await RNFetchBlob.fetch('GET', href, { Accept: 'image/*' })
       const status = resp.info()?.status
       if (status < 200 || status >= 300) {
@@ -101,16 +180,47 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit }: P
         imageUrls={urls}
         index={index}
         doubleClickInterval={300}
+        onChange={i => setIndex(i)}
         onSave={img => share(img)}
         loadingRender={() => <LoaderComponent />}
         menuContext={{ saveToLocal: t('share'), cancel: t('cancel') }}
-        renderHeader={i => (
+        renderHeader={i => {
+          const shown = imgAt(i)
+          const rating = ratingOf(shown)
+          const showRate = !!nyx && shown?.postId != null && shown?.canBeRated !== false
+          return (
           <View style={styles.header} pointerEvents="box-none">
+            {showRate && (
+              <TouchableOpacity
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                onPress={() => rateImage(shown, 'positive')}>
+                {isPositiveRating(rating) ? (
+                  <FA name="thumbs-up" size={22} color="green" />
+                ) : (
+                  <Icon name="thumbs-up" size={22} color="green" />
+                )}
+              </TouchableOpacity>
+            )}
+            {showRate && (
+              <TouchableOpacity
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                onPress={() => rateImage(shown, 'negative')}>
+                {isNegativeRating(rating) ? (
+                  <FA name="thumbs-down" size={22} color="red" />
+                ) : (
+                  <Icon name="thumbs-down" size={22} color="red" />
+                )}
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.headerBtn}
               accessibilityRole="button"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              onPress={() => share(urlAt(i))}>
+              onPress={() => share(shown?.url)}>
               <Icon name="share" size={24} color="#ccc" />
             </TouchableOpacity>
             <TouchableOpacity
@@ -121,7 +231,8 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit }: P
               <Icon name="x" size={24} color="#ccc" />
             </TouchableOpacity>
           </View>
-        )}
+          )
+        }}
       />
     </View>
   )
@@ -138,6 +249,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingTop: 8,
     paddingRight: 8,
+    alignItems: 'center',
   },
   headerBtn: {
     padding: 10,
