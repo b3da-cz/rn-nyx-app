@@ -110,6 +110,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
       <Tab.Navigator
         initialRouteName={config.initialRouteName}
         tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
+        backBehavior="history"
         // gestureHandlerProps={{
         //   wip, needs more testing
         //   maxPointers: 1,
@@ -121,6 +122,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         //   minDeltaY: 0,
         // }}
         // options={{ cardStyle: NavOptions.cardStyle(theme) }}
+        overScrollMode="never"
         screenOptions={{
           lazy: true,
           swipeEnabled: config.isNavGesturesEnabled,

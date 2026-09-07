@@ -8,14 +8,11 @@ import { Linking, LogBox, Platform, UIManager, useColorScheme } from 'react-nati
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { NetworkProvider } from 'react-native-offline'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import { Bugfender } from '@bugfender/rn-bugfender'
-import { confirm, LoaderComponent } from './src/component'
-// import Feather from 'react-native-vector-icons/Feather'
-// Feather.loadFont()
-
+import { confirm, LoaderComponent, NestedBackHandler } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
@@ -33,6 +30,8 @@ import { Router } from './src/Router'
 import { LoginView } from './src/view'
 // @ts-ignore
 import { gplayTestId } from './keys.json'
+
+const navigationRef = createNavigationContainerRef()
 
 LogBox.ignoreLogs([
   'Animated.event',
@@ -205,7 +204,8 @@ const App: () => ReactNode = () => {
           {isAppLoaded && isAuthenticated && (
             <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
               <UnreadContextProvider>
-                <NavigationContainer theme={theme}>
+                <NavigationContainer ref={navigationRef} theme={theme}>
+                  <NestedBackHandler navigationRef={navigationRef} />
                   <Router
                     config={config}
                     nyx={nyx}
