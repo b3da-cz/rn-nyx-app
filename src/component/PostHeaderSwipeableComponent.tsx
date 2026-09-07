@@ -187,26 +187,36 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           overshootFriction={8}
           leftThreshold={40}
           rightThreshold={40}
+          dragOffsetFromLeftEdge={24}
+          dragOffsetFromRightEdge={24}
           renderLeftActions={() => (
-            <View style={{ flexDirection: 'row' }}>
+            <View style={{ flexDirection: 'row' }} collapsable={false}>
               {[
                 !post.parsed?.advertisement && (
                   <ButtonSquareComponent
                     key={`${post.id}_btn_reply`}
                     icon={'corner-down-right'}
+                    rectButton
                     onPress={() => this.onReply()}
                   />
                 ),
                 <ButtonSquareComponent
                   key={`${post.id}_btn_share_content`}
                   icon={'copy'}
+                  rectButton
                   onPress={() => this.onShare(true)}
                 />,
-                <ButtonSquareComponent key={`${post.id}_btn_share`} icon={'share'} onPress={() => this.onShare()} />,
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_share`}
+                  icon={'share'}
+                  rectButton
+                  onPress={() => this.onShare()}
+                />,
                 post.can_be_reminded && (
                   <ButtonSquareComponent
                     key={`${post.id}_btn_remind`}
                     icon={'bell'}
+                    rectButton
                     color={post.reminder ? colors.primary : undefined}
                     onPress={() => this.setReminder(post)}
                   />
@@ -215,6 +225,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
                   <ButtonSquareComponent
                     key={`${post.id}_btn_delete`}
                     icon={'trash-2'}
+                    rectButton
                     color={'red'}
                     onPress={() => this.deletePost(post)}
                   />
@@ -222,6 +233,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
                 <ButtonSquareComponent
                   key={`${post.id}_btn_report`}
                   icon={'alert-triangle'}
+                  rectButton
                   color={'red'}
                   onPress={() => this.reportPost(post)}
                 />,
@@ -231,16 +243,18 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           renderRightActions={
             post.can_be_rated
               ? () => (
-                  <View style={{ flexDirection: 'row' }}>
+                  <View style={{ flexDirection: 'row' }} collapsable={false}>
                     <ButtonSquareComponent
                       key={`${post.id}_btn_thumbs_up`}
                       icon={'thumbs-up'}
+                      rectButton
                       color={'green'}
                       onPress={() => this.ratePost(post, 'positive')}
                     />
                     <ButtonSquareComponent
                       key={`${post.id}_btn_thumbs_down`}
                       icon={'thumbs-down'}
+                      rectButton
                       color={'red'}
                       onPress={() => this.ratePost(post, 'negative')}
                     />

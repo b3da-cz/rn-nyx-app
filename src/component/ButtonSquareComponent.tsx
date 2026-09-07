@@ -1,6 +1,7 @@
 import React from 'react'
 import Icon from 'react-native-vector-icons/Feather'
 import { TouchableRipple } from 'react-native-paper'
+import { RectButton } from 'react-native-gesture-handler'
 import { Styling, useTheme } from '../lib'
 
 type Props = {
@@ -17,6 +18,8 @@ type Props = {
   borderWidth?: number
   width?: number | string
   height?: number
+  // RNGH RectButton cooperates with parent Swipeable; RN Pressable often loses the tap.
+  rectButton?: boolean
 }
 export const ButtonSquareComponent: React.FC<Props> = ({
   icon,
@@ -32,22 +35,38 @@ export const ButtonSquareComponent: React.FC<Props> = ({
   borderWidth = 0,
   width = 50,
   height = 50,
+  rectButton = false,
 }: Props) => {
   const {
     colors,
     metrics: { fontSizes },
   } = useTheme()
+  const style = [
+    Styling.groups.squareBtn,
+    { backgroundColor, marginBottom, marginTop, borderColor, borderWidth, width, height },
+  ]
+  const iconEl = <Icon name={icon} size={size || fontSizes.h2} color={color || colors.text} />
+  if (rectButton) {
+    return (
+      <RectButton
+        enabled={!isDisabled}
+        rippleColor={colors.ripple}
+        foreground
+        exclusive
+        style={style}
+        onPress={() => onPress()}>
+        {iconEl}
+      </RectButton>
+    )
+  }
   return (
     <TouchableRipple
       disabled={isDisabled}
       rippleColor={colors.ripple}
-      style={[
-        Styling.groups.squareBtn,
-        { backgroundColor, marginBottom, marginTop, borderColor, borderWidth, width, height },
-      ]}
+      style={style}
       onPress={() => onPress()}
       onLongPress={() => (typeof onLongPress === 'function' ? onLongPress() : null)}>
-      <Icon name={icon} size={size || fontSizes.h2} color={color || colors.text} />
+      {iconEl}
     </TouchableRipple>
   )
 }
