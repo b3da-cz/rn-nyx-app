@@ -70,8 +70,8 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     await Storage.setConfig(config)
   }
 
-  showDiscussion(discussionId) {
-    this.props.navigation.push('discussion', { discussionId, jumpToLastSeen: true })
+  showDiscussion(discussionId, lastSeenPostId?) {
+    this.props.navigation.push('discussion', { discussionId, jumpToLastSeen: true, lastSeenPostId })
   }
 
   showDiscussionStats(discussionId) {

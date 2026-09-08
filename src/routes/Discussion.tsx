@@ -3,7 +3,8 @@ import { DiscussionView } from '../view'
 
 export const Discussion = ({ navigation, route }) => {
   const viewRef = useRef<DiscussionView>(null)
-  const { discussionId, postId, showBoard, showHeader, showReplies, showStats, jumpToLastSeen } = route.params
+  const { discussionId, postId, showBoard, showHeader, showReplies, showStats, jumpToLastSeen, lastSeenPostId } =
+    route.params
   return (
     <DiscussionView
       ref={viewRef}
@@ -15,6 +16,7 @@ export const Discussion = ({ navigation, route }) => {
       showReplies={showReplies}
       showStats={showStats}
       jumpToLastSeen={jumpToLastSeen}
+      lastSeenPostId={lastSeenPostId}
       onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
       onImages={(images, imgIndex) =>
         navigation.navigate('gallery', {

@@ -54,7 +54,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
                 <DiscussionRowComponent
                   key={d.discussion_id}
                   discussion={d}
-                  onPress={id => this.showDiscussion(id)}
+                  onPress={id => this.showDiscussion(id, d.last_seen_post_id)}
                   onLongPress={id => this.showDiscussionStats(id)}
                 />
               ))}

@@ -108,7 +108,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             <DiscussionRowComponent
               key={item.discussion_id}
               discussion={item}
-              onPress={id => this.showDiscussion(id)}
+              onPress={id => this.showDiscussion(id, item.last_seen_post_id)}
               onLongPress={id => this.showDiscussionStats(id)}
             />
           )}

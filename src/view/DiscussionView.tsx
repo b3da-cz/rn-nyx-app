@@ -36,6 +36,7 @@ type Props = {
   showReplies?: boolean
   showStats?: boolean
   jumpToLastSeen?: boolean
+  lastSeenPostId?: number
   onDiscussionFetched: Function
   onImages: Function
   // onHeaderSwipe: Function,
@@ -63,6 +64,8 @@ type State = {
   isSubmenuVisible: boolean
   isMsgBoxVisible: boolean
   isFetching: boolean
+  listEpoch: number
+  initialScrollIndex?: number
   theme?: Theme
 }
 // todo refactor
@@ -73,6 +76,11 @@ export class DiscussionView extends Component<Props> {
   nyx?: Nyx
   filters: any[] = []
   blockedUsers: any[] = []
+  fetchLock = false
+  _posts: any[] = []
+  _lastSeenPostId?: number
+  _pendingDiscussion: any = null
+  _skipJumpToLastSeen = false
   refScroll: any
   refMsgBoxDialog: any
   navFocusListener?: Function
@@ -88,7 +96,7 @@ export class DiscussionView extends Component<Props> {
       header: [],
       board: [],
       bookmarkCategories: [],
-      lastSeenPostId: undefined,
+      lastSeenPostId: props.lastSeenPostId,
       filterText: '',
       filterRating: 0,
       filterUser: '',
@@ -102,8 +110,11 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      listEpoch: 0,
+      initialScrollIndex: undefined,
       theme: undefined,
     }
+    this._lastSeenPostId = props.lastSeenPostId
   }
 
   componentDidMount() {
@@ -131,11 +142,11 @@ export class DiscussionView extends Component<Props> {
     } else if (this.props.showStats) {
       this.fetchDiscussionBoard()
     } else {
-      this.reloadDiscussionLatest().then(async () => {
+      this.loadInitialDiscussion().then(async () => {
         if (this.props.showHeader) {
           this.setHeaderVisible(true)
         }
-        if (this.props.jumpToLastSeen) {
+        if (this.props.jumpToLastSeen && !this._skipJumpToLastSeen) {
           this.jumpToLastSeen()
         }
       })
@@ -167,22 +178,91 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
+  async loadInitialDiscussion() {
+    if (this.props.jumpToLastSeen) {
+      await this.loadDiscussionToLastSeen(this.props.lastSeenPostId)
+      return
+    }
+    await this.reloadDiscussionLatest()
+  }
+
+  async loadDiscussionToLastSeen(knownLastSeenPostId?: number) {
+    const discussionId = this.props.id
+    this.fetchLock = true
+    this._pendingDiscussion = null
+    this.setState({ isFetching: true, lastSeenPostId: knownLastSeenPostId })
+    try {
+      let lastSeenPostId = knownLastSeenPostId ?? this._lastSeenPostId
+      if (!lastSeenPostId) {
+        await this.fetchDiscussion(discussionId, true, { holdLock: true, deferUi: true })
+        lastSeenPostId = this._lastSeenPostId
+        if (!lastSeenPostId) {
+          this.commitDeferredDiscussion(false)
+          return
+        }
+      }
+      await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
+        holdLock: true,
+        deferUi: true,
+      })
+      await this.fetchDiscussion(`${discussionId}?order=newer_than&from_id=${lastSeenPostId}`, false, {
+        holdLock: true,
+        deferUi: true,
+      })
+      this.commitDeferredDiscussion(true)
+    } finally {
+      this.fetchLock = false
+      this.setState({ isFetching: false })
+    }
+  }
+
+  commitDeferredDiscussion(aroundLastSeen = false) {
+    const pending = this._pendingDiscussion
+    if (!pending) {
+      return
+    }
+    this._pendingDiscussion = null
+    const lastSeenIndex = aroundLastSeen ? this.getPostIndexById(this._lastSeenPostId) : undefined
+    const firstUnreadIndex = typeof lastSeenIndex === 'number' && lastSeenIndex > 0 ? lastSeenIndex - 1 : 0
+    if (aroundLastSeen) {
+      this._skipJumpToLastSeen = true
+    }
+    this.setState({
+      title: pending.title,
+      images: galleryImagesFromPosts(this._posts),
+      isBooked: pending.isBooked,
+      header: pending.header,
+      lastSeenPostId: this._lastSeenPostId,
+      posts: this._posts,
+      advertisementOP: pending.advertisementOP ?? this.state.advertisementOP,
+      imgPrefetchProgress: { length: 0, done: 0 },
+      hasBoard: pending.hasBoard,
+      hasHeader: pending.hasHeader,
+      isFetching: false,
+      initialScrollIndex: aroundLastSeen ? firstUnreadIndex : undefined,
+      listEpoch: aroundLastSeen ? (this.state.listEpoch || 0) + 1 : this.state.listEpoch,
+    })
+    this.onDiscussionFetched(pending.title, pending.uploadedFiles)
+  }
+
   async loadDiscussionTop() {
     const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
-    const topPostId = this.state.posts.length > 0 && this.state.posts[0].id
+    const posts = this._posts.length ? this._posts : this.state.posts
+    const topPostId = posts.length > 0 && posts[0].id
     const queryString = `${discussionId}?order=newer_than&from_id=${topPostId}`
     const addedLen = await this.fetchDiscussion(queryString)
-    if (addedLen > 0 && addedLen !== this.state.posts.length) {
+    if (addedLen > 0 && addedLen !== posts.length) {
       this.scrollToPost(addedLen)
     }
   }
 
   async loadDiscussionBottom() {
-    if (this.state.posts.length < 20 || this.state.isHeaderVisible) {
+    const posts = this._posts.length ? this._posts : this.state.posts
+    if (posts.length < 20 || this.state.isHeaderVisible) {
       return // prevent reloading of new discussion, todo variable min len
     }
     const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
-    const bottomPostId = this.state.posts.length > 0 && this.state.posts[this.state.posts.length - 1].id
+    const bottomPostId = posts.length > 0 && posts[posts.length - 1].id
     const queryString = `${discussionId}?order=older_than&from_id=${bottomPostId}`
     await this.fetchDiscussion(queryString)
   }
@@ -202,73 +282,95 @@ export class DiscussionView extends Component<Props> {
   }
 
   async jumpToLastSeen() {
-    await wait(20)
-    // const postIndex = this.getPostIndexById(this.state.lastSeenPostId) // lastSeen doesn't have to be there, so:
+    await wait(50)
+    const lastSeenPostId = this._lastSeenPostId ?? this.state.lastSeenPostId
+    const lastSeenIndex = this.getPostIndexById(lastSeenPostId)
+    if (lastSeenIndex !== undefined) {
+      this.scrollToPost(lastSeenIndex, false)
+      return
+    }
     const postIndex = Math.min(this.state.posts?.filter(p => p.new).length, this.state.posts?.length - 5)
     this.scrollToPost(postIndex !== undefined ? postIndex : 0, false)
   }
 
-  async fetchDiscussion(idOrQueryString, clearPosts = false) {
-    const { isFetching, filterText, filterRating, filterUser } = this.state
-    if (isFetching) {
-      return 0
+  async fetchDiscussion(idOrQueryString, clearPosts = false, opts: { holdLock?: boolean; deferUi?: boolean } = {}) {
+    const { filterText, filterRating, filterUser } = this.state
+    if (!opts.holdLock) {
+      if (this.fetchLock) {
+        return 0
+      }
+      this.fetchLock = true
+      this.setState({ isFetching: true })
     }
-    // console.warn('fetch ', idOrQueryString) // TODO: remove
-    this.setState({ isFetching: true })
-    // this.measureMs()
-    if (filterUser?.length) {
-      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}user=${filterUser}`
+    try {
+      if (filterUser?.length) {
+        idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}user=${filterUser}`
+      }
+      if (filterText?.length) {
+        idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}text=${filterText}`
+      }
+      if (filterRating !== 0) {
+        idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
+      }
+      const res = await this.nyx?.api.getDiscussion(idOrQueryString)
+      if (!res?.posts?.length) {
+        if (!opts.holdLock) {
+          this.setState({ isFetching: false })
+        }
+        return 0
+      }
+      const advertisementOP = this.getAdvertisementOP(
+        res?.discussion_common?.advertisement_specific_data?.advertisement,
+        res?.discussion_common?.advertisement_specific_data?.attachments,
+      )
+      const filteredPosts =
+        this.blockedUsers?.length > 0
+          ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
+          : filterPostsByContent(res.posts, this.filters)
+      const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
+      const nextPosts = await preparePosts(filteredPosts, clearPosts ? [] : this._posts, true, themeBaseFontSize)
+      const title = `${res?.discussion_common?.discussion.name_static}${
+        res?.discussion_common?.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
+      }`
+      if (!isDiscussionPermitted(title, this.filters)) {
+        alert('Blocked content')
+        this.props.navigation.goBack()
+        return 0
+      }
+      let header = res?.discussion_common?.discussion_specific_data?.header
+      if (header && header.length > 0) {
+        header = await preparePosts(header, [], true, themeBaseFontSize)
+      }
+      this._posts = nextPosts
+      this._lastSeenPostId =
+        this.props.lastSeenPostId ?? res?.discussion_common?.bookmark?.last_seen_post_id ?? this._lastSeenPostId
+      const uploadedFiles = res?.discussion_common?.waiting_files || []
+      const isBooked = res?.discussion_common?.bookmark?.bookmark
+      const images = galleryImagesFromPosts(nextPosts)
+      const nextState = {
+        title,
+        images,
+        isBooked,
+        header,
+        lastSeenPostId: this._lastSeenPostId,
+        posts: nextPosts,
+        advertisementOP: advertisementOP || this.state.advertisementOP,
+        isFetching: opts.holdLock ? true : false,
+        imgPrefetchProgress: { length: 0, done: 0 },
+        hasBoard: res.discussion_common?.discussion?.has_home,
+        hasHeader: res.discussion_common?.discussion?.has_header,
+      }
+      this._pendingDiscussion = { ...nextState, uploadedFiles }
+      if (!opts.deferUi) {
+        this.setState(nextState)
+        this.onDiscussionFetched(title, uploadedFiles)
+      }
+      return res?.posts?.length || 0
+    } finally {
+      if (!opts.holdLock) {
+        this.fetchLock = false
+      }
     }
-    if (filterText?.length) {
-      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}text=${filterText}`
-    }
-    if (filterRating !== 0) {
-      idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
-    }
-    const res = await this.nyx?.api.getDiscussion(idOrQueryString)
-    if (!res?.posts?.length) {
-      this.setState({ isFetching: false })
-      return 0
-    }
-    this.getAdvertisementOP(
-      res?.discussion_common?.advertisement_specific_data?.advertisement,
-      res?.discussion_common?.advertisement_specific_data?.attachments,
-    )
-    const filteredPosts =
-      this.blockedUsers?.length > 0
-        ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
-        : filterPostsByContent(res.posts, this.filters)
-    const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-    const nextPosts = await preparePosts(filteredPosts, clearPosts ? [] : this.state.posts, true, themeBaseFontSize)
-    const title = `${res?.discussion_common?.discussion.name_static}${
-      res?.discussion_common?.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
-    }`
-    if (!isDiscussionPermitted(title, this.filters)) {
-      alert('Blocked content')
-      return this.props.navigation.goBack()
-    }
-    let header = res?.discussion_common?.discussion_specific_data?.header
-    if (header && header.length > 0) {
-      header = await preparePosts(header, [], true, themeBaseFontSize)
-    }
-    const lastSeenPostId = res?.discussion_common?.bookmark?.last_seen_post_id
-    const uploadedFiles = res?.discussion_common?.waiting_files || []
-    const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = galleryImagesFromPosts(nextPosts)
-    this.setState({
-      title,
-      images,
-      isBooked,
-      header,
-      lastSeenPostId,
-      posts: nextPosts,
-      isFetching: false,
-      imgPrefetchProgress: { length: 0, done: 0 },
-      hasBoard: res.discussion_common?.discussion?.has_home,
-      hasHeader: res.discussion_common?.discussion?.has_header,
-    })
-    this.onDiscussionFetched(title, uploadedFiles)
-    return res?.posts?.length || 0
   }
 
   async fetchDiscussionBoard() {
@@ -285,6 +387,7 @@ export class DiscussionView extends Component<Props> {
     }`
     const isBooked = res?.discussion_common?.bookmark?.bookmark
     const images = galleryImagesFromPosts(board)
+    this._posts = board
     this.setState({
       title,
       images,
@@ -297,19 +400,17 @@ export class DiscussionView extends Component<Props> {
 
   getAdvertisementOP(ad, images) {
     if (!ad) {
-      return
+      return null
     }
-    this.setState({
-      advertisementOP: {
-        action: ad.ad_type === 'offer' ? 'Nabízím' : 'Sháním',
-        summary: ad.summary,
-        shipping: ad.shipping,
-        images: images.map(img => ({ url: `https://nyx.cz${img.url}` })),
-        location: ad.location,
-        price: `${ad.price}${ad.currency}`,
-        updated: formatDate(ad.refreshed_at),
-      },
-    })
+    return {
+      action: ad.ad_type === 'offer' ? 'Nabízím' : 'Sháním',
+      summary: ad.summary,
+      shipping: ad.shipping,
+      images: images.map(img => ({ url: `https://nyx.cz${img.url}` })),
+      location: ad.location,
+      price: `${ad.price}${ad.currency}`,
+      updated: formatDate(ad.refreshed_at),
+    }
   }
 
   async setFilters({ user, text, rating }) {
@@ -323,8 +424,9 @@ export class DiscussionView extends Component<Props> {
   }
 
   getPostIndexById(postId) {
+    const posts = this._posts?.length ? this._posts : this.state.posts
     let index = 0
-    for (const p of this.state.posts) {
+    for (const p of posts) {
       if (p.id == postId) {
         return index
       }
@@ -383,6 +485,7 @@ export class DiscussionView extends Component<Props> {
 
   onPostDelete(postId) {
     const posts = this.state.posts.filter(p => p.id != postId)
+    this._posts = posts
     this.setState({ posts })
   }
 
@@ -411,6 +514,7 @@ export class DiscussionView extends Component<Props> {
       post.my_rating = updatedPost.my_rating
       post.rating = updatedPost.rating
       const posts = getDistinctPosts([post], this.state.posts)
+      this._posts = posts
       this.setState({ posts, images: galleryImagesFromPosts(posts) })
     }
   }
@@ -429,6 +533,7 @@ export class DiscussionView extends Component<Props> {
     } else {
       const parsedPosts = parsePostsContent([updatedPost])
       const posts = getDistinctPosts(parsedPosts, this.state.posts)
+      this._posts = posts
       this.setState({ posts })
     }
   }
@@ -436,6 +541,7 @@ export class DiscussionView extends Component<Props> {
   onReminder(post, isReminder) {
     const p = { ...post, reminder: isReminder }
     const posts = getDistinctPosts([p], this.state.posts)
+    this._posts = posts
     this.setState({ posts })
   }
 
@@ -482,6 +588,7 @@ export class DiscussionView extends Component<Props> {
     const res = await this.nyx?.api.getDiscussion(`${discussionId}/id/${postId}/replies`) // todo replies endpoint for proper type check
     const replies = getDistinctPosts(Array.isArray(res) ? res : [], [])
     const posts = parsePostsContent(replies)
+    this._posts = posts
     this.setState({ posts, isFetching: false })
   }
 
@@ -595,9 +702,11 @@ export class DiscussionView extends Component<Props> {
           />
         )}
         <FlatList
+          key={this.state.listEpoch || 'discussion'}
           ref={r => (this.refScroll = r)}
           data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
           extraData={this.state}
+          initialScrollIndex={this.state.initialScrollIndex}
           keyExtractor={item => `${item.uuid}`}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
