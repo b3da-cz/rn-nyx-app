@@ -2,6 +2,7 @@ import { createContext, Context } from 'react'
 import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
+import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 
 export type MainContextConfig = {
   isLoaded: boolean
@@ -15,6 +16,7 @@ export type MainContextConfig = {
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
   isUnreadToggleEnabled: boolean
+  imageDownloadMaxKb: number | null
   initialRouteName: string
   shownCategories: string[]
   fcmToken?: string
@@ -44,6 +46,7 @@ export const initialConfig: MainContextConfig = {
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
   isUnreadToggleEnabled: true,
+  imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
   initialRouteName: 'historyStack',
   shownCategories: [],
   fcmToken: undefined,

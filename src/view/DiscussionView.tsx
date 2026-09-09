@@ -22,6 +22,7 @@ import {
   Nyx,
   parsePostsContent,
   preparePosts,
+  revealImageInPosts,
   t,
   Theme,
   wait,
@@ -81,6 +82,7 @@ export class DiscussionView extends Component<Props> {
   _lastSeenPostId?: number
   _pendingDiscussion: any = null
   _skipJumpToLastSeen = false
+  _revealQueue: Promise<void> = Promise.resolve()
   refScroll: any
   refMsgBoxDialog: any
   navFocusListener?: Function
@@ -169,6 +171,10 @@ export class DiscussionView extends Component<Props> {
 
   setTheme() {
     this.setState({ theme: this.context.theme })
+  }
+
+  imageDownloadMaxKb() {
+    return this.context?.config?.imageDownloadMaxKb ?? this.config?.imageDownloadMaxKb
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -328,7 +334,13 @@ export class DiscussionView extends Component<Props> {
           ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
           : filterPostsByContent(res.posts, this.filters)
       const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-      const nextPosts = await preparePosts(filteredPosts, clearPosts ? [] : this._posts, true, themeBaseFontSize)
+      const nextPosts = await preparePosts(
+        filteredPosts,
+        clearPosts ? [] : this._posts,
+        true,
+        themeBaseFontSize,
+        this.imageDownloadMaxKb(),
+      )
       const title = `${res?.discussion_common?.discussion.name_static}${
         res?.discussion_common?.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
       }`
@@ -339,7 +351,7 @@ export class DiscussionView extends Component<Props> {
       }
       let header = res?.discussion_common?.discussion_specific_data?.header
       if (header && header.length > 0) {
-        header = await preparePosts(header, [], true, themeBaseFontSize)
+        header = await preparePosts(header, [], true, themeBaseFontSize, this.imageDownloadMaxKb())
       }
       this._posts = nextPosts
       this._lastSeenPostId =
@@ -381,7 +393,7 @@ export class DiscussionView extends Component<Props> {
       return
     }
     const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-    const board = await preparePosts(res.items, [], true, themeBaseFontSize)
+    const board = await preparePosts(res.items, [], true, themeBaseFontSize, this.imageDownloadMaxKb())
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
@@ -447,13 +459,25 @@ export class DiscussionView extends Component<Props> {
   }
 
   scrollToPostById(postId) {
-    const postIndex = this.getPostIndexById(postId)
-    if (postIndex === undefined || postIndex === null || !this.refScroll) {
+    const posts = this._posts.length ? this._posts : this.state.posts
+    const post = posts?.find(p => p.id == postId)
+    if (!this.refScroll) {
       return
     }
     setTimeout(() => {
       try {
-        this.refScroll?.scrollToIndex({ index: postIndex, viewPosition: 0, animated: false })
+        if (post?.parsed?.offset != null && post?.parsed?.height != null) {
+          this.refScroll.scrollToOffset({
+            offset: Math.max(0, post.parsed.offset - post.parsed.height),
+            animated: false,
+          })
+          return
+        }
+        const postIndex = this.getPostIndexById(postId)
+        if (postIndex === undefined || postIndex === null) {
+          return
+        }
+        this.refScroll.scrollToIndex({ index: postIndex, viewPosition: 0, animated: false })
       } catch (e) {
         console.warn(e)
       }
@@ -478,9 +502,30 @@ export class DiscussionView extends Component<Props> {
   }
 
   showImages(image, imageList?) {
+    this.revealPostImage(image)
     const sourceList = imageList?.length > 0 ? imageList : galleryImagesFromPosts(this.state.posts)
     const { images, imgIndex } = toGalleryImages(image, sourceList)
     this.props.onImages(images, imgIndex)
+  }
+
+  revealPostImage(image) {
+    this._revealQueue = this._revealQueue.then(() => this.revealPostImageNow(image)).catch(e => console.warn(e))
+    return this._revealQueue
+  }
+
+  flushImageReveals() {
+    return this._revealQueue
+  }
+
+  async revealPostImageNow(image) {
+    const posts = (this._posts.length ? this._posts : this.state.posts).slice()
+    const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
+    const nextPosts = await revealImageInPosts(posts, image, themeBaseFontSize)
+    this._posts = nextPosts
+    this.setState({
+      posts: nextPosts.slice(),
+      images: galleryImagesFromPosts(nextPosts),
+    })
   }
 
   onPostDelete(postId) {

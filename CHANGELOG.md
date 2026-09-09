@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+- nastavení stahování obrázků (vypnout / strop kB / neomezovat)
+- cached obrázky se zobrazí rovnou i při vypnutém stahování / stropu kB
+- kvalita jpeg při zmenšení (50–90 %, výchozí 75 %)
+- šablony tučné a kurzíva v novém příspěvku
+- nahrané video se vloží jako `<video>` tag
+- Last / Reminders / Notifikace / Pošta používají stejné limity a prefetch obrázků jako diskuze
+- galerie a placeholdery ukazují velikost (kB, nad 1 MB červeně tučně v MB)
+
 ## 0.12.0
 - `nyx-api` 0.3.2 (`last_seen_post_id` v bookmarks/historii)
 - diskuze ze seznamu se otevře u prvního nepřečteného (1 stránka novějších + last_seen a starší), další novější pull-to-refresh

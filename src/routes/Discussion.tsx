@@ -22,7 +22,9 @@ export const Discussion = ({ navigation, route }) => {
         navigation.navigate('gallery', {
           images,
           imgIndex,
-          onClose: (focusPostId: number) => viewRef.current?.scrollToPostById(focusPostId),
+          onClose: (focusPostId: number) =>
+            viewRef.current?.flushImageReveals()?.then(() => viewRef.current?.scrollToPostById(focusPostId)),
+          onViewImage: (img: any) => viewRef.current?.revealPostImage(img),
           onRated: (updatedPost: any) => viewRef.current?.onPostRated(updatedPost),
         })
       }

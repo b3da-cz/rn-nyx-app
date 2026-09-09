@@ -3,7 +3,16 @@ import { FlatList, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { PostComponent, RatingDetailComponent } from '../component'
-import { MainContext, Nyx, Theme, parseNotificationsContent } from '../lib'
+import {
+  MainContext,
+  Nyx,
+  Theme,
+  prepareNotifications,
+  notificationPosts,
+  revealImageInPosts,
+  galleryImagesFromPosts,
+  toGalleryImages,
+} from '../lib'
 
 type Props = {
   navigation: any
@@ -22,6 +31,7 @@ export class NotificationsView extends Component<Props> {
   refScroll: any
   navFocusListener?: Function
   navTabPressListener?: Function
+  _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
     this.state = {
@@ -62,7 +72,11 @@ export class NotificationsView extends Component<Props> {
   async getNotifications() {
     this.setState({ isFetching: true })
     const res = await this.nyx?.api.getNotifications()
-    const parsedNotifications = parseNotificationsContent(res?.notifications || [])
+    const parsedNotifications = await prepareNotifications(
+      res?.notifications || [],
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
     this.setState({
       unreadCount: res?.context?.user?.notifications_unread,
       posts: parsedNotifications,
@@ -71,7 +85,20 @@ export class NotificationsView extends Component<Props> {
   }
 
   showImages(image) {
-    this.props.onImages([{ url: image.src }], 0)
+    this.revealPostImage(image)
+    const { images, imgIndex } = toGalleryImages(image, galleryImagesFromPosts(notificationPosts(this.state.posts)))
+    this.props.onImages(images, imgIndex)
+  }
+
+  revealPostImage(image) {
+    this._revealQueue = this._revealQueue.then(() => this.revealPostImageNow(image)).catch(e => console.warn(e))
+    return this._revealQueue
+  }
+
+  async revealPostImageNow(image) {
+    const posts = notificationPosts(this.state.posts)
+    await revealImageInPosts(posts, image, this.context?.theme?.metrics?.fontSizes?.p)
+    this.setState({ posts: this.state.posts.slice() })
   }
 
   showPost(discussionId, postId) {
@@ -90,7 +117,8 @@ export class NotificationsView extends Component<Props> {
         style={{
           borderBottomWidth: blocks.medium,
           borderColor: colors.background,
-        }}>
+        }}
+      >
         <PostComponent
           key={item.data.id}
           post={item.data}
@@ -133,7 +161,8 @@ export class NotificationsView extends Component<Props> {
             justifyContent: 'center',
             backgroundColor: colors.background,
             zIndex: 1,
-          }}>
+          }}
+        >
           <Icon name={'corner-down-right'} size={fontSizes.h2} color={colors.disabled} />
         </TouchableRipple>
         <View style={{ flex: 5 }}>

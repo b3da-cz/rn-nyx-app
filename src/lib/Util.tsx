@@ -4,6 +4,7 @@ import DocumentPicker from 'react-native-document-picker'
 import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-image-resizer'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
+import { clampJpegQuality, isResizableImageUpload, jpegUploadName, JPEG_QUALITY_DEFAULT } from './compose'
 
 // ImageViewer treats IImageInfo width/height as the display size and never
 // scales up, so discussion thumbnail layout sizes must not be forwarded.
@@ -12,7 +13,13 @@ const toGalleryImage = (img: any, post?: any) => {
   if (!url) {
     return null
   }
-  const next: any = { url }
+  const next: any = { url, src: img.src || url }
+  if (img.id) {
+    next.id = img.id
+  }
+  if (img.byteLength != null) {
+    next.byteLength = img.byteLength
+  }
   if (post) {
     next.postId = post.id
     next.discussionId = post.discussion_id
@@ -89,23 +96,43 @@ export const wait = async (ms = 100) => {
 //   </Portal>
 // )
 
-export const pickFileAndResizeJpegs = async size => {
+const asFileUri = (uri?: string, path?: string) => {
+  const value = uri || path
+  if (!value) {
+    return value
+  }
+  if (value.startsWith('file:') || value.startsWith('content:')) {
+    return value
+  }
+  return `file://${value}`
+}
+
+export const pickFileAndResizeJpegs = async (size, quality = JPEG_QUALITY_DEFAULT) => {
   try {
     const file = await DocumentPicker.pickSingle({
       type: [DocumentPicker.types.allFiles],
     })
-    // console.warn(`original ${Math.floor(file.size / 1024)}Kb`) // TODO: remove
     let resized: RNIRResponse | null = null
-    if (file.type === 'image/jpeg' && size !== 'Original') {
-      resized = await ImageResizer.createResizedImage(file.uri, size, size, 'JPEG', 80, undefined, undefined, false, {
-        onlyScaleDown: true,
-      })
-      // console.warn(`resized ${Math.floor(resized.size / 1024)}Kb`) // TODO: remove
+    if (isResizableImageUpload(file) && size !== 'Original') {
+      resized = await ImageResizer.createResizedImage(
+        file.uri,
+        size,
+        size,
+        'JPEG',
+        clampJpegQuality(quality),
+        0,
+        undefined,
+        false,
+        {
+          onlyScaleDown: true,
+        },
+      )
     }
     return {
-      uri: resized ? resized.uri : file.uri,
-      type: file.type,
-      name: file.name,
+      uri: resized ? asFileUri(resized.uri, resized.path) : file.uri,
+      type: resized ? 'image/jpeg' : file.type,
+      name: resized ? jpegUploadName(file.name) : file.name,
+      size: resized ? resized.size : file.size,
     }
   } catch (e) {
     if (!DocumentPicker.isCancel(e)) {

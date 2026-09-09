@@ -31,7 +31,7 @@ type Props = {
 }
 
 const Gallery = ({ navigation, route }) => {
-  const { images, imgIndex, onClose, onRated } = route.params || {}
+  const { images, imgIndex, onClose, onRated, onViewImage } = route.params || {}
   const currentIndexRef = useRef(imgIndex || 0)
   useEffect(() => {
     const unsub = navigation.addListener('beforeRemove', () => {
@@ -49,6 +49,7 @@ const Gallery = ({ navigation, route }) => {
       isShowing={true}
       onIndexChange={i => {
         currentIndexRef.current = i
+        onViewImage?.(images?.[i])
       }}
       onRated={onRated}
       onExit={() => navigation.goBack()}

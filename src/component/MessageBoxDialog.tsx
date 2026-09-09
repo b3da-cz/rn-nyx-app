@@ -1,17 +1,20 @@
 import React, { Component } from 'react'
-import {
-  ActivityIndicator,
-  View,
-  ScrollView,
-  Image,
-  LayoutAnimation,
-  Keyboard,
-  Dimensions,
-} from 'react-native'
+import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation, Keyboard, Dimensions } from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
-import { MainContext, createIssue, LayoutAnimConf, pickFileAndResizeJpegs, t, Nyx } from '../lib'
+import {
+  MainContext,
+  createIssue,
+  LayoutAnimConf,
+  JPEG_QUALITY_DEFAULT,
+  JPEG_QUALITY_PERCENTS,
+  pickFileAndResizeJpegs,
+  isVideoUpload,
+  videoTagFromUpload,
+  t,
+  Nyx,
+} from '../lib'
 
 type Props = {
   nyx: Nyx
@@ -30,8 +33,10 @@ type State = {
   isFetching: boolean
   isUploading: boolean
   isMenuVisible: boolean
+  isQualityMenuVisible: boolean
   issueTitle: string
   selectedSize: string
+  selectedQuality: number
   message: string
   msgBoxSelection: { start: number; end: number }
   uploadedFiles: any[]
@@ -57,8 +62,10 @@ export class MessageBoxDialog extends Component<Props> {
       isFetching: false,
       isUploading: false,
       isMenuVisible: false,
+      isQualityMenuVisible: false,
       issueTitle: '',
       selectedSize: 'Original',
+      selectedQuality: JPEG_QUALITY_DEFAULT,
       message: '',
       msgBoxSelection: { start: 0, end: 0 },
       uploadedFiles: [],
@@ -78,6 +85,8 @@ export class MessageBoxDialog extends Component<Props> {
       { title: '900px', value: 900 },
       { title: '600px', value: 600 },
       { title: '400px', value: 400 },
+      { title: '320px', value: 320 },
+      { title: '240px', value: 240 },
     ]
   }
 
@@ -153,7 +162,11 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   selectSize = size => {
-    this.setState({ selectedSize: size, isMenuVisible: false })
+    this.setState({ selectedSize: size, isMenuVisible: false, isQualityMenuVisible: false })
+  }
+
+  selectQuality = quality => {
+    this.setState({ selectedQuality: quality, isQualityMenuVisible: false, isMenuVisible: false })
   }
 
   async appendFile() {
@@ -161,7 +174,7 @@ export class MessageBoxDialog extends Component<Props> {
       return
     }
     try {
-      const file = await pickFileAndResizeJpegs(this.state.selectedSize)
+      const file = await pickFileAndResizeJpegs(this.state.selectedSize, this.state.selectedQuality)
       if (!file) {
         return
       }
@@ -169,15 +182,30 @@ export class MessageBoxDialog extends Component<Props> {
       const res = await this.props.nyx.api.uploadFile(file, this.props.params?.discussionId)
       if (res?.id && res.id > 0) {
         LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
-        this.setState({
-          isUploading: false,
-          uploadedFiles: this.state.uploadedFiles?.length ? [...this.state.uploadedFiles, res] : [res],
+        this.setState(prev => {
+          const uploaded = {
+            ...res,
+            size: file.size != null ? file.size : res.size,
+          }
+          const next: Partial<State> = {
+            isUploading: false,
+            uploadedFiles: prev.uploadedFiles?.length ? [...prev.uploadedFiles, uploaded] : [uploaded],
+          }
+          if (isVideoUpload(uploaded)) {
+            const tag = videoTagFromUpload(uploaded)
+            if (tag) {
+              next.message = `${prev.message}${prev.message?.length > 0 ? '\n' : ''}${tag}`
+            }
+          }
+          return next
         })
         Bugfender.log('INFO', 'upload file ok')
       } else {
+        this.setState({ isUploading: false })
         Bugfender.warn('WARNING', 'upload file not ok? ' + (res?.error ? res.error : ''))
       }
     } catch (e) {
+      this.setState({ isUploading: false })
       console.warn(e)
     }
   }
@@ -241,12 +269,14 @@ export class MessageBoxDialog extends Component<Props> {
       isDialogVisible,
       isFetching,
       isMenuVisible,
+      isQualityMenuVisible,
       isUploading,
       issueTitle,
       message,
       searchPhrase,
       selectedRecipient,
       selectedSize,
+      selectedQuality,
       uploadedFiles,
       users,
       keyboardHeight,
@@ -256,8 +286,13 @@ export class MessageBoxDialog extends Component<Props> {
       metrics: { blocks, fontSizes },
     } = this.context.theme
     const windowHeight = Dimensions.get('window').height
+    const isAnyMenuVisible = isMenuVisible || isQualityMenuVisible
     const dialogMaxHeight =
-      keyboardHeight > 0 ? windowHeight - keyboardHeight - 24 : isMenuVisible ? windowHeight * 0.69 : windowHeight * 0.86
+      keyboardHeight > 0
+        ? windowHeight - keyboardHeight - 24
+        : isAnyMenuVisible
+        ? windowHeight * 0.69
+        : windowHeight * 0.86
     return (
       <View
         style={{
@@ -266,7 +301,8 @@ export class MessageBoxDialog extends Component<Props> {
           height: isDialogVisible ? '100%' : 100,
           left: isDialogVisible ? 0 : undefined,
           right: 0,
-        }}>
+        }}
+      >
         <Dialog
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}
@@ -283,15 +319,17 @@ export class MessageBoxDialog extends Component<Props> {
                   zIndex: 1,
                 }
               : { marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }
-          }>
+          }
+        >
           <Dialog.ScrollArea
             style={{
               paddingLeft: 5,
               paddingRight: 5,
               paddingTop: 5,
               paddingBottom: 0,
-              maxHeight: keyboardHeight > 0 ? dialogMaxHeight - 56 : isMenuVisible ? '69%' : '86%',
-            }}>
+              maxHeight: keyboardHeight > 0 ? dialogMaxHeight - 56 : isAnyMenuVisible ? '69%' : '86%',
+            }}
+          >
             <ScrollView
               ref={r => (this.refScroll = r)}
               keyboardDismissMode={'on-drag'}
@@ -301,7 +339,8 @@ export class MessageBoxDialog extends Component<Props> {
                 if (keyboardHeight > 0) {
                   this.refScroll?.scrollToEnd({ animated: false })
                 }
-              }}>
+              }}
+            >
               {!!params?.isGitIssue && (
                 <TextInput
                   numberOfLines={1}
@@ -362,7 +401,8 @@ export class MessageBoxDialog extends Component<Props> {
                   justifyContent: 'space-between',
                   width: '100%',
                   marginTop: 5,
-                }}>
+                }}
+              >
                 <View style={{ alignItems: 'center' }}>
                   <Text>{t('jpegSize')}</Text>
                   <Menu
@@ -371,12 +411,16 @@ export class MessageBoxDialog extends Component<Props> {
                     onDismiss={() => this.setState({ isMenuVisible: false })}
                     anchor={
                       <Button
-                        onPress={() => (isUploading ? null : this.setState({ isMenuVisible: true }))}
+                        onPress={() =>
+                          isUploading ? null : this.setState({ isMenuVisible: true, isQualityMenuVisible: false })
+                        }
                         uppercase={false}
-                        color={isUploading ? colors.disabled : colors.text}>
+                        color={isUploading ? colors.disabled : colors.text}
+                      >
                         {`${selectedSize}${selectedSize !== 'Original' ? 'px' : ''}`}
                       </Button>
-                    }>
+                    }
+                  >
                     {this.sizes.map((s, i) =>
                       !s.value ? (
                         <Divider key={`d${i}`} />
@@ -384,6 +428,27 @@ export class MessageBoxDialog extends Component<Props> {
                         <Menu.Item key={s.value} onPress={() => this.selectSize(s.value)} title={s.title} />
                       ),
                     )}
+                  </Menu>
+                  <Text>{t('jpegQuality')}</Text>
+                  <Menu
+                    visible={isQualityMenuVisible}
+                    statusBarHeight={-150}
+                    onDismiss={() => this.setState({ isQualityMenuVisible: false })}
+                    anchor={
+                      <Button
+                        onPress={() =>
+                          isUploading ? null : this.setState({ isQualityMenuVisible: true, isMenuVisible: false })
+                        }
+                        uppercase={false}
+                        color={isUploading ? colors.disabled : colors.text}
+                      >
+                        {`${selectedQuality}%`}
+                      </Button>
+                    }
+                  >
+                    {JPEG_QUALITY_PERCENTS.map(q => (
+                      <Menu.Item key={q} onPress={() => this.selectQuality(q)} title={`${q}%`} />
+                    ))}
                   </Menu>
                 </View>
                 <View>
@@ -415,7 +480,8 @@ export class MessageBoxDialog extends Component<Props> {
               </View>
             )}
             <View
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+            >
               {!params?.isGitIssue ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
                   <IconButton
@@ -442,23 +508,48 @@ export class MessageBoxDialog extends Component<Props> {
                 </View>
               )}
               <View style={{ height: '70%', width: 1, borderLeftWidth: 1, borderColor: colors.disabled }} />
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: '50%' }}>
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  flexWrap: 'nowrap',
+                }}
+              >
                 <IconButton
                   icon={'link'}
-                  size={17}
+                  size={18}
+                  style={{ margin: 0 }}
                   onPress={() => this.addText('<a href=""></a>', true)}
                   rippleColor={colors.ripple}
                 />
                 <IconButton
                   icon={'image'}
-                  size={17}
+                  size={18}
+                  style={{ margin: 0 }}
                   onPress={() => this.addText('<img src="" title="" alt="">', true)}
                   rippleColor={colors.ripple}
                 />
                 <IconButton
                   icon={'lock'}
-                  size={17}
+                  size={18}
+                  style={{ margin: 0 }}
                   onPress={() => this.addText('<div class="spoiler"></div>', true)}
+                  rippleColor={colors.ripple}
+                />
+                <IconButton
+                  icon={'format-bold'}
+                  size={18}
+                  style={{ margin: 0 }}
+                  onPress={() => this.addText('<b></b>', true)}
+                  rippleColor={colors.ripple}
+                />
+                <IconButton
+                  icon={'format-italic'}
+                  size={18}
+                  style={{ margin: 0 }}
+                  onPress={() => this.addText('<i></i>', true)}
                   rippleColor={colors.ripple}
                 />
                 {/*<IconButton*/}

@@ -1,7 +1,17 @@
 import React, { Component } from 'react'
 import { FlatList, LayoutAnimation, View } from 'react-native'
 import { FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
-import { MainContext, getDistinctPosts, LayoutAnimConf, parsePostsContent, Theme, wait, Nyx } from '../lib'
+import {
+  MainContext,
+  LayoutAnimConf,
+  preparePosts,
+  revealImageInPosts,
+  galleryImagesFromPosts,
+  toGalleryImages,
+  Theme,
+  wait,
+  Nyx,
+} from '../lib'
 
 type Props = {
   onImages: Function
@@ -26,6 +36,7 @@ export class MailView extends Component<Props> {
   navFocusListener?: Function
   navBlurListener?: Function
   navTabPressListener?: Function
+  _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
     this.state = {
@@ -80,7 +91,13 @@ export class MailView extends Component<Props> {
       isMsgBtnVisible: isFocused,
     })
     const res = await this.nyx?.api.getMail()
-    const parsedMessages = parsePostsContent(res?.posts)
+    const parsedMessages = await preparePosts(
+      res?.posts || [],
+      [],
+      true,
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       conversations: res?.conversations,
@@ -96,8 +113,13 @@ export class MailView extends Component<Props> {
       messages[messages.length - 1].id
     }`
     const res = await this.nyx?.api.getMail(queryString)
-    const newMessages = getDistinctPosts(res?.posts || [], messages)
-    const parsedMessages = parsePostsContent(newMessages)
+    const parsedMessages = await preparePosts(
+      res?.posts || [],
+      messages,
+      true,
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       conversations: res?.conversations,
@@ -110,7 +132,13 @@ export class MailView extends Component<Props> {
     this.setState({ isFetching: true, messages: [] })
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx?.api.getMail(queryString)
-    const parsedMessages = parsePostsContent(res?.posts)
+    const parsedMessages = await preparePosts(
+      res?.posts || [],
+      [],
+      true,
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       activeRecipient: username,
@@ -121,7 +149,23 @@ export class MailView extends Component<Props> {
   }
 
   showImages(image) {
-    this.props.onImages([{ url: image.src }], 0)
+    this.revealPostImage(image)
+    const { images, imgIndex } = toGalleryImages(image, galleryImagesFromPosts(this.state.messages))
+    this.props.onImages(images, imgIndex)
+  }
+
+  revealPostImage(image) {
+    this._revealQueue = this._revealQueue.then(() => this.revealPostImageNow(image)).catch(e => console.warn(e))
+    return this._revealQueue
+  }
+
+  async revealPostImageNow(image) {
+    const next = await revealImageInPosts(
+      this.state.messages.slice(),
+      image,
+      this.context?.theme?.metrics?.fontSizes?.p,
+    )
+    this.setState({ messages: next.slice() })
   }
 
   showPost(discussionId, postId) {

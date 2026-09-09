@@ -1,7 +1,18 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { PostComponent, SectionHeaderComponent } from '../component'
-import { MainContext, Nyx, parsePostsContent, t, Theme, filterDiscussions, filterPostsByContent } from '../lib'
+import {
+  MainContext,
+  Nyx,
+  t,
+  Theme,
+  filterDiscussions,
+  filterPostsByContent,
+  galleryImagesFromPosts,
+  toGalleryImages,
+  preparePosts,
+  revealImageInPosts,
+} from '../lib'
 
 type Props = {
   navigation: any
@@ -22,6 +33,7 @@ export class RemindersView extends Component<Props> {
   refScroll: any
   navFocusListener?: Function
   navTabPressListener?: Function
+  _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
     this.state = {
@@ -85,8 +97,14 @@ export class RemindersView extends Component<Props> {
     const res = await this.nyx?.api.getReminders(type)
     // const newPosts = getDistinctPosts(res.posts, this.state[type])
     const filteredPosts = filterPostsByContent(filterDiscussions(res?.posts || [], this.filters), this.filters)
-    const parsedPosts = parsePostsContent(filteredPosts)
-    const images = parsedPosts.flatMap(p => p.parsed.images)
+    const parsedPosts = await preparePosts(
+      filteredPosts,
+      [],
+      true,
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
+    const images = galleryImagesFromPosts(parsedPosts)
     return {
       reminders: parsedPosts,
       images,
@@ -98,9 +116,34 @@ export class RemindersView extends Component<Props> {
   }
 
   showImages(image) {
-    const imgIndex = this.state.images.indexOf(image)
-    const images = this.state.images.map(img => ({ url: img.src }))
-    this.props.navigation.navigate('gallery', { images, imgIndex })
+    this.revealPostImage(image)
+    const list = galleryImagesFromPosts([...this.state.mail, ...this.state.bookmarks])
+    const { images, imgIndex } = toGalleryImages(image, list)
+    this.props.navigation.navigate('gallery', {
+      images,
+      imgIndex,
+      onViewImage: (img: any) => this.revealPostImage(img),
+    })
+  }
+
+  revealPostImage(image) {
+    this._revealQueue = this._revealQueue.then(() => this.revealPostImageNow(image)).catch(e => console.warn(e))
+    return this._revealQueue
+  }
+
+  async revealPostImageNow(image) {
+    const fontSize = this.context?.theme?.metrics?.fontSizes?.p
+    const bookmarks = await revealImageInPosts(this.state.bookmarks.slice(), image, fontSize)
+    const mail = await revealImageInPosts(this.state.mail.slice(), image, fontSize)
+    this.setState({
+      bookmarks,
+      mail,
+      images: galleryImagesFromPosts([...mail, ...bookmarks]),
+      sectionedReminders: [
+        { title: t('reminders.inMail'), data: mail },
+        { title: t('reminders.inDiscussions'), data: bookmarks },
+      ],
+    })
   }
 
   onReminderRemove(post) {
@@ -123,6 +166,7 @@ export class RemindersView extends Component<Props> {
       <View style={{ backgroundColor: theme?.colors?.background }}>
         <SectionList
           sections={this.state.sectionedReminders}
+          extraData={this.state}
           stickySectionHeadersEnabled={true}
           initialNumToRender={20}
           keyExtractor={item => item.id}

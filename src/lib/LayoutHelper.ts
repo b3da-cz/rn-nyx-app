@@ -1,15 +1,34 @@
 import { Dimensions, Image } from 'react-native'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
-// import { prefetchImageSize } from './ImageSizeHelper'
+import {
+  applyImagePlaceholder,
+  applyRevealedImageLayoutAtWidth,
+  computeImagesHeight,
+  fetchImageByteLength,
+  hasLoadedImageUrl,
+  isImageDownloadOff,
+  isImageDownloadUnlimited,
+  isPlaceholderImageSize,
+  rememberLoadedImageUrl,
+  shouldShowCachedImage,
+  shouldSkipImageDownload,
+} from './imageDownload'
 
 const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
   return new Promise(async resolve => {
     try {
       const nextImages: any[] = []
       for (const img of images) {
-        const { width, height } = await getImageSize(isFullImgSize ? img.src : img.thumb) // RNImage.getSize()
-        // const { width, height } = await prefetchImageSize(isFullImgSize ? img.src : img.thumb) // Image prefetch helper
+        if (img.skipDownload && !img.revealed && !img.cached) {
+          nextImages.push(img)
+          continue
+        }
+        if (img.width > 0 && img.height > 0 && !isPlaceholderImageSize(img)) {
+          nextImages.push(img)
+          continue
+        }
+        const { width, height } = await getImageSize(isFullImgSize || img.cached ? img.src : img.thumb || img.src)
         nextImages.push({
           ...img,
           width,
@@ -23,19 +42,67 @@ const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
   })
 }
 
+export const queryCachedImageUrls = async (urls: string[] = []): Promise<Set<string>> => {
+  const cached = new Set<string>()
+  const unique = [...new Set(urls.filter(Boolean))]
+  for (const url of unique) {
+    if (hasLoadedImageUrl(url)) {
+      cached.add(url)
+    }
+  }
+  const missing = unique.filter(url => !cached.has(url))
+  if (!missing.length || typeof Image.queryCache !== 'function') {
+    return cached
+  }
+  try {
+    const result = await Image.queryCache(missing)
+    if (result && typeof result === 'object') {
+      for (const url of missing) {
+        if (result[url]) {
+          cached.add(url)
+          rememberLoadedImageUrl(url)
+        }
+      }
+    }
+  } catch (e) {}
+  return cached
+}
+
+export const isImageCached = async (url?: string): Promise<boolean> => {
+  if (!url) {
+    return false
+  }
+  const cached = await queryCachedImageUrls([url])
+  return cached.has(url)
+}
+
 const getImageSize = async (url: string): Promise<{ width: number; height: number }> => {
-  return new Promise(async resolve => {
+  return new Promise(resolve => {
+    let done = false
+    const finish = (width: number, height: number) => {
+      if (done) {
+        return
+      }
+      done = true
+      resolve({ width, height })
+    }
+    const timeout = setTimeout(() => finish(0, 0), 4000)
     try {
       Image.getSize(
         url,
         (width, height) => {
-          resolve({ width, height })
+          clearTimeout(timeout)
+          finish(width, height)
         },
-        _ => resolve({ width: 100, height: 5 }),
+        () => {
+          clearTimeout(timeout)
+          finish(0, 0)
+        },
       )
     } catch (e) {
-      console.warn(e) // TODO: remove
-      resolve({ width: 100, height: 5 })
+      clearTimeout(timeout)
+      console.warn(e)
+      finish(0, 0)
     }
   })
 }
@@ -45,7 +112,11 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
     let i = 0
     for (const post of posts) {
       if (post.parsed.images?.length > 0 && post.content_raw?.type !== 'advertisement') {
-        const needsSizes = post.parsed.images.some(img => !img.width || !img.height)
+        const needsSizes = post.parsed.images.some(
+          img =>
+            (img.revealed || img.cached || !img.skipDownload) &&
+            (!img.width || !img.height || isPlaceholderImageSize(img)),
+        )
         if (needsSizes) {
           post.parsed.images = await getImageSizes(post.parsed.images, isFullImgSize)
         }
@@ -58,6 +129,133 @@ export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onP
     Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)
   }
   return posts
+}
+
+export const measureImagePixels = async (img: any, isFullImgSize = true) => {
+  const url = isFullImgSize ? img.src : img.thumb || img.src
+  const { width, height } = await getImageSize(url)
+  return { ...img, width, height }
+}
+
+const layoutScreenWidth = (themeBaseFontSize: number) =>
+  Dimensions.get('window').width - (themeBaseFontSize > 16 ? 12 : 2)
+
+export const applyRevealedImageLayout = (posts: any[] = [], themeBaseFontSize: number) =>
+  applyRevealedImageLayoutAtWidth(posts, layoutScreenWidth(themeBaseFontSize))
+
+export const revealImageInPosts = async (posts: any[] = [], image: any, themeBaseFontSize: number) => {
+  const src = image?.src || image?.url
+  if (!src || !posts.length) {
+    return posts
+  }
+  let found = false
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i]
+    const images = post.parsed?.images || []
+    const j = images.findIndex(img => (image.id && img.id === image.id) || img.src === src || img.src === image.src)
+    if (j < 0) {
+      continue
+    }
+    const prev = images[j]
+    if (prev.revealed) {
+      found = true
+      break
+    }
+    let width = prev.width
+    let height = prev.height
+    try {
+      const sized = await measureImagePixels(prev, false)
+      if (sized.width > 0 && sized.height > 0) {
+        width = sized.width
+        height = sized.height
+      }
+    } catch (e) {
+      console.warn(e)
+    }
+    const nextImages = images.slice()
+    nextImages[j] = {
+      ...prev,
+      width,
+      height,
+      revealed: true,
+      skipDownload: false,
+      cached: true,
+    }
+    post.parsed = {
+      ...post.parsed,
+      images: nextImages,
+      layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
+    }
+    posts[i] = { ...post, parsed: post.parsed }
+    found = true
+    break
+  }
+  if (!found || !themeBaseFontSize) {
+    return posts
+  }
+  return applyRevealedImageLayout(posts, themeBaseFontSize)
+}
+
+const markCachedImage = (img: any) => {
+  const next = { ...img, cached: true, skipDownload: false }
+  if (isPlaceholderImageSize(next)) {
+    next.width = 0
+    next.height = 0
+  }
+  return next
+}
+
+export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | null) => {
+  try {
+    if (isImageDownloadUnlimited(maxKb)) {
+      return fetchImageSizes(posts, false)
+    }
+    const srcs: string[] = []
+    for (const post of posts) {
+      for (const img of post.parsed?.images || []) {
+        if (img.src) {
+          srcs.push(img.src)
+        }
+      }
+    }
+    const cached = srcs.length ? await queryCachedImageUrls(srcs) : new Set<string>()
+    for (const post of posts) {
+      if (!post.parsed?.images?.length || post.content_raw?.type === 'advertisement') {
+        continue
+      }
+      const nextImages = []
+      for (const img of post.parsed.images) {
+        if (img.revealed || img.src?.includes('youtu')) {
+          nextImages.push(img)
+          continue
+        }
+        if (shouldShowCachedImage(cached.has(img.src), maxKb)) {
+          nextImages.push(markCachedImage(img))
+          continue
+        }
+        if (isImageDownloadOff(maxKb)) {
+          nextImages.push(applyImagePlaceholder({ ...img }))
+          continue
+        }
+        const bytes = await fetchImageByteLength(img.src)
+        if (shouldSkipImageDownload(bytes, maxKb)) {
+          nextImages.push(applyImagePlaceholder({ ...img, byteLength: bytes }))
+        } else {
+          nextImages.push({ ...img, skipDownload: false, byteLength: bytes })
+        }
+      }
+      post.parsed = {
+        ...post.parsed,
+        images: nextImages,
+        layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
+      }
+    }
+    return fetchImageSizes(posts, false)
+  } catch (e) {
+    console.warn(e)
+    Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)
+    return posts
+  }
 }
 
 export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => {
@@ -83,23 +281,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         ...fontSpecs,
       })
       const textHeight = textHeights.reduce((a, b) => a + b)
-      const imagesHeight =
-        post.parsed.images?.length > 0
-          ? post.content_raw?.type === 'advertisement'
-            ? 120
-            : post.parsed.images
-                .map(img => {
-                  let w = screenWidth
-                  const isYtPreview = img.src.includes('youtu')
-                  if (img.width > 0 && img.width < w && !isYtPreview) {
-                    // w = img.width // todo cant do this while prefetching thumbnail sizes
-                  } else if (isYtPreview) {
-                    w = w * 0.8
-                  }
-                  return img.height * (w / img.width) + 20
-                })
-                .reduce((a, b) => a + b)
-          : 0
+      const imagesHeight = computeImagesHeight(post, screenWidth)
       const codeHeights =
         post.parsed.codeBlocks?.length > 0
           ? await rnTextSize.flatHeights({
@@ -164,6 +346,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         headerSize +
         videoHeight +
         paddingBottom
+      post.parsed.imagesHeight = imagesHeight
       post.parsed.height = height < 75 ? 75 : height
       post.parsed.offset = posts
         .filter((_, i) => i <= index)

@@ -55,6 +55,17 @@ export class PostComponent extends Component<Props> {
     return (
       this.props.post.rating !== nextProps.post.rating ||
       this.props.post.reminder !== nextProps.post.reminder ||
+      this.props.post.parsed?.height !== nextProps.post.parsed?.height ||
+      this.props.post.parsed?.layoutEpoch !== nextProps.post.parsed?.layoutEpoch ||
+      this.props.post.parsed?.images?.some(
+        (img, i) =>
+          img.skipDownload !== nextProps.post.parsed?.images?.[i]?.skipDownload ||
+          img.revealed !== nextProps.post.parsed?.images?.[i]?.revealed ||
+          img.cached !== nextProps.post.parsed?.images?.[i]?.cached ||
+          img.width !== nextProps.post.parsed?.images?.[i]?.width ||
+          img.height !== nextProps.post.parsed?.images?.[i]?.height ||
+          img.byteLength !== nextProps.post.parsed?.images?.[i]?.byteLength,
+      ) ||
       this.context.theme !== nextContext.theme
     )
   }
@@ -65,7 +76,8 @@ export class PostComponent extends Component<Props> {
         key={reply.id}
         isPressable={true}
         isReply={true}
-        onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}>
+        onPress={() => (reply ? this.props.onDiscussionDetailShow(reply.discussionId, reply.postId) : null)}
+      >
         {`${reply.text}${reply.text?.endsWith(']') || reply.text?.startsWith('#') ? ' ' : ': '}`}
       </TextComponent>
     )
@@ -87,7 +99,8 @@ export class PostComponent extends Component<Props> {
               console.warn('failed to open ', link.url, link)
             }
           })
-        }}>
+        }}
+      >
         {`${link.text} `}
       </TextComponent>
     )
@@ -106,13 +119,17 @@ export class PostComponent extends Component<Props> {
     //   w = img.width // todo cant do this while prefetching thumbnail sizes
     // }
     if (!img.src.includes('img.youtube.com')) {
+      const isPlaceholder = !!img.skipDownload && !img.revealed && !img.cached
+      const hasMeasuredSize = img.width > 0 && img.height > 0
       return (
         <ImageComponent
-          key={img.id}
+          key={`${img.id}-${isPlaceholder ? 'ph' : 'img'}`}
           src={img.src}
           width={w}
-          height={img.height > 0 ? img.height * (w / img.width) : undefined}
-          useExactSize={img.width > 0}
+          height={hasMeasuredSize ? img.height * (w / img.width) : isPlaceholder ? w * (2 / 3) : undefined}
+          useExactSize={hasMeasuredSize}
+          skipDownload={isPlaceholder}
+          byteLength={img.byteLength}
           onPress={() => this.props.onImage(img)}
         />
       )
@@ -249,18 +266,8 @@ export class PostComponent extends Component<Props> {
       )
     }
     const { post } = this.props
-    const {
-      contentParts,
-      links,
-      replies,
-      images,
-      codeBlocks,
-      textsBold,
-      textsItalic,
-      ytBlocks,
-      spoilers,
-      videos,
-    } = post.parsed
+    const { contentParts, links, replies, images, codeBlocks, textsBold, textsItalic, ytBlocks, spoilers, videos } =
+      post.parsed
     const { colors } = this.context.theme
     const isTextType = part =>
       part.startsWith(TOKEN.REPLY) ||
@@ -300,7 +307,8 @@ export class PostComponent extends Component<Props> {
           paddingBottom: post?.parsed?.height > 0 ? undefined : 10,
           backgroundColor: colors.background,
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,
-        }}>
+        }}
+      >
         {isSwipeablePostHeader || !this.props.isHeaderInteractive ? (
           <PostHeaderSwipeableComponent
             post={post}

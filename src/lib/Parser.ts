@@ -1,7 +1,8 @@
 import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
-import { fetchImageSizes, generateUuidV4, getBlockSizes, getDistinctPosts } from '../lib'
+import { applyImageDownloadPolicy, getBlockSizes } from './LayoutHelper'
+import { generateUuidV4, getDistinctPosts } from './Util'
 
 export const TOKEN = {
   // meh todo
@@ -128,8 +129,12 @@ export class Parser {
     this.images.forEach(i => (content = this.replaceRaw(content, i.raw, `${T.SPLIT}${T.IMG}${i.id}${T.SPLIT}`)))
     this.links.forEach(l => (content = this.replaceRaw(content, l.raw, `${T.SPLIT}${T.LINK}${l.id}${T.SPLIT}`)))
     this.codeBlocks.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.CODE}${c.id}${T.SPLIT}`)))
-    this.textsBold.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_BOLD}${c.id}${T.SPLIT}`)))
-    this.textsItalic.forEach(c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_ITALIC}${c.id}${T.SPLIT}`)))
+    this.textsBold.forEach(
+      c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_BOLD}${c.id}${T.SPLIT}`)),
+    )
+    this.textsItalic.forEach(
+      c => (content = this.replaceRaw(content, c.raw, `${T.SPLIT}${T.TEXT_ITALIC}${c.id}${T.SPLIT}`)),
+    )
     this.ytBlocks.forEach(y => (content = this.replaceRaw(content, y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
     this.videos.forEach(v => (content = this.replaceRaw(content, v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
     this.ytBlocksToDelete.forEach(y => (content = this.replaceRaw(content, y.raw, '')))
@@ -295,7 +300,10 @@ export class Parser {
 
   parseDiscussionRequest() {
     // html parser doesn't handle this as valid html, even if it renders.. TODO: voting buttons
-    this.discussionRequest = this.contentRaw?.replace('<tr><td>akce<td><button type=button name=vote_for><span class=\'icon-entypo icon-up-bold\'></span> hlas pro</button><button type=button name=vote_against><span class=\'icon-entypo icon-down-bold\'></span> hlas proti</button></tr>', '')
+    this.discussionRequest = this.contentRaw?.replace(
+      "<tr><td>akce<td><button type=button name=vote_for><span class='icon-entypo icon-up-bold'></span> hlas pro</button><button type=button name=vote_against><span class='icon-entypo icon-down-bold'></span> hlas proti</button></tr>",
+      '',
+    )
     this.clearText = this.replaceHtmlEntitiesAndTags(this.discussionRequest)
     this.isParsed = true
     this.isTokenized = true
@@ -385,6 +393,35 @@ export const parseNotificationsContent = notifications => {
   return notifications
 }
 
+export const notificationPosts = (notifications: any[] = []) => {
+  const posts: any[] = []
+  for (const notification of notifications) {
+    if (notification?.data) {
+      posts.push(notification.data)
+    }
+    if (notification?.details?.replies?.length) {
+      posts.push(...notification.details.replies)
+    }
+  }
+  return posts
+}
+
+export const prepareNotifications = async (
+  notifications: any[] = [],
+  themeBaseFontSize?,
+  imageDownloadMaxKb?: number | null,
+) => {
+  const parsed = parseNotificationsContent(notifications)
+  const posts = notificationPosts(parsed)
+  if (posts.length) {
+    await applyImageDownloadPolicy(posts, imageDownloadMaxKb)
+    if (themeBaseFontSize) {
+      await getBlockSizes(posts, themeBaseFontSize)
+    }
+  }
+  return parsed
+}
+
 export const recountDiscussionList = discussions => {
   try {
     return discussions.map(d => {
@@ -407,11 +444,12 @@ export const preparePosts = async (
   oldPosts: any[] = [],
   calculateSizes = false,
   themeBaseFontSize?,
+  imageDownloadMaxKb?: number | null,
 ) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {
-    const parsedPostsWImageSizes = await fetchImageSizes(parsedPosts, false)
+    const parsedPostsWImageSizes = await applyImageDownloadPolicy(parsedPosts, imageDownloadMaxKb)
     return await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize)
   }
   return parsedPosts

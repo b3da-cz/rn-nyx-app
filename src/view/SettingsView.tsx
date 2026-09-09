@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { ScrollView, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import {
   ButtonComponent,
   confirm,
@@ -8,7 +9,18 @@ import {
   FormRowToggleComponent,
   SectionHeaderComponent,
 } from '../component'
-import { MainContext, Storage, t, Theme, initFCM, unregisterFCM, Nyx } from '../lib'
+import {
+  IMAGE_DOWNLOAD_LIMITS_KB,
+  IMAGE_DOWNLOAD_OFF,
+  MainContext,
+  Storage,
+  t,
+  Theme,
+  initFCM,
+  unregisterFCM,
+  Nyx,
+  normalizeImageDownloadMaxKb,
+} from '../lib'
 
 type Props = {
   config: any
@@ -26,6 +38,7 @@ type State = {
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
   isSwipeablePostHeader: boolean
+  imageDownloadMaxKb: number | null
   initialRouteName: string
   theme: Theme
   username: string
@@ -65,6 +78,7 @@ export class SettingsView extends Component<Props> {
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
+      imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
       username: '',
       isVisible: true,
@@ -91,6 +105,28 @@ export class SettingsView extends Component<Props> {
     }
     await Storage.setConfig(conf)
     this.props.onConfigChange()
+  }
+
+  imageDownloadLabel(maxKb?: number | null) {
+    if (maxKb === IMAGE_DOWNLOAD_OFF) {
+      return t('profile.imageDownloadOff')
+    }
+    if (maxKb == null) {
+      return t('profile.imageDownloadUnlimited')
+    }
+    const size = maxKb >= 1024 ? '1 MB' : `${maxKb} kB`
+    return `${t('profile.imageDownloadMax')}`.replace('%s', size)
+  }
+
+  imageDownloadOptions() {
+    return [
+      { value: 'off', label: t('profile.imageDownloadOff') },
+      ...IMAGE_DOWNLOAD_LIMITS_KB.map(kb => ({
+        value: `${kb}`,
+        label: this.imageDownloadLabel(kb),
+      })),
+      { value: 'unlimited', label: t('profile.imageDownloadUnlimited') },
+    ]
   }
 
   async setFilters({ filters, blockedUsers }) {
@@ -187,6 +223,23 @@ export class SettingsView extends Component<Props> {
             value={!!this.state.isSwipeablePostHeader}
             onChange={val => this.setOption('isSwipeablePostHeader', val)}
           />
+          <View
+            style={{
+              paddingVertical: theme.metrics.blocks.medium,
+              paddingHorizontal: theme.metrics.blocks.medium,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+              {t('profile.imageDownload')}
+            </Text>
+            <FormRowSelectComponent
+              value={this.imageDownloadLabel(this.state.imageDownloadMaxKb)}
+              onSelect={val => this.setOption('imageDownloadMaxKb', normalizeImageDownloadMaxKb(val))}
+              options={this.imageDownloadOptions()}
+            />
+          </View>
           <SectionHeaderComponent title={t('profile.sections')} backgroundColor={theme.colors.surface} />
           <FormRowToggleComponent
             label={t('bookmarks')}

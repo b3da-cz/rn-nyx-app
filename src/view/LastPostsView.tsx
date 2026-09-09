@@ -3,8 +3,6 @@ import { FlatList, View } from 'react-native'
 import { PostComponent, RatingFilterBarComponent } from '../component'
 import {
   MainContext,
-  getDistinctPosts,
-  parsePostsContent,
   wait,
   filterDiscussions,
   filterPostsByAuthor,
@@ -12,6 +10,8 @@ import {
   toGalleryImages,
   Nyx,
   Theme,
+  preparePosts,
+  revealImageInPosts,
 } from '../lib'
 
 type Props = {
@@ -33,6 +33,7 @@ export class LastPostsView extends Component<Props> {
   filters: string[] = []
   blockedUsers: string[] = []
   navTabPressListener?: Function
+  _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
     this.state = {
@@ -74,8 +75,13 @@ export class LastPostsView extends Component<Props> {
     const filteredPosts = filterDiscussions(res?.posts || [], this.filters) // last posts have discussion_name prop
     const filteredByAuthor =
       this.blockedUsers?.length > 0 ? filterPostsByAuthor(filteredPosts, this.blockedUsers) : filteredPosts
-    const newPosts = getDistinctPosts(filteredByAuthor, [])
-    const parsedPosts = parsePostsContent(newPosts)
+    const parsedPosts = await preparePosts(
+      filteredByAuthor,
+      [],
+      true,
+      this.context?.theme?.metrics?.fontSizes?.p,
+      this.context?.config?.imageDownloadMaxKb,
+    )
     const images = galleryImagesFromPosts(parsedPosts)
     this.setState({
       posts: parsedPosts,
@@ -95,8 +101,26 @@ export class LastPostsView extends Component<Props> {
   }
 
   showImages(image) {
+    this.revealPostImage(image)
     const { images, imgIndex } = toGalleryImages(image, galleryImagesFromPosts(this.state.posts))
     this.props.onImages(images, imgIndex)
+  }
+
+  revealPostImage(image) {
+    this._revealQueue = this._revealQueue.then(() => this.revealPostImageNow(image)).catch(e => console.warn(e))
+    return this._revealQueue
+  }
+
+  async revealPostImageNow(image) {
+    const nextPosts = await revealImageInPosts(
+      this.state.posts.slice(),
+      image,
+      this.context?.theme?.metrics?.fontSizes?.p,
+    )
+    this.setState({
+      posts: nextPosts.slice(),
+      images: galleryImagesFromPosts(nextPosts),
+    })
   }
 
   render() {

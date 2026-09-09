@@ -156,6 +156,22 @@
       "cs": "Swipovací hlavička příspěvku",
       "en": "Swipeable post header"
     },
+    "imageDownload": {
+      "cs": "Stahování obrázků",
+      "en": "Image download"
+    },
+    "imageDownloadOff": {
+      "cs": "Nestahovat",
+      "en": "Don't download"
+    },
+    "imageDownloadUnlimited": {
+      "cs": "Neomezovat",
+      "en": "Unlimited"
+    },
+    "imageDownloadMax": {
+      "cs": "max. %s",
+      "en": "max %s"
+    },
     "theme": {
       "cs": "Barevné schema",
       "en": "Color theme"
@@ -242,6 +258,10 @@
   "jpegSize": {
     "cs": "Velikost jpg",
     "en": "Jpg size"
+  },
+  "jpegQuality": {
+    "cs": "Kvalita jpg",
+    "en": "Jpg quality"
   },
   "send": {
     "cs": "Odeslat",

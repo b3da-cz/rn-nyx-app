@@ -1,12 +1,12 @@
-import React, { useContext, useMemo, useRef, useState } from 'react'
-import { StyleSheet, ToastAndroid, TouchableOpacity, View } from 'react-native'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { StyleSheet, Text, ToastAndroid, TouchableOpacity, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import FA from 'react-native-vector-icons/FontAwesome'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import RNFetchBlob from 'react-native-blob-util'
 import Share from 'react-native-share'
 import { LoaderComponent } from '../component'
-import { MainContext, t } from '../lib'
+import { MainContext, fetchImageByteLength, formatImageSizeKb, rememberLoadedImageUrl, t } from '../lib'
 
 type Props = {
   isShowing?: boolean
@@ -46,14 +46,7 @@ const ratingsFromImages = (images: any[] = []) => {
   return next
 }
 
-export const ImageModal = ({
-  isShowing = true,
-  images,
-  imgIndex = 0,
-  onExit,
-  onIndexChange,
-  onRated,
-}: Props) => {
+export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onIndexChange, onRated }: Props) => {
   const { nyx } = useContext(MainContext) as any
   const sharing = useRef(false)
   const ratingLock = useRef(false)
@@ -78,6 +71,27 @@ export const ImageModal = ({
   const [ratingsByPost, setRatingsByPost] = useState<Record<string, string | undefined>>(() =>
     ratingsFromImages(images),
   )
+  const [sizeLabel, setSizeLabel] = useState(() => formatImageSizeKb(urls[index]?.byteLength))
+
+  useEffect(() => {
+    const img = urls[currentIndex]
+    rememberLoadedImageUrl(img?.url || img?.src)
+    const known = formatImageSizeKb(img?.byteLength)
+    if (known) {
+      setSizeLabel(known)
+      return
+    }
+    let cancelled = false
+    setSizeLabel(null)
+    fetchImageByteLength(img?.url || img?.src).then(bytes => {
+      if (!cancelled) {
+        setSizeLabel(formatImageSizeKb(bytes))
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [currentIndex, urls])
 
   const setIndex = (i?: number) => {
     const next = urls.length ? Math.min(Math.max(0, i || 0), urls.length - 1) : 0
@@ -189,48 +203,57 @@ export const ImageModal = ({
           const rating = ratingOf(shown)
           const showRate = !!nyx && shown?.postId != null && shown?.canBeRated !== false
           return (
-          <View style={styles.header} pointerEvents="box-none">
-            {showRate && (
+            <View style={styles.header} pointerEvents="box-none">
+              {!!sizeLabel && (
+                <View style={styles.sizeBadge} pointerEvents="none">
+                  <Text style={[styles.sizeText, sizeLabel.overMb && styles.sizeTextOverMb]}>{sizeLabel.text}</Text>
+                </View>
+              )}
+              {showRate && (
+                <TouchableOpacity
+                  style={styles.headerBtn}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  onPress={() => rateImage(shown, 'positive')}
+                >
+                  {isPositiveRating(rating) ? (
+                    <FA name="thumbs-up" size={22} color="green" />
+                  ) : (
+                    <Icon name="thumbs-up" size={22} color="green" />
+                  )}
+                </TouchableOpacity>
+              )}
+              {showRate && (
+                <TouchableOpacity
+                  style={styles.headerBtn}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  onPress={() => rateImage(shown, 'negative')}
+                >
+                  {isNegativeRating(rating) ? (
+                    <FA name="thumbs-down" size={22} color="red" />
+                  ) : (
+                    <Icon name="thumbs-down" size={22} color="red" />
+                  )}
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={styles.headerBtn}
                 accessibilityRole="button"
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                onPress={() => rateImage(shown, 'positive')}>
-                {isPositiveRating(rating) ? (
-                  <FA name="thumbs-up" size={22} color="green" />
-                ) : (
-                  <Icon name="thumbs-up" size={22} color="green" />
-                )}
+                onPress={() => share(shown?.url)}
+              >
+                <Icon name="share" size={24} color="#ccc" />
               </TouchableOpacity>
-            )}
-            {showRate && (
               <TouchableOpacity
                 style={styles.headerBtn}
                 accessibilityRole="button"
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                onPress={() => rateImage(shown, 'negative')}>
-                {isNegativeRating(rating) ? (
-                  <FA name="thumbs-down" size={22} color="red" />
-                ) : (
-                  <Icon name="thumbs-down" size={22} color="red" />
-                )}
+                onPress={() => onExit()}
+              >
+                <Icon name="x" size={24} color="#ccc" />
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.headerBtn}
-              accessibilityRole="button"
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              onPress={() => share(shown?.url)}>
-              <Icon name="share" size={24} color="#ccc" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              accessibilityRole="button"
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              onPress={() => onExit()}>
-              <Icon name="x" size={24} color="#ccc" />
-            </TouchableOpacity>
-          </View>
+            </View>
           )
         }}
       />
@@ -243,13 +266,28 @@ const styles = StyleSheet.create({
   header: {
     position: 'absolute',
     top: 0,
+    left: 0,
     right: 0,
     zIndex: 99,
     elevation: 99,
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     paddingTop: 8,
     paddingRight: 8,
     alignItems: 'center',
+  },
+  sizeBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+  },
+  sizeText: {
+    color: '#ccc',
+    fontSize: 13,
+  },
+  sizeTextOverMb: {
+    color: '#f44336',
+    fontWeight: 'bold',
   },
   headerBtn: {
     padding: 10,
