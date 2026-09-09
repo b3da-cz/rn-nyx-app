@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.13.1
+- fix: po otevření galerie se placeholder v diskuzi hned nahradí obrázkem
+
 ## 0.13.0
 - nastavení stahování obrázků (vypnout / strop kB / neomezovat)
 - cached obrázky se zobrazí rovnou i při vypnutém stahování / stropu kB

@@ -3,6 +3,7 @@ import {
   IMAGE_DOWNLOAD_UNLIMITED,
   applyImagePlaceholder,
   applyRevealedImageLayoutAtWidth,
+  applyRevealedImageToPosts,
   formatImageSizeKb,
   hasLoadedImageUrl,
   isPlaceholderImageSize,
@@ -92,5 +93,24 @@ describe('revealed image layout', () => {
     const next = applyRevealedImageLayoutAtWidth(posts, 360)
     expect(next[0].parsed.height).toBeGreaterThan(200)
     expect(next[1].parsed.offset).toBe(next[0].parsed.height + next[1].parsed.height)
+  })
+
+  it('clones the post so a placeholder reveal is visible to shouldComponentUpdate', () => {
+    const parsed = {
+      height: 200,
+      offset: 200,
+      imagesHeight: 80,
+      layoutEpoch: 1,
+      images: [{ id: 'a', src: 'https://nyx.cz/a.jpg', width: 3, height: 2, skipDownload: true }],
+    }
+    const posts = [{ id: 1, parsed }]
+    const next = applyRevealedImageToPosts(posts, { src: 'https://nyx.cz/a.jpg' }, { width: 300, height: 200 })
+    expect(parsed.images[0].skipDownload).toBe(true)
+    expect(parsed.layoutEpoch).toBe(1)
+    expect(next[0]).not.toBe(posts[0])
+    expect(next[0].parsed).not.toBe(parsed)
+    expect(next[0].parsed.images[0].skipDownload).toBe(false)
+    expect(next[0].parsed.images[0].revealed).toBe(true)
+    expect(next[0].parsed.layoutEpoch).toBe(2)
   })
 })

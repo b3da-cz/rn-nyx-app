@@ -4,6 +4,7 @@ import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
 import {
   applyImagePlaceholder,
   applyRevealedImageLayoutAtWidth,
+  applyRevealedImageToPosts,
   computeImagesHeight,
   fetchImageByteLength,
   hasLoadedImageUrl,
@@ -148,52 +149,33 @@ export const revealImageInPosts = async (posts: any[] = [], image: any, themeBas
   if (!src || !posts.length) {
     return posts
   }
-  let found = false
-  for (let i = 0; i < posts.length; i++) {
-    const post = posts[i]
-    const images = post.parsed?.images || []
-    const j = images.findIndex(img => (image.id && img.id === image.id) || img.src === src || img.src === image.src)
-    if (j < 0) {
-      continue
-    }
-    const prev = images[j]
-    if (prev.revealed) {
-      found = true
+  let prev
+  for (const post of posts) {
+    const img = (post.parsed?.images || []).find(
+      item => (image.id && item.id === image.id) || item.src === src || item.src === image.src,
+    )
+    if (img) {
+      prev = img
       break
     }
-    let width = prev.width
-    let height = prev.height
-    try {
-      const sized = await measureImagePixels(prev, false)
-      if (sized.width > 0 && sized.height > 0) {
-        width = sized.width
-        height = sized.height
-      }
-    } catch (e) {
-      console.warn(e)
-    }
-    const nextImages = images.slice()
-    nextImages[j] = {
-      ...prev,
-      width,
-      height,
-      revealed: true,
-      skipDownload: false,
-      cached: true,
-    }
-    post.parsed = {
-      ...post.parsed,
-      images: nextImages,
-      layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
-    }
-    posts[i] = { ...post, parsed: post.parsed }
-    found = true
-    break
   }
-  if (!found || !themeBaseFontSize) {
+  if (!prev || prev.revealed) {
     return posts
   }
-  return applyRevealedImageLayout(posts, themeBaseFontSize)
+  let size
+  try {
+    const sized = await measureImagePixels(prev, false)
+    if (sized.width > 0 && sized.height > 0) {
+      size = { width: sized.width, height: sized.height }
+    }
+  } catch (e) {
+    console.warn(e)
+  }
+  const nextPosts = applyRevealedImageToPosts(posts, image, size)
+  if (!themeBaseFontSize) {
+    return nextPosts
+  }
+  return applyRevealedImageLayout(nextPosts, themeBaseFontSize)
 }
 
 const markCachedImage = (img: any) => {

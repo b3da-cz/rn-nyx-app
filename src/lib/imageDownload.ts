@@ -103,6 +103,48 @@ export const applyRevealedImageLayoutAtWidth = (posts: any[] = [], screenWidth: 
   return recountPostOffsets(posts)
 }
 
+export const applyRevealedImageToPosts = (
+  posts: any[] = [],
+  image: any,
+  size?: { width?: number; height?: number } | null,
+) => {
+  const src = image?.src || image?.url
+  if (!src || !posts.length) {
+    return posts
+  }
+  const nextPosts = posts.slice()
+  for (let i = 0; i < nextPosts.length; i++) {
+    const post = nextPosts[i]
+    const images = post.parsed?.images || []
+    const j = images.findIndex(img => (image.id && img.id === image.id) || img.src === src || img.src === image.src)
+    if (j < 0) {
+      continue
+    }
+    const prev = images[j]
+    if (prev.revealed) {
+      return nextPosts
+    }
+    const nextImages = images.slice()
+    nextImages[j] = {
+      ...prev,
+      ...(size && size.width > 0 && size.height > 0 ? { width: size.width, height: size.height } : null),
+      revealed: true,
+      skipDownload: false,
+      cached: true,
+    }
+    nextPosts[i] = {
+      ...post,
+      parsed: {
+        ...post.parsed,
+        images: nextImages,
+        layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
+      },
+    }
+    break
+  }
+  return nextPosts
+}
+
 export const IMAGE_SIZE_MB_BYTES = 1024 * 1024
 
 export type ImageSizeLabel = { text: string; overMb: boolean }
