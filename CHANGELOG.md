@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.13.0
 - nastavení stahování obrázků (vypnout / strop kB / neomezovat)
 - cached obrázky se zobrazí rovnou i při vypnutém stahování / stropu kB
 - kvalita jpeg při zmenšení (50–90 %, výchozí 75 %)
