@@ -13,6 +13,7 @@ import {
 import {
   filterPostsByAuthor,
   filterPostsByContent,
+  getOldestUnreadIndex,
   formatDate,
   getDistinctPosts,
   toGalleryImages,
@@ -228,8 +229,7 @@ export class DiscussionView extends Component<Props> {
       return
     }
     this._pendingDiscussion = null
-    const lastSeenIndex = aroundLastSeen ? this.getPostIndexById(this._lastSeenPostId) : undefined
-    const firstUnreadIndex = typeof lastSeenIndex === 'number' && lastSeenIndex > 0 ? lastSeenIndex - 1 : 0
+    const firstUnreadIndex = aroundLastSeen ? getOldestUnreadIndex(this._posts, this._lastSeenPostId) : 0
     if (aroundLastSeen) {
       this._skipJumpToLastSeen = true
     }
@@ -290,13 +290,9 @@ export class DiscussionView extends Component<Props> {
   async jumpToLastSeen() {
     await wait(50)
     const lastSeenPostId = this._lastSeenPostId ?? this.state.lastSeenPostId
-    const lastSeenIndex = this.getPostIndexById(lastSeenPostId)
-    if (lastSeenIndex !== undefined) {
-      this.scrollToPost(lastSeenIndex, false)
-      return
-    }
-    const postIndex = Math.min(this.state.posts?.filter(p => p.new).length, this.state.posts?.length - 5)
-    this.scrollToPost(postIndex !== undefined ? postIndex : 0, false)
+    const posts = this._posts.length ? this._posts : this.state.posts
+    const unreadIndex = getOldestUnreadIndex(posts, lastSeenPostId)
+    this.scrollToPost(unreadIndex + 1, false)
   }
 
   async fetchDiscussion(idOrQueryString, clearPosts = false, opts: { holdLock?: boolean; deferUi?: boolean } = {}) {

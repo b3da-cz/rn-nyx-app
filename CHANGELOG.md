@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.13.2
+- fix: skok na nejstarší nepřečtený i když last_seen post už neexistuje
+
 ## 0.13.1
 - fix: po otevření galerie se placeholder v diskuzi hned nahradí obrázkem
 
