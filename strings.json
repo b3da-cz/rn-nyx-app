@@ -417,6 +417,10 @@
     "cs": "Sdílet",
     "en": "Share"
   },
+  "copyUrl": {
+    "cs": "Kopírovat odkaz",
+    "en": "Copy link"
+  },
   "stats": {
     "title": {
       "cs": "Statistiky",
