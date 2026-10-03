@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.15.7
+- galerie má počet fotek vlevo nad velikostí a tapnutí schová i ikony
+
 ## 0.15.6
 - diskuze se seznamem inzerátů nebo událostí nemá ve FAB nový příspěvek, šipka zpět ho sbalí
 

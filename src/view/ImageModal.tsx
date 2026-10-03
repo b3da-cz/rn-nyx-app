@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet, Text, ToastAndroid, TouchableOpacity, View } from 'react-native'
+import { Animated, Easing, StyleSheet, Text, ToastAndroid, TouchableOpacity, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import FA from 'react-native-vector-icons/FontAwesome'
 import ImageViewer from 'react-native-image-zoom-viewer'
@@ -37,6 +37,9 @@ const mimeFromUrl = (url: string) => {
 const isPositiveRating = (rating?: string | null) => !!rating && `${rating}`.includes('positive')
 const isNegativeRating = (rating?: string | null) => !!rating && `${rating}`.includes('negative')
 
+const CHROME_FADE_OUT_MS = 360
+const CHROME_FADE_IN_MS = 170
+
 const ratingsFromImages = (images: any[] = []) => {
   const next: Record<string, string | undefined> = {}
   for (const img of images) {
@@ -73,6 +76,21 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
     ratingsFromImages(images),
   )
   const [sizeLabel, setSizeLabel] = useState(() => formatImageSizeKb(urls[index]?.byteLength))
+  const chromeOn = useRef(true)
+  const [chromeInteractive, setChromeInteractive] = useState(true)
+  const chromeOpacity = useRef(new Animated.Value(1)).current
+
+  const toggleChrome = () => {
+    const next = !chromeOn.current
+    chromeOn.current = next
+    setChromeInteractive(next)
+    Animated.timing(chromeOpacity, {
+      toValue: next ? 1 : 0,
+      duration: next ? CHROME_FADE_IN_MS : CHROME_FADE_OUT_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start()
+  }
 
   useEffect(() => {
     const img = urls[currentIndex]
@@ -205,20 +223,31 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
         index={index}
         doubleClickInterval={300}
         onChange={i => setIndex(i)}
+        onClick={() => toggleChrome()}
         onSave={img => share(img)}
         loadingRender={() => <LoaderComponent />}
         menuContext={{ saveToLocal: t('share'), cancel: t('cancel') }}
+        renderIndicator={() => <View />}
         renderHeader={i => {
           const shown = imgAt(i)
           const rating = ratingOf(shown)
           const showRate = !!nyx && shown?.postId != null && shown?.canBeRated !== false
+          const page = (typeof i === 'number' ? i : currentIndex) + 1
           return (
-            <View style={styles.header} pointerEvents="box-none">
-              {!!sizeLabel && (
-                <View style={styles.sizeBadge} pointerEvents="none">
+            <Animated.View
+              style={[styles.header, { opacity: chromeOpacity }]}
+              pointerEvents={chromeInteractive ? 'box-none' : 'none'}
+            >
+              <View style={styles.meta} pointerEvents="none">
+                {urls.length > 0 && (
+                  <Text style={styles.countText}>
+                    {page}/{urls.length}
+                  </Text>
+                )}
+                {!!sizeLabel && (
                   <Text style={[styles.sizeText, sizeLabel.overMb && styles.sizeTextOverMb]}>{sizeLabel.text}</Text>
-                </View>
-              )}
+                )}
+              </View>
               {showRate && (
                 <TouchableOpacity
                   style={styles.headerBtn}
@@ -271,7 +300,7 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
               >
                 <Icon name="x" size={24} color="#ccc" />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           )
         }}
       />
@@ -294,14 +323,23 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     alignItems: 'center',
   },
-  sizeBadge: {
+  meta: {
     position: 'absolute',
     top: 8,
     left: 8,
+    alignItems: 'flex-start',
   },
   sizeText: {
     color: '#ccc',
     fontSize: 13,
+    marginTop: 2,
+  },
+  countText: {
+    color: '#fff',
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 0.5 },
+    textShadowRadius: 0,
   },
   sizeTextOverMb: {
     color: '#f44336',
