@@ -12,6 +12,7 @@ import {
   MainContext,
   rememberLoadedImageUrl,
   shouldSkipImageDownload,
+  subscribeLoadedImageUrls,
   useTheme,
 } from '../lib'
 import { ImageLoaderComponent } from './ImageLoaderComponent'
@@ -54,18 +55,31 @@ export const ImageComponent = ({
   }
 
   useEffect(() => {
+    return subscribeLoadedImageUrls(() => {
+      if (hasLoadedImageUrl(src)) {
+        setBlocked(false)
+      }
+    })
+  }, [src])
+
+  useEffect(() => {
     let cancelled = false
+    const show = () => {
+      if (!cancelled) {
+        setBlocked(false)
+      }
+    }
     const decide = async () => {
       if (skipDownload === false || hasLoadedImageUrl(src)) {
-        if (!cancelled) {
-          setBlocked(false)
-        }
+        show()
         return
       }
       if (await isImageCached(src)) {
-        if (!cancelled) {
-          setBlocked(false)
-        }
+        show()
+        return
+      }
+      if (hasLoadedImageUrl(src)) {
+        show()
         return
       }
       if (skipDownload || isImageDownloadOff(maxKb)) {
@@ -93,7 +107,7 @@ export const ImageComponent = ({
       }
       const bytes = await fetchImageByteLength(src)
       if (!cancelled) {
-        setBlocked(shouldSkipImageDownload(bytes, maxKb))
+        setBlocked(hasLoadedImageUrl(src) ? false : shouldSkipImageDownload(bytes, maxKb))
         setSizeLabel(formatImageSizeKb(bytes))
       }
     }

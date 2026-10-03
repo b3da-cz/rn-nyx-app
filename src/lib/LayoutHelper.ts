@@ -159,19 +159,28 @@ export const revealImageInPosts = async (posts: any[] = [], image: any, themeBas
       break
     }
   }
-  if (!prev || prev.revealed) {
+  if (!prev) {
     return posts
   }
-  let size
-  try {
-    const sized = await measureImagePixels(prev, false)
-    if (sized.width > 0 && sized.height > 0) {
-      size = { width: sized.width, height: sized.height }
-    }
-  } catch (e) {
-    console.warn(e)
+  const needsSize = !(prev.width > 0 && prev.height > 0) || isPlaceholderImageSize(prev)
+  if (prev.revealed && !needsSize) {
+    return posts
   }
-  const nextPosts = applyRevealedImageToPosts(posts, image, size)
+  let nextPosts = prev.revealed ? posts : applyRevealedImageToPosts(posts, image)
+  let size
+  if (needsSize) {
+    try {
+      const sized = await measureImagePixels(prev, false)
+      if (sized.width > 0 && sized.height > 0) {
+        size = { width: sized.width, height: sized.height }
+      }
+    } catch (e) {
+      console.warn(e)
+    }
+  }
+  if (size) {
+    nextPosts = applyRevealedImageToPosts(nextPosts, image, size)
+  }
   if (!themeBaseFontSize) {
     return nextPosts
   }

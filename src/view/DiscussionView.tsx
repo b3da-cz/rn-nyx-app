@@ -12,6 +12,8 @@ import {
   PostComponent,
 } from '../component'
 import {
+  applyRevealedImageLayout,
+  applyRevealedImageToPosts,
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
@@ -19,6 +21,7 @@ import {
   getDistinctPosts,
   toGalleryImages,
   galleryImagesFromPosts,
+  hasLoadedImageUrl,
   EventDetailData,
   isDiscussionPermitted,
   MainContext,
@@ -134,6 +137,7 @@ export class DiscussionView extends Component<Props> {
       if (!this.state.isMsgBoxVisible) {
         this.setState({ isSubmenuVisible: true })
       }
+      this.revealLoadedPlaceholders()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false })
@@ -523,15 +527,45 @@ export class DiscussionView extends Component<Props> {
     return this._revealQueue
   }
 
+  publishPosts(posts) {
+    this._posts = posts
+    this.setState({
+      posts: posts.slice(),
+      images: galleryImagesFromPosts(posts),
+    })
+  }
+
+  revealLoadedPlaceholders() {
+    const posts = (this._posts.length ? this._posts : this.state.posts).slice()
+    let next = posts
+    for (const post of posts) {
+      for (const img of post.parsed?.images || []) {
+        if (img?.src && img.skipDownload && !img.revealed && !img.cached && hasLoadedImageUrl(img.src)) {
+          next = applyRevealedImageToPosts(next, img)
+        }
+      }
+    }
+    if (next.every((post, index) => post === posts[index])) {
+      return
+    }
+    const fontSize = this.state.theme?.metrics?.fontSizes?.p
+    this.publishPosts(fontSize ? applyRevealedImageLayout(next, fontSize) : next)
+  }
+
   async revealPostImageNow(image) {
     const posts = (this._posts.length ? this._posts : this.state.posts).slice()
     const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-    const nextPosts = await revealImageInPosts(posts, image, themeBaseFontSize)
-    this._posts = nextPosts
-    this.setState({
-      posts: nextPosts.slice(),
-      images: galleryImagesFromPosts(nextPosts),
-    })
+    const immediate = applyRevealedImageToPosts(posts, image)
+    const base = immediate.some((post, index) => post !== posts[index])
+      ? applyRevealedImageLayout(immediate, themeBaseFontSize)
+      : posts
+    if (base !== posts) {
+      this.publishPosts(base)
+    }
+    const nextPosts = await revealImageInPosts(base, image, themeBaseFontSize)
+    if (nextPosts !== base) {
+      this.publishPosts(nextPosts)
+    }
   }
 
   onPostDelete(postId) {

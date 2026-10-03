@@ -34,14 +34,24 @@ export const shouldSkipImageDownload = (byteLength: number | null | undefined, m
 }
 
 const loadedImageUrls = new Set<string>()
+const loadedImageListeners = new Set<() => void>()
 
 export const rememberLoadedImageUrl = (url?: string | null) => {
-  if (url) {
-    loadedImageUrls.add(url)
+  if (!url || loadedImageUrls.has(url)) {
+    return
   }
+  loadedImageUrls.add(url)
+  loadedImageListeners.forEach(listener => listener())
 }
 
 export const hasLoadedImageUrl = (url?: string | null) => !!url && loadedImageUrls.has(url)
+
+export const subscribeLoadedImageUrls = (listener: () => void) => {
+  loadedImageListeners.add(listener)
+  return () => {
+    loadedImageListeners.delete(listener)
+  }
+}
 
 export const shouldShowCachedImage = (cached?: boolean, _maxKb?: number | null) => !!cached
 
@@ -121,13 +131,14 @@ export const applyRevealedImageToPosts = (
       continue
     }
     const prev = images[j]
-    if (prev.revealed) {
+    const hasSize = !!(size && size.width > 0 && size.height > 0)
+    if (prev.revealed && (!hasSize || (prev.width === size.width && prev.height === size.height))) {
       return nextPosts
     }
     const nextImages = images.slice()
     nextImages[j] = {
       ...prev,
-      ...(size && size.width > 0 && size.height > 0 ? { width: size.width, height: size.height } : null),
+      ...(hasSize ? { width: size.width, height: size.height } : null),
       revealed: true,
       skipDownload: false,
       cached: true,

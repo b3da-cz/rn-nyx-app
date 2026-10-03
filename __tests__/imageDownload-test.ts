@@ -11,6 +11,7 @@ import {
   rememberLoadedImageUrl,
   shouldShowCachedImage,
   shouldSkipImageDownload,
+  subscribeLoadedImageUrls,
 } from '../src/lib/imageDownload'
 
 describe('imageDownload', () => {
@@ -49,6 +50,20 @@ describe('imageDownload', () => {
     expect(hasLoadedImageUrl(url)).toBe(false)
     rememberLoadedImageUrl(url)
     expect(hasLoadedImageUrl(url)).toBe(true)
+  })
+
+  it('tells listeners when a new image url is loaded', () => {
+    const url = 'https://nyx.cz/gallery-seen.jpg'
+    let calls = 0
+    const unsubscribe = subscribeLoadedImageUrls(() => {
+      calls += 1
+    })
+    rememberLoadedImageUrl(url)
+    rememberLoadedImageUrl(url)
+    expect(calls).toBe(1)
+    unsubscribe()
+    rememberLoadedImageUrl('https://nyx.cz/gallery-seen-2.jpg')
+    expect(calls).toBe(1)
   })
 
   it('formats placeholder size in kB, and MB in red over 1 MB', () => {
@@ -112,5 +127,33 @@ describe('revealed image layout', () => {
     expect(next[0].parsed.images[0].skipDownload).toBe(false)
     expect(next[0].parsed.images[0].revealed).toBe(true)
     expect(next[0].parsed.layoutEpoch).toBe(2)
+  })
+
+  it('updates the measured size after the placeholder was already revealed', () => {
+    const posts = [
+      {
+        id: 1,
+        parsed: {
+          layoutEpoch: 2,
+          images: [
+            {
+              id: 'a',
+              src: 'https://nyx.cz/a.jpg',
+              width: 3,
+              height: 2,
+              skipDownload: false,
+              revealed: true,
+              cached: true,
+            },
+          ],
+        },
+      },
+    ]
+    const next = applyRevealedImageToPosts(posts, { src: 'https://nyx.cz/a.jpg' }, { width: 300, height: 200 })
+    expect(posts[0].parsed.images[0].width).toBe(3)
+    expect(next[0]).not.toBe(posts[0])
+    expect(next[0].parsed.images[0].width).toBe(300)
+    expect(next[0].parsed.images[0].height).toBe(200)
+    expect(next[0].parsed.layoutEpoch).toBe(3)
   })
 })

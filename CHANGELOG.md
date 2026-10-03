@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.14.4
+- detail události: počet účastníků je hned pod pořadatelem, oba řádky mají primary border
+- po galerii se placeholder v diskuzi hned nahradí obrázkem
+
 ## 0.14.3
 - detail události: pořadatel, čas, místo, popis, obrázky a pruh účastníků nad diskuzí
 - řádek v seznamu událostí otevře diskuzi

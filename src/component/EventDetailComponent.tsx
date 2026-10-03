@@ -8,7 +8,6 @@ import {
   EventDetailData,
   EventDetailImage,
   formatEventDuration,
-  friendAttendees,
   t,
   TOKEN,
   useTheme,
@@ -25,7 +24,8 @@ type Props = {
   onOpenDiscussion: (discussionId: string, postId?: string) => void
 }
 
-const FRIEND_LIMIT = 6
+const ICON_W = 32
+const ICON_H = 40
 
 export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Props) => {
   const [isAttendeesOpen, setIsAttendeesOpen] = useState(false)
@@ -37,22 +37,57 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
     .filter(part => part.length > 0)
     .join(' | ')
   const when = detail.start && detail.end ? formatEventDuration(detail.start, detail.end) : ''
-  const friends = friendAttendees(detail.attendees)
-  const shownFriends = friends.slice(0, FRIEND_LIMIT)
   const imageWidth = screen.width - 2 * blocks.large
+  const rowStyle = {
+    backgroundColor: colors.row,
+    borderLeftWidth: 3,
+    borderColor: colors.primary,
+    paddingHorizontal: blocks.medium,
+    paddingVertical: blocks.medium,
+    marginBottom: blocks.small,
+  }
+  const total = (detail.going || 0) + (detail.interested || 0)
 
   return (
     <View>
-      <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.medium }}>
+      <View style={{ paddingTop: blocks.small }}>
         {!!detail.owner && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: blocks.medium }}>
-            <UserIconComponent username={detail.owner} marginRight={blocks.medium} />
+          <View style={[rowStyle, { flexDirection: 'row', alignItems: 'center' }]}>
+            <UserIconComponent username={detail.owner} width={ICON_W} height={ICON_H} marginRight={blocks.medium} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>{t('events.hostedBy')}</Text>
               <Text style={{ color: colors.text, fontSize: fontSizes.p, fontWeight: '700' }}>{detail.owner}</Text>
             </View>
           </View>
         )}
+        <TouchableRipple rippleColor={colors.ripple} onPress={() => setIsAttendeesOpen(true)}>
+          <View style={[rowStyle, { flexDirection: 'row', alignItems: 'center' }]}>
+            <View
+              style={{
+                width: ICON_W,
+                height: ICON_H,
+                marginRight: blocks.medium,
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSizes.small }}>{total}</Text>
+            </View>
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <Text style={{ color: colors.text, fontSize: fontSizes.small }}>
+                {detail.going || 0} {t('events.going')}
+              </Text>
+              <Text style={{ color: colors.text, fontSize: fontSizes.small, marginTop: 2 }}>
+                {detail.interested || 0} {t('events.interested')}
+              </Text>
+            </View>
+          </View>
+        </TouchableRipple>
+      </View>
+      <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>
         {!!when && <Text style={{ color: colors.text, fontSize: fontSizes.p }}>{when}</Text>}
         {!!place && (
           <Text style={{ color: colors.faded, fontSize: fontSizes.p, marginTop: when ? 2 : 0 }}>{place}</Text>
@@ -65,70 +100,11 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
         onImage={onImage}
         onOpenDiscussion={onOpenDiscussion}
       />
-      <TouchableRipple rippleColor={colors.ripple} onPress={() => setIsAttendeesOpen(true)}>
-        <View
-          style={{
-            backgroundColor: colors.row,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: blocks.medium,
-            paddingVertical: blocks.medium,
-            marginTop: blocks.small,
-          }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, flexWrap: 'wrap' }}>
-            {detail.going > 0 && <CountPill count={detail.going} label={t('events.going')} />}
-            {detail.interested > 0 && (
-              <CountPill count={detail.interested} label={t('events.interested')} marginLeft={detail.going > 0} />
-            )}
-            {detail.going === 0 && detail.interested === 0 && (
-              <Text style={{ color: colors.faded, fontSize: fontSizes.p }}>{t('events.nobody')}</Text>
-            )}
-          </View>
-          <View style={{ flex: 1 }} />
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {shownFriends.map((friend, index) => (
-              <UserIconComponent
-                key={friend.username}
-                username={friend.username}
-                width={26}
-                height={32}
-                marginLeft={index === 0 ? 0 : -8}
-              />
-            ))}
-            {friends.length > shownFriends.length && (
-              <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginLeft: 4 }}>
-                +{friends.length - shownFriends.length}
-              </Text>
-            )}
-          </View>
-        </View>
-      </TouchableRipple>
       <AttendeesDialog
         visible={isAttendeesOpen}
         attendees={detail.attendees}
         onDismiss={() => setIsAttendeesOpen(false)}
       />
-    </View>
-  )
-}
-
-const CountPill = ({ count, label, marginLeft = false }: { count: number; label: string; marginLeft?: boolean }) => {
-  const {
-    colors,
-    metrics: { blocks, fontSizes },
-  } = useTheme()
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: marginLeft ? blocks.medium : 0 }}>
-      <View
-        style={{
-          backgroundColor: colors.background,
-          borderRadius: 4,
-          paddingHorizontal: 7,
-          paddingVertical: 1,
-        }}>
-        <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSizes.small }}>{count}</Text>
-      </View>
-      <Text style={{ color: colors.text, fontSize: fontSizes.small }}> {label}</Text>
     </View>
   )
 }
