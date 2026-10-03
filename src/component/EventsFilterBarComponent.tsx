@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { BackHandler, LayoutAnimation, ScrollView, useWindowDimensions, View } from 'react-native'
+import React, { useContext, useEffect, useState } from 'react'
+import { BackHandler, ScrollView, useWindowDimensions, View } from 'react-native'
 import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import { useFocusEffect } from '@react-navigation/native'
+import { PanGestureHandler, State } from 'react-native-gesture-handler'
 import Icon from 'react-native-vector-icons/Feather'
 import type { EventArea, EventCalendarDay, EventCategory } from 'nyx-api'
 import { ButtonComponent } from './ButtonComponent'
@@ -14,7 +15,7 @@ import {
   EventListFilters,
   isoDate,
   isEventFilterActive,
-  LayoutAnimConf,
+  MainContext,
   monthGrid,
   Styling,
   t,
@@ -22,6 +23,7 @@ import {
 } from '../lib'
 
 type Props = {
+  navigation: any
   filters: EventListFilters
   categories: EventCategory[]
   areas: EventArea[]
@@ -29,31 +31,34 @@ type Props = {
   onChange: (filters: EventListFilters) => void
 }
 
-const MONTH_SPAN = 18
-
-export const EventsFilterBarComponent = ({ filters, categories, areas, calendar, onChange }: Props) => {
+export const EventsFilterBarComponent = ({ navigation, filters, categories, areas, calendar, onChange }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState(filters.search)
-  const scrollRef = useRef<ScrollView>(null)
-  const pageRef = useRef(MONTH_SPAN)
-  const { width } = useWindowDimensions()
+  const [bodyHeight, setBodyHeight] = useState(0)
+  const { height, width } = useWindowDimensions()
+  const { config } = useContext(MainContext)
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
   const todayIso = isoDate(new Date())
-  const months = useMemo(() => {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth() - MONTH_SPAN, 1)
-    return Array.from({ length: MONTH_SPAN * 2 + 1 }, (_, index) => {
-      const date = new Date(start.getFullYear(), start.getMonth() + index, 1)
-      return { year: date.getFullYear(), month: date.getMonth() + 1 }
-    })
-  }, [])
 
   useEffect(() => {
     setSearch(filters.search)
   }, [filters.search])
+
+  useEffect(() => {
+    const tabs = navigation?.getParent?.()
+    if (!tabs?.setOptions) {
+      return
+    }
+    if (isOpen) {
+      tabs.setOptions({ swipeEnabled: false })
+    }
+    return () => {
+      tabs.setOptions({ swipeEnabled: !!config?.isNavGesturesEnabled })
+    }
+  }, [config?.isNavGesturesEnabled, isOpen, navigation])
 
   useFocusEffect(
     React.useCallback(() => {
@@ -68,23 +73,17 @@ export const EventsFilterBarComponent = ({ filters, categories, areas, calendar,
     }, [isOpen]),
   )
 
-  const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimConf.spring)
-    setIsOpen(!isOpen)
-  }
-  const close = () => {
-    LayoutAnimation.configureNext(LayoutAnimConf.spring)
-    setIsOpen(false)
-  }
+  const toggle = () => setIsOpen(open => !open)
+  const close = () => setIsOpen(false)
   const apply = (next: EventListFilters, shouldClose: boolean) => {
     onChange(next)
     if (shouldClose) {
       close()
     }
   }
-  const scrollToPage = (index: number, animated = false) => {
-    pageRef.current = index
-    scrollRef.current?.scrollTo({ x: index * width, animated })
+  const shiftMonth = (delta: number) => {
+    const date = new Date(filters.year, filters.month - 1 + delta, 1)
+    onChange({ ...filters, search, month: date.getMonth() + 1, year: date.getFullYear() })
   }
 
   const epochLabel = /^\d{4}-\d{2}-\d{2}$/.test(filters.epoch)
@@ -103,8 +102,6 @@ export const EventsFilterBarComponent = ({ filters, categories, areas, calendar,
           top: 0,
           left: 0,
           right: 0,
-          bottom: isOpen ? 0 : undefined,
-          height: isOpen ? undefined : 50,
           zIndex: 2,
           backgroundColor: colors.background,
         },
@@ -116,38 +113,41 @@ export const EventsFilterBarComponent = ({ filters, categories, areas, calendar,
         </View>
       </TouchableRipple>
       {isOpen && (
-        <View style={{ flex: 1 }}>
-          <ScrollView keyboardShouldPersistTaps={'handled'} keyboardDismissMode={'on-drag'}>
-            <ScrollView
-              ref={scrollRef}
-              horizontal
-              pagingEnabled
-              nestedScrollEnabled
-              directionalLockEnabled
-              showsHorizontalScrollIndicator={false}
-              onLayout={() => scrollToPage(pageRef.current)}
-              onMomentumScrollEnd={event => {
-                const index = Math.round(event.nativeEvent.contentOffset.x / width)
-                if (index === pageRef.current || !months[index]) {
+        <ScrollView
+          keyboardShouldPersistTaps={'handled'}
+          keyboardDismissMode={'on-drag'}
+          style={{ height: bodyHeight > 0 ? Math.min(bodyHeight, height - 96) : undefined, flexGrow: 0 }}
+          onContentSizeChange={(_, nextHeight) => {
+            if (Math.abs(nextHeight - bodyHeight) > 1) {
+              setBodyHeight(nextHeight)
+            }
+          }}>
+            <PanGestureHandler
+              activeOffsetX={[-16, 16]}
+              failOffsetY={[-24, 24]}
+              onHandlerStateChange={event => {
+                if (event.nativeEvent.state !== State.END) {
                   return
                 }
-                pageRef.current = index
-                const next = months[index]
-                apply({ ...filters, search, month: next.month, year: next.year }, false)
+                const dx = event.nativeEvent.translationX
+                if (dx > 48) {
+                  shiftMonth(-1)
+                } else if (dx < -48) {
+                  shiftMonth(1)
+                }
               }}>
-              {months.map(month => (
+              <View collapsable={false}>
                 <MonthPage
-                  key={`${month.year}-${month.month}`}
                   width={width}
-                  year={month.year}
-                  month={month.month}
+                  year={filters.year}
+                  month={filters.month}
                   calendar={calendar}
                   todayIso={todayIso}
                   selectedIso={/^\d{4}-\d{2}-\d{2}$/.test(filters.epoch) ? filters.epoch : ''}
                   onPick={iso => apply({ ...filters, search, epoch: iso }, true)}
                 />
-              ))}
-            </ScrollView>
+              </View>
+            </PanGestureHandler>
             <TextInput
               numberOfLines={1}
               textAlignVertical={'center'}
@@ -225,32 +225,28 @@ export const EventsFilterBarComponent = ({ filters, categories, areas, calendar,
                 }
               />
             </FilterRow>
-          </ScrollView>
-          <View style={{ flexDirection: 'row' }}>
-            <ButtonComponent
-              label={t('search.clear')}
-              color={colors.faded}
-              backgroundColor={'inherit'}
-              fontSize={fontSizes.p}
-              width={'50%'}
-              onPress={() => {
-                setSearch('')
-                const defaults = defaultEventFilters()
-                const current = months.findIndex(month => month.year === defaults.year && month.month === defaults.month)
-                scrollToPage(current >= 0 ? current : MONTH_SPAN)
-                apply(defaults, true)
-              }}
-            />
-            <ButtonComponent
-              label={t('search.do')}
-              color={colors.accent}
-              backgroundColor={'inherit'}
-              fontSize={fontSizes.p}
-              width={'50%'}
-              onPress={() => apply({ ...filters, search }, true)}
-            />
-          </View>
-        </View>
+            <View style={{ flexDirection: 'row', marginTop: blocks.medium }}>
+              <ButtonComponent
+                label={t('search.clear')}
+                color={colors.faded}
+                backgroundColor={'inherit'}
+                fontSize={fontSizes.p}
+                width={'50%'}
+                onPress={() => {
+                  setSearch('')
+                  apply(defaultEventFilters(), true)
+                }}
+              />
+              <ButtonComponent
+                label={t('search.do')}
+                color={colors.accent}
+                backgroundColor={'inherit'}
+                fontSize={fontSizes.p}
+                width={'50%'}
+                onPress={() => apply({ ...filters, search }, true)}
+              />
+            </View>
+        </ScrollView>
       )}
     </View>
   )

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.14.1
+- filtr událostí se otevírá hned, bez skládání všech měsíců
+- posun měsíce nenačítá seznam znovu
+- při otevřeném filtru patří vodorovný swipe kalendáři
+- tlačítka filtru jsou hned pod výběry
+
 ## 0.14.0
 - seznam událostí: tab s kalendářem, filtr a řazení, `nyx-api` 0.5.1
 

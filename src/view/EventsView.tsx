@@ -69,19 +69,19 @@ export const EventsView = ({ navigation }: Props) => {
   }, [load, navigation])
 
   const onChange = (next: EventListFilters) => {
-    const monthOnly =
-      (next.month !== filters.month || next.year !== filters.year) &&
-      next.order === filters.order &&
-      next.epoch === filters.epoch &&
-      next.attendance === filters.attendance &&
-      next.category === filters.category &&
-      next.area === filters.area &&
-      next.search === filters.search
+    const listChanged =
+      next.order !== filters.order ||
+      next.epoch !== filters.epoch ||
+      next.attendance !== filters.attendance ||
+      next.category !== filters.category ||
+      next.area !== filters.area ||
+      next.search !== filters.search
     setFilters(next)
-    if (!monthOnly) {
-      listRef.current?.scrollToOffset({ offset: 0, animated: false })
+    if (!listChanged) {
+      return
     }
-    load(next, monthOnly)
+    listRef.current?.scrollToOffset({ offset: 0, animated: false })
+    load(next)
   }
 
   return (
@@ -91,6 +91,7 @@ export const EventsView = ({ navigation }: Props) => {
         categories={categories}
         areas={areas}
         calendar={calendar}
+        navigation={navigation}
         onChange={onChange}
       />
       <FlatList
