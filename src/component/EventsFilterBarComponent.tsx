@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { BackHandler, ScrollView, useWindowDimensions, View } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { BackHandler, LayoutAnimation, Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import { useFocusEffect } from '@react-navigation/native'
-import { PanGestureHandler, State } from 'react-native-gesture-handler'
+import PagerView from 'react-native-pager-view'
 import Icon from 'react-native-vector-icons/Feather'
 import type { EventArea, EventCalendarDay, EventCategory } from 'nyx-api'
 import { ButtonComponent } from './ButtonComponent'
@@ -15,12 +15,29 @@ import {
   EventListFilters,
   isoDate,
   isEventFilterActive,
+  LayoutAnimConf,
   MainContext,
   monthGrid,
   Styling,
   t,
   useTheme,
+  wait,
 } from '../lib'
+
+const MONTH_RANGE = 24
+const CALENDAR_HEIGHT = 292
+
+const monthAt = (offset: number) => {
+  const now = new Date()
+  const date = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  return { year: date.getFullYear(), month: date.getMonth() + 1 }
+}
+
+const indexForMonth = (year: number, month: number) => {
+  const now = new Date()
+  const offset = (year - now.getFullYear()) * 12 + (month - 1 - now.getMonth())
+  return Math.min(MONTH_RANGE * 2, Math.max(0, offset + MONTH_RANGE))
+}
 
 type Props = {
   navigation: any
@@ -35,6 +52,9 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState(filters.search)
   const [bodyHeight, setBodyHeight] = useState(0)
+  const [pageIndex, setPageIndex] = useState(() => indexForMonth(filters.year, filters.month))
+  const pagerRef = useRef<PagerView>(null)
+  const fromPager = useRef(false)
   const { height, width } = useWindowDimensions()
   const { config } = useContext(MainContext)
   const {
@@ -66,6 +86,7 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
         if (!isOpen) {
           return false
         }
+        LayoutAnimation.configureNext(LayoutAnimConf.spring)
         setIsOpen(false)
         return true
       })
@@ -73,18 +94,31 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
     }, [isOpen]),
   )
 
-  const toggle = () => setIsOpen(open => !open)
-  const close = () => setIsOpen(false)
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    setIsOpen(open => !open)
+  }
+  const close = async () => {
+    await wait(200)
+    LayoutAnimation.configureNext(LayoutAnimConf.spring)
+    setIsOpen(false)
+  }
   const apply = (next: EventListFilters, shouldClose: boolean) => {
     onChange(next)
     if (shouldClose) {
       close()
     }
   }
-  const shiftMonth = (delta: number) => {
-    const date = new Date(filters.year, filters.month - 1 + delta, 1)
-    onChange({ ...filters, search, month: date.getMonth() + 1, year: date.getFullYear() })
-  }
+
+  useEffect(() => {
+    const index = indexForMonth(filters.year, filters.month)
+    setPageIndex(index)
+    if (fromPager.current) {
+      fromPager.current = false
+      return
+    }
+    pagerRef.current?.setPageWithoutAnimation(index)
+  }, [filters.month, filters.year])
 
   const epochLabel = /^\d{4}-\d{2}-\d{2}$/.test(filters.epoch)
     ? filters.epoch.split('-').reverse().join('.')
@@ -93,25 +127,31 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
     categories.find(category => category.id === filters.category)?.name || t('all')
   const areaLabel = areas.find(area => area.id === filters.area)?.name || t('all')
 
+  const selectedIso = /^\d{4}-\d{2}-\d{2}$/.test(filters.epoch) ? filters.epoch : ''
+  const pages = Array.from({ length: MONTH_RANGE * 2 + 1 }, (_, index) => index)
+
   return (
-    <View
+    <TouchableRipple
+      rippleColor={colors.ripple}
+      onPress={toggle}
       style={[
         Styling.groups.shadow,
         {
-          position: 'absolute',
+          backgroundColor: colors.background,
+          position: Platform.OS === 'android' || !isOpen ? 'absolute' : 'static',
           top: 0,
-          left: 0,
           right: 0,
           zIndex: 2,
-          backgroundColor: colors.background,
+          width: '100%',
+          marginBottom: Platform.OS === 'android' ? blocks.small : -50,
+          height: isOpen ? 'auto' : 50,
         },
       ]}>
-      <TouchableRipple rippleColor={colors.ripple} onPress={toggle}>
-        <View style={[Styling.groups.flexRowSpbCentered, { height: 50, paddingRight: blocks.large }]}>
-          <Text style={{ fontSize: fontSizes.p + 2, marginLeft: blocks.large }}>{t('events.title')}</Text>
-          <Icon name={'search'} size={20} color={isEventFilterActive(filters) ? colors.accent : colors.text} />
-        </View>
-      </TouchableRipple>
+      <View>
+      <View style={[Styling.groups.flexRowSpbCentered, { height: 50, paddingRight: blocks.large }]}>
+        <Text style={{ fontSize: fontSizes.p + 2, marginLeft: blocks.large }}>{t('events.title')}</Text>
+        <Icon name={'search'} size={20} color={isEventFilterActive(filters) ? colors.accent : colors.text} />
+      </View>
       {isOpen && (
         <ScrollView
           keyboardShouldPersistTaps={'handled'}
@@ -122,32 +162,41 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
               setBodyHeight(nextHeight)
             }
           }}>
-            <PanGestureHandler
-              activeOffsetX={[-16, 16]}
-              failOffsetY={[-24, 24]}
-              onHandlerStateChange={event => {
-                if (event.nativeEvent.state !== State.END) {
+            <PagerView
+              ref={pagerRef}
+              style={{ height: CALENDAR_HEIGHT }}
+              initialPage={indexForMonth(filters.year, filters.month)}
+              offscreenPageLimit={1}
+              overdrag
+              onPageSelected={event => {
+                const index = event.nativeEvent.position
+                setPageIndex(index)
+                const next = monthAt(index - MONTH_RANGE)
+                if (next.year === filters.year && next.month === filters.month) {
                   return
                 }
-                const dx = event.nativeEvent.translationX
-                if (dx > 48) {
-                  shiftMonth(-1)
-                } else if (dx < -48) {
-                  shiftMonth(1)
-                }
+                fromPager.current = true
+                onChange({ ...filters, search, year: next.year, month: next.month })
               }}>
-              <View collapsable={false}>
-                <MonthPage
-                  width={width}
-                  year={filters.year}
-                  month={filters.month}
-                  calendar={calendar}
-                  todayIso={todayIso}
-                  selectedIso={/^\d{4}-\d{2}-\d{2}$/.test(filters.epoch) ? filters.epoch : ''}
-                  onPick={iso => apply({ ...filters, search, epoch: iso }, true)}
-                />
-              </View>
-            </PanGestureHandler>
+              {pages.map(index => {
+                const page = monthAt(index - MONTH_RANGE)
+                return (
+                  <View key={index} collapsable={false} style={{ height: CALENDAR_HEIGHT }}>
+                    {Math.abs(index - pageIndex) <= 1 ? (
+                      <MonthPage
+                        width={width}
+                        year={page.year}
+                        month={page.month}
+                        calendar={calendar}
+                        todayIso={todayIso}
+                        selectedIso={selectedIso}
+                        onPick={iso => apply({ ...filters, search, epoch: iso }, true)}
+                      />
+                    ) : null}
+                  </View>
+                )
+              })}
+            </PagerView>
             <TextInput
               numberOfLines={1}
               textAlignVertical={'center'}
@@ -248,7 +297,8 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
             </View>
         </ScrollView>
       )}
-    </View>
+      </View>
+    </TouchableRipple>
   )
 }
 
