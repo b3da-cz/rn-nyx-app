@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.0
+- seznam událostí: tab s kalendářem, filtr a řazení, `nyx-api` 0.5.1
+
 ## 0.13.2
 - fix: skok na nejstarší nepřečtený i když last_seen post už neexistuje
 

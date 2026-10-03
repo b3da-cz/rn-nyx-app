@@ -15,6 +15,7 @@ import {
   HistoryStackContainer,
   LastPostsStackContainer,
   MailStackContainer,
+  EventsStackContainer,
   NotificationsStackContainer,
   RemindersStackContainer,
   SearchStackContainer,
@@ -193,6 +194,15 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             component={RemindersStackContainer}
             options={{
               tabBarLabel: ({ focused }) => <Icon name="bell" size={14} color={getTabIconColor(focused)} />,
+            }}
+          />
+        )}
+        {config.isEventsEnabled && (
+          <Tab.Screen
+            name={'eventsStack'}
+            component={EventsStackContainer}
+            options={{
+              tabBarLabel: ({ focused }) => <Icon name="calendar" size={14} color={getTabIconColor(focused)} />,
             }}
           />
         )}

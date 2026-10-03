@@ -35,6 +35,7 @@ type State = {
   isSearchEnabled: boolean
   isLastEnabled: boolean
   isRemindersEnabled: boolean
+  isEventsEnabled: boolean
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
   isSwipeablePostHeader: boolean
@@ -75,6 +76,7 @@ export class SettingsView extends Component<Props> {
       isSearchEnabled: config?.isSearchEnabled !== undefined ? !!config.isSearchEnabled : true,
       isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
+      isEventsEnabled: config?.isEventsEnabled !== undefined ? !!config.isEventsEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
@@ -265,6 +267,11 @@ export class SettingsView extends Component<Props> {
             label={t('reminders.title')}
             value={!!this.state.isRemindersEnabled}
             onChange={val => this.setOption('isRemindersEnabled', val)}
+          />
+          <FormRowToggleComponent
+            label={t('events.title')}
+            value={this.state.isEventsEnabled !== false}
+            onChange={val => this.setOption('isEventsEnabled', val)}
           />
           <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
           <FormRowSelectComponent

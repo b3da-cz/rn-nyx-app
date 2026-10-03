@@ -2,12 +2,12 @@ import DeviceInfo from 'react-native-device-info'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import { confirm } from '../component'
 import { t, showNotificationBanner, Storage } from '../lib'
-import NyxApi from 'nyx-api'
+import { NyxEventsApi } from './NyxEventsApi'
 // @ts-ignore
 import { gplayTestId, gplayTestToken } from '../../keys.json'
 
 export class Nyx {
-  api: NyxApi
+  api: NyxEventsApi
   appVersion: string
   userAgent: string
   username?: string
@@ -17,7 +17,7 @@ export class Nyx {
     this.userAgent = `Nnn v${
       this.appVersion
     } | ${DeviceInfo.getSystemName()} ${DeviceInfo.getSystemVersion()} | ${DeviceInfo.getModel()}`
-    this.api = new NyxApi({ appName: this.userAgent })
+    this.api = new NyxEventsApi({ appName: this.userAgent })
     this.api.onError.subscribe().then(msg => {
       if (!msg.includes('Hlas bude pro uživatele viditelný.')) {
         this.showNotification(msg)

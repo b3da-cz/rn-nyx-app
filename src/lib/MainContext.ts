@@ -12,6 +12,7 @@ export type MainContextConfig = {
   isSearchEnabled: boolean
   isLastEnabled: boolean
   isRemindersEnabled: boolean
+  isEventsEnabled: boolean
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
@@ -42,6 +43,7 @@ export const initialConfig: MainContextConfig = {
   isSearchEnabled: true,
   isLastEnabled: true,
   isRemindersEnabled: true,
+  isEventsEnabled: true,
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,

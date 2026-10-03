@@ -57,6 +57,82 @@
       "en": "Clear"
     }
   },
+  "events": {
+    "title": {
+      "cs": "Události",
+      "en": "Events"
+    },
+    "empty": {
+      "cs": "Žádné události",
+      "en": "No events"
+    },
+    "search": {
+      "cs": "hledat",
+      "en": "search"
+    },
+    "sortBy": {
+      "cs": "řadit podle",
+      "en": "order by"
+    },
+    "sort": {
+      "popularity": {
+        "cs": "popularity",
+        "en": "popularity"
+      },
+      "proximity": {
+        "cs": "blížící se",
+        "en": "upcoming first"
+      },
+      "freshness": {
+        "cs": "nově založené",
+        "en": "newly created first"
+      }
+    },
+    "when": {
+      "cs": "v...",
+      "en": "in the ..."
+    },
+    "epoch": {
+      "future": {
+        "cs": "v budoucnu",
+        "en": "in the future"
+      },
+      "past": {
+        "cs": "v minulosti",
+        "en": "in the past"
+      },
+      "all": {
+        "cs": "oboje",
+        "en": "both"
+      }
+    },
+    "who": {
+      "cs": "kam jdou",
+      "en": "attended by"
+    },
+    "attendance": {
+      "any": {
+        "cs": "kdokoliv",
+        "en": "anyone"
+      },
+      "me": {
+        "cs": "já",
+        "en": "me"
+      },
+      "friends": {
+        "cs": "přátelé",
+        "en": "friends"
+      }
+    },
+    "category": {
+      "cs": "podle typu",
+      "en": "by type"
+    },
+    "area": {
+      "cs": "v oblasti",
+      "en": "in area"
+    }
+  },
   "reminders": {
     "title": {
       "cs": "Upomínky",
