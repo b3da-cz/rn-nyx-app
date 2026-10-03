@@ -241,6 +241,7 @@ export const EventDetailComponent = ({
         visible={isAttendeesOpen}
         attendees={detail.attendees}
         isLoading={isAttendeesLoading}
+        username={username}
         onDismiss={() => {
           attendeesRequest.current += 1
           setIsAttendeesOpen(false)
@@ -255,11 +256,13 @@ const AttendeesDialog = ({
   visible,
   attendees,
   isLoading,
+  username,
   onDismiss,
 }: {
   visible: boolean
   attendees: EventAttendee[]
   isLoading?: boolean
+  username?: string
   onDismiss: () => void
 }) => {
   const theme = useTheme()
@@ -267,6 +270,7 @@ const AttendeesDialog = ({
     colors,
     metrics: { blocks, fontSizes },
   } = theme
+  const mine = (username || '').trim().toLowerCase()
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss}>
@@ -293,25 +297,28 @@ const AttendeesDialog = ({
               </Text>
             )}
             {!isLoading &&
-              attendees.map(attendee => (
-                <UserRowComponent
-                  key={attendee.username}
-                  user={attendee}
-                  theme={theme}
-                  isPressable={false}
-                  marginBottom={0}
-                  marginTop={blocks.small}
-                  borderLeftWidth={3}
-                  borderColor={attendee.is_friend ? colors.primary : colors.transparent}
-                  extra={
-                    <Icon
-                      name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
-                      size={fontSizes.p}
-                      color={colors.accent}
-                    />
-                  }
-                />
-              ))}
+              attendees.map(attendee => {
+                const marked = attendee.is_friend || (mine.length > 0 && attendee.username.toLowerCase() === mine)
+                return (
+                  <UserRowComponent
+                    key={attendee.username}
+                    user={attendee}
+                    theme={theme}
+                    isPressable={false}
+                    marginBottom={0}
+                    marginTop={blocks.small}
+                    borderLeftWidth={3}
+                    borderColor={marked ? colors.primary : colors.transparent}
+                    extra={
+                      <Icon
+                        name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
+                        size={fontSizes.p}
+                        color={colors.accent}
+                      />
+                    }
+                  />
+                )
+              })}
           </ScrollView>
         </Dialog.ScrollArea>
       </Dialog>

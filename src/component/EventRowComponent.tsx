@@ -27,7 +27,6 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
   const context = useContext(MainContext)
   const username = context.nyx?.username || context.nyx?.api.getAuth()?.username || ''
   const showSelf = context.config.isEventSelfIconEnabled !== false
-  const showBadges = context.config.isEventFriendBadgesEnabled !== false
   const thumb = eventThumbUrl(event.thumbnail_id)
   const phrase = attendancePhrase(event.going_people || 0, event.duration?.end)
   const meta = eventMetaParts(event)
@@ -87,11 +86,6 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
                 width={22}
                 height={28}
                 marginRight={4}
-                attendance={
-                  showBadges && icon.isSelf && (icon.attendance === 'going' || icon.attendance === 'interested')
-                    ? icon.attendance
-                    : null
-                }
               />
             ))}
             {overflow > 0 && (

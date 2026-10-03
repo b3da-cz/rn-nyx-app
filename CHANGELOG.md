@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.15.2
+- dialog účastníků má u mě stejný levý okraj jako u přátel
+- seznam událostí nemá u ikon odznak účasti
+
 ## 0.15.1
 - účast na události se po uložení načte znovu, jméno je seřazené a ve verzálkách
 - na seznamu i detailu je moje ikona první před přáteli, v obecném nastavení jde vypnout
