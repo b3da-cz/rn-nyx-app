@@ -5,6 +5,7 @@ import FA from 'react-native-vector-icons/FontAwesome'
 import ImageViewer from 'react-native-image-zoom-viewer'
 import RNFetchBlob from 'react-native-blob-util'
 import Share from 'react-native-share'
+import Clipboard from '@react-native-clipboard/clipboard'
 import { LoaderComponent } from '../component'
 import { MainContext, fetchImageByteLength, formatImageSizeKb, rememberLoadedImageUrl, t } from '../lib'
 
@@ -143,6 +144,15 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
     }
   }
 
+  const copyUrl = (url?: string) => {
+    if (!url) {
+      return
+    }
+    const href = url.startsWith('//') ? `https:${url}` : url
+    Clipboard.setString(href)
+    ToastAndroid.show(t('coppied'), ToastAndroid.SHORT)
+  }
+
   const share = async (url?: string) => {
     if (!url || sharing.current) {
       return
@@ -237,6 +247,14 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
                   )}
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                onPress={() => copyUrl(shown?.url)}
+              >
+                <Icon name="link" size={22} color="#ccc" />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.headerBtn}
                 accessibilityRole="button"

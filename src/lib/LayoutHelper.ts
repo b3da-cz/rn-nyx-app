@@ -317,7 +317,11 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
           : []
       const discussionRequestHeight =
         discussionRequestTextHeights.length > 0 ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 : 0
-      const videoHeight = post.parsed?.videos?.length > 0 ? post.parsed.videos.length * screenWidth : 0
+      // each video renders a square WebView plus a "copy link" row below it;
+      // reserve the row height too or the row gets clipped by the fixed post height
+      const videoCopyRowHeight = 16 + (2 * themeBaseFontSize) / 5 + 6
+      const videoHeight =
+        post.parsed?.videos?.length > 0 ? post.parsed.videos.length * (screenWidth + videoCopyRowHeight) : 0
       const height =
         (adHeight > 0 ? adHeight : textHeight) +
         discussionRequestHeight +
