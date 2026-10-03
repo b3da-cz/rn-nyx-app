@@ -125,6 +125,7 @@ const App: () => ReactNode = () => {
       isEventsEnabled: conf?.isEventsEnabled !== undefined ? !!conf.isEventsEnabled : true,
       isEventFriendBadgesEnabled:
         conf?.isEventFriendBadgesEnabled !== undefined ? !!conf.isEventFriendBadgesEnabled : true,
+      isEventSelfIconEnabled: conf?.isEventSelfIconEnabled !== undefined ? !!conf.isEventSelfIconEnabled : true,
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,

@@ -1,8 +1,17 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { Image, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import type { EventListItem } from 'nyx-api'
-import { attendancePhrase, eventFriendNames, eventMetaParts, eventThumbUrl, otherAttendeesNoun, useTheme } from '../lib'
+import {
+  attendancePhrase,
+  eventFriends,
+  eventIconRow,
+  eventMetaParts,
+  eventThumbUrl,
+  MainContext,
+  otherAttendeesNoun,
+  useTheme,
+} from '../lib'
 import { UserIconComponent } from './UserIconComponent'
 
 type Props = {
@@ -15,13 +24,24 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const context = useContext(MainContext)
+  const username = context.nyx?.username || context.nyx?.api.getAuth()?.username || ''
+  const showSelf = context.config.isEventSelfIconEnabled !== false
+  const showBadges = context.config.isEventFriendBadgesEnabled !== false
   const thumb = eventThumbUrl(event.thumbnail_id)
   const phrase = attendancePhrase(event.going_people || 0, event.duration?.end)
   const meta = eventMetaParts(event)
   const summary = (event.summary || '').replace(/<[^>]+>/g, '').trim()
-  const friends = eventFriendNames(event.friends)
-  const shownFriends = friends.slice(0, 4)
-  const others = Math.max(0, (event.going_people || 0) - friends.length)
+  const { icons, others } = eventIconRow(
+    eventFriends(event.friends),
+    { username, attendance: event.my_attendance },
+    showSelf,
+    event.going_people || 0,
+  )
+  const rowIcons = phrase ? icons : icons.filter(icon => icon.isSelf)
+  const shownIcons = rowIcons.slice(0, 4)
+  const overflow = rowIcons.length - shownIcons.length
+  const hasIcons = shownIcons.length > 0
 
   return (
     <TouchableRipple
@@ -57,21 +77,30 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
         {summary.length > 0 && (
           <Text style={{ color: colors.text, fontSize: fontSizes.small, marginTop: blocks.medium }}>{summary}</Text>
         )}
-        {phrase && (
+        {(phrase || hasIcons) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: blocks.medium, flexWrap: 'wrap' }}>
-            <Text style={{ color: colors.text, fontSize: fontSizes.small }}>{phrase.lead} </Text>
-            {shownFriends.map(name => (
-              <UserIconComponent key={name} username={name} width={22} height={28} marginRight={4} />
+            {!!phrase && <Text style={{ color: colors.text, fontSize: fontSizes.small }}>{phrase.lead} </Text>}
+            {shownIcons.map(icon => (
+              <UserIconComponent
+                key={`${icon.isSelf ? 'me' : 'friend'}-${icon.username}`}
+                username={icon.username}
+                width={22}
+                height={28}
+                marginRight={4}
+                attendance={
+                  showBadges && icon.isSelf && (icon.attendance === 'going' || icon.attendance === 'interested')
+                    ? icon.attendance
+                    : null
+                }
+              />
             ))}
-            {friends.length > shownFriends.length && (
-              <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginRight: 4 }}>
-                +{friends.length - shownFriends.length}
-              </Text>
+            {overflow > 0 && (
+              <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginRight: 4 }}>+{overflow}</Text>
             )}
-            {friends.length > 0 && others > 0 && (
+            {hasIcons && others > 0 && !!phrase && (
               <Text style={{ color: colors.text, fontSize: fontSizes.small }}>a </Text>
             )}
-            {(friends.length === 0 || others > 0) && (
+            {!!phrase && (!hasIcons || others > 0) && (
               <>
                 <View
                   style={{
@@ -81,12 +110,12 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
                     paddingVertical: 1,
                   }}>
                   <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSizes.small }}>
-                    {friends.length > 0 ? others : event.going_people}
+                    {hasIcons ? others : event.going_people}
                   </Text>
                 </View>
                 <Text style={{ color: colors.text, fontSize: fontSizes.small }}>
                   {' '}
-                  {friends.length > 0 ? otherAttendeesNoun(others) : phrase.noun}
+                  {hasIcons ? otherAttendeesNoun(others) : phrase.noun}
                 </Text>
               </>
             )}

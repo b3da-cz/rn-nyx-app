@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react'
-import { Linking, ScrollView, View } from 'react-native'
+import React, { useContext, useRef, useState } from 'react'
+import { ActivityIndicator, Linking, ScrollView, View } from 'react-native'
 import { Dialog, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import type { EventAttendee } from 'nyx-api'
@@ -7,6 +7,7 @@ import {
   discussionTarget,
   EventDetailData,
   EventDetailImage,
+  eventIconRow,
   formatEventDuration,
   friendAttendees,
   MainContext,
@@ -29,6 +30,7 @@ type Props = {
   onAttendance: (attendance: MyAttendance) => void
   onImage: (image: EventDetailImage, images: EventDetailImage[]) => void
   onOpenDiscussion: (discussionId: string, postId?: string) => void
+  onReloadAttendees?: () => Promise<void> | void
 }
 
 const ICON_W = 32
@@ -42,8 +44,11 @@ export const EventDetailComponent = ({
   onAttendance,
   onImage,
   onOpenDiscussion,
+  onReloadAttendees,
 }: Props) => {
   const [isAttendeesOpen, setIsAttendeesOpen] = useState(false)
+  const [isAttendeesLoading, setIsAttendeesLoading] = useState(false)
+  const attendeesRequest = useRef(0)
   const {
     colors,
     metrics: { blocks, fontSizes, screen },
@@ -62,9 +67,29 @@ export const EventDetailComponent = ({
     marginBottom: blocks.small,
   }
   const total = (detail.going || 0) + (detail.interested || 0)
-  const showFriendBadges = useContext(MainContext).config.isEventFriendBadgesEnabled !== false
-  const friends = friendAttendees(detail.attendees)
-  const shownFriends = friends.slice(0, 4)
+  const context = useContext(MainContext)
+  const showFriendBadges = context.config.isEventFriendBadgesEnabled !== false
+  const showSelf = context.config.isEventSelfIconEnabled !== false
+  const username = context.nyx?.username || context.nyx?.api.getAuth()?.username || ''
+  const friends = friendAttendees(detail.attendees).map(friend => ({
+    username: friend.username,
+    attendance: friend.attendance_type === 'interested' ? ('interested' as const) : ('going' as const),
+  }))
+  const icons = eventIconRow(friends, { username, attendance: detail.myAttendance }, showSelf).icons
+  const shownIcons = icons.slice(0, 4)
+  const openAttendees = () => {
+    const request = ++attendeesRequest.current
+    setIsAttendeesOpen(true)
+    if (!onReloadAttendees) {
+      return
+    }
+    setIsAttendeesLoading(true)
+    Promise.resolve(onReloadAttendees()).finally(() => {
+      if (request === attendeesRequest.current) {
+        setIsAttendeesLoading(false)
+      }
+    })
+  }
 
   return (
     <View>
@@ -102,7 +127,7 @@ export const EventDetailComponent = ({
             )}
           </View>
         )}
-        <TouchableRipple rippleColor={colors.ripple} onPress={() => setIsAttendeesOpen(true)}>
+        <TouchableRipple rippleColor={colors.ripple} onPress={openAttendees}>
           <View style={[rowStyle, { flexDirection: 'row', alignItems: 'center' }]}>
             <View
               style={{
@@ -126,25 +151,25 @@ export const EventDetailComponent = ({
                 {detail.interested || 0} {t('events.interested')}
               </Text>
             </View>
-            {shownFriends.length > 0 && (
+            {shownIcons.length > 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: blocks.small }}>
-                {shownFriends.map(friend => (
+                {shownIcons.map(icon => (
                   <UserIconComponent
-                    key={friend.username}
-                    username={friend.username}
+                    key={`${icon.isSelf ? 'me' : 'friend'}-${icon.username}`}
+                    username={icon.username}
                     width={26}
                     height={32}
                     marginLeft={4}
                     attendance={
-                      showFriendBadges && (friend.attendance_type === 'going' || friend.attendance_type === 'interested')
-                        ? friend.attendance_type
+                      showFriendBadges && (icon.attendance === 'going' || icon.attendance === 'interested')
+                        ? icon.attendance
                         : null
                     }
                   />
                 ))}
-                {friends.length > shownFriends.length && (
+                {icons.length > shownIcons.length && (
                   <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginLeft: 4 }}>
-                    +{friends.length - shownFriends.length}
+                    +{icons.length - shownIcons.length}
                   </Text>
                 )}
               </View>
@@ -215,7 +240,12 @@ export const EventDetailComponent = ({
       <AttendeesDialog
         visible={isAttendeesOpen}
         attendees={detail.attendees}
-        onDismiss={() => setIsAttendeesOpen(false)}
+        isLoading={isAttendeesLoading}
+        onDismiss={() => {
+          attendeesRequest.current += 1
+          setIsAttendeesOpen(false)
+          setIsAttendeesLoading(false)
+        }}
       />
     </View>
   )
@@ -224,10 +254,12 @@ export const EventDetailComponent = ({
 const AttendeesDialog = ({
   visible,
   attendees,
+  isLoading,
   onDismiss,
 }: {
   visible: boolean
   attendees: EventAttendee[]
+  isLoading?: boolean
   onDismiss: () => void
 }) => {
   const theme = useTheme()
@@ -246,9 +278,10 @@ const AttendeesDialog = ({
                 { paddingHorizontal: blocks.small, minHeight: fontSizes.h1 },
               ]}>
               <Text style={{ fontSize: fontSizes.p }}>{t('events.attendees')}</Text>
-              <Text style={{ fontSize: fontSizes.p }}>{attendees.length}</Text>
+              <Text style={{ fontSize: fontSizes.p }}>{isLoading ? '' : attendees.length}</Text>
             </View>
-            {attendees.length === 0 && (
+            {isLoading && <ActivityIndicator color={colors.primary} style={{ marginVertical: blocks.large }} />}
+            {!isLoading && attendees.length === 0 && (
               <Text
                 style={{
                   color: colors.faded,
@@ -259,25 +292,26 @@ const AttendeesDialog = ({
                 {t('events.nobody')}
               </Text>
             )}
-            {attendees.map(attendee => (
-              <UserRowComponent
-                key={attendee.username}
-                user={attendee}
-                theme={theme}
-                isPressable={false}
-                marginBottom={0}
-                marginTop={blocks.small}
-                borderLeftWidth={3}
-                borderColor={attendee.is_friend ? colors.primary : colors.transparent}
-                extra={
-                  <Icon
-                    name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
-                    size={fontSizes.p}
-                    color={colors.accent}
-                  />
-                }
-              />
-            ))}
+            {!isLoading &&
+              attendees.map(attendee => (
+                <UserRowComponent
+                  key={attendee.username}
+                  user={attendee}
+                  theme={theme}
+                  isPressable={false}
+                  marginBottom={0}
+                  marginTop={blocks.small}
+                  borderLeftWidth={3}
+                  borderColor={attendee.is_friend ? colors.primary : colors.transparent}
+                  extra={
+                    <Icon
+                      name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
+                      size={fontSizes.p}
+                      color={colors.accent}
+                    />
+                  }
+                />
+              ))}
           </ScrollView>
         </Dialog.ScrollArea>
       </Dialog>

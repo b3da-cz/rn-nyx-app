@@ -13,6 +13,7 @@ import {
   formatEventMeta,
   eventFriendNames,
   eventFriends,
+  eventIconRow,
   friendAttendees,
   isEventFilterActive,
   isNyxBrowserUrl,
@@ -120,6 +121,31 @@ describe('events', () => {
     expect(otherAttendeesNoun(1)).toBe('dalšího')
     expect(otherAttendeesNoun(3)).toBe('další')
     expect(otherAttendeesNoun(6)).toBe('dalších')
+  })
+
+  it('puts the signed-in user first on the icon row and keeps them out of the remainder', () => {
+    const friends = [
+      { username: 'C', attendance: 'going' as const },
+      { username: 'A', attendance: 'interested' as const },
+    ]
+    const interested = eventIconRow(friends, { username: 'b3da', attendance: 'interested' }, true, 4)
+    expect(interested.icons).toEqual([
+      { username: 'b3da', attendance: 'interested', isSelf: true },
+      { username: 'C', attendance: 'going', isSelf: false },
+      { username: 'A', attendance: 'interested', isSelf: false },
+    ])
+    expect(interested.others).toBe(2)
+    expect(eventIconRow(friends, { username: 'b3da', attendance: 'going' }, true, 4).others).toBe(1)
+
+    const alreadyListed = eventIconRow(friends, { username: 'c', attendance: 'going' }, true, 4)
+    expect(alreadyListed.icons.map(icon => icon.username)).toEqual(['c', 'A'])
+    expect(alreadyListed.others).toBe(2)
+    expect(
+      eventIconRow(friends, { username: 'b3da', attendance: 'none' }, true).icons.map(icon => icon.isSelf),
+    ).toEqual([false, false])
+    expect(
+      eventIconRow(friends, { username: 'b3da', attendance: 'going' }, false).icons.map(icon => icon.username),
+    ).toEqual(['C', 'A'])
   })
 
   it('shows friend avatars for people who are going first', () => {

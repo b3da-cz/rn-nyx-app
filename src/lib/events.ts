@@ -282,6 +282,56 @@ export function friendAttendees(attendees: EventAttendee[] = []) {
     .sort((a, b) => rank[a.attendance_type] - rank[b.attendance_type])
 }
 
+export type AttendanceIcon = {
+  username: string
+  attendance: 'going' | 'interested' | null
+  isSelf: boolean
+}
+
+// Icon row only. The attendee dialog keeps the API order.
+export function eventIconRow(
+  friends: { username?: string | null; attendance?: 'going' | 'interested' | null }[] = [],
+  self?: { username?: string | null; attendance?: string | null } | null,
+  showSelf = true,
+  goingPeople = 0,
+) {
+  const namedFriends: { username: string; attendance?: 'going' | 'interested' | null }[] = []
+  for (const friend of friends) {
+    const username = friend?.username?.trim()
+    if (!username) {
+      continue
+    }
+    namedFriends.push({ username, attendance: friend?.attendance })
+  }
+  const me = self?.username?.trim() || ''
+  const mine = normalizeMyAttendance(self?.attendance)
+  const includeSelf = showSelf && me.length > 0 && mine !== 'none'
+  const icons: AttendanceIcon[] = []
+  if (includeSelf) {
+    icons.push({ username: me, attendance: mine, isSelf: true })
+  }
+  const seen = new Set(includeSelf ? [me.toLowerCase()] : [])
+  for (const friend of namedFriends) {
+    const username = friend.username.trim()
+    const key = username.toLowerCase()
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    icons.push({
+      username,
+      attendance: friend.attendance === 'interested' || friend.attendance === 'going' ? friend.attendance : null,
+      isSelf: false,
+    })
+  }
+  const alreadyListed = namedFriends.some(friend => friend.username.toLowerCase() === me.toLowerCase())
+  const selfIsExtraGoing = includeSelf && mine === 'going' && !alreadyListed
+  return {
+    icons,
+    others: Math.max(0, goingPeople - namedFriends.length - (selfIsExtraGoing ? 1 : 0)),
+  }
+}
+
 export type EventDetailImage = { src: string; url: string }
 
 export type EventDetailData = {

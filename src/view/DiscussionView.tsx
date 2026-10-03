@@ -90,6 +90,9 @@ export class DiscussionView extends Component<Props> {
   blockedUsers: any[] = []
   fetchLock = false
   _attendanceSaving = false
+  _attendanceDone: Promise<void> = Promise.resolve()
+  _eventDetailEpoch = 0
+  _freshEventDetail: EventDetailData | null = null
   _posts: any[] = []
   _lastSeenPostId?: number
   _pendingDiscussion: any = null
@@ -637,10 +640,36 @@ export class DiscussionView extends Component<Props> {
   }
 
   eventDetailFromResponse(loaded: EventDetailData | null) {
-    if (this._attendanceSaving && this.state.eventDetail) {
-      return this.state.eventDetail
+    if (this._attendanceSaving) {
+      return this._freshEventDetail || this.state.eventDetail || loaded
     }
     return loaded
+  }
+
+  async loadEventDetail(discussionId: string | number, epoch: number) {
+    const res = await this.nyx?.api.getDiscussion(`${discussionId}`)
+    if (epoch !== this._eventDetailEpoch || res?.error) {
+      return null
+    }
+    return toEventDetail(res?.discussion_common)
+  }
+
+  async reloadEventAttendees() {
+    if (this._attendanceSaving) {
+      await this._attendanceDone
+      return
+    }
+    const discussionId = this.state.discussionId ?? this.props.id
+    if (!this.nyx || discussionId == null) {
+      return
+    }
+    const epoch = this._eventDetailEpoch
+    const fresh = await this.loadEventDetail(discussionId, epoch)
+    if (!fresh || epoch !== this._eventDetailEpoch || this._attendanceSaving) {
+      return
+    }
+    this._freshEventDetail = fresh
+    await new Promise<void>(resolve => this.setState({ eventDetail: fresh }, () => resolve()))
   }
 
   async setEventAttendance(next: MyAttendance) {
@@ -649,19 +678,50 @@ export class DiscussionView extends Component<Props> {
     if (!current || !this.nyx || this._attendanceSaving || current.myAttendance === next || discussionId == null) {
       return
     }
+    this._eventDetailEpoch += 1
+    const epoch = this._eventDetailEpoch
     this._attendanceSaving = true
-    const username = this.nyx.username || this.nyx.api.getAuth()?.username || ''
-    this.setState({
-      isAttendanceSaving: true,
-      eventDetail: applyMyAttendance(current, username, next),
+    this._freshEventDetail = null
+    let resolveDone = () => {}
+    this._attendanceDone = new Promise(resolve => {
+      resolveDone = resolve
     })
-    const res = await this.nyx.api.setEventAttendance(discussionId, next)
-    this._attendanceSaving = false
-    if (res?.error) {
-      this.setState({ isAttendanceSaving: false, eventDetail: current })
-      return
+    // Keep the previous attendee list. The discussion reload replaces the names.
+    let settled = applyMyAttendance(current, '', next)
+    let posted = false
+    this.setState({ isAttendanceSaving: true, eventDetail: settled })
+    try {
+      const res = await this.nyx.api.setEventAttendance(discussionId, next)
+      if (epoch !== this._eventDetailEpoch) {
+        return
+      }
+      if (res?.error) {
+        settled = current
+        return
+      }
+      posted = true
+      const fresh = await this.loadEventDetail(discussionId, epoch)
+      if (epoch !== this._eventDetailEpoch) {
+        return
+      }
+      if (fresh) {
+        settled = fresh
+        this._freshEventDetail = fresh
+      }
+    } catch {
+      if (!posted) {
+        settled = current
+      }
+    } finally {
+      if (epoch !== this._eventDetailEpoch) {
+        resolveDone()
+        return
+      }
+      this.setState({ isAttendanceSaving: false, eventDetail: settled }, () => {
+        this._attendanceSaving = false
+        resolveDone()
+      })
     }
-    this.setState({ isAttendanceSaving: false })
   }
 
   async bookmarkDiscussion(categoryId?) {
@@ -850,6 +910,7 @@ export class DiscussionView extends Component<Props> {
                 detail={this.state.eventDetail}
                 isAttendanceSaving={this.state.isAttendanceSaving}
                 onAttendance={attendance => this.setEventAttendance(attendance)}
+                onReloadAttendees={() => this.reloadEventAttendees()}
                 onImage={(image, images) => this.showImages(image, images)}
                 onOpenDiscussion={(discussionId, postId) => this.showPost(discussionId, postId)}
               />

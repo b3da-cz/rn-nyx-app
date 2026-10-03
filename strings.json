@@ -173,6 +173,10 @@
     "friendBadges": {
       "cs": "Odznaky účasti přátel",
       "en": "Friend attendance badges"
+    },
+    "selfIcon": {
+      "cs": "Moje ikona u událostí",
+      "en": "My icon on events"
     }
   },
   "reminders": {

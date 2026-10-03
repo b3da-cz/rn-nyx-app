@@ -37,6 +37,7 @@ type State = {
   isRemindersEnabled: boolean
   isEventsEnabled: boolean
   isEventFriendBadgesEnabled: boolean
+  isEventSelfIconEnabled: boolean
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
@@ -81,6 +82,7 @@ export class SettingsView extends Component<Props> {
       isEventsEnabled: config?.isEventsEnabled !== undefined ? !!config.isEventsEnabled : true,
       isEventFriendBadgesEnabled:
         config?.isEventFriendBadgesEnabled !== undefined ? !!config.isEventFriendBadgesEnabled : true,
+      isEventSelfIconEnabled: config?.isEventSelfIconEnabled !== undefined ? !!config.isEventSelfIconEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       isBookmarkSectionReadFilterEnabled:
@@ -240,6 +242,11 @@ export class SettingsView extends Component<Props> {
             label={t('events.friendBadges')}
             value={this.state.isEventFriendBadgesEnabled !== false}
             onChange={val => this.setOption('isEventFriendBadgesEnabled', val)}
+          />
+          <FormRowToggleComponent
+            label={t('events.selfIcon')}
+            value={this.state.isEventSelfIconEnabled !== false}
+            onChange={val => this.setOption('isEventSelfIconEnabled', val)}
           />
           <View
             style={{

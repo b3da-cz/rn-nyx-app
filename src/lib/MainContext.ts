@@ -15,6 +15,7 @@ export type MainContextConfig = {
   isRemindersEnabled: boolean
   isEventsEnabled: boolean
   isEventFriendBadgesEnabled: boolean
+  isEventSelfIconEnabled: boolean
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
@@ -49,6 +50,7 @@ export const initialConfig: MainContextConfig = {
   isRemindersEnabled: true,
   isEventsEnabled: true,
   isEventFriendBadgesEnabled: true,
+  isEventSelfIconEnabled: true,
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,

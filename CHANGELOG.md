@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.15.1
+- účast na události se po uložení načte znovu, jméno je seřazené a ve verzálkách
+- na seznamu i detailu je moje ikona první před přáteli, v obecném nastavení jde vypnout
+
 ## 0.15.0
 - záložky: u rozbalené sekce oko přepíná vše, jen nepřečtené a jen přečtené, v obecném nastavení jde vypnout
 
