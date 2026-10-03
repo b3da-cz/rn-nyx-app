@@ -1,7 +1,7 @@
 {
   "name": "nnn",
-  "version": "0.14.9",
-  "buildVersion": 45,
+  "version": "0.14.10",
+  "buildVersion": 46,
   "description": "Mobile app for Nyx.cz",
   "private": true,
   "repository": {
@@ -43,7 +43,7 @@
     "@react-navigation/native-stack": "^7.17.9",
     "he": "^1.2.0",
     "node-html-parser": "^3.1.5",
-    "nyx-api": "^0.5.1",
+    "nyx-api": "^0.5.2",
     "react": "19.1.4",
     "react-native": "0.81.6",
     "react-native-autoheight-webview": "^1.6.5",

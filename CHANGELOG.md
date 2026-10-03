@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.10
+- účast na události jde přes `nyx-api` 0.5.2
+
 ## 0.14.9
 - detail události má pod účastníky tlačítka jdu, zajímá mě a nejdu
 
