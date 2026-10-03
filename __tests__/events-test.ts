@@ -9,6 +9,7 @@ import {
   EventDetailData,
   filterEventsByAttendance,
   formatEventDuration,
+  eventFromPost,
   eventMetaParts,
   formatEventMeta,
   eventFriendNames,
@@ -67,6 +68,35 @@ describe('events', () => {
     expect(calendarWeekCount(2021, 2)).toBe(4)
     expect(calendarWeekCount(2026, 10)).toBe(5)
     expect(calendarWeekCount(2026, 8)).toBe(6)
+  })
+
+  it('maps an event listing post onto an event row', () => {
+    const event = eventFromPost({
+      content_raw: {
+        type: 'event',
+        data: {
+          discussion_id: 291598,
+          full_name: 'Samurai Breaks',
+          summary: 'jungle',
+          location: 'Fuchs2',
+          area_gettext_name: 'ČR - Praha',
+          duration: { start: '2026-10-10T22:00:00', end: '2026-10-11T05:00:00' },
+          category_path: 'party',
+          thumbnail_id: '/files/x.jpg',
+          going_people: 2,
+          interested_people: 0,
+        },
+      },
+    })
+    expect(event).toMatchObject({
+      discussion_id: 291598,
+      full_name: 'Samurai Breaks',
+      category_path: 'party',
+      going_people: 2,
+      friends: [],
+    })
+    expect(eventFromPost({ content_raw: { type: 'advertisement', data: { discussion_id: 1 } } })).toBeNull()
+    expect(eventFromPost({ content_raw: { type: 'text', data: null } })).toBeNull()
   })
 
   it('keeps the events filter fullscreen unless the tallest card leaves room', () => {

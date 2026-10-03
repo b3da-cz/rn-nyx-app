@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper'
 import {
   AdvertisementComponent,
   CodeBlockComponent,
+  EventRowComponent,
   DiceComponent,
   PollComponent,
   PostHeaderComponent,
@@ -15,7 +16,7 @@ import {
   VideoTagComponent,
   DiscussionRequestComponent,
 } from '../component'
-import { Nyx, TOKEN, generateUuidV4, MainContext } from '../lib'
+import { eventFromPost, Nyx, TOKEN, generateUuidV4, MainContext } from '../lib'
 
 type Props = {
   post: any
@@ -257,7 +258,26 @@ export class PostComponent extends Component<Props> {
     )
   }
 
+  renderEvent() {
+    const event = eventFromPost(this.props.post)
+    if (!event) {
+      return null
+    }
+    return (
+      <EventRowComponent
+        event={event}
+        onPress={() => this.props.onDiscussionDetailShow(event.discussion_id)}
+      />
+    )
+  }
+
   render() {
+    if (this.props.post?.content_raw?.type === 'event') {
+      const eventRow = this.renderEvent()
+      if (eventRow) {
+        return eventRow
+      }
+    }
     if (!this.props.post.parsed) {
       return (
         <View>

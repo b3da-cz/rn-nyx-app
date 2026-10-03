@@ -194,6 +194,38 @@ export function eventFilterHugsContent(maxContentHeight: number, maxCardHeight: 
   return maxContentHeight + slack <= maxCardHeight
 }
 
+export function eventFromPost(post?: {
+  content_raw?: { type?: string; data?: Partial<EventListItem> | null } | null
+}): EventListItem | null {
+  const raw = post?.content_raw
+  const data = raw?.type === 'event' ? raw.data : null
+  if (!data || data.discussion_id == null || !data.duration?.start || !data.duration?.end) {
+    return null
+  }
+  return {
+    discussion_id: data.discussion_id,
+    full_name: data.full_name || '',
+    summary: data.summary,
+    area_id: data.area_id ?? 0,
+    location: data.location || '',
+    area_gettext_name: data.area_gettext_name || '',
+    duration: { start: data.duration.start, end: data.duration.end },
+    upcoming_short_event: !!data.upcoming_short_event,
+    category_id: data.category_id ?? 0,
+    category_path: data.category_path || '',
+    bookmark: !!data.bookmark,
+    thumbnail_id: data.thumbnail_id,
+    new_posts_count: data.new_posts_count || 0,
+    new_replies_count: data.new_replies_count || 0,
+    new_links_count: data.new_links_count || 0,
+    new_images_count: data.new_images_count || 0,
+    going_people: data.going_people || 0,
+    interested_people: data.interested_people || 0,
+    friends: data.friends || [],
+    my_attendance: data.my_attendance,
+  }
+}
+
 export function eventThumbUrl(thumbnailId?: string | null) {
   if (!thumbnailId) {
     return null

@@ -316,6 +316,29 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             })
           : []
       const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 : 0
+      const eventData = post.content_raw?.type === 'event' ? post.content_raw.data : null
+      let eventHeight = 0
+      if (eventData?.discussion_id) {
+        const fullWidth = Dimensions.get('window').width - 24
+        const hasThumb = !!eventData.thumbnail_id
+        const headHeights = await rnTextSize.flatHeights({
+          text: [eventData.full_name || ' ', eventData.category_path || ' ', eventData.location || ' '],
+          width: Math.max(80, fullWidth - (hasThumb ? 84 : 0)),
+          fontSize: themeBaseFontSize,
+        })
+        const summaryHeights = eventData.summary
+          ? await rnTextSize.flatHeights({
+              text: [eventData.summary],
+              width: fullWidth,
+              fontSize: Math.max(11, themeBaseFontSize * 0.8),
+            })
+          : [0]
+        const head = Math.max(
+          headHeights.reduce((a, b) => a + b, 0),
+          hasThumb ? 72 : 0,
+        )
+        eventHeight = head + summaryHeights.reduce((a, b) => a + b, 0) + (eventData.going_people > 0 ? 36 : 8) + 28
+      }
       const discussionRequestTextHeights =
         post.content_raw?.type === 'discussion_request'
           ? await rnTextSize.flatHeights({
@@ -328,15 +351,17 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         discussionRequestTextHeights.length > 0 ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 : 0
       const videoHeight = post.parsed?.videos?.length > 0 ? post.parsed.videos.length * screenWidth : 0
       const height =
-        (adHeight > 0 ? adHeight : textHeight) +
-        discussionRequestHeight +
-        imagesHeight +
-        codeBlocksHeight +
-        diceHeight +
-        pollHeight +
-        headerSize +
-        videoHeight +
-        paddingBottom
+        eventHeight > 0
+          ? eventHeight
+          : (adHeight > 0 ? adHeight : textHeight) +
+            discussionRequestHeight +
+            imagesHeight +
+            codeBlocksHeight +
+            diceHeight +
+            pollHeight +
+            headerSize +
+            videoHeight +
+            paddingBottom
       post.parsed.imagesHeight = imagesHeight
       post.parsed.height = height < 75 ? 75 : height
       post.parsed.offset = posts

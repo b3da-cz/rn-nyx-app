@@ -58,6 +58,26 @@ export class Parser {
     if (this.type === 'dice' || this.type === 'poll') {
       return {}
     }
+    if (this.type === 'event') {
+      return {
+        advertisement: null,
+        contentParts: [],
+        discussionRequest: null,
+        spoilers: [],
+        replies: [],
+        links: [],
+        images: [],
+        codeBlocks: [],
+        textsBold: [],
+        textsItalic: [],
+        ytBlocks: [],
+        videos: [],
+        clearText: '',
+        clearTextWithUrls: '',
+        height: null,
+        offset: null,
+      }
+    }
     if (this.type === 'advertisement') {
       this.parseAdvertisement()
     }

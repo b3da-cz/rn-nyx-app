@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.15.5
+- příspěvek typu událost v diskuzi se vykreslí jako řádek seznamu událostí
+
 ## 0.15.4
 - filtr událostí drží hledání 20 px pod kalendářem a výška karty sleduje počet týdnů
 - na malé obrazovce karta zůstane přes celou plochu a Smazat s Hledat jsou dole
