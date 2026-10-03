@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.15.6
+- diskuze se seznamem inzerátů nebo událostí nemá ve FAB nový příspěvek, šipka zpět ho sbalí
+
 ## 0.15.5
 - příspěvek typu událost v diskuzi se vykreslí jako řádek seznamu událostí
 

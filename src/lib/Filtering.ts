@@ -14,6 +14,20 @@ export const filterPostsByAuthor = (list: any[], blockedUsers: string[]): any[] 
   return list.filter(p => !blockedUsers.includes(p.username))
 }
 
+const LISTING_POST_TYPES = new Set(['event', 'advertisement'])
+
+// A club whose posts are ads or events (opened from history or bookmarks).
+// A real event or ad discussion has ordinary posts, so composing stays available there.
+export const isListingDiscussion = (
+  title?: string | null,
+  posts?: { content_raw?: { type?: string | null } | null; post_type?: string | null }[] | null,
+): boolean => {
+  if (title?.includes('tržiště')) {
+    return true
+  }
+  return !!posts?.some(post => LISTING_POST_TYPES.has(post?.content_raw?.type || post?.post_type || ''))
+}
+
 const filter = (str: string, filters?: string[]): boolean => {
   filters = filters && filters.length > 0 ? filters : []
   if (!str || str?.length === 0 || filters.length === 0) {

@@ -25,6 +25,7 @@ import {
   applyMyAttendance,
   EventDetailData,
   isDiscussionPermitted,
+  isListingDiscussion,
   MyAttendance,
   MainContext,
   Nyx,
@@ -75,6 +76,7 @@ type State = {
   isSubmenuVisible: boolean
   isMsgBoxVisible: boolean
   isFetching: boolean
+  isListing: boolean
   isAttendanceSaving: boolean
   listEpoch: number
   initialScrollIndex?: number
@@ -128,6 +130,7 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      isListing: false,
       isAttendanceSaving: false,
       listEpoch: 0,
       initialScrollIndex: undefined,
@@ -262,6 +265,7 @@ export class DiscussionView extends Component<Props> {
       imgPrefetchProgress: { length: 0, done: 0 },
       hasBoard: pending.hasBoard,
       hasHeader: pending.hasHeader,
+      isListing: this.state.isListing || pending.isListing || isListingDiscussion(pending.title, this._posts),
       isFetching: false,
       initialScrollIndex: aroundLastSeen ? firstUnreadIndex : undefined,
       listEpoch: aroundLastSeen ? (this.state.listEpoch || 0) + 1 : this.state.listEpoch,
@@ -390,6 +394,7 @@ export class DiscussionView extends Component<Props> {
         imgPrefetchProgress: { length: 0, done: 0 },
         hasBoard: res.discussion_common?.discussion?.has_home,
         hasHeader: res.discussion_common?.discussion?.has_header,
+        isListing: this.state.isListing || this._pendingDiscussion?.isListing || isListingDiscussion(title, res.posts),
       }
       this._pendingDiscussion = { ...nextState, uploadedFiles }
       if (!opts.deferUi) {
@@ -425,6 +430,7 @@ export class DiscussionView extends Component<Props> {
       isBooked,
       posts: board,
       isFetching: false,
+      isListing: this.state.isListing || isListingDiscussion(title, res.items),
     })
     this.onDiscussionFetched(title)
   }
@@ -832,7 +838,7 @@ export class DiscussionView extends Component<Props> {
     if (!theme) {
       return null
     }
-    const isMarket = this.state?.title?.length && this.state.title.includes('tržiště')
+    const isListing = this.state.isListing || isListingDiscussion(this.state.title, this.state.posts)
     return (
       <View style={{ backgroundColor: theme.colors.background }}>
         {this.state.imgPrefetchProgress?.length > 0 && (
@@ -850,12 +856,12 @@ export class DiscussionView extends Component<Props> {
         />
         <FabComponent
           isVisible={this.state.isSubmenuVisible}
-          iconOpen={isMarket ? 'close' : 'message'}
+          iconOpen={isListing ? 'arrow-left' : 'message'}
           paddingBottom={this.config?.isBottomTabs ? 45 : 0}
           actions={this.getFabActions()}
           backgroundColor={theme.colors.primary}
           onPress={isOpen => {
-            if (isOpen && !isMarket) {
+            if (isOpen && !isListing) {
               this.showMsgBox()
             }
           }}
