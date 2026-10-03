@@ -1,8 +1,11 @@
 import type { EventListItem } from 'nyx-api'
 import { EVENT_WEEKDAY_LABELS, isoDate, parseNyxDate } from './events'
 
-// First screen: yesterday on top, then today and five days ahead. Past is up, future is down.
-export const TIMELINE_VISIBLE_DAYS = 7
+// First generated window: yesterday on top, then today and five days ahead. Past is up, future is down.
+// How many of those day rows fit on the screen is eventTimelineVisibleDays (default 5).
+export const TIMELINE_VISIBLE_DAYS_DEFAULT = 5
+export const TIMELINE_VISIBLE_DAYS_MIN = 1
+export const TIMELINE_VISIBLE_DAYS_MAX = 10
 export const TIMELINE_FUTURE_DAYS = 5
 export const TIMELINE_PAST_DAYS = 1
 export const TIMELINE_CHUNK_DAYS = 21
@@ -35,6 +38,14 @@ export type TimelineLane = {
   discussionId: number
   column: number
   columns: number
+}
+
+export function normalizeTimelineVisibleDays(value: unknown) {
+  const parsed = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10)
+  if (!Number.isFinite(parsed)) {
+    return TIMELINE_VISIBLE_DAYS_DEFAULT
+  }
+  return Math.min(TIMELINE_VISIBLE_DAYS_MAX, Math.max(TIMELINE_VISIBLE_DAYS_MIN, Math.round(parsed)))
 }
 
 function startOfDay(date: Date) {

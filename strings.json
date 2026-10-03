@@ -181,6 +181,10 @@
     "selfIcon": {
       "cs": "Moje ikona u událostí",
       "en": "My icon on events"
+    },
+    "timelineDays": {
+      "cs": "Dní na výšku časové osy",
+      "en": "Timeline days on screen"
     }
   },
   "reminders": {

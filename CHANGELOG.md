@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.16.1
+- časová osa má v obecném nastavení počet dní na výšku displeje, výchozí je 5
+- karta události na ose už neukazuje text účasti
+
 ## 0.16.0
 - časová osa událostí z rozbaleného FAB: minulost nahoře, sedm dní na displej, blok od času začátku do konce
 

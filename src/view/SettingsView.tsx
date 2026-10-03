@@ -20,6 +20,9 @@ import {
   unregisterFCM,
   Nyx,
   normalizeImageDownloadMaxKb,
+  normalizeTimelineVisibleDays,
+  TIMELINE_VISIBLE_DAYS_MAX,
+  TIMELINE_VISIBLE_DAYS_MIN,
 } from '../lib'
 
 type Props = {
@@ -38,6 +41,7 @@ type State = {
   isEventsEnabled: boolean
   isEventFriendBadgesEnabled: boolean
   isEventSelfIconEnabled: boolean
+  eventTimelineVisibleDays: number
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
@@ -83,6 +87,7 @@ export class SettingsView extends Component<Props> {
       isEventFriendBadgesEnabled:
         config?.isEventFriendBadgesEnabled !== undefined ? !!config.isEventFriendBadgesEnabled : true,
       isEventSelfIconEnabled: config?.isEventSelfIconEnabled !== undefined ? !!config.isEventSelfIconEnabled : true,
+      eventTimelineVisibleDays: normalizeTimelineVisibleDays(config?.eventTimelineVisibleDays),
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       isBookmarkSectionReadFilterEnabled:
@@ -248,6 +253,29 @@ export class SettingsView extends Component<Props> {
             value={this.state.isEventSelfIconEnabled !== false}
             onChange={val => this.setOption('isEventSelfIconEnabled', val)}
           />
+          <View
+            style={{
+              paddingVertical: theme.metrics.blocks.medium,
+              paddingHorizontal: theme.metrics.blocks.medium,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+              {t('events.timelineDays')}
+            </Text>
+            <FormRowSelectComponent
+              value={`${normalizeTimelineVisibleDays(this.state.eventTimelineVisibleDays)}`}
+              onSelect={val => this.setOption('eventTimelineVisibleDays', normalizeTimelineVisibleDays(val))}
+              options={Array.from(
+                { length: TIMELINE_VISIBLE_DAYS_MAX - TIMELINE_VISIBLE_DAYS_MIN + 1 },
+                (_, index) => {
+                  const days = `${TIMELINE_VISIBLE_DAYS_MIN + index}`
+                  return { value: days, label: days }
+                },
+              )}
+            />
+          </View>
           <View
             style={{
               paddingVertical: theme.metrics.blocks.medium,

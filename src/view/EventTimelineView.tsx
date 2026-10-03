@@ -23,7 +23,7 @@ import {
   timelineTopIndex,
   TIMELINE_CHUNK_DAYS,
   TIMELINE_DATE_WIDTH,
-  TIMELINE_VISIBLE_DAYS,
+  normalizeTimelineVisibleDays,
   useTheme,
 } from '../lib'
 
@@ -56,8 +56,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
   const coverageRef = useRef<TimelineCoverage[]>([])
   const readyRef = useRef(false)
   const daysRef = useRef<TimelineDay[]>([])
-  const [rowHeight, setRowHeight] = useState(0)
+  const visibleDays = normalizeTimelineVisibleDays(context.config?.eventTimelineVisibleDays)
+  const [listHeight, setListHeight] = useState(0)
   const [trackWidth, setTrackWidth] = useState(0)
+  const rowHeight = listHeight > 1 ? listHeight / visibleDays : 0
   const [days, setDays] = useState(() => initialTimelineDays(nowRef.current))
   const [events, setEvents] = useState<EventListItem[]>([])
   const [coverage, setCoverage] = useState<TimelineCoverage[]>([])
@@ -185,22 +187,22 @@ export const EventTimelineView = ({ navigation }: Props) => {
     [rowHeight],
   )
 
-  const didInitialScroll = useRef(false)
+  const anchoredDays = useRef<number | null>(null)
   useEffect(() => {
-    if (!rowHeight || didInitialScroll.current) {
+    if (!rowHeight || anchoredDays.current === visibleDays) {
       return
     }
-    didInitialScroll.current = true
+    anchoredDays.current = visibleDays
     const y = topIndex * rowHeight
     offsetRef.current = y
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ y, animated: false }))
-  }, [rowHeight, topIndex])
+  }, [rowHeight, topIndex, visibleDays])
 
   useEffect(() => {
-    if (ready && rowHeight) {
-      syncVisible(offsetRef.current, rowHeight * TIMELINE_VISIBLE_DAYS)
+    if (ready && rowHeight && listHeight) {
+      syncVisible(offsetRef.current, listHeight)
     }
-  }, [ready, rowHeight, days, syncVisible])
+  }, [ready, rowHeight, listHeight, days, syncVisible])
 
   const extend = (edge: 'future' | 'past') => {
     if (days.length > 1200) {
@@ -266,13 +268,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
     <View
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       onLayout={event => {
-        const nextHeight = event.nativeEvent.layout.height / TIMELINE_VISIBLE_DAYS
+        const nextHeight = event.nativeEvent.layout.height
         const nextTrack = event.nativeEvent.layout.width - TIMELINE_DATE_WIDTH - 8
-        if (rowHeight === 0 && nextHeight > 1) {
-          offsetRef.current = topIndex * nextHeight
-          setRowHeight(nextHeight)
-          setTrackWidth(nextTrack)
-        }
+        setListHeight(prev => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
+        setTrackWidth(prev => (Math.abs(prev - nextTrack) > 1 ? nextTrack : prev))
       }}
     >
       {rowHeight > 0 && (

@@ -24,6 +24,7 @@ import {
   Nyx,
   normalizeBookmarkSectionFilters,
   normalizeImageDownloadMaxKb,
+  normalizeTimelineVisibleDays,
   Storage,
   UnreadContextProvider,
   wait,
@@ -126,6 +127,7 @@ const App: () => ReactNode = () => {
       isEventFriendBadgesEnabled:
         conf?.isEventFriendBadgesEnabled !== undefined ? !!conf.isEventFriendBadgesEnabled : true,
       isEventSelfIconEnabled: conf?.isEventSelfIconEnabled !== undefined ? !!conf.isEventSelfIconEnabled : true,
+      eventTimelineVisibleDays: normalizeTimelineVisibleDays(conf?.eventTimelineVisibleDays),
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,

@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import type { EventFriendInput, TimelineDay } from '../lib'
-import { eventFriends, eventIconRow, MainContext, t, TIMELINE_DATE_WIDTH, useTheme } from '../lib'
+import { eventFriends, eventIconRow, MainContext, TIMELINE_DATE_WIDTH, useTheme } from '../lib'
 import { UserIconComponent } from './UserIconComponent'
 
 export type TimelineBlockModel = {
@@ -97,7 +97,7 @@ export const EventTimelineBlock = ({ block, top, height, left, width, onPress }:
         zIndex: 1,
       }}
     >
-      <View style={{ flex: 1, overflow: 'hidden', paddingHorizontal: 4, paddingVertical: 2 }}>
+      <View style={{ flex: 1, overflow: 'hidden', paddingHorizontal: 4, paddingTop: 2, paddingBottom: icons.length ? 22 : 2 }}>
         <Text numberOfLines={1} style={{ color: colors.accent, fontSize: fontSizes.small, fontWeight: '700' }}>
           {block.title}
         </Text>
@@ -111,20 +111,19 @@ export const EventTimelineBlock = ({ block, top, height, left, width, onPress }:
             {block.summary}
           </Text>
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text numberOfLines={1} style={{ color: colors.text, fontSize: fontSizes.small, marginRight: 4 }}>
-            {t(block.attendance === 'going' ? 'events.rsvp.going' : 'events.rsvp.interested')}
-          </Text>
-          {icons.map(icon => (
-            <UserIconComponent
-              key={`${icon.isSelf ? 'me' : 'friend'}-${icon.username}`}
-              username={icon.username}
-              width={16}
-              height={20}
-              marginRight={2}
-            />
-          ))}
-        </View>
+        {icons.length > 0 && (
+          <View style={{ position: 'absolute', left: 4, right: 4, bottom: 2, flexDirection: 'row', alignItems: 'flex-end' }}>
+            {icons.map(icon => (
+              <UserIconComponent
+                key={`${icon.isSelf ? 'me' : 'friend'}-${icon.username}`}
+                username={icon.username}
+                width={16}
+                height={20}
+                marginRight={2}
+              />
+            ))}
+          </View>
+        )}
       </View>
     </TouchableRipple>
   )

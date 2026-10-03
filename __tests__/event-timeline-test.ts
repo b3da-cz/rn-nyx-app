@@ -16,6 +16,7 @@ import {
   timelineTopIndex,
   TIMELINE_CHUNK_DAYS,
   TIMELINE_LIST_CAP,
+  normalizeTimelineVisibleDays,
 } from '../src/lib/eventTimeline'
 
 const now = new Date(2026, 9, 3, 11, 0, 0)
@@ -43,6 +44,14 @@ function event(partial: Partial<EventListItem> & Pick<EventListItem, 'discussion
 }
 
 describe('event timeline', () => {
+  it('fits five days on the screen unless the setting picks another count from 1 to 10', () => {
+    expect(normalizeTimelineVisibleDays(undefined)).toBe(5)
+    expect(normalizeTimelineVisibleDays('7')).toBe(7)
+    expect(normalizeTimelineVisibleDays(0)).toBe(1)
+    expect(normalizeTimelineVisibleDays(12)).toBe(10)
+    expect(normalizeTimelineVisibleDays('nope')).toBe(5)
+  })
+
   it('opens on seven days with yesterday on top and the future below', () => {
     const days = initialTimelineDays(now, 0)
     expect(days).toHaveLength(7)

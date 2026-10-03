@@ -2,6 +2,7 @@ import { createContext, Context } from 'react'
 import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
+import { TIMELINE_VISIBLE_DAYS_DEFAULT } from './eventTimeline'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
 
@@ -16,6 +17,7 @@ export type MainContextConfig = {
   isEventsEnabled: boolean
   isEventFriendBadgesEnabled: boolean
   isEventSelfIconEnabled: boolean
+  eventTimelineVisibleDays: number
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
@@ -51,6 +53,7 @@ export const initialConfig: MainContextConfig = {
   isEventsEnabled: true,
   isEventFriendBadgesEnabled: true,
   isEventSelfIconEnabled: true,
+  eventTimelineVisibleDays: TIMELINE_VISIBLE_DAYS_DEFAULT,
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
