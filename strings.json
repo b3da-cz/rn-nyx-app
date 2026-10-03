@@ -270,6 +270,10 @@
       "cs": "Přepínátka nepřečtených klubů",
       "en": "Unread topic toggles"
     },
+    "bookmarkSectionReadFilter": {
+      "cs": "Filtr přečtenosti v sekcích záložek",
+      "en": "Read filter in bookmark sections"
+    },
     "isSwipeablePostHeader": {
       "cs": "Swipovací hlavička příspěvku",
       "en": "Swipeable post header"

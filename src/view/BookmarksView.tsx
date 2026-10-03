@@ -1,109 +1,246 @@
 import React from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
 import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
-import { filterDiscussions, LayoutAnimConf, recountDiscussionList, Theme } from '../lib'
+import {
+  BookmarkSectionReadFilter,
+  bookmarkFetchIncludesSeen,
+  bookmarkSectionReadFilterIcon,
+  filterBookmarkSection,
+  filterDiscussions,
+  LayoutAnimConf,
+  nextBookmarkSectionReadFilter,
+  normalizeBookmarkSectionFilters,
+  recountDiscussionList,
+  Storage,
+  Theme,
+} from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
   navigation: any
   onDetailShow: Function
 }
+type BookmarkSection = { title: string; data: any[] }
 type State = {
   reminderCount: number
-  sectionedBookmarks: any[]
-  shownBookmarks: any[]
-  shownCategories: any[]
+  sectionedBookmarks: BookmarkSection[]
+  shownCategories: string[]
+  sectionReadFilters: Record<string, BookmarkSectionReadFilter>
   isShowingRead: boolean
+  isBookmarkSectionReadFilterEnabled: boolean
   isFetching: boolean
   theme?: Theme
 }
 export class BookmarksView extends BaseDiscussionListView<Props> {
   state: Readonly<State>
+  shownCategories: string[] = []
+  sectionFilters: Record<string, BookmarkSectionReadFilter> = {}
+  sectionFilterEnabled = true
+  showingRead = false
+  ready = false
+  fetchedIncludesSeen = false
+  appliedFeature = true
   constructor(props) {
     super(props)
     this.state = {
       reminderCount: 0,
       sectionedBookmarks: [],
-      shownBookmarks: [],
       shownCategories: [],
+      sectionReadFilters: {},
       isShowingRead: false,
+      isBookmarkSectionReadFilterEnabled: true,
       isFetching: false,
     }
   }
 
+  featureEnabled() {
+    const value = this.context?.config?.isBookmarkSectionReadFilterEnabled
+    if (value === undefined) {
+      return this.sectionFilterEnabled
+    }
+    return !!value
+  }
+
+  ensureReady() {
+    if (this.ready) {
+      return
+    }
+    this.ready = true
+    const config = this.context?.config || this.config || {}
+    this.showingRead = config.isShowingReadOnLists === undefined ? true : !!config.isShowingReadOnLists
+    this.sectionFilters = normalizeBookmarkSectionFilters(config.bookmarkSectionFilters)
+    this.sectionFilterEnabled = config.isBookmarkSectionReadFilterEnabled !== false
+    this.appliedFeature = this.sectionFilterEnabled
+    this.shownCategories = Array.isArray(config.shownCategories) ? [...config.shownCategories] : []
+  }
+
+  syncSharedSettings() {
+    const config = this.context?.config
+    if (!config?.isLoaded) {
+      return
+    }
+    this.sectionFilterEnabled = config.isBookmarkSectionReadFilterEnabled !== false
+    if (typeof config.isShowingReadOnLists === 'boolean') {
+      this.showingRead = config.isShowingReadOnLists
+    }
+    this.appliedFeature = this.sectionFilterEnabled
+  }
+
+  init() {
+    this.ensureReady()
+    super.init()
+    this.setState({
+      isShowingRead: this.showingRead,
+      shownCategories: this.shownCategories,
+      sectionReadFilters: this.sectionFilters,
+      isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
+    })
+  }
+
+  componentDidUpdate() {
+    if (!this.ready || this.state.isFetching) {
+      return
+    }
+    const featureOn = this.featureEnabled()
+    if (featureOn === this.appliedFeature) {
+      return
+    }
+    this.sectionFilterEnabled = featureOn
+    this.appliedFeature = featureOn
+    this.getList()
+  }
+
   async getList() {
+    this.ensureReady()
+    this.syncSharedSettings()
     this.setState({ isFetching: true })
-    const res = await this.nyx?.api.getBookmarks(this.state.isShowingRead)
+    const includeSeen = bookmarkFetchIncludesSeen(this.sectionFilterEnabled, this.showingRead, this.sectionFilters)
+    let res
+    try {
+      res = await this.nyx?.api.getBookmarks(includeSeen)
+    } catch {
+      this.setState({ isFetching: false })
+      return
+    }
     if (res?.bookmarks?.length) {
+      this.fetchedIncludesSeen = includeSeen
       const reminderCount = res.reminder_count || 0
       const sectionedBookmarks = res.bookmarks.map(b => ({
         title: b.category.category_name,
         data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
       }))
-      const shownBookmarks = [...sectionedBookmarks]
-      const shownCategories =
-        this.state.shownCategories.length > 0
-          ? this.state.shownCategories
-          : Array.from(new Set(sectionedBookmarks.map(b => b.title)))
-      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
-      this.setState({ reminderCount, sectionedBookmarks, shownBookmarks, shownCategories, isFetching: false })
-      this.filterCategories(shownCategories, true)
-    } else {
-      this.setState({ isFetching: false })
-    }
-  }
-
-  filterCategories(shownCategories, isAnimated = true) {
-    const shownBookmarks: Array<{ title: string; data: any[] }> = []
-    for (const b of this.state.sectionedBookmarks) {
-      if (!shownCategories.includes(b.title)) {
-        shownBookmarks.push({ title: b.title, data: [] })
-      } else {
-        shownBookmarks.push({ title: b.title, data: [...b.data] })
+      if (this.shownCategories.length === 0) {
+        this.shownCategories = Array.from(new Set(sectionedBookmarks.map(section => section.title)))
       }
-    }
-    if (isAnimated) {
+      const shownCategories = this.shownCategories
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+      this.setState({
+        reminderCount,
+        sectionedBookmarks,
+        shownCategories,
+        sectionReadFilters: this.sectionFilters,
+        isShowingRead: this.showingRead,
+        isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
+        isFetching: false,
+      })
+    } else {
+      this.setState({
+        isFetching: false,
+        isShowingRead: this.showingRead,
+        isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
+        sectionReadFilters: this.sectionFilters,
+      })
     }
-    this.setState({ shownCategories, shownBookmarks })
   }
 
   toggleCategory(title) {
-    let shownCategories = [...this.state.shownCategories]
+    let shownCategories = [...this.shownCategories]
     if (shownCategories.includes(title)) {
-      shownCategories = this.state.shownCategories.filter(c => c !== title)
+      shownCategories = shownCategories.filter(category => category !== title)
     } else {
       shownCategories.push(title)
     }
-    this.filterCategories(shownCategories)
+    this.shownCategories = shownCategories
     this.persistShownCategories(shownCategories)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    this.setState({ shownCategories })
+  }
+
+  async persistSectionReadFilters(sectionReadFilters) {
+    if (this.context?.config) {
+      this.context.config.bookmarkSectionFilters = sectionReadFilters
+    }
+    const config = await Storage.getConfig()
+    config.bookmarkSectionFilters = sectionReadFilters
+    await Storage.setConfig(config)
+  }
+
+  cycleSectionFilter(title: string) {
+    if (!this.featureEnabled()) {
+      return
+    }
+    this.sectionFilterEnabled = true
+    const next = nextBookmarkSectionReadFilter(this.sectionFilters[title])
+    const sectionFilters = { ...this.sectionFilters }
+    if (next === 'all') {
+      delete sectionFilters[title]
+    } else {
+      sectionFilters[title] = next
+    }
+    this.sectionFilters = sectionFilters
+    this.persistSectionReadFilters(sectionFilters)
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    const needsSeen = bookmarkFetchIncludesSeen(true, this.showingRead, sectionFilters)
+    this.setState({ sectionReadFilters: sectionFilters }, () => {
+      if (needsSeen && !this.fetchedIncludesSeen) {
+        this.getList()
+      }
+    })
   }
 
   render() {
-    const { shownCategories, shownBookmarks, theme, isFetching } = this.state
+    const { shownCategories, sectionedBookmarks, sectionReadFilters, isShowingRead, theme, isFetching } = this.state
     if (!theme) {
       return null
     }
+    const featureOn = this.featureEnabled()
+    const sections = sectionedBookmarks.map(section => {
+      if (!shownCategories.includes(section.title)) {
+        return { title: section.title, data: [] }
+      }
+      return {
+        title: section.title,
+        data: filterBookmarkSection(section.data, sectionReadFilters?.[section.title], isShowingRead, featureOn),
+      }
+    })
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <SectionList
-          sections={shownBookmarks}
+          sections={sections}
+          extraData={`${featureOn}|${this.state.isShowingRead}|${shownCategories.join('\n')}|${JSON.stringify(
+            sectionReadFilters,
+          )}`}
           stickySectionHeadersEnabled={true}
           initialNumToRender={500}
-          keyExtractor={item => item.discussion_id}
+          keyExtractor={item => `${item.discussion_id}`}
           refreshing={isFetching}
           onRefresh={() => this.getList()}
-          // getItemLayout={(data, index) => {
-          //   return { length: 35, offset: 35 * index, index }
-          // }}
-          renderSectionHeader={({ section: { title } }) => (
-            <SectionHeaderComponent
-              title={title}
-              icon={shownCategories.includes(title) ? undefined : 'plus'}
-              isPressable={true}
-              onPress={() => this.toggleCategory(title)}
-            />
-          )}
+          renderSectionHeader={({ section: { title } }) => {
+            const expanded = shownCategories.includes(title)
+            const mode = sectionReadFilters?.[title]
+            const showEye = expanded && featureOn
+            return (
+              <SectionHeaderComponent
+                title={title}
+                icon={showEye ? bookmarkSectionReadFilterIcon(mode) : expanded ? undefined : 'plus'}
+                iconFamily={showEye ? 'material-community' : 'feather'}
+                iconColor={showEye && mode === 'unread' ? theme.colors.accent : theme.colors.text}
+                isPressable={true}
+                onPress={() => this.toggleCategory(title)}
+                onIconPress={showEye ? () => this.cycleSectionFilter(title) : undefined}
+              />
+            )
+          }}
           renderItem={({ item }) => (
             <DiscussionRowComponent
               key={item.discussion_id}

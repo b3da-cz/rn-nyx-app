@@ -39,6 +39,7 @@ type State = {
   isEventFriendBadgesEnabled: boolean
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
+  isBookmarkSectionReadFilterEnabled: boolean
   isSwipeablePostHeader: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
@@ -82,6 +83,8 @@ export class SettingsView extends Component<Props> {
         config?.isEventFriendBadgesEnabled !== undefined ? !!config.isEventFriendBadgesEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
+      isBookmarkSectionReadFilterEnabled:
+        config.isBookmarkSectionReadFilterEnabled === undefined ? true : !!config.isBookmarkSectionReadFilterEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
@@ -222,6 +225,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.isUnreadToggleEnabled')}
             value={!!this.state.isUnreadToggleEnabled}
             onChange={val => this.setOption('isUnreadToggleEnabled', val)}
+          />
+          <FormRowToggleComponent
+            label={t('profile.bookmarkSectionReadFilter')}
+            value={this.state.isBookmarkSectionReadFilterEnabled !== false}
+            onChange={val => this.setOption('isBookmarkSectionReadFilterEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('profile.isSwipeablePostHeader')}

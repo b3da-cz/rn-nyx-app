@@ -3,6 +3,7 @@ import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
+import type { BookmarkSectionReadFilter } from './bookmarkSections'
 
 export type MainContextConfig = {
   isLoaded: boolean
@@ -18,9 +19,11 @@ export type MainContextConfig = {
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
   isUnreadToggleEnabled: boolean
+  isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
   shownCategories: string[]
+  bookmarkSectionFilters: Record<string, BookmarkSectionReadFilter>
   fcmToken?: string
   isFCMSubscribed: boolean
   theme: string
@@ -50,9 +53,11 @@ export const initialConfig: MainContextConfig = {
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
   isUnreadToggleEnabled: true,
+  isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
   initialRouteName: 'historyStack',
   shownCategories: [],
+  bookmarkSectionFilters: {},
   fcmToken: undefined,
   isFCMSubscribed: false,
   theme: 'system',

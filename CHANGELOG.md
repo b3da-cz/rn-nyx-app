@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.15.0
+- záložky: u rozbalené sekce oko přepíná vše, jen nepřečtené a jen přečtené, v obecném nastavení jde vypnout
+
 ## 0.14.12
 - detail události má u ikon přátel odznak jdu nebo zajímá, v obecném nastavení jde vypnout
 

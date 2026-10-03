@@ -57,14 +57,21 @@ export class BaseDiscussionListView<P> extends Component<Props> {
   async getList() {}
 
   async toggleRead(isShowingRead) {
+    const next = !isShowingRead
+    if (this.context?.config) {
+      this.context.config.isShowingReadOnLists = next
+    }
     const config = await Storage.getConfig()
-    config.isShowingReadOnLists = !isShowingRead
-    this.setState({ isShowingRead: !isShowingRead })
+    config.isShowingReadOnLists = next
+    this.setState({ isShowingRead: next })
     await Storage.setConfig(config)
     await this.getList()
   }
 
   async persistShownCategories(shownCategories) {
+    if (this.context?.config) {
+      this.context.config.shownCategories = shownCategories
+    }
     const config = await Storage.getConfig()
     config.shownCategories = shownCategories
     await Storage.setConfig(config)
