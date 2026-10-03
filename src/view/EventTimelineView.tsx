@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from 'react-native'
+import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, View } from 'react-native'
 import type { EventListItem } from 'nyx-api'
 import { EventTimelineBlock, EventTimelineDay, FormRowSelectComponent, StackHeaderComponent } from '../component'
 import type { TimelineBlockModel } from '../component'
@@ -23,6 +23,7 @@ import {
   timelineBlockFrame,
   timelineNowTop,
   timelineSpanClock,
+  timelineTicks,
   timelineTopIndex,
   timelineVisibleDayOptions,
   TIMELINE_CHUNK_DAYS,
@@ -321,6 +322,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
 
   const originIso = days[0]?.iso
   const initialOffset = topIndex * rowHeight
+  const ticks = useMemo(
+    () => (originIso ? timelineTicks(originIso, days.length, rowHeight, visibleDays) : []),
+    [originIso, days.length, rowHeight, visibleDays],
+  )
 
   return (
     <View
@@ -360,6 +365,48 @@ export const EventTimelineView = ({ navigation }: Props) => {
                 }}
               />
             )}
+            {ticks.map(tick => (
+              <View
+                key={tick.key}
+                pointerEvents={'none'}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: tick.top,
+                  width: tick.width,
+                  height: tick.height,
+                  backgroundColor: tick.major ? theme.colors.text : theme.colors.faded,
+                  zIndex: 1,
+                }}
+              />
+            ))}
+            {ticks.map(tick => {
+              if (!tick.label) {
+                return null
+              }
+              const labelSize = theme.metrics.fontSizes.small
+              const center = tick.top + tick.height / 2
+              return (
+                <Text
+                  key={`${tick.key}-label`}
+                  pointerEvents={'none'}
+                  style={{
+                    position: 'absolute',
+                    right: tick.width + 4,
+                    top: center - labelSize / 2,
+                    width: 28,
+                    height: labelSize,
+                    lineHeight: labelSize,
+                    fontSize: labelSize,
+                    color: theme.colors.text,
+                    textAlign: 'right',
+                    zIndex: 1,
+                  }}
+                >
+                  {tick.label}
+                </Text>
+              )
+            })}
             {originIso &&
               blocks.map(block => {
                 const frame = timelineBlockFrame(block.startMs, block.endMs, originIso, rowHeight)

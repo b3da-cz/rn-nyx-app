@@ -14,6 +14,13 @@ export const TIMELINE_ICON_WIDTH = 16
 export const TIMELINE_ICON_HEIGHT = 20
 export const TIMELINE_ICON_GAP = 2
 export const TIMELINE_NOW_LINE = 3
+export const TIMELINE_MAJOR_TICK_HOURS = 6
+export const TIMELINE_MAJOR_TICK_WIDTH = 50
+export const TIMELINE_MAJOR_TICK_HEIGHT = 2
+export const TIMELINE_MINOR_TICK_WIDTH = 40
+export const TIMELINE_MINOR_TICK_HEIGHT = 1
+export const TIMELINE_MINOR_TICK_DAYS = 3
+export const TIMELINE_TICK_LABEL_DAYS = 5
 // /api/events?epoch=past stops at 50. A shorter page is the whole epoch.
 export const TIMELINE_LIST_CAP = 50
 const MAX_SPAN_DAYS = 90
@@ -161,6 +168,54 @@ export function timelineOffset(ms: number, originIso: string, rowHeight: number)
 // Center the 3px line on the current instant. Cards paint above it.
 export function timelineNowTop(ms: number, originIso: string, rowHeight: number) {
   return timelineOffset(ms, originIso, rowHeight) - TIMELINE_NOW_LINE / 2
+}
+
+export type TimelineTick = {
+  key: string
+  top: number
+  width: number
+  height: number
+  major: boolean
+  label: string | null
+}
+
+function tickLabel(hour: number, visibleDays: number) {
+  if (hour % TIMELINE_MAJOR_TICK_HOURS !== 0) {
+    return null
+  }
+  if (visibleDays > TIMELINE_TICK_LABEL_DAYS && hour !== 0 && hour !== 12) {
+    return null
+  }
+  return `${hour}`
+}
+
+// Major marks every 6 hours on the right. Hour marks join them when three days or fewer fit on screen.
+export function timelineTicks(originIso: string, dayCount: number, rowHeight: number, visibleDays: number): TimelineTick[] {
+  if (!originIso || dayCount <= 0 || rowHeight <= 0) {
+    return []
+  }
+  const showMinor = visibleDays <= TIMELINE_MINOR_TICK_DAYS
+  const origin = parseIso(originIso)
+  const ticks: TimelineTick[] = []
+  for (let day = 0; day < dayCount; day++) {
+    const count = showMinor ? 24 : 24 / TIMELINE_MAJOR_TICK_HOURS
+    for (let step = 0; step < count; step++) {
+      const hour = showMinor ? step : step * TIMELINE_MAJOR_TICK_HOURS
+      const major = hour % TIMELINE_MAJOR_TICK_HOURS === 0
+      const height = major ? TIMELINE_MAJOR_TICK_HEIGHT : TIMELINE_MINOR_TICK_HEIGHT
+      const width = major ? TIMELINE_MAJOR_TICK_WIDTH : TIMELINE_MINOR_TICK_WIDTH
+      const ms = new Date(origin.getFullYear(), origin.getMonth(), origin.getDate() + day, hour).getTime()
+      ticks.push({
+        key: `${originIso}-${day}-${hour}`,
+        top: timelineOffset(ms, originIso, rowHeight) - height / 2,
+        width,
+        height,
+        major,
+        label: tickLabel(hour, visibleDays),
+      })
+    }
+  }
+  return ticks
 }
 
 export function timelineBlockFrame(startMs: number, endMs: number, originIso: string, rowHeight: number) {

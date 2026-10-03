@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.16.3
+- časová osa má vpravo stupnici po 6 hodinách s časy 0, 6, 12 a 18, pod kartami událostí
+- od šesti dní na displej zůstávají jen časy 0 a 12, do tří dnů přibývají i hodinové značky
+
 ## 0.16.2
 - na časové ose je v aktuálním čase čára přes šířku a počet dní je i v hlavičce
 - ikony na kartě jsou dole jen když se vejdou pod text a vedle sebe se vejde víc než tři

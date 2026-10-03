@@ -13,6 +13,7 @@ import {
   timelineClock,
   timelineNowTop,
   timelineOffset,
+  timelineTicks,
   timelineSpanClock,
   timelineTopIndex,
   TIMELINE_CHUNK_DAYS,
@@ -107,6 +108,17 @@ describe('event timeline', () => {
     const row = 240
     expect(timelineOffset(new Date(2026, 9, 2, 12, 0).getTime(), '2026-10-02', row)).toBe(120)
     expect(timelineNowTop(new Date(2026, 9, 2, 12, 0).getTime(), '2026-10-02', row)).toBe(118.5)
+    const major = timelineTicks('2026-10-02', 1, row, 5)
+    expect(major.map(tick => tick.label)).toEqual(['0', '6', '12', '18'])
+    expect(major[0]).toMatchObject({ top: -1, width: 50, height: 2 })
+    expect(major[2].top).toBe(row / 2 - 1)
+    expect(timelineTicks('2026-10-02', 1, row, 6).map(tick => tick.label)).toEqual(['0', null, '12', null])
+    const withHours = timelineTicks('2026-10-02', 1, row, 3)
+    expect(withHours).toHaveLength(24)
+    expect(withHours.filter(tick => tick.major)).toHaveLength(4)
+    expect(withHours[1]).toMatchObject({ major: false, width: 40, height: 1 })
+    expect(timelineTicks('2026-10-02', 1, row, 2).filter(tick => !tick.major)).toHaveLength(20)
+    expect(timelineTicks('2026-10-02', 1, row, 4).some(tick => !tick.major)).toBe(false)
     const placed = placeTimelineEvents([
       event({
         discussion_id: 1,
