@@ -111,7 +111,12 @@ export const EventsView = ({ navigation }: Props) => {
             <Text style={{ color: theme.colors.faded, textAlign: 'center', marginTop: 24 }}>{t('events.empty')}</Text>
           )
         }
-        renderItem={({ item }) => <EventRowComponent event={item} />}
+        renderItem={({ item }) => (
+          <EventRowComponent
+            event={item}
+            onPress={() => navigation.push('discussion', { discussionId: item.discussion_id })}
+          />
+        )}
       />
     </View>
   )

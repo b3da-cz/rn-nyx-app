@@ -6,6 +6,7 @@ import {
   BookmarkCategoriesDialog,
   DiscussionFilterBarComponent,
   DiscussionStatsComponent,
+  EventDetailComponent,
   FabComponent,
   MessageBoxDialog,
   PostComponent,
@@ -18,6 +19,7 @@ import {
   getDistinctPosts,
   toGalleryImages,
   galleryImagesFromPosts,
+  EventDetailData,
   isDiscussionPermitted,
   MainContext,
   Nyx,
@@ -26,6 +28,7 @@ import {
   revealImageInPosts,
   t,
   Theme,
+  toEventDetail,
   wait,
 } from '../lib'
 
@@ -47,6 +50,7 @@ type State = {
   title: string
   discussionId?: string | number
   advertisementOP: any
+  eventDetail: EventDetailData | null
   posts: any[]
   images: any[]
   header: any[]
@@ -94,6 +98,7 @@ export class DiscussionView extends Component<Props> {
       title: '',
       discussionId: undefined,
       advertisementOP: null,
+      eventDetail: null,
       posts: [],
       images: [],
       header: [],
@@ -241,6 +246,7 @@ export class DiscussionView extends Component<Props> {
       lastSeenPostId: this._lastSeenPostId,
       posts: this._posts,
       advertisementOP: pending.advertisementOP ?? this.state.advertisementOP,
+      eventDetail: pending.eventDetail ?? this.state.eventDetail,
       imgPrefetchProgress: { length: 0, done: 0 },
       hasBoard: pending.hasBoard,
       hasHeader: pending.hasHeader,
@@ -316,8 +322,9 @@ export class DiscussionView extends Component<Props> {
       }
       const res = await this.nyx?.api.getDiscussion(idOrQueryString)
       if (!res?.posts?.length) {
+        const eventDetail = toEventDetail(res?.discussion_common)
         if (!opts.holdLock) {
-          this.setState({ isFetching: false })
+          this.setState(eventDetail ? { isFetching: false, eventDetail } : { isFetching: false })
         }
         return 0
       }
@@ -354,6 +361,8 @@ export class DiscussionView extends Component<Props> {
         this.props.lastSeenPostId ?? res?.discussion_common?.bookmark?.last_seen_post_id ?? this._lastSeenPostId
       const uploadedFiles = res?.discussion_common?.waiting_files || []
       const isBooked = res?.discussion_common?.bookmark?.bookmark
+      const eventDetail =
+        toEventDetail(res?.discussion_common) ?? this._pendingDiscussion?.eventDetail ?? this.state.eventDetail
       const images = galleryImagesFromPosts(nextPosts)
       const nextState = {
         title,
@@ -363,6 +372,7 @@ export class DiscussionView extends Component<Props> {
         lastSeenPostId: this._lastSeenPostId,
         posts: nextPosts,
         advertisementOP: advertisementOP || this.state.advertisementOP,
+        eventDetail,
         isFetching: opts.holdLock ? true : false,
         imgPrefetchProgress: { length: 0, done: 0 },
         hasBoard: res.discussion_common?.discussion?.has_home,
@@ -763,6 +773,18 @@ export class DiscussionView extends Component<Props> {
             marginTop: 50,
             backgroundColor: theme.colors.background,
           }}
+          ListHeaderComponent={
+            this.state.eventDetail &&
+            !this.props.showReplies &&
+            !this.state.isHeaderVisible &&
+            !this.state.isBoardVisible ? (
+              <EventDetailComponent
+                detail={this.state.eventDetail}
+                onImage={(image, images) => this.showImages(image, images)}
+                onOpenDiscussion={(discussionId, postId) => this.showPost(discussionId, postId)}
+              />
+            ) : null
+          }
           ListFooterComponent={() =>
             this.state.isFetching && this.state.posts.length > 0 ? (
               <ActivityIndicator size="large" color={theme.colors.primary} />

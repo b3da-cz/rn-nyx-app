@@ -1,10 +1,14 @@
-import type { EventListItem } from 'nyx-api'
+import type { EventAttendee, EventListItem } from 'nyx-api'
 import {
   attendancePhrase,
   defaultEventFilters,
+  discussionTarget,
+  eventBodyHtml,
+  eventDetailImages,
   filterEventsByAttendance,
   formatEventDuration,
   formatEventMeta,
+  friendAttendees,
   isEventFilterActive,
   monthGrid,
   toEventsQuery,
@@ -66,6 +70,42 @@ describe('events', () => {
     })
     expect(isEventFilterActive(defaultEventFilters(now), now)).toBe(false)
     expect(isEventFilterActive(filters, now)).toBe(true)
+  })
+
+  it('uses the html description and falls back to a linked summary', () => {
+    expect(eventBodyHtml({ description: '<div>vstup volný</div>', summary: 'ignored' })).toBe(
+      '<div>vstup volný</div><br>',
+    )
+    expect(eventBodyHtml({ description: '', summary: 'line\r\nhttps://ra.co/events/1.' })).toBe(
+      'line<br><a href="https://ra.co/events/1">https://ra.co/events/1</a>.',
+    )
+    expect(eventBodyHtml({ summary: 'a < b' })).toBe('a &lt; b')
+  })
+
+  it('keeps nyx discussion links inside the app', () => {
+    expect(discussionTarget('https://nyx.cz/discussion/291499/id/12')).toEqual({
+      discussionId: '291499',
+      postId: '12',
+    })
+    expect(discussionTarget('/discussion/291499')).toEqual({ discussionId: '291499', postId: undefined })
+    expect(discussionTarget('https://ra.co/events/1')).toBeNull()
+  })
+
+  it('shows friend avatars for people who are going first', () => {
+    const attendees = [
+      { username: 'A', attendance_type: 'interested', is_friend: true },
+      { username: 'B', attendance_type: 'going', is_friend: false },
+      { username: 'C', attendance_type: 'going', is_friend: true },
+      { username: 'D', attendance_type: 'none', is_friend: true },
+    ] as EventAttendee[]
+    expect(friendAttendees(attendees).map(attendee => attendee.username)).toEqual(['C', 'A'])
+  })
+
+  it('collects attachment images and skips a duplicate thumbnail', () => {
+    const { images, extras } = eventDetailImages(['https://i.ibb.co/x/image.png'], [{ url: '/files/flyer.jpg' }], null, '/files/thumb.jpg')
+    expect(images.map(image => image.url)).toEqual(['https://i.ibb.co/x/image.png', 'https://nyx.cz/files/flyer.jpg'])
+    expect(extras.map(image => image.url)).toEqual(['https://nyx.cz/files/flyer.jpg'])
+    expect(eventDetailImages([], [], null, '/files/thumb.jpg').images[0].url).toBe('https://nyx.cz/files/thumb.jpg')
   })
 
   it('picks the Czech attendee phrase', () => {

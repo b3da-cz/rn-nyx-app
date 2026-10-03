@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.14.3
+- detail události: pořadatel, čas, místo, popis, obrázky a pruh účastníků nad diskuzí
+- řádek v seznamu událostí otevře diskuzi
+
 ## 0.14.2
 - kalendář událostí jede za prstem a dá se v půlce vrátit
 - hlavička filtru má stejný ripple a spring animaci jako hledání v diskuzi

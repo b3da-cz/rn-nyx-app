@@ -131,6 +131,26 @@
     "area": {
       "cs": "v oblasti",
       "en": "in area"
+    },
+    "hostedBy": {
+      "cs": "pořádá",
+      "en": "hosted by"
+    },
+    "going": {
+      "cs": "jde",
+      "en": "going"
+    },
+    "interested": {
+      "cs": "se zajímá",
+      "en": "interested"
+    },
+    "attendees": {
+      "cs": "Účastníci",
+      "en": "Attendees"
+    },
+    "nobody": {
+      "cs": "Zatím nikdo",
+      "en": "No one yet"
     }
   },
   "reminders": {

@@ -1,4 +1,4 @@
-import type { EventListItem } from 'nyx-api'
+import type { EventAttendee, EventListItem } from 'nyx-api'
 
 export type EventOrder = 'popularity' | 'proximity' | 'freshness'
 export type EventEpoch = 'future' | 'past' | 'all'
@@ -178,6 +178,87 @@ export function eventThumbUrl(thumbnailId?: string | null) {
     return thumbnailId
   }
   return `https://nyx.cz${thumbnailId.startsWith('/') ? '' : '/'}${thumbnailId}`
+}
+
+export function eventBodyHtml(event: { description?: string | null; summary?: string | null }) {
+  const description = (event.description || '').trim()
+  if (description) {
+    return description.replace(/<\/(div|p|li|h[1-6]|tr)>/gi, '</$1><br>').replace(/<li\b[^>]*>/gi, match => `${match}• `)
+  }
+  const summary = (event.summary || '').replace(/\r\n/g, '\n').trim()
+  if (!summary) {
+    return ''
+  }
+  const escaped = summary.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const linked = escaped.replace(/https?:\/\/[^\s<]+/g, url => {
+    const clean = url.replace(/[),.;]+$/, '')
+    const tail = url.slice(clean.length)
+    return `<a href="${clean}">${clean}</a>${tail}`
+  })
+  return linked.replace(/\n/g, '<br>')
+}
+
+export function discussionTarget(url?: string | null) {
+  if (!url) {
+    return null
+  }
+  const match = url.match(/^(?:https?:\/\/(?:www\.)?nyx\.cz)?\/discussion\/(\d+)(?:\/id\/(\d+))?/)
+  if (!match) {
+    return null
+  }
+  return { discussionId: match[1], postId: match[2] }
+}
+
+export function friendAttendees(attendees: EventAttendee[] = []) {
+  const rank = { going: 0, interested: 1, none: 2 }
+  return attendees
+    .filter(attendee => attendee.is_friend && attendee.attendance_type !== 'none')
+    .slice()
+    .sort((a, b) => rank[a.attendance_type] - rank[b.attendance_type])
+}
+
+export type EventDetailImage = { src: string; url: string }
+
+export type EventDetailData = {
+  owner?: string
+  areaName?: string
+  location?: string
+  start?: string
+  end?: string
+  parsed: any | null
+  images: EventDetailImage[]
+  going: number
+  interested: number
+  attendees: EventAttendee[]
+}
+
+export function eventDetailImages(
+  inlineSrcs: string[] = [],
+  attachments: { url?: string | null }[] = [],
+  photoIds?: string[] | null,
+  thumbnailId?: string | null,
+) {
+  const images: EventDetailImage[] = []
+  const seen = new Set<string>()
+  const add = (value?: string | null) => {
+    const url = eventThumbUrl(value)
+    if (!url || seen.has(url)) {
+      return
+    }
+    seen.add(url)
+    images.push({ src: url, url })
+  }
+  inlineSrcs.forEach(add)
+  attachments.forEach(file => add(file.url))
+  ;(photoIds || []).forEach(add)
+  if (images.length === 0) {
+    add(thumbnailId)
+  }
+  const inline = new Set(inlineSrcs.map(src => eventThumbUrl(src)).filter((src): src is string => !!src))
+  return {
+    images,
+    extras: images.filter(image => !inline.has(image.src)),
+  }
 }
 
 export function attendancePhrase(count: number, endValue: string, now = new Date()) {
