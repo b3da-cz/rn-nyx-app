@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.15.3
+- kalendář událostí má menší podbarvení dnů a mezeru mezi rámečkem a výplní
+
 ## 0.15.2
 - dialog účastníků má u mě stejný levý okraj jako u přátel
 - seznam událostí nemá u ikon odznak účasti

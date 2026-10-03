@@ -385,6 +385,10 @@ const MonthPage = ({
   )
 }
 
+const DAY_HEIGHT = 36
+const DAY_INSET = 3
+const FRAME_GAP = 2
+
 const DayCell = ({
   cell,
   width,
@@ -401,6 +405,8 @@ const DayCell = ({
   onPick: (iso: string) => void
 }) => {
   const { colors } = useTheme()
+  const framed = isToday || isSelected
+  const fill = isSelected ? colors.primary : hasEvents ? colors.border : undefined
   const textColor = isSelected ? colors.background : cell.inMonth ? colors.text : colors.disabled
   return (
     <TouchableRipple
@@ -408,14 +414,33 @@ const DayCell = ({
       onPress={() => onPick(cell.iso)}
       style={{
         width,
-        height: 36,
+        height: DAY_HEIGHT,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: isSelected ? colors.primary : hasEvents ? colors.border : 'transparent',
-        borderWidth: isToday && !isSelected ? 1 : 0,
-        borderColor: colors.accent,
       }}>
-      <Text style={{ color: textColor, fontWeight: isToday || isSelected ? '700' : '400' }}>{cell.date.getDate()}</Text>
+      <View
+        style={{
+          width: width - DAY_INSET * 2,
+          height: DAY_HEIGHT - DAY_INSET * 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: framed ? 1 : 0,
+          borderColor: colors.accent,
+        }}>
+        {!!fill && (
+          <View
+            style={{
+              position: 'absolute',
+              top: framed ? FRAME_GAP : 0,
+              right: framed ? FRAME_GAP : 0,
+              bottom: framed ? FRAME_GAP : 0,
+              left: framed ? FRAME_GAP : 0,
+              backgroundColor: fill,
+            }}
+          />
+        )}
+        <Text style={{ color: textColor, fontWeight: isToday || isSelected ? '700' : '400' }}>{cell.date.getDate()}</Text>
+      </View>
     </TouchableRipple>
   )
 }
