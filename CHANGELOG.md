@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.7
+- seznam událostí má + pro založení na webu, prohlížeč si pamatuje přihlášení
+
 ## 0.14.6
 - detail události: datum a místo jsou vpravo na řádku s pořadatelem, popis začíná zvýrazněným názvem
 - řádek v seznamu má nahoře tmavý okraj a místo konání je na vlastním řádku

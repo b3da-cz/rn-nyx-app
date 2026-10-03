@@ -12,6 +12,7 @@ import {
   eventFriendNames,
   friendAttendees,
   isEventFilterActive,
+  isNyxBrowserUrl,
   otherAttendeesNoun,
   monthGrid,
   toEventsQuery,
@@ -120,6 +121,15 @@ describe('events', () => {
     expect(images.map(image => image.url)).toEqual(['https://i.ibb.co/x/image.png', 'https://nyx.cz/files/flyer.jpg'])
     expect(extras.map(image => image.url)).toEqual(['https://nyx.cz/files/flyer.jpg'])
     expect(eventDetailImages([], [], null, '/files/thumb.jpg').images[0].url).toBe('https://nyx.cz/files/thumb.jpg')
+  })
+
+  it('keeps web links in the event browser and hands off other schemes', () => {
+    expect(isNyxBrowserUrl('https://nyx.cz/event/create')).toBe(true)
+    expect(isNyxBrowserUrl('http://nyx.cz/login')).toBe(true)
+    expect(isNyxBrowserUrl('about:blank')).toBe(true)
+    expect(isNyxBrowserUrl('mailto:nyx@nyx.cz')).toBe(false)
+    expect(isNyxBrowserUrl('javascript:alert(1)')).toBe(false)
+    expect(isNyxBrowserUrl('')).toBe(false)
   })
 
   it('picks the Czech attendee phrase', () => {

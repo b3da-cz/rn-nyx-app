@@ -1,7 +1,8 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Discussion, Events } from '../routes'
+import { StackHeaderComponent } from '../component'
+import { MainContext, NavOptions, discussionScreenOptions, t } from '../lib'
+import { Discussion, EventCreate, Events } from '../routes'
 
 export const EventsStackContainer = () => {
   const EventsStack = createNativeStackNavigator()
@@ -9,6 +10,16 @@ export const EventsStackContainer = () => {
   return (
     <EventsStack.Navigator initialRouteName={'events'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <EventsStack.Screen name={'events'} component={Events} options={{ headerShown: false }} />
+      <EventsStack.Screen
+        name={'eventCreate'}
+        component={EventCreate}
+        options={{
+          title: t('events.create'),
+          gestureEnabled: false,
+          fullScreenGestureEnabled: false,
+          header: props => <StackHeaderComponent {...props} theme={context.theme} />,
+        }}
+      />
       <EventsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
     </EventsStack.Navigator>
   )

@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { FlatList, RefreshControl, View } from 'react-native'
-import { Text } from 'react-native-paper'
+import { FAB, Text } from 'react-native-paper'
 import type { EventArea, EventCalendarDay, EventCategory, EventListItem } from 'nyx-api'
 import { EventsFilterBarComponent, EventRowComponent } from '../component'
 import {
@@ -98,7 +98,7 @@ export const EventsView = ({ navigation }: Props) => {
         ref={listRef}
         data={events}
         keyExtractor={event => `${event.discussion_id}`}
-        contentContainerStyle={{ paddingTop: 50, flexGrow: 1 }}
+        contentContainerStyle={{ paddingTop: 50, paddingBottom: 88, flexGrow: 1 }}
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
@@ -122,6 +122,20 @@ export const EventsView = ({ navigation }: Props) => {
             }}
           />
         )}
+      />
+      <FAB
+        icon={'plus'}
+        accessibilityLabel={t('events.create')}
+        style={{
+          position: 'absolute',
+          margin: 16,
+          right: 0,
+          bottom: 0,
+          zIndex: 1,
+          elevation: 4,
+          backgroundColor: theme.colors.primary,
+        }}
+        onPress={() => navigation.navigate('eventCreate')}
       />
     </View>
   )

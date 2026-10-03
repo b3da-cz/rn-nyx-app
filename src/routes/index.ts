@@ -1,6 +1,7 @@
 export * from './Bookmarks'
 export * from './BookmarksStackContainer'
 export * from './Discussion'
+export * from './EventCreate'
 export * from './Events'
 export * from './EventsStackContainer'
 export * from './History'

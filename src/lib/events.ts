@@ -284,6 +284,27 @@ export function eventDetailImages(
   }
 }
 
+export const EVENT_CREATE_URL = 'https://nyx.cz/event/create'
+
+// The site only stores a lasting login cookie when this box is checked.
+export const NYX_KEEP_LOGGED_SCRIPT = `(function () {
+  var box = document.getElementById('keep_logged')
+  if (box) {
+    box.checked = true
+  }
+})();
+true;`
+
+const NYX_BROWSER_PROTOCOLS = new Set(['http:', 'https:', 'about:', 'blob:'])
+
+export function isNyxBrowserUrl(url: string) {
+  try {
+    return NYX_BROWSER_PROTOCOLS.has(new URL(url).protocol)
+  } catch {
+    return false
+  }
+}
+
 export function attendancePhrase(count: number, endValue: string, now = new Date()) {
   if (count <= 0) {
     return null

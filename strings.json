@@ -151,6 +151,10 @@
     "nobody": {
       "cs": "Zatím nikdo",
       "en": "No one yet"
+    },
+    "create": {
+      "cs": "Založit událost",
+      "en": "Create event"
     }
   },
   "reminders": {
