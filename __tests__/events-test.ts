@@ -19,6 +19,8 @@ import {
   isNyxBrowserUrl,
   normalizeMyAttendance,
   otherAttendeesNoun,
+  calendarWeekCount,
+  eventFilterHugsContent,
   monthGrid,
   toEventsQuery,
 } from '../src/lib/events'
@@ -59,6 +61,18 @@ describe('events', () => {
     expect(cells[3].iso).toBe('2026-10-01')
     expect(cells[3].inMonth).toBe(true)
     expect(cells[0].inMonth).toBe(false)
+  })
+
+  it('counts only the weeks a month needs', () => {
+    expect(calendarWeekCount(2021, 2)).toBe(4)
+    expect(calendarWeekCount(2026, 10)).toBe(5)
+    expect(calendarWeekCount(2026, 8)).toBe(6)
+  })
+
+  it('keeps the events filter fullscreen unless the tallest card leaves room', () => {
+    expect(eventFilterHugsContent(640, 760)).toBe(true)
+    expect(eventFilterHugsContent(720, 760)).toBe(false)
+    expect(eventFilterHugsContent(800, 760)).toBe(false)
   })
 
   it('filters attendance on the client and keeps other filters for the query', () => {

@@ -186,6 +186,14 @@ export function monthGrid(year: number, month: number): CalendarCell[] {
   return cells
 }
 
+export function calendarWeekCount(year: number, month: number) {
+  return monthGrid(year, month).length / 7
+}
+
+export function eventFilterHugsContent(maxContentHeight: number, maxCardHeight: number, slack = 48) {
+  return maxContentHeight + slack <= maxCardHeight
+}
+
 export function eventThumbUrl(thumbnailId?: string | null) {
   if (!thumbnailId) {
     return null

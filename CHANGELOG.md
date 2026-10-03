@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.15.4
+- filtr událostí drží hledání 20 px pod kalendářem a výška karty sleduje počet týdnů
+- na malé obrazovce karta zůstane přes celou plochu a Smazat s Hledat jsou dole
+
 ## 0.15.3
 - kalendář událostí má menší podbarvení dnů a mezeru mezi rámečkem a výplní
 

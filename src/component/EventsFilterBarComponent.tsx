@@ -1,5 +1,13 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { BackHandler, LayoutAnimation, Platform, ScrollView, useWindowDimensions, View } from 'react-native'
+import {
+  BackHandler,
+  LayoutAnimation,
+  LayoutChangeEvent,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from 'react-native'
 import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import { useFocusEffect } from '@react-navigation/native'
 import PagerView from 'react-native-pager-view'
@@ -9,9 +17,11 @@ import { ButtonComponent } from './ButtonComponent'
 import { FormRowSelectComponent } from './FormRowSelectComponent'
 import {
   CalendarCell,
+  calendarWeekCount,
   defaultEventFilters,
   EVENT_MONTHS,
   EVENT_WEEKDAY_LABELS,
+  eventFilterHugsContent,
   EventListFilters,
   isoDate,
   isEventFilterActive,
@@ -25,7 +35,22 @@ import {
 } from '../lib'
 
 const MONTH_RANGE = 24
-const CALENDAR_HEIGHT = 292
+const HEADER_HEIGHT = 50
+const DAY_HEIGHT = 36
+const MAX_WEEKS = 6
+const SEARCH_GAP = 20
+const DAY_INSET = 3
+const FRAME_GAP = 2
+
+const calendarChrome = (fontSizes: { p: number; small: number }) => {
+  const titleLine = Math.ceil(fontSizes.p + 6)
+  const weekdayLine = Math.ceil(fontSizes.small + 8)
+  const titleBlock = titleLine + 16
+  return { titleLine, weekdayLine, titleBlock, total: titleBlock + weekdayLine }
+}
+
+const calendarBodyHeight = (weeks: number, fontSizes: { p: number; small: number }) =>
+  calendarChrome(fontSizes).total + weeks * DAY_HEIGHT
 
 const monthAt = (offset: number) => {
   const now = new Date()
@@ -51,7 +76,9 @@ type Props = {
 export const EventsFilterBarComponent = ({ navigation, filters, categories, areas, calendar, onChange }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState(filters.search)
-  const [bodyHeight, setBodyHeight] = useState(0)
+  const [paneHeight, setPaneHeight] = useState(0)
+  const [tailHeight, setTailHeight] = useState(0)
+  const [actionsHeight, setActionsHeight] = useState(0)
   const [pageIndex, setPageIndex] = useState(() => indexForMonth(filters.year, filters.month))
   const pagerRef = useRef<PagerView>(null)
   const fromPager = useRef(false)
@@ -62,6 +89,29 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
     metrics: { blocks, fontSizes },
   } = useTheme()
   const todayIso = isoDate(new Date())
+  const calendarHeight = calendarBodyHeight(calendarWeekCount(filters.year, filters.month), fontSizes)
+  const maxCalendarHeight = calendarBodyHeight(MAX_WEEKS, fontSizes)
+  const estimatedTail = SEARCH_GAP + 42 + blocks.small + 5 * (40 + blocks.small)
+  const estimatedActions = blocks.medium + 50
+  const tail = tailHeight > 0 ? tailHeight : estimatedTail
+  const actions = actionsHeight > 0 ? actionsHeight : estimatedActions
+  const maxCardHeight = paneHeight > HEADER_HEIGHT ? paneHeight : height - 96 + HEADER_HEIGHT
+  // A shorter month must not drop a nearly full card off the bottom of a small screen.
+  const hug = eventFilterHugsContent(HEADER_HEIGHT + maxCalendarHeight + tail + actions, maxCardHeight)
+  const contentHeight = HEADER_HEIGHT + calendarHeight + tail + actions
+  const cardHeight = hug ? contentHeight : maxCardHeight
+
+  const rememberHeight = (current: number, next: number, setHeight: (height: number) => void) => {
+    if (Math.abs(current - next) > 1) {
+      setHeight(next)
+    }
+  }
+  const onPaneLayout = (event: LayoutChangeEvent) => {
+    if (!isOpen || Platform.OS !== 'android') {
+      return
+    }
+    rememberHeight(paneHeight, event.nativeEvent.layout.height, setPaneHeight)
+  }
 
   useEffect(() => {
     setSearch(filters.search)
@@ -133,13 +183,14 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
   return (
     <View
       pointerEvents={'box-none'}
+      onLayout={onPaneLayout}
       style={{
         position: Platform.OS === 'android' || !isOpen ? 'absolute' : 'relative',
         top: 0,
         left: 0,
         right: 0,
         bottom: Platform.OS === 'android' && isOpen ? 0 : undefined,
-        height: isOpen ? undefined : 50,
+        height: isOpen ? undefined : HEADER_HEIGHT,
         zIndex: 2,
         overflow: 'hidden',
       }}>
@@ -151,10 +202,11 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
         {
           backgroundColor: colors.background,
           width: '100%',
+          height: isOpen ? cardHeight : undefined,
         },
       ]}>
-      <View>
-      <View style={[Styling.groups.flexRowSpbCentered, { height: 50, paddingRight: blocks.large }]}>
+      <View style={{ height: isOpen ? cardHeight : undefined, overflow: 'hidden' }}>
+      <View style={[Styling.groups.flexRowSpbCentered, { height: HEADER_HEIGHT, paddingRight: blocks.large }]}>
         <Text style={{ fontSize: fontSizes.p + 2, marginLeft: blocks.large }}>{t('events.title')}</Text>
         <Icon name={'search'} size={20} color={isEventFilterActive(filters) ? colors.accent : colors.text} />
       </View>
@@ -162,15 +214,11 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
         <ScrollView
           keyboardShouldPersistTaps={'handled'}
           keyboardDismissMode={'on-drag'}
-          style={{ height: bodyHeight > 0 ? Math.min(bodyHeight, height - 96) : undefined, flexGrow: 0 }}
-          onContentSizeChange={(_, nextHeight) => {
-            if (Math.abs(nextHeight - bodyHeight) > 1) {
-              setBodyHeight(nextHeight)
-            }
-          }}>
+          scrollEnabled={!hug && contentHeight > maxCardHeight}
+          style={{ flex: 1 }}>
             <PagerView
               ref={pagerRef}
-              style={{ height: CALENDAR_HEIGHT }}
+              style={{ height: calendarHeight, overflow: 'hidden' }}
               initialPage={indexForMonth(filters.year, filters.month)}
               offscreenPageLimit={1}
               overdrag
@@ -181,13 +229,17 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
                 if (next.year === filters.year && next.month === filters.month) {
                   return
                 }
+                const nextHeight = calendarBodyHeight(calendarWeekCount(next.year, next.month), fontSizes)
+                if (hug && nextHeight !== calendarHeight) {
+                  LayoutAnimation.configureNext(LayoutAnimConf.spring)
+                }
                 fromPager.current = true
                 onChange({ ...filters, search, year: next.year, month: next.month })
               }}>
               {pages.map(index => {
                 const page = monthAt(index - MONTH_RANGE)
                 return (
-                  <View key={index} collapsable={false} style={{ height: CALENDAR_HEIGHT }}>
+                  <View key={index} collapsable={false} style={{ height: calendarHeight, overflow: 'hidden' }}>
                     {Math.abs(index - pageIndex) <= 1 ? (
                       <MonthPage
                         width={width}
@@ -203,6 +255,9 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
                 )
               })}
             </PagerView>
+            <View
+              onLayout={event => rememberHeight(tailHeight, event.nativeEvent.layout.height, setTailHeight)}
+              style={{ paddingTop: SEARCH_GAP }}>
             <TextInput
               numberOfLines={1}
               textAlignVertical={'center'}
@@ -280,28 +335,33 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
                 }
               />
             </FilterRow>
-            <View style={{ flexDirection: 'row', marginTop: blocks.medium }}>
-              <ButtonComponent
-                label={t('search.clear')}
-                color={colors.faded}
-                backgroundColor={'inherit'}
-                fontSize={fontSizes.p}
-                width={'50%'}
-                onPress={() => {
-                  setSearch('')
-                  apply(defaultEventFilters(), true)
-                }}
-              />
-              <ButtonComponent
-                label={t('search.do')}
-                color={colors.accent}
-                backgroundColor={'inherit'}
-                fontSize={fontSizes.p}
-                width={'50%'}
-                onPress={() => apply({ ...filters, search }, true)}
-              />
             </View>
         </ScrollView>
+      )}
+      {isOpen && (
+        <View
+          onLayout={event => rememberHeight(actionsHeight, event.nativeEvent.layout.height, setActionsHeight)}
+          style={{ paddingTop: blocks.medium, flexDirection: 'row', flexShrink: 0 }}>
+          <ButtonComponent
+            label={t('search.clear')}
+            color={colors.faded}
+            backgroundColor={'inherit'}
+            fontSize={fontSizes.p}
+            width={'50%'}
+            onPress={() => {
+              setSearch('')
+              apply(defaultEventFilters(), true)
+            }}
+          />
+          <ButtonComponent
+            label={t('search.do')}
+            color={colors.accent}
+            backgroundColor={'inherit'}
+            fontSize={fontSizes.p}
+            width={'50%'}
+            onPress={() => apply({ ...filters, search }, true)}
+          />
+        </View>
       )}
       </View>
     </TouchableRipple>
@@ -353,17 +413,33 @@ const MonthPage = ({
   } = useTheme()
   const cells = monthGrid(year, month)
   const cellWidth = width / 7
+  const chrome = calendarChrome(fontSizes)
   return (
-    <View style={{ width, paddingBottom: 8 }}>
-      <Text style={{ color: colors.faded, fontSize: fontSizes.p, paddingHorizontal: 12, paddingVertical: 8 }}>
-        {EVENT_MONTHS[month - 1]}
-        {year === new Date().getFullYear() ? '' : ` ${year}`}
-      </Text>
-      <View style={{ flexDirection: 'row' }}>
+    <View style={{ width }}>
+      <View style={{ height: chrome.titleBlock, justifyContent: 'center', paddingHorizontal: 12 }}>
+        <Text
+          style={{
+            color: colors.faded,
+            fontSize: fontSizes.p,
+            lineHeight: chrome.titleLine,
+            includeFontPadding: false,
+          }}>
+          {EVENT_MONTHS[month - 1]}
+          {year === new Date().getFullYear() ? '' : ` ${year}`}
+        </Text>
+      </View>
+      <View style={{ height: chrome.weekdayLine, flexDirection: 'row', alignItems: 'center' }}>
         {EVENT_WEEKDAY_LABELS.map(label => (
           <Text
             key={label}
-            style={{ width: cellWidth, textAlign: 'center', color: colors.faded, fontSize: fontSizes.small }}>
+            style={{
+              width: cellWidth,
+              textAlign: 'center',
+              color: colors.faded,
+              fontSize: fontSizes.small,
+              lineHeight: chrome.weekdayLine,
+              includeFontPadding: false,
+            }}>
             {label}
           </Text>
         ))}
@@ -384,10 +460,6 @@ const MonthPage = ({
     </View>
   )
 }
-
-const DAY_HEIGHT = 36
-const DAY_INSET = 3
-const FRAME_GAP = 2
 
 const DayCell = ({
   cell,
