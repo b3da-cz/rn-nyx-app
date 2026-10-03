@@ -19,6 +19,7 @@ import {
   TIMELINE_CHUNK_DAYS,
   TIMELINE_LIST_CAP,
   normalizeTimelineVisibleDays,
+  timelineDayPlural,
   timelineIconCount,
 } from '../src/lib/eventTimeline'
 
@@ -53,6 +54,9 @@ describe('event timeline', () => {
     expect(normalizeTimelineVisibleDays(0)).toBe(1)
     expect(normalizeTimelineVisibleDays(12)).toBe(10)
     expect(normalizeTimelineVisibleDays('nope')).toBe(5)
+    expect(timelineDayPlural(1)).toBe('one')
+    expect([2, 3, 4].map(timelineDayPlural)).toEqual(['few', 'few', 'few'])
+    expect([5, 6, 10].map(timelineDayPlural)).toEqual(['many', 'many', 'many'])
   })
 
   it('shows every icon that fits beside the others and none when the row would cover the text', () => {

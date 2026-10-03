@@ -21,6 +21,7 @@ export const TIMELINE_MINOR_TICK_WIDTH = 40
 export const TIMELINE_MINOR_TICK_HEIGHT = 1
 export const TIMELINE_MINOR_TICK_DAYS = 3
 export const TIMELINE_TICK_LABEL_DAYS = 5
+export const TIMELINE_TICK_LABEL_GAP = 6
 // /api/events?epoch=past stops at 50. A shorter page is the whole epoch.
 export const TIMELINE_LIST_CAP = 50
 const MAX_SPAN_DAYS = 90
@@ -61,6 +62,17 @@ export function timelineIconCount(iconCount: number, contentWidth: number, conte
   }
   const across = Math.floor((contentWidth + TIMELINE_ICON_GAP) / (TIMELINE_ICON_WIDTH + TIMELINE_ICON_GAP))
   return Math.min(iconCount, Math.max(0, across))
+}
+
+export function timelineDayPlural(days: number): 'one' | 'few' | 'many' {
+  const count = normalizeTimelineVisibleDays(days)
+  if (count === 1) {
+    return 'one'
+  }
+  if (count < 5) {
+    return 'few'
+  }
+  return 'many'
 }
 
 export function timelineVisibleDayOptions() {

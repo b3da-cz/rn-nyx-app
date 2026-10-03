@@ -31,9 +31,10 @@ type DayProps = {
   day: TimelineDay
   height: number
   isToday: boolean
+  dividerInset: number
 }
 
-export const EventTimelineDay = ({ day, height, isToday }: DayProps) => {
+export const EventTimelineDay = ({ day, height, isToday, dividerInset }: DayProps) => {
   const {
     colors,
     metrics: { fontSizes },
@@ -44,11 +45,20 @@ export const EventTimelineDay = ({ day, height, isToday }: DayProps) => {
       style={{
         height,
         backgroundColor: day.isWeekend ? colors.card : colors.background,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
         justifyContent: 'center',
       }}
     >
+      <View
+        pointerEvents={'none'}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: dividerInset,
+          bottom: 0,
+          height: 1,
+          backgroundColor: colors.border,
+        }}
+      />
       <View style={{ width: TIMELINE_DATE_WIDTH, paddingLeft: 8 }}>
         <Text style={{ color: dateColor, fontSize: fontSizes.small, fontWeight: '700' }}>{day.weekday}</Text>
         <Text style={{ color: dateColor, fontSize: fontSizes.small }}>{day.label}</Text>

@@ -20,7 +20,9 @@ import {
   Storage,
   TimelineCoverage,
   TimelineDay,
+  t,
   timelineBlockFrame,
+  timelineDayPlural,
   timelineNowTop,
   timelineSpanClock,
   timelineTicks,
@@ -28,7 +30,9 @@ import {
   timelineVisibleDayOptions,
   TIMELINE_CHUNK_DAYS,
   TIMELINE_DATE_WIDTH,
+  TIMELINE_MAJOR_TICK_WIDTH,
   TIMELINE_NOW_LINE,
+  TIMELINE_TICK_LABEL_GAP,
   useTheme,
 } from '../lib'
 
@@ -38,6 +42,53 @@ type Props = {
 
 const EDGE_ROWS = 2
 const COLUMN_GAP = 3
+
+function timelineDaysLabel(days: number) {
+  const count = normalizeTimelineVisibleDays(days)
+  const form = timelineDayPlural(count)
+  const key =
+    form === 'one' ? 'events.timelineDayOne' : form === 'few' ? 'events.timelineDayFew' : 'events.timelineDayMany'
+  return `${t(key)}`.replace('%s', `${count}`)
+}
+
+const TimelineHeader = ({
+  navigation,
+  options,
+  back,
+  onSelect,
+}: {
+  navigation: any
+  options: { title?: string }
+  back?: { title?: string }
+  onSelect: (days: number) => void
+}) => {
+  const context = useContext(MainContext)
+  const configured = normalizeTimelineVisibleDays(context.config?.eventTimelineVisibleDays)
+  const [days, setDays] = useState(configured)
+  useEffect(() => {
+    setDays(configured)
+  }, [configured])
+  return (
+    <StackHeaderComponent
+      navigation={navigation}
+      options={{ ...options, title: t('events.timelineTitle') }}
+      back={back}
+      theme={context.theme}
+      right={
+        <FormRowSelectComponent
+          value={timelineDaysLabel(days)}
+          selectionColor={context.theme?.colors?.text}
+          options={timelineVisibleDayOptions()}
+          onSelect={(value: string) => {
+            const next = normalizeTimelineVisibleDays(value)
+            setDays(next)
+            onSelect(next)
+          }}
+        />
+      }
+    />
+  )
+}
 
 function plain(value?: string | null) {
   return (value || '')
@@ -64,6 +115,7 @@ export const EventTimelineView = ({ navigation }: Props) => {
   const configuredDays = normalizeTimelineVisibleDays(context.config?.eventTimelineVisibleDays)
   const [visibleDays, setVisibleDays] = useState(configuredDays)
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const [zeroLabelWidth, setZeroLabelWidth] = useState(0)
   const [listWidth, setListWidth] = useState(0)
   const [listHeight, setListHeight] = useState(0)
   const [trackWidth, setTrackWidth] = useState(0)
@@ -95,39 +147,33 @@ export const EventTimelineView = ({ navigation }: Props) => {
   const persistTimelineDays = useCallback(
     async (days: number) => {
       const next = normalizeTimelineVisibleDays(days)
-      const conf = (await Storage.getConfig()) || {}
-      conf.eventTimelineVisibleDays = next
-      await Storage.setConfig(conf)
       if (context.config) {
         context.config.eventTimelineVisibleDays = next
       }
+      const conf = (await Storage.getConfig()) || {}
+      conf.eventTimelineVisibleDays = next
+      await Storage.setConfig(conf)
     },
     [context.config],
   )
 
+  const onTimelineDays = useCallback(
+    (days: number) => {
+      setVisibleDays(days)
+      void persistTimelineDays(days)
+    },
+    [persistTimelineDays],
+  )
+  const onTimelineDaysRef = useRef(onTimelineDays)
+  onTimelineDaysRef.current = onTimelineDays
+
   useLayoutEffect(() => {
     navigation.setOptions({
       header: (props: any) => (
-        <StackHeaderComponent
-          {...props}
-          theme={context.theme}
-          right={
-            <FormRowSelectComponent
-              value={`${visibleDays}`}
-              width={56}
-              selectionColor={context.theme?.colors?.text}
-              options={timelineVisibleDayOptions()}
-              onSelect={(value: string) => {
-                const days = normalizeTimelineVisibleDays(value)
-                setVisibleDays(days)
-                void persistTimelineDays(days)
-              }}
-            />
-          }
-        />
+        <TimelineHeader {...props} onSelect={days => onTimelineDaysRef.current(days)} />
       ),
     })
-  }, [navigation, context.theme, visibleDays, persistTimelineDays])
+  }, [navigation])
 
   const placements = useMemo(() => placeTimelineEvents(events), [events])
   const eventsById = useMemo(() => {
@@ -320,6 +366,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
     scrollRef.current?.scrollTo({ y: next, animated: false })
   }
 
+  const dividerInset =
+    TIMELINE_MAJOR_TICK_WIDTH +
+    TIMELINE_TICK_LABEL_GAP * 2 +
+    (zeroLabelWidth || theme.metrics.fontSizes.small * 0.7)
   const originIso = days[0]?.iso
   const initialOffset = topIndex * rowHeight
   const ticks = useMemo(
@@ -349,7 +399,13 @@ export const EventTimelineView = ({ navigation }: Props) => {
         >
           <View style={{ height: days.length * rowHeight, width: listWidth || '100%' }}>
             {days.map(day => (
-              <EventTimelineDay key={day.iso} day={day} height={rowHeight} isToday={day.iso === todayIso} />
+              <EventTimelineDay
+                key={day.iso}
+                day={day}
+                height={rowHeight}
+                isToday={day.iso === todayIso}
+                dividerInset={dividerInset}
+              />
             ))}
             {originIso && listWidth > 0 && (
               <View
@@ -392,9 +448,8 @@ export const EventTimelineView = ({ navigation }: Props) => {
                   pointerEvents={'none'}
                   style={{
                     position: 'absolute',
-                    right: tick.width + 4,
+                    right: tick.width + TIMELINE_TICK_LABEL_GAP,
                     top: center - labelSize / 2,
-                    width: 28,
                     height: labelSize,
                     lineHeight: labelSize,
                     fontSize: labelSize,
@@ -402,6 +457,14 @@ export const EventTimelineView = ({ navigation }: Props) => {
                     textAlign: 'right',
                     zIndex: 1,
                   }}
+                  onLayout={
+                    tick.label === '0'
+                      ? event => {
+                          const nextWidth = event.nativeEvent.layout.width
+                          setZeroLabelWidth(prev => (prev === nextWidth ? prev : nextWidth))
+                        }
+                      : undefined
+                  }
                 >
                   {tick.label}
                 </Text>

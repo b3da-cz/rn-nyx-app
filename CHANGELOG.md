@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.16.4
+- hlavička časové osy je Timeline událostí a počet dní ukazuje jako 1 den, 2 dny nebo 5 dní
+- linky mezi dny jsou 1 px a končí se stejnou mezerou před nulou
+- výběr počtu dní v hlavičce už po klepnutí nezůstane na staré hodnotě
+
 ## 0.16.3
 - časová osa má vpravo stupnici po 6 hodinách s časy 0, 6, 12 a 18, pod kartami událostí
 - od šesti dní na displej zůstávají jen časy 0 a 12, do tří dnů přibývají i hodinové značky
