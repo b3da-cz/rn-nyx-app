@@ -131,6 +131,18 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
   const pages = Array.from({ length: MONTH_RANGE * 2 + 1 }, (_, index) => index)
 
   return (
+    <View
+      pointerEvents={'box-none'}
+      style={{
+        position: Platform.OS === 'android' || !isOpen ? 'absolute' : 'relative',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: Platform.OS === 'android' && isOpen ? 0 : undefined,
+        height: isOpen ? undefined : 50,
+        zIndex: 2,
+        overflow: 'hidden',
+      }}>
     <TouchableRipple
       rippleColor={colors.ripple}
       onPress={toggle}
@@ -138,13 +150,7 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
         Styling.groups.shadow,
         {
           backgroundColor: colors.background,
-          position: Platform.OS === 'android' || !isOpen ? 'absolute' : 'static',
-          top: 0,
-          right: 0,
-          zIndex: 2,
           width: '100%',
-          marginBottom: Platform.OS === 'android' ? blocks.small : -50,
-          height: isOpen ? 'auto' : 50,
         },
       ]}>
       <View>
@@ -299,6 +305,7 @@ export const EventsFilterBarComponent = ({ navigation, filters, categories, area
       )}
       </View>
     </TouchableRipple>
+    </View>
   )
 }
 

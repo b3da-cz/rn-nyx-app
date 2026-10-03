@@ -2,7 +2,8 @@ import React from 'react'
 import { Image, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import type { EventListItem } from 'nyx-api'
-import { attendancePhrase, eventThumbUrl, formatEventMeta, useTheme } from '../lib'
+import { attendancePhrase, eventFriendNames, eventThumbUrl, formatEventMeta, otherAttendeesNoun, useTheme } from '../lib'
+import { UserIconComponent } from './UserIconComponent'
 
 type Props = {
   event: EventListItem
@@ -17,6 +18,9 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
   const thumb = eventThumbUrl(event.thumbnail_id)
   const phrase = attendancePhrase(event.going_people || 0, event.duration?.end)
   const summary = (event.summary || '').replace(/<[^>]+>/g, '').trim()
+  const friends = eventFriendNames(event.friends)
+  const shownFriends = friends.slice(0, 4)
+  const others = Math.max(0, (event.going_people || 0) - friends.length)
 
   return (
     <TouchableRipple
@@ -46,18 +50,36 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
         {phrase && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: blocks.medium, flexWrap: 'wrap' }}>
             <Text style={{ color: colors.text, fontSize: fontSizes.small }}>{phrase.lead} </Text>
-            <View
-              style={{
-                backgroundColor: colors.background,
-                borderRadius: 4,
-                paddingHorizontal: 7,
-                paddingVertical: 1,
-              }}>
-              <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSizes.small }}>
-                {event.going_people}
+            {shownFriends.map(name => (
+              <UserIconComponent key={name} username={name} width={22} height={28} marginRight={4} />
+            ))}
+            {friends.length > shownFriends.length && (
+              <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginRight: 4 }}>
+                +{friends.length - shownFriends.length}
               </Text>
-            </View>
-            <Text style={{ color: colors.text, fontSize: fontSizes.small }}> {phrase.noun}</Text>
+            )}
+            {friends.length > 0 && others > 0 && (
+              <Text style={{ color: colors.text, fontSize: fontSizes.small }}>a </Text>
+            )}
+            {(friends.length === 0 || others > 0) && (
+              <>
+                <View
+                  style={{
+                    backgroundColor: colors.background,
+                    borderRadius: 4,
+                    paddingHorizontal: 7,
+                    paddingVertical: 1,
+                  }}>
+                  <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSizes.small }}>
+                    {friends.length > 0 ? others : event.going_people}
+                  </Text>
+                </View>
+                <Text style={{ color: colors.text, fontSize: fontSizes.small }}>
+                  {' '}
+                  {friends.length > 0 ? otherAttendeesNoun(others) : phrase.noun}
+                </Text>
+              </>
+            )}
           </View>
         )}
       </View>

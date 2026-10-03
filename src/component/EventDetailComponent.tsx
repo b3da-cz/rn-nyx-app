@@ -8,6 +8,7 @@ import {
   EventDetailData,
   EventDetailImage,
   formatEventDuration,
+  friendAttendees,
   t,
   TOKEN,
   useTheme,
@@ -47,6 +48,8 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
     marginBottom: blocks.small,
   }
   const total = (detail.going || 0) + (detail.interested || 0)
+  const friends = friendAttendees(detail.attendees)
+  const shownFriends = friends.slice(0, 4)
 
   return (
     <View>
@@ -84,6 +87,24 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
                 {detail.interested || 0} {t('events.interested')}
               </Text>
             </View>
+            {shownFriends.length > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: blocks.small }}>
+                {shownFriends.map(friend => (
+                  <UserIconComponent
+                    key={friend.username}
+                    username={friend.username}
+                    width={26}
+                    height={32}
+                    marginLeft={4}
+                  />
+                ))}
+                {friends.length > shownFriends.length && (
+                  <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginLeft: 4 }}>
+                    +{friends.length - shownFriends.length}
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
         </TouchableRipple>
       </View>
@@ -140,6 +161,9 @@ const AttendeesDialog = ({
                   flexDirection: 'row',
                   alignItems: 'center',
                   paddingVertical: blocks.small,
+                  paddingLeft: attendee.is_friend ? blocks.small : 3 + blocks.small,
+                  borderLeftWidth: attendee.is_friend ? 3 : 0,
+                  borderColor: colors.primary,
                 }}>
                 <UserIconComponent username={attendee.username} width={32} height={40} marginRight={blocks.medium} />
                 <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: fontSizes.p }}>

@@ -114,7 +114,12 @@ export const EventsView = ({ navigation }: Props) => {
         renderItem={({ item }) => (
           <EventRowComponent
             event={item}
-            onPress={() => navigation.push('discussion', { discussionId: item.discussion_id })}
+            onPress={() => {
+              if (item.discussion_id == null) {
+                return
+              }
+              navigation.navigate('discussion', { discussionId: item.discussion_id })
+            }}
           />
         )}
       />

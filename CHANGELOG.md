@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.14.5
+- seznam a detail události ukazují ikony přátel, zbytek účastníků je „a N dalších“
+- filtr událostí už nepřekrývá seznam, řádek otevře diskuzi
+
 ## 0.14.4
 - detail události: počet účastníků je hned pod pořadatelem, oba řádky mají primary border
 - po galerii se placeholder v diskuzi hned nahradí obrázkem

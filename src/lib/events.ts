@@ -209,6 +209,20 @@ export function discussionTarget(url?: string | null) {
   return { discussionId: match[1], postId: match[2] }
 }
 
+export function eventFriendNames(friends?: Array<string | { username?: string | null }> | null) {
+  return (friends || []).map(friend => (typeof friend === 'string' ? friend : friend?.username || '')).filter(Boolean)
+}
+
+export function otherAttendeesNoun(count: number) {
+  if (count === 1) {
+    return 'dalšího'
+  }
+  if (count < 5) {
+    return 'další'
+  }
+  return 'dalších'
+}
+
 export function friendAttendees(attendees: EventAttendee[] = []) {
   const rank = { going: 0, interested: 1, none: 2 }
   return attendees

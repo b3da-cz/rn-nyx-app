@@ -8,8 +8,10 @@ import {
   filterEventsByAttendance,
   formatEventDuration,
   formatEventMeta,
+  eventFriendNames,
   friendAttendees,
   isEventFilterActive,
+  otherAttendeesNoun,
   monthGrid,
   toEventsQuery,
 } from '../src/lib/events'
@@ -89,6 +91,13 @@ describe('events', () => {
     })
     expect(discussionTarget('/discussion/291499')).toEqual({ discussionId: '291499', postId: undefined })
     expect(discussionTarget('https://ra.co/events/1')).toBeNull()
+  })
+
+  it('names friends and the other attendees', () => {
+    expect(eventFriendNames(['ALICE', { username: 'BOB' }, { username: '' }, null as any])).toEqual(['ALICE', 'BOB'])
+    expect(otherAttendeesNoun(1)).toBe('dalšího')
+    expect(otherAttendeesNoun(3)).toBe('další')
+    expect(otherAttendeesNoun(6)).toBe('dalších')
   })
 
   it('shows friend avatars for people who are going first', () => {
