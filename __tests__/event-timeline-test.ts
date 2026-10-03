@@ -11,12 +11,14 @@ import {
   placeTimelineEvents,
   timelineBlockFrame,
   timelineClock,
+  timelineNowTop,
   timelineOffset,
   timelineSpanClock,
   timelineTopIndex,
   TIMELINE_CHUNK_DAYS,
   TIMELINE_LIST_CAP,
   normalizeTimelineVisibleDays,
+  timelineIconCount,
 } from '../src/lib/eventTimeline'
 
 const now = new Date(2026, 9, 3, 11, 0, 0)
@@ -50,6 +52,16 @@ describe('event timeline', () => {
     expect(normalizeTimelineVisibleDays(0)).toBe(1)
     expect(normalizeTimelineVisibleDays(12)).toBe(10)
     expect(normalizeTimelineVisibleDays('nope')).toBe(5)
+  })
+
+  it('shows every icon that fits beside the others and none when the row would cover the text', () => {
+    expect(timelineIconCount(8, 52, 80, 40)).toBe(3)
+    expect(timelineIconCount(8, 51, 80, 40)).toBe(2)
+    expect(timelineIconCount(1, 16, 80, 40)).toBe(1)
+    expect(timelineIconCount(4, 15, 80, 40)).toBe(0)
+    expect(timelineIconCount(4, 200, 60, 40)).toBe(4)
+    expect(timelineIconCount(4, 200, 59, 40)).toBe(0)
+    expect(timelineIconCount(4, 200, 80, 0)).toBe(0)
   })
 
   it('opens on seven days with yesterday on top and the future below', () => {
@@ -94,6 +106,7 @@ describe('event timeline', () => {
   it('draws one block from the start time to the end time, side by side when they overlap', () => {
     const row = 240
     expect(timelineOffset(new Date(2026, 9, 2, 12, 0).getTime(), '2026-10-02', row)).toBe(120)
+    expect(timelineNowTop(new Date(2026, 9, 2, 12, 0).getTime(), '2026-10-02', row)).toBe(118.5)
     const placed = placeTimelineEvents([
       event({
         discussion_id: 1,

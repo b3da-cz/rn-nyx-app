@@ -123,8 +123,13 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
 
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
   const About = ({ navigation }) => <AboutView navigation={navigation} />
-  const Settings = () => (
-    <SettingsView config={config} onConfigChange={() => onConfigReload()} onFiltersChange={() => onFiltersReload()} />
+  const Settings = ({ navigation }) => (
+    <SettingsView
+      navigation={navigation}
+      config={config}
+      onConfigChange={() => onConfigReload()}
+      onFiltersChange={() => onFiltersReload()}
+    />
   )
   const ThemeScreen = () => <ThemeView config={config} onConfigChange={() => onConfigReload()} />
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import type { ReactNode } from 'react'
 import { Text, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import { TouchableRipple } from 'react-native-paper'
@@ -11,9 +12,10 @@ type Props = {
   options: { title?: string }
   back?: { title?: string }
   theme: Theme
+  right?: ReactNode
 }
 
-export const StackHeaderComponent = ({ navigation, options, back, theme }: Props) => (
+export const StackHeaderComponent = ({ navigation, options, back, theme, right }: Props) => (
   <View
     style={{
       height: HEADER_HEIGHT,
@@ -46,5 +48,6 @@ export const StackHeaderComponent = ({ navigation, options, back, theme }: Props
       }}>
       {options.title}
     </Text>
+    {!!right && <View style={{ marginRight: 4 }}>{right}</View>}
   </View>
 )

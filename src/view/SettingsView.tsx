@@ -21,12 +21,12 @@ import {
   Nyx,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
-  TIMELINE_VISIBLE_DAYS_MAX,
-  TIMELINE_VISIBLE_DAYS_MIN,
+  timelineVisibleDayOptions,
 } from '../lib'
 
 type Props = {
   config: any
+  navigation?: any
   onConfigChange: Function
   onFiltersChange: Function
 }
@@ -55,6 +55,7 @@ type State = {
 export class SettingsView extends Component<Props> {
   static contextType = MainContext
   nyx?: Nyx
+  unsubscribeFocus?: () => void
   state: Readonly<Partial<State>> = {}
   constructor(props) {
     super(props)
@@ -64,6 +65,19 @@ export class SettingsView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.setTheme()
+    this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => this.refreshTimelineDays())
+  }
+
+  componentWillUnmount() {
+    this.unsubscribeFocus?.()
+  }
+
+  async refreshTimelineDays() {
+    const conf = await Storage.getConfig()
+    const days = normalizeTimelineVisibleDays(conf?.eventTimelineVisibleDays)
+    if (days !== this.state.eventTimelineVisibleDays) {
+      this.setState({ eventTimelineVisibleDays: days })
+    }
   }
 
   setTheme() {
@@ -267,13 +281,7 @@ export class SettingsView extends Component<Props> {
             <FormRowSelectComponent
               value={`${normalizeTimelineVisibleDays(this.state.eventTimelineVisibleDays)}`}
               onSelect={val => this.setOption('eventTimelineVisibleDays', normalizeTimelineVisibleDays(val))}
-              options={Array.from(
-                { length: TIMELINE_VISIBLE_DAYS_MAX - TIMELINE_VISIBLE_DAYS_MIN + 1 },
-                (_, index) => {
-                  const days = `${TIMELINE_VISIBLE_DAYS_MIN + index}`
-                  return { value: days, label: days }
-                },
-              )}
+              options={timelineVisibleDayOptions()}
             />
           </View>
           <View

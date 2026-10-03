@@ -1,7 +1,7 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from 'react-native'
 import type { EventListItem } from 'nyx-api'
-import { EventTimelineBlock, EventTimelineDay } from '../component'
+import { EventTimelineBlock, EventTimelineDay, FormRowSelectComponent, StackHeaderComponent } from '../component'
 import type { TimelineBlockModel } from '../component'
 import {
   addCoverage,
@@ -15,15 +15,19 @@ import {
   layoutTimelineLanes,
   MainContext,
   mergeTimelineEvents,
+  normalizeTimelineVisibleDays,
   placeTimelineEvents,
+  Storage,
   TimelineCoverage,
   TimelineDay,
   timelineBlockFrame,
+  timelineNowTop,
   timelineSpanClock,
   timelineTopIndex,
+  timelineVisibleDayOptions,
   TIMELINE_CHUNK_DAYS,
   TIMELINE_DATE_WIDTH,
-  normalizeTimelineVisibleDays,
+  TIMELINE_NOW_LINE,
   useTheme,
 } from '../lib'
 
@@ -56,7 +60,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
   const coverageRef = useRef<TimelineCoverage[]>([])
   const readyRef = useRef(false)
   const daysRef = useRef<TimelineDay[]>([])
-  const visibleDays = normalizeTimelineVisibleDays(context.config?.eventTimelineVisibleDays)
+  const configuredDays = normalizeTimelineVisibleDays(context.config?.eventTimelineVisibleDays)
+  const [visibleDays, setVisibleDays] = useState(configuredDays)
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  const [listWidth, setListWidth] = useState(0)
   const [listHeight, setListHeight] = useState(0)
   const [trackWidth, setTrackWidth] = useState(0)
   const rowHeight = listHeight > 1 ? listHeight / visibleDays : 0
@@ -69,6 +76,57 @@ export const EventTimelineView = ({ navigation }: Props) => {
   coverageRef.current = coverage
   readyRef.current = ready
   daysRef.current = days
+
+  useEffect(() => {
+    setVisibleDays(configuredDays)
+  }, [configuredDays])
+
+  useEffect(() => {
+    const tick = () => setNowMs(Date.now())
+    const id = setInterval(tick, 30000)
+    const focus = navigation.addListener('focus', tick)
+    return () => {
+      clearInterval(id)
+      focus()
+    }
+  }, [navigation])
+
+  const persistTimelineDays = useCallback(
+    async (days: number) => {
+      const next = normalizeTimelineVisibleDays(days)
+      const conf = (await Storage.getConfig()) || {}
+      conf.eventTimelineVisibleDays = next
+      await Storage.setConfig(conf)
+      if (context.config) {
+        context.config.eventTimelineVisibleDays = next
+      }
+    },
+    [context.config],
+  )
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      header: (props: any) => (
+        <StackHeaderComponent
+          {...props}
+          theme={context.theme}
+          right={
+            <FormRowSelectComponent
+              value={`${visibleDays}`}
+              width={56}
+              selectionColor={context.theme?.colors?.text}
+              options={timelineVisibleDayOptions()}
+              onSelect={(value: string) => {
+                const days = normalizeTimelineVisibleDays(value)
+                setVisibleDays(days)
+                void persistTimelineDays(days)
+              }}
+            />
+          }
+        />
+      ),
+    })
+  }, [navigation, context.theme, visibleDays, persistTimelineDays])
 
   const placements = useMemo(() => placeTimelineEvents(events), [events])
   const eventsById = useMemo(() => {
@@ -269,8 +327,10 @@ export const EventTimelineView = ({ navigation }: Props) => {
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       onLayout={event => {
         const nextHeight = event.nativeEvent.layout.height
-        const nextTrack = event.nativeEvent.layout.width - TIMELINE_DATE_WIDTH - 8
+        const nextWidth = event.nativeEvent.layout.width
+        const nextTrack = nextWidth - TIMELINE_DATE_WIDTH - 8
         setListHeight(prev => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev))
+        setListWidth(prev => (Math.abs(prev - nextWidth) > 1 ? nextWidth : prev))
         setTrackWidth(prev => (Math.abs(prev - nextTrack) > 1 ? nextTrack : prev))
       }}
     >
@@ -282,10 +342,24 @@ export const EventTimelineView = ({ navigation }: Props) => {
           scrollEventThrottle={16}
           onContentSizeChange={onContentSizeChange}
         >
-          <View style={{ height: days.length * rowHeight }}>
+          <View style={{ height: days.length * rowHeight, width: listWidth || '100%' }}>
             {days.map(day => (
               <EventTimelineDay key={day.iso} day={day} height={rowHeight} isToday={day.iso === todayIso} />
             ))}
+            {originIso && listWidth > 0 && (
+              <View
+                pointerEvents={'none'}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: timelineNowTop(nowMs, originIso, rowHeight),
+                  width: listWidth,
+                  height: TIMELINE_NOW_LINE,
+                  backgroundColor: theme.colors.primary,
+                  zIndex: 1,
+                }}
+              />
+            )}
             {originIso &&
               blocks.map(block => {
                 const frame = timelineBlockFrame(block.startMs, block.endMs, originIso, rowHeight)

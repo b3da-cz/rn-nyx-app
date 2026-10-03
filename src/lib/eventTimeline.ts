@@ -10,6 +10,10 @@ export const TIMELINE_FUTURE_DAYS = 5
 export const TIMELINE_PAST_DAYS = 1
 export const TIMELINE_CHUNK_DAYS = 21
 export const TIMELINE_DATE_WIDTH = 64
+export const TIMELINE_ICON_WIDTH = 16
+export const TIMELINE_ICON_HEIGHT = 20
+export const TIMELINE_ICON_GAP = 2
+export const TIMELINE_NOW_LINE = 3
 // /api/events?epoch=past stops at 50. A shorter page is the whole epoch.
 export const TIMELINE_LIST_CAP = 50
 const MAX_SPAN_DAYS = 90
@@ -38,6 +42,25 @@ export type TimelineLane = {
   discussionId: number
   column: number
   columns: number
+}
+
+// How many 16×20 icons fit beside each other under the card text. None when the row would cover the text.
+export function timelineIconCount(iconCount: number, contentWidth: number, contentHeight: number, textHeight: number) {
+  if (iconCount <= 0 || textHeight <= 0 || contentHeight - textHeight < TIMELINE_ICON_HEIGHT) {
+    return 0
+  }
+  if (contentWidth < TIMELINE_ICON_WIDTH) {
+    return 0
+  }
+  const across = Math.floor((contentWidth + TIMELINE_ICON_GAP) / (TIMELINE_ICON_WIDTH + TIMELINE_ICON_GAP))
+  return Math.min(iconCount, Math.max(0, across))
+}
+
+export function timelineVisibleDayOptions() {
+  return Array.from({ length: TIMELINE_VISIBLE_DAYS_MAX - TIMELINE_VISIBLE_DAYS_MIN + 1 }, (_, index) => {
+    const days = `${TIMELINE_VISIBLE_DAYS_MIN + index}`
+    return { value: days, label: days }
+  })
 }
 
 export function normalizeTimelineVisibleDays(value: unknown) {
@@ -133,6 +156,11 @@ export function timelineOffset(ms: number, originIso: string, rowHeight: number)
   const end = addDays(startOfDay(date), 1).getTime()
   const fraction = end === start ? 0 : (ms - start) / (end - start)
   return (dayIndex(ms, origin) + fraction) * rowHeight
+}
+
+// Center the 3px line on the current instant. Cards paint above it.
+export function timelineNowTop(ms: number, originIso: string, rowHeight: number) {
+  return timelineOffset(ms, originIso, rowHeight) - TIMELINE_NOW_LINE / 2
 }
 
 export function timelineBlockFrame(startMs: number, endMs: number, originIso: string, rowHeight: number) {

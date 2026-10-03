@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.16.2
+- na časové ose je v aktuálním čase čára přes šířku a počet dní je i v hlavičce
+- ikony na kartě jsou dole jen když se vejdou pod text a vedle sebe se vejde víc než tři
+
 ## 0.16.1
 - časová osa má v obecném nastavení počet dní na výšku displeje, výchozí je 5
 - karta události na ose už neukazuje text účasti
