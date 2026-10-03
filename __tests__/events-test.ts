@@ -7,6 +7,7 @@ import {
   eventDetailImages,
   filterEventsByAttendance,
   formatEventDuration,
+  eventMetaParts,
   formatEventMeta,
   eventFriendNames,
   friendAttendees,
@@ -40,6 +41,10 @@ describe('events', () => {
       location: 'Klub 007 Strahov',
     } as EventListItem
     expect(formatEventMeta(event, now)).toBe('concert | Pá 02.04.2027 @ 19:00 - 22:59 | ČR – Praha | Klub 007 Strahov')
+    expect(eventMetaParts(event, now)).toEqual({
+      schedule: 'concert | Pá 02.04.2027 @ 19:00 - 22:59',
+      place: 'ČR – Praha | Klub 007 Strahov',
+    })
   })
 
   it('builds a Monday-first October 2026 grid', () => {

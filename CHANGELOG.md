@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.14.6
+- detail události: datum a místo jsou vpravo na řádku s pořadatelem, popis začíná zvýrazněným názvem
+- řádek v seznamu má nahoře tmavý okraj a místo konání je na vlastním řádku
+
 ## 0.14.5
 - seznam a detail události ukazují ikony přátel, zbytek účastníků je „a N dalších“
 - filtr událostí už nepřekrývá seznam, řádek otevře diskuzi

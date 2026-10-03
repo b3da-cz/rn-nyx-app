@@ -54,13 +54,37 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
   return (
     <View>
       <View style={{ paddingTop: blocks.small }}>
-        {!!detail.owner && (
+        {(!!detail.owner || !!when || !!place) && (
           <View style={[rowStyle, { flexDirection: 'row', alignItems: 'center' }]}>
-            <UserIconComponent username={detail.owner} width={ICON_W} height={ICON_H} marginRight={blocks.medium} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>{t('events.hostedBy')}</Text>
-              <Text style={{ color: colors.text, fontSize: fontSizes.p, fontWeight: '700' }}>{detail.owner}</Text>
-            </View>
+            {!!detail.owner && (
+              <UserIconComponent username={detail.owner} width={ICON_W} height={ICON_H} marginRight={blocks.medium} />
+            )}
+            {!!detail.owner && (
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>{t('events.hostedBy')}</Text>
+                <Text numberOfLines={1} style={{ color: colors.text, fontSize: fontSizes.p, fontWeight: '700' }}>
+                  {detail.owner}
+                </Text>
+              </View>
+            )}
+            {(!!when || !!place) && (
+              <View style={{ flex: 1, alignItems: 'flex-end', marginLeft: detail.owner ? blocks.small : 0 }}>
+                {!!when && (
+                  <Text style={{ color: colors.text, fontSize: fontSizes.small, textAlign: 'right' }}>{when}</Text>
+                )}
+                {!!place && (
+                  <Text
+                    style={{
+                      color: colors.faded,
+                      fontSize: fontSizes.small,
+                      textAlign: 'right',
+                      marginTop: when ? 2 : 0,
+                    }}>
+                    {place}
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
         )}
         <TouchableRipple rippleColor={colors.ripple} onPress={() => setIsAttendeesOpen(true)}>
@@ -108,12 +132,18 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
           </View>
         </TouchableRipple>
       </View>
-      <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>
-        {!!when && <Text style={{ color: colors.text, fontSize: fontSizes.p }}>{when}</Text>}
-        {!!place && (
-          <Text style={{ color: colors.faded, fontSize: fontSizes.p, marginTop: when ? 2 : 0 }}>{place}</Text>
-        )}
-      </View>
+      {!!detail.name && (
+        <Text
+          style={{
+            color: colors.accent,
+            fontSize: fontSizes.p * 1.15,
+            fontWeight: '700',
+            paddingHorizontal: blocks.medium,
+            marginTop: blocks.medium,
+          }}>
+          {detail.name}
+        </Text>
+      )}
       <EventBody
         parsed={detail.parsed}
         imageWidth={imageWidth}

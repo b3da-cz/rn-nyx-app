@@ -3,6 +3,7 @@ import { eventBodyHtml, eventDetailImages, EventDetailData } from './events'
 import { Parser } from './Parser'
 
 type EventDetailSource = {
+  discussion?: { name_static?: string | null }
   owner?: { user?: { username?: string } }
   event_specific_data?: {
     event?: {
@@ -32,6 +33,7 @@ export function toEventDetail(common?: EventDetailSource | null): EventDetailDat
   const inline = (parsed?.images || []).map(image => image.src).filter((src): src is string => !!src)
   const { images } = eventDetailImages(inline, data?.attachments || [], event.photo_ids, event.thumbnail_id)
   return {
+    name: common?.discussion?.name_static || '',
     owner: common?.owner?.user?.username,
     areaName: data?.area?.gettext_name,
     location: event.location || '',

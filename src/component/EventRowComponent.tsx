@@ -2,7 +2,7 @@ import React from 'react'
 import { Image, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import type { EventListItem } from 'nyx-api'
-import { attendancePhrase, eventFriendNames, eventThumbUrl, formatEventMeta, otherAttendeesNoun, useTheme } from '../lib'
+import { attendancePhrase, eventFriendNames, eventMetaParts, eventThumbUrl, otherAttendeesNoun, useTheme } from '../lib'
 import { UserIconComponent } from './UserIconComponent'
 
 type Props = {
@@ -17,6 +17,7 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
   } = useTheme()
   const thumb = eventThumbUrl(event.thumbnail_id)
   const phrase = attendancePhrase(event.going_people || 0, event.duration?.end)
+  const meta = eventMetaParts(event)
   const summary = (event.summary || '').replace(/<[^>]+>/g, '').trim()
   const friends = eventFriendNames(event.friends)
   const shownFriends = friends.slice(0, 4)
@@ -28,6 +29,8 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
       onPress={() => (typeof onPress === 'function' ? onPress() : null)}
       style={{
         backgroundColor: colors.row,
+        borderTopWidth: 2,
+        borderTopColor: colors.card,
         marginBottom: blocks.small,
         paddingHorizontal: blocks.medium,
         paddingVertical: blocks.medium,
@@ -38,9 +41,16 @@ export const EventRowComponent = ({ event, onPress }: Props) => {
             <Text numberOfLines={2} style={{ color: colors.accent, fontSize: fontSizes.p, fontWeight: '700' }}>
               {event.full_name}
             </Text>
-            <Text numberOfLines={2} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
-              {formatEventMeta(event)}
-            </Text>
+            {!!meta.schedule && (
+              <Text numberOfLines={2} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
+                {meta.schedule}
+              </Text>
+            )}
+            {!!meta.place && (
+              <Text numberOfLines={2} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
+                {meta.place}
+              </Text>
+            )}
           </View>
           {thumb ? <Image source={{ uri: thumb }} style={{ width: 72, height: 72 }} /> : null}
         </View>

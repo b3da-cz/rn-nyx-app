@@ -126,13 +126,21 @@ export function formatEventDuration(startValue: string, endValue: string, now = 
   return `${weekday} ${formatDay(start)} @ ${formatClock(start)} - ${endLabel}`
 }
 
-export function formatEventMeta(event: EventListItem, now = new Date()) {
+export function eventMetaParts(event: EventListItem, now = new Date()) {
   const duration = formatEventDuration(event.duration?.start, event.duration?.end, now)
   const area = (event.area_gettext_name || '').replace(' - ', ' – ')
   const location = event.location?.trim()
   const place = location ? `${area} | ${location}` : area
   const category = event.category_path || ''
-  return [category, duration, place].filter(part => part.length > 0).join(' | ')
+  return {
+    schedule: [category, duration].filter(part => part.length > 0).join(' | '),
+    place,
+  }
+}
+
+export function formatEventMeta(event: EventListItem, now = new Date()) {
+  const { schedule, place } = eventMetaParts(event, now)
+  return [schedule, place].filter(part => part.length > 0).join(' | ')
 }
 
 export function filterEventsByAttendance(events: EventListItem[], attendance: EventAttendance) {
@@ -234,6 +242,7 @@ export function friendAttendees(attendees: EventAttendee[] = []) {
 export type EventDetailImage = { src: string; url: string }
 
 export type EventDetailData = {
+  name?: string
   owner?: string
   areaName?: string
   location?: string
