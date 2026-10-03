@@ -122,6 +122,8 @@ const App: () => ReactNode = () => {
       isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,
       isRemindersEnabled: conf?.isRemindersEnabled !== undefined ? !!conf.isRemindersEnabled : true,
       isEventsEnabled: conf?.isEventsEnabled !== undefined ? !!conf.isEventsEnabled : true,
+      isEventFriendBadgesEnabled:
+        conf?.isEventFriendBadgesEnabled !== undefined ? !!conf.isEventFriendBadgesEnabled : true,
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,

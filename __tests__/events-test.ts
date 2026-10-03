@@ -12,6 +12,7 @@ import {
   eventMetaParts,
   formatEventMeta,
   eventFriendNames,
+  eventFriends,
   friendAttendees,
   isEventFilterActive,
   isNyxBrowserUrl,
@@ -104,6 +105,18 @@ describe('events', () => {
 
   it('names friends and the other attendees', () => {
     expect(eventFriendNames(['ALICE', { username: 'BOB' }, { username: '' }, null as any])).toEqual(['ALICE', 'BOB'])
+    expect(
+      eventFriends([
+        'ALICE',
+        { username: 'BOB', attendance_type: 'interested' },
+        { username: 'C', attendance_type: 'none' },
+        { username: 'D' },
+      ]),
+    ).toEqual([
+      { username: 'ALICE', attendance: 'going' },
+      { username: 'BOB', attendance: 'interested' },
+      { username: 'D', attendance: 'going' },
+    ])
     expect(otherAttendeesNoun(1)).toBe('dalšího')
     expect(otherAttendeesNoun(3)).toBe('další')
     expect(otherAttendeesNoun(6)).toBe('dalších')

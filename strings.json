@@ -169,6 +169,10 @@
     "create": {
       "cs": "Založit událost",
       "en": "Create event"
+    },
+    "friendBadges": {
+      "cs": "Odznaky účasti přátel",
+      "en": "Friend attendance badges"
     }
   },
   "reminders": {

@@ -36,6 +36,7 @@ type State = {
   isLastEnabled: boolean
   isRemindersEnabled: boolean
   isEventsEnabled: boolean
+  isEventFriendBadgesEnabled: boolean
   isNavGesturesEnabled: boolean
   isUnreadToggleEnabled: boolean
   isSwipeablePostHeader: boolean
@@ -77,6 +78,8 @@ export class SettingsView extends Component<Props> {
       isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
       isRemindersEnabled: config?.isRemindersEnabled !== undefined ? !!config.isRemindersEnabled : true,
       isEventsEnabled: config?.isEventsEnabled !== undefined ? !!config.isEventsEnabled : true,
+      isEventFriendBadgesEnabled:
+        config?.isEventFriendBadgesEnabled !== undefined ? !!config.isEventFriendBadgesEnabled : true,
       isNavGesturesEnabled: config.isNavGesturesEnabled === undefined ? false : !!config.isNavGesturesEnabled,
       isUnreadToggleEnabled: config.isUnreadToggleEnabled === undefined ? true : !!config.isUnreadToggleEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
@@ -224,6 +227,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.isSwipeablePostHeader')}
             value={!!this.state.isSwipeablePostHeader}
             onChange={val => this.setOption('isSwipeablePostHeader', val)}
+          />
+          <FormRowToggleComponent
+            label={t('events.friendBadges')}
+            value={this.state.isEventFriendBadgesEnabled !== false}
+            onChange={val => this.setOption('isEventFriendBadgesEnabled', val)}
           />
           <View
             style={{

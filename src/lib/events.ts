@@ -225,8 +225,43 @@ export function discussionTarget(url?: string | null) {
   return { discussionId: match[1], postId: match[2] }
 }
 
-export function eventFriendNames(friends?: Array<string | { username?: string | null }> | null) {
-  return (friends || []).map(friend => (typeof friend === 'string' ? friend : friend?.username || '')).filter(Boolean)
+export type EventFriendInput =
+  | string
+  | {
+      username?: string | null
+      attendance_type?: string | null
+      attendance?: string | null
+    }
+  | null
+
+export type EventFriendMark = {
+  username: string
+  attendance: 'going' | 'interested'
+}
+
+// List payloads are usernames inside the "going" sentence. Detail rows carry attendance_type.
+export function eventFriends(friends?: EventFriendInput[] | null): EventFriendMark[] {
+  return (friends || []).flatMap(friend => {
+    if (!friend) {
+      return []
+    }
+    if (typeof friend === 'string') {
+      return friend ? [{ username: friend, attendance: 'going' as const }] : []
+    }
+    const username = friend.username || ''
+    if (!username) {
+      return []
+    }
+    const raw = friend.attendance_type || friend.attendance
+    if (raw === 'none') {
+      return []
+    }
+    return [{ username, attendance: raw === 'interested' ? 'interested' : 'going' }]
+  })
+}
+
+export function eventFriendNames(friends?: EventFriendInput[] | null) {
+  return eventFriends(friends).map(friend => friend.username)
 }
 
 export function otherAttendeesNoun(count: number) {

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.12
+- detail události má u ikon přátel odznak jdu nebo zajímá, v obecném nastavení jde vypnout
+
 ## 0.14.10
 - účast na události jde přes `nyx-api` 0.5.2
 

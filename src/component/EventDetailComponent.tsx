@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Linking, ScrollView, View } from 'react-native'
 import { Dialog, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
@@ -9,6 +9,7 @@ import {
   EventDetailImage,
   formatEventDuration,
   friendAttendees,
+  MainContext,
   MyAttendance,
   Styling,
   t,
@@ -61,6 +62,7 @@ export const EventDetailComponent = ({
     marginBottom: blocks.small,
   }
   const total = (detail.going || 0) + (detail.interested || 0)
+  const showFriendBadges = useContext(MainContext).config.isEventFriendBadgesEnabled !== false
   const friends = friendAttendees(detail.attendees)
   const shownFriends = friends.slice(0, 4)
 
@@ -133,6 +135,11 @@ export const EventDetailComponent = ({
                     width={26}
                     height={32}
                     marginLeft={4}
+                    attendance={
+                      showFriendBadges && (friend.attendance_type === 'going' || friend.attendance_type === 'interested')
+                        ? friend.attendance_type
+                        : null
+                    }
                   />
                 ))}
                 {friends.length > shownFriends.length && (
