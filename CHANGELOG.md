@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.16.0
+- časová osa událostí z rozbaleného FAB: minulost nahoře, sedm dní na displej, blok od času začátku do konce
+
 ## 0.15.7
 - galerie má počet fotek vlevo nad velikostí a tapnutí schová i ikony
 

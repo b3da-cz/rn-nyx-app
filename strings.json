@@ -170,6 +170,10 @@
       "cs": "Založit událost",
       "en": "Create event"
     },
+    "timeline": {
+      "cs": "Časová osa",
+      "en": "Timeline"
+    },
     "friendBadges": {
       "cs": "Odznaky účasti přátel",
       "en": "Friend attendance badges"

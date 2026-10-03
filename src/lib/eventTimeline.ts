@@ -1,0 +1,316 @@
+import type { EventListItem } from 'nyx-api'
+import { EVENT_WEEKDAY_LABELS, isoDate, parseNyxDate } from './events'
+
+// First screen: yesterday on top, then today and five days ahead. Past is up, future is down.
+export const TIMELINE_VISIBLE_DAYS = 7
+export const TIMELINE_FUTURE_DAYS = 5
+export const TIMELINE_PAST_DAYS = 1
+export const TIMELINE_CHUNK_DAYS = 21
+export const TIMELINE_DATE_WIDTH = 64
+// /api/events?epoch=past stops at 50. A shorter page is the whole epoch.
+export const TIMELINE_LIST_CAP = 50
+const MAX_SPAN_DAYS = 90
+
+export type TimelineDay = {
+  iso: string
+  weekday: string
+  label: string
+  yearLabel: string
+  isWeekend: boolean
+}
+
+export type TimelineCoverage = {
+  startMs: number
+  endMs: number
+}
+
+export type TimelinePlacement = {
+  discussionId: number
+  startMs: number
+  endMs: number
+  isos: string[]
+}
+
+export type TimelineLane = {
+  discussionId: number
+  column: number
+  columns: number
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+}
+
+function parseIso(iso: string) {
+  const [year, month, day] = iso.split('-').map(Number)
+  return new Date(year, (month || 1) - 1, day || 1)
+}
+
+function clock(ms: number) {
+  const date = new Date(ms)
+  return `${date.getHours()}:${`${date.getMinutes()}`.padStart(2, '0')}`
+}
+
+export function timelineDay(date: Date): TimelineDay {
+  const day = startOfDay(date)
+  const weekday = EVENT_WEEKDAY_LABELS[(day.getDay() + 6) % 7]
+  const showYear = day.getMonth() === 0 && day.getDate() === 1
+  return {
+    iso: isoDate(day),
+    weekday,
+    label: `${day.getDate()}. ${day.getMonth() + 1}.`,
+    yearLabel: showYear ? `${day.getFullYear()}` : '',
+    isWeekend: day.getDay() === 0 || day.getDay() === 6,
+  }
+}
+
+// Ascending: earlier days first, so scrolling down moves into the future.
+export function initialTimelineDays(now = new Date(), chunk = TIMELINE_CHUNK_DAYS): TimelineDay[] {
+  const past = TIMELINE_PAST_DAYS + chunk
+  const future = TIMELINE_FUTURE_DAYS + chunk
+  const first = addDays(startOfDay(now), -past)
+  const total = past + future + 1
+  const days: TimelineDay[] = []
+  for (let i = 0; i < total; i++) {
+    days.push(timelineDay(addDays(first, i)))
+  }
+  return days
+}
+
+export function timelineTopIndex(days: { iso: string }[], now = new Date()) {
+  const iso = isoDate(addDays(startOfDay(now), -TIMELINE_PAST_DAYS))
+  const index = days.findIndex(day => day.iso === iso)
+  return index < 0 ? 0 : index
+}
+
+export function extendTimelineDays(days: TimelineDay[], edge: 'future' | 'past', count = TIMELINE_CHUNK_DAYS) {
+  if (!days.length || count <= 0) {
+    return days
+  }
+  if (edge === 'past') {
+    const first = parseIso(days[0].iso)
+    const added: TimelineDay[] = []
+    for (let i = count; i >= 1; i--) {
+      added.push(timelineDay(addDays(first, -i)))
+    }
+    return [...added, ...days]
+  }
+  const last = parseIso(days[days.length - 1].iso)
+  const added: TimelineDay[] = []
+  for (let i = 1; i <= count; i++) {
+    added.push(timelineDay(addDays(last, i)))
+  }
+  return [...days, ...added]
+}
+
+function dayIndex(ms: number, origin: Date) {
+  const date = new Date(ms)
+  const utcMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  const utcOrigin = Date.UTC(origin.getFullYear(), origin.getMonth(), origin.getDate())
+  return Math.round((utcMs - utcOrigin) / 86400000)
+}
+
+// 12:00 is halfway down that day's row. The origin day is the first row.
+export function timelineOffset(ms: number, originIso: string, rowHeight: number) {
+  const origin = parseIso(originIso)
+  const date = new Date(ms)
+  const start = startOfDay(date).getTime()
+  const end = addDays(startOfDay(date), 1).getTime()
+  const fraction = end === start ? 0 : (ms - start) / (end - start)
+  return (dayIndex(ms, origin) + fraction) * rowHeight
+}
+
+export function timelineBlockFrame(startMs: number, endMs: number, originIso: string, rowHeight: number) {
+  const top = timelineOffset(startMs, originIso, rowHeight)
+  const bottom = timelineOffset(endMs, originIso, rowHeight)
+  return { top, height: Math.max(0, bottom - top) }
+}
+
+function eventRange(event: EventListItem) {
+  if (event.discussion_id == null || !event.duration?.start || !event.duration?.end) {
+    return null
+  }
+  if (event.my_attendance !== 'going' && event.my_attendance !== 'interested') {
+    return null
+  }
+  const start = parseNyxDate(event.duration.start)
+  const end = parseNyxDate(event.duration.end)
+  const startMs = start.getTime()
+  let endMs = end.getTime()
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || start.getFullYear() < 2000) {
+    return null
+  }
+  if (endMs <= startMs) {
+    endMs = startMs + 60 * 60 * 1000
+  }
+  return { discussionId: event.discussion_id, startMs, endMs }
+}
+
+function isosBetween(startMs: number, endMs: number) {
+  const isos: string[] = []
+  let cursor = startOfDay(new Date(startMs))
+  const last = startOfDay(new Date(endMs - 1)).getTime()
+  let guard = 0
+  while (cursor.getTime() <= last && guard < MAX_SPAN_DAYS) {
+    isos.push(isoDate(cursor))
+    cursor = addDays(cursor, 1)
+    guard += 1
+  }
+  return isos
+}
+
+export function placeTimelineEvents(events: EventListItem[]): TimelinePlacement[] {
+  return events.flatMap(event => {
+    const range = eventRange(event)
+    if (!range) {
+      return []
+    }
+    return [{ ...range, isos: isosBetween(range.startMs, range.endMs) }]
+  })
+}
+
+// Overlapping times share side-by-side columns for the whole span. A gap resets to full width.
+export function layoutTimelineLanes(items: { discussionId: number; startMs: number; endMs: number }[]): TimelineLane[] {
+  const sorted = [...items].sort(
+    (a, b) => a.startMs - b.startMs || a.endMs - b.endMs || a.discussionId - b.discussionId,
+  )
+  const clusters: (typeof sorted)[] = []
+  let current: typeof sorted = []
+  let clusterEnd = -Infinity
+  for (const item of sorted) {
+    if (current.length && item.startMs >= clusterEnd) {
+      clusters.push(current)
+      current = []
+      clusterEnd = -Infinity
+    }
+    current.push(item)
+    clusterEnd = Math.max(clusterEnd, item.endMs)
+  }
+  if (current.length) {
+    clusters.push(current)
+  }
+  const lanes: TimelineLane[] = []
+  clusters.forEach(cluster => {
+    const columnEnds: number[] = []
+    const assigned: { discussionId: number; column: number }[] = []
+    for (const item of cluster) {
+      let column = columnEnds.findIndex(end => end <= item.startMs)
+      if (column < 0) {
+        column = columnEnds.length
+        columnEnds.push(item.endMs)
+      } else {
+        columnEnds[column] = item.endMs
+      }
+      assigned.push({ discussionId: item.discussionId, column })
+    }
+    const columns = Math.max(1, columnEnds.length)
+    assigned.forEach(item => lanes.push({ discussionId: item.discussionId, column: item.column, columns }))
+  })
+  return lanes
+}
+
+export function timelineSpanClock(startMs: number, endMs: number) {
+  return `${clock(startMs)}–${clock(endMs)}`
+}
+
+export function timelineClock(startMs: number, endMs: number, iso: string) {
+  const dayStart = parseIso(iso).getTime()
+  const dayEnd = addDays(parseIso(iso), 1).getTime()
+  const begins = startMs > dayStart
+  const ends = endMs < dayEnd
+  if (!begins && !ends) {
+    return null
+  }
+  if (begins && ends) {
+    return `${clock(startMs)}–${clock(endMs)}`
+  }
+  if (begins) {
+    return `${clock(startMs)}–`
+  }
+  return `–${clock(endMs)}`
+}
+
+export function myTimelineEvents(events: EventListItem[]) {
+  return events.filter(event => event.my_attendance === 'going' || event.my_attendance === 'interested')
+}
+
+export function mergeTimelineEvents(current: EventListItem[], incoming: EventListItem[]) {
+  const map = new Map<number, EventListItem>()
+  for (const event of current) {
+    if (event.discussion_id != null) {
+      map.set(event.discussion_id, event)
+    }
+  }
+  for (const event of myTimelineEvents(incoming)) {
+    if (event.discussion_id != null) {
+      map.set(event.discussion_id, event)
+    }
+  }
+  return [...map.values()]
+}
+
+function startMsOf(events: EventListItem[]) {
+  return events.flatMap(event => {
+    if (!event.duration?.start) {
+      return []
+    }
+    const start = parseNyxDate(event.duration.start)
+    if (Number.isNaN(start.getTime()) || start.getFullYear() < 2000) {
+      return []
+    }
+    return [startOfDay(start).getTime()]
+  })
+}
+
+export function coverageForEpoch(kind: 'future' | 'past', events: EventListItem[], now = new Date()): TimelineCoverage {
+  const today = startOfDay(now).getTime()
+  const tomorrow = addDays(startOfDay(now), 1).getTime()
+  const starts = startMsOf(events)
+  const truncated = events.length >= TIMELINE_LIST_CAP
+  if (!starts.length) {
+    if (truncated) {
+      return { startMs: today, endMs: today }
+    }
+    return kind === 'future'
+      ? { startMs: today, endMs: Number.POSITIVE_INFINITY }
+      : { startMs: Number.NEGATIVE_INFINITY, endMs: tomorrow }
+  }
+  if (kind === 'future') {
+    if (!truncated) {
+      return { startMs: today, endMs: Number.POSITIVE_INFINITY }
+    }
+    const maxStart = Math.max(...starts)
+    return { startMs: today, endMs: addDays(new Date(maxStart), 1).getTime() }
+  }
+  if (!truncated) {
+    return { startMs: Number.NEGATIVE_INFINITY, endMs: tomorrow }
+  }
+  return { startMs: Math.min(...starts), endMs: tomorrow }
+}
+
+export function addCoverage(coverage: TimelineCoverage[], next: TimelineCoverage) {
+  const merged: TimelineCoverage[] = []
+  for (const span of [...coverage, next].sort((a, b) => a.startMs - b.startMs)) {
+    const prev = merged[merged.length - 1]
+    if (prev && span.startMs <= prev.endMs) {
+      prev.endMs = Math.max(prev.endMs, span.endMs)
+    } else {
+      merged.push({ ...span })
+    }
+  }
+  return merged
+}
+
+export function dayCoverage(iso: string): TimelineCoverage {
+  const startMs = parseIso(iso).getTime()
+  return { startMs, endMs: addDays(new Date(startMs), 1).getTime() }
+}
+
+export function isIsoCovered(coverage: TimelineCoverage[], iso: string) {
+  const ms = parseIso(iso).getTime()
+  return coverage.some(span => ms >= span.startMs && ms < span.endMs)
+}

@@ -1,8 +1,9 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { FlatList, RefreshControl, View } from 'react-native'
-import { FAB, Text } from 'react-native-paper'
+import { Text } from 'react-native-paper'
+import { useIsFocused } from '@react-navigation/native'
 import type { EventArea, EventCalendarDay, EventCategory, EventListItem } from 'nyx-api'
-import { EventsFilterBarComponent, EventRowComponent } from '../component'
+import { EventsFilterBarComponent, EventRowComponent, FabComponent } from '../component'
 import {
   defaultEventFilters,
   EventListFilters,
@@ -20,6 +21,7 @@ type Props = {
 export const EventsView = ({ navigation }: Props) => {
   const context = useContext(MainContext)
   const theme = useTheme()
+  const isFocused = useIsFocused()
   const [filters, setFilters] = useState<EventListFilters>(defaultEventFilters())
   const [events, setEvents] = useState<EventListItem[]>([])
   const [calendar, setCalendar] = useState<Record<string, EventCalendarDay>>({})
@@ -123,19 +125,27 @@ export const EventsView = ({ navigation }: Props) => {
           />
         )}
       />
-      <FAB
-        icon={'plus'}
-        accessibilityLabel={t('events.create')}
-        style={{
-          position: 'absolute',
-          margin: 16,
-          right: 0,
-          bottom: 0,
-          zIndex: 1,
-          elevation: 4,
-          backgroundColor: theme.colors.primary,
-        }}
-        onPress={() => navigation.navigate('eventCreate')}
+      <FabComponent
+        isVisible={isFocused}
+        iconOpen={'close'}
+        iconClosed={'plus'}
+        paddingBottom={context.config?.isBottomTabs ? 45 : 0}
+        backgroundColor={theme.colors.primary}
+        onPress={() => {}}
+        actions={[
+          {
+            icon: 'calendar',
+            label: t('events.timeline'),
+            style: { backgroundColor: theme.colors.primary },
+            onPress: () => navigation.navigate('eventTimeline'),
+          },
+          {
+            icon: 'plus',
+            label: t('events.create'),
+            style: { backgroundColor: theme.colors.primary },
+            onPress: () => navigation.navigate('eventCreate'),
+          },
+        ]}
       />
     </View>
   )

@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StackHeaderComponent } from '../component'
 import { MainContext, NavOptions, discussionScreenOptions, t } from '../lib'
-import { Discussion, EventCreate, Events } from '../routes'
+import { Discussion, EventCreate, EventTimeline, Events } from '../routes'
 
 export const EventsStackContainer = () => {
   const EventsStack = createNativeStackNavigator()
@@ -17,6 +17,14 @@ export const EventsStackContainer = () => {
           title: t('events.create'),
           gestureEnabled: false,
           fullScreenGestureEnabled: false,
+          header: props => <StackHeaderComponent {...props} theme={context.theme} />,
+        }}
+      />
+      <EventsStack.Screen
+        name={'eventTimeline'}
+        component={EventTimeline}
+        options={{
+          title: t('events.timeline'),
           header: props => <StackHeaderComponent {...props} theme={context.theme} />,
         }}
       />
