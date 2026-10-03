@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.8
+- dialog účastníků má stejnou hlavičku a řádky jako detail hodnocení, pod řádky je barva D
+
 ## 0.14.7
 - seznam událostí má + pro založení na webu, prohlížeč si pamatuje přihlášení
 

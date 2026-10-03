@@ -9,6 +9,7 @@ import {
   EventDetailImage,
   formatEventDuration,
   friendAttendees,
+  Styling,
   t,
   TOKEN,
   useTheme,
@@ -17,6 +18,7 @@ import { CodeBlockComponent } from './CodeBlockComponent'
 import { ImageComponent } from './ImageComponent'
 import { SpoilerComponent } from './SpoilerComponent'
 import { UserIconComponent } from './UserIconComponent'
+import { UserRowComponent } from './UserRowComponent'
 import { VideoYoutubeComponent } from './VideoYoutubeComponent'
 
 type Props = {
@@ -169,42 +171,53 @@ const AttendeesDialog = ({
   attendees: EventAttendee[]
   onDismiss: () => void
 }) => {
+  const theme = useTheme()
   const {
     colors,
-    metrics: { blocks, fontSizes, screen },
-  } = useTheme()
+    metrics: { blocks, fontSizes },
+  } = theme
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss}>
-        <Dialog.Title style={{ marginBottom: blocks.small }}>{t('events.attendees')}</Dialog.Title>
-        <Dialog.ScrollArea style={{ paddingHorizontal: blocks.medium, maxHeight: screen.height * 0.6 }}>
-          <ScrollView>
+        <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
+          <ScrollView style={{ marginVertical: 5 }}>
+            <View
+              style={[
+                Styling.groups.flexRowSpbCentered,
+                { paddingHorizontal: blocks.small, minHeight: fontSizes.h1 },
+              ]}>
+              <Text style={{ fontSize: fontSizes.p }}>{t('events.attendees')}</Text>
+              <Text style={{ fontSize: fontSizes.p }}>{attendees.length}</Text>
+            </View>
             {attendees.length === 0 && (
-              <Text style={{ color: colors.faded, fontSize: fontSizes.p, marginVertical: blocks.medium }}>
+              <Text
+                style={{
+                  color: colors.faded,
+                  fontSize: fontSizes.p,
+                  marginTop: blocks.small,
+                  paddingHorizontal: blocks.small,
+                }}>
                 {t('events.nobody')}
               </Text>
             )}
             {attendees.map(attendee => (
-              <View
+              <UserRowComponent
                 key={attendee.username}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: blocks.small,
-                  paddingLeft: attendee.is_friend ? blocks.small : 3 + blocks.small,
-                  borderLeftWidth: attendee.is_friend ? 3 : 0,
-                  borderColor: colors.primary,
-                }}>
-                <UserIconComponent username={attendee.username} width={32} height={40} marginRight={blocks.medium} />
-                <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: fontSizes.p }}>
-                  {attendee.username}
-                </Text>
-                <Icon
-                  name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
-                  size={fontSizes.h3}
-                  color={colors.accent}
-                />
-              </View>
+                user={attendee}
+                theme={theme}
+                isPressable={false}
+                marginBottom={0}
+                marginTop={blocks.small}
+                borderLeftWidth={3}
+                borderColor={attendee.is_friend ? colors.primary : colors.transparent}
+                extra={
+                  <Icon
+                    name={attendee.attendance_type === 'going' ? 'user' : 'eye'}
+                    size={fontSizes.p}
+                    color={colors.accent}
+                  />
+                }
+              />
             ))}
           </ScrollView>
         </Dialog.ScrollArea>

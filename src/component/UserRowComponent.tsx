@@ -8,6 +8,7 @@ type Props = {
   user: { username: string }
   theme?: Theme
   extraText?: string
+  extra?: React.ReactNode
   borderLeftWidth?: number
   borderColor?: string
   marginBottom?: number
@@ -20,6 +21,7 @@ export const UserRowComponent = ({
   user,
   theme,
   extraText,
+  extra,
   borderLeftWidth = 0,
   borderColor = 'inherit',
   marginBottom,
@@ -64,7 +66,14 @@ export const UserRowComponent = ({
           )}
           <Text style={{ fontSize: fontSizes.p }}>{user.username}</Text>
         </View>
-        {extraText && extraText.length > 0 && <Text style={{ fontSize: fontSizes.p }}>{extraText}</Text>}
+        {(extra || (extraText && extraText.length > 0)) && (
+          <View style={Styling.groups.flexRowCentered}>
+            {extraText && extraText.length > 0 && (
+              <Text style={{ fontSize: fontSizes.p, marginRight: extra ? blocks.small : 0 }}>{extraText}</Text>
+            )}
+            {extra}
+          </View>
+        )}
       </View>
     </TouchableRipple>
   )
