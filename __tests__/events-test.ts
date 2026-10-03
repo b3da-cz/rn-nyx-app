@@ -1,10 +1,12 @@
 import type { EventAttendee, EventListItem } from 'nyx-api'
 import {
+  applyMyAttendance,
   attendancePhrase,
   defaultEventFilters,
   discussionTarget,
   eventBodyHtml,
   eventDetailImages,
+  EventDetailData,
   filterEventsByAttendance,
   formatEventDuration,
   eventMetaParts,
@@ -13,6 +15,7 @@ import {
   friendAttendees,
   isEventFilterActive,
   isNyxBrowserUrl,
+  normalizeMyAttendance,
   otherAttendeesNoun,
   monthGrid,
   toEventsQuery,
@@ -130,6 +133,38 @@ describe('events', () => {
     expect(isNyxBrowserUrl('mailto:nyx@nyx.cz')).toBe(false)
     expect(isNyxBrowserUrl('javascript:alert(1)')).toBe(false)
     expect(isNyxBrowserUrl('')).toBe(false)
+  })
+
+  it('keeps only going and interested as the signed-in attendance', () => {
+    expect(normalizeMyAttendance('going')).toBe('going')
+    expect(normalizeMyAttendance('interested')).toBe('interested')
+    expect(normalizeMyAttendance('none')).toBe('none')
+    expect(normalizeMyAttendance('later')).toBe('none')
+    expect(normalizeMyAttendance(null)).toBe('none')
+  })
+
+  it('moves the signed-in user between attendance counts', () => {
+    const base: EventDetailData = {
+      parsed: null,
+      images: [],
+      going: 4,
+      interested: 4,
+      myAttendance: 'none',
+      attendees: [{ discussion_id: 9, username: 'A', attendance_type: 'going', is_friend: true }],
+    }
+    const going = applyMyAttendance(base, 'NNN_TEST', 'going')
+    expect(going.going).toBe(5)
+    expect(going.interested).toBe(4)
+    expect(going.attendees.map(attendee => attendee.username)).toEqual(['A', 'NNN_TEST'])
+    const interested = applyMyAttendance(going, 'NNN_TEST', 'interested')
+    expect(interested.going).toBe(4)
+    expect(interested.interested).toBe(5)
+    expect(interested.attendees.find(attendee => attendee.username === 'NNN_TEST')?.attendance_type).toBe('interested')
+    const cleared = applyMyAttendance(interested, 'NNN_TEST', 'none')
+    expect(cleared.going).toBe(4)
+    expect(cleared.interested).toBe(4)
+    expect(cleared.attendees.map(attendee => attendee.username)).toEqual(['A'])
+    expect(applyMyAttendance(cleared, 'NNN_TEST', 'none')).toBe(cleared)
   })
 
   it('picks the Czech attendee phrase', () => {

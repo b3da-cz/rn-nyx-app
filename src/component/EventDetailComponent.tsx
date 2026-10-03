@@ -9,6 +9,7 @@ import {
   EventDetailImage,
   formatEventDuration,
   friendAttendees,
+  MyAttendance,
   Styling,
   t,
   TOKEN,
@@ -23,6 +24,8 @@ import { VideoYoutubeComponent } from './VideoYoutubeComponent'
 
 type Props = {
   detail: EventDetailData
+  isAttendanceSaving?: boolean
+  onAttendance: (attendance: MyAttendance) => void
   onImage: (image: EventDetailImage, images: EventDetailImage[]) => void
   onOpenDiscussion: (discussionId: string, postId?: string) => void
 }
@@ -30,7 +33,15 @@ type Props = {
 const ICON_W = 32
 const ICON_H = 40
 
-export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Props) => {
+const RSVP: MyAttendance[] = ['going', 'interested', 'none']
+
+export const EventDetailComponent = ({
+  detail,
+  isAttendanceSaving,
+  onAttendance,
+  onImage,
+  onOpenDiscussion,
+}: Props) => {
   const [isAttendeesOpen, setIsAttendeesOpen] = useState(false)
   const {
     colors,
@@ -133,6 +144,47 @@ export const EventDetailComponent = ({ detail, onImage, onOpenDiscussion }: Prop
             )}
           </View>
         </TouchableRipple>
+        <View style={[rowStyle, { flexDirection: 'row', paddingVertical: 0, paddingHorizontal: 0 }]}>
+          {RSVP.map((attendance, index) => {
+            const selected = detail.myAttendance === attendance
+            return (
+              <TouchableRipple
+                key={attendance}
+                disabled={isAttendanceSaving}
+                rippleColor={colors.ripple}
+                accessibilityRole="button"
+                accessibilityState={{ selected, disabled: !!isAttendanceSaving }}
+                onPress={() => {
+                  if (selected) {
+                    return
+                  }
+                  onAttendance(attendance)
+                }}
+                style={{
+                  flex: 1,
+                  minHeight: 44,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: blocks.medium,
+                  paddingHorizontal: 4,
+                  backgroundColor: selected ? colors.card : colors.transparent,
+                  borderRightWidth: index < RSVP.length - 1 ? 1 : 0,
+                  borderColor: colors.border,
+                }}>
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    color: selected ? colors.text : colors.faded,
+                    fontSize: fontSizes.small,
+                    fontWeight: selected ? '700' : '400',
+                    textAlign: 'center',
+                  }}>
+                  {t(`events.rsvp.${attendance}`)}
+                </Text>
+              </TouchableRipple>
+            )
+          })}
+        </View>
       </View>
       {!!detail.name && (
         <Text

@@ -3,6 +3,14 @@ import type { EventAttendee, EventListItem } from 'nyx-api'
 export type EventOrder = 'popularity' | 'proximity' | 'freshness'
 export type EventEpoch = 'future' | 'past' | 'all'
 export type EventAttendance = 'any' | 'me' | 'friends'
+export type MyAttendance = 'going' | 'interested' | 'none'
+
+export function normalizeMyAttendance(value?: string | null): MyAttendance {
+  if (value === 'going' || value === 'interested') {
+    return value
+  }
+  return 'none'
+}
 
 export type EventListFilters = {
   search: string
@@ -252,7 +260,56 @@ export type EventDetailData = {
   images: EventDetailImage[]
   going: number
   interested: number
+  myAttendance: MyAttendance
   attendees: EventAttendee[]
+}
+
+export function applyMyAttendance(detail: EventDetailData, username: string, next: MyAttendance): EventDetailData {
+  const prev = detail.myAttendance || 'none'
+  if (prev === next) {
+    return detail
+  }
+  let going = detail.going
+  let interested = detail.interested
+  if (prev === 'going') {
+    going -= 1
+  }
+  if (prev === 'interested') {
+    interested -= 1
+  }
+  if (next === 'going') {
+    going += 1
+  }
+  if (next === 'interested') {
+    interested += 1
+  }
+  let attendees = detail.attendees
+  if (username) {
+    const index = attendees.findIndex(attendee => attendee.username === username)
+    if (next === 'none') {
+      attendees = attendees.filter(attendee => attendee.username !== username)
+    } else if (index >= 0) {
+      attendees = attendees.slice()
+      attendees[index] = { ...attendees[index], attendance_type: next }
+    } else {
+      attendees = [
+        ...attendees,
+        {
+          discussion_id: attendees[0]?.discussion_id || 0,
+          username,
+          attendance_type: next,
+          is_friend: false,
+        },
+      ]
+    }
+  }
+  return {
+    ...detail,
+    myAttendance: next,
+    going: Math.max(0, going),
+    interested: Math.max(0, interested),
+    attendees,
+  }
 }
 
 export function eventDetailImages(

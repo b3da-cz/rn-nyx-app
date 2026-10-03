@@ -22,8 +22,10 @@ import {
   toGalleryImages,
   galleryImagesFromPosts,
   hasLoadedImageUrl,
+  applyMyAttendance,
   EventDetailData,
   isDiscussionPermitted,
+  MyAttendance,
   MainContext,
   Nyx,
   parsePostsContent,
@@ -73,6 +75,7 @@ type State = {
   isSubmenuVisible: boolean
   isMsgBoxVisible: boolean
   isFetching: boolean
+  isAttendanceSaving: boolean
   listEpoch: number
   initialScrollIndex?: number
   theme?: Theme
@@ -86,6 +89,7 @@ export class DiscussionView extends Component<Props> {
   filters: any[] = []
   blockedUsers: any[] = []
   fetchLock = false
+  _attendanceSaving = false
   _posts: any[] = []
   _lastSeenPostId?: number
   _pendingDiscussion: any = null
@@ -121,6 +125,7 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      isAttendanceSaving: false,
       listEpoch: 0,
       initialScrollIndex: undefined,
       theme: undefined,
@@ -326,7 +331,7 @@ export class DiscussionView extends Component<Props> {
       }
       const res = await this.nyx?.api.getDiscussion(idOrQueryString)
       if (!res?.posts?.length) {
-        const eventDetail = toEventDetail(res?.discussion_common)
+        const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
           this.setState(eventDetail ? { isFetching: false, eventDetail } : { isFetching: false })
         }
@@ -365,8 +370,9 @@ export class DiscussionView extends Component<Props> {
         this.props.lastSeenPostId ?? res?.discussion_common?.bookmark?.last_seen_post_id ?? this._lastSeenPostId
       const uploadedFiles = res?.discussion_common?.waiting_files || []
       const isBooked = res?.discussion_common?.bookmark?.bookmark
-      const eventDetail =
-        toEventDetail(res?.discussion_common) ?? this._pendingDiscussion?.eventDetail ?? this.state.eventDetail
+      const eventDetail = this.eventDetailFromResponse(
+        toEventDetail(res?.discussion_common) ?? this._pendingDiscussion?.eventDetail ?? this.state.eventDetail,
+      )
       const images = galleryImagesFromPosts(nextPosts)
       const nextState = {
         title,
@@ -630,6 +636,34 @@ export class DiscussionView extends Component<Props> {
     this.setState({ posts })
   }
 
+  eventDetailFromResponse(loaded: EventDetailData | null) {
+    if (this._attendanceSaving && this.state.eventDetail) {
+      return this.state.eventDetail
+    }
+    return loaded
+  }
+
+  async setEventAttendance(next: MyAttendance) {
+    const current = this.state.eventDetail
+    const discussionId = this.state.discussionId ?? this.props.id
+    if (!current || !this.nyx || this._attendanceSaving || current.myAttendance === next || discussionId == null) {
+      return
+    }
+    this._attendanceSaving = true
+    const username = this.nyx.username || this.nyx.api.getAuth()?.username || ''
+    this.setState({
+      isAttendanceSaving: true,
+      eventDetail: applyMyAttendance(current, username, next),
+    })
+    const res = await this.nyx.api.setEventAttendance(discussionId, next)
+    this._attendanceSaving = false
+    if (res?.error) {
+      this.setState({ isAttendanceSaving: false, eventDetail: current })
+      return
+    }
+    this.setState({ isAttendanceSaving: false })
+  }
+
   async bookmarkDiscussion(categoryId?) {
     const newIsBooked = !this.state.isBooked
     if (newIsBooked && categoryId === undefined) {
@@ -814,6 +848,8 @@ export class DiscussionView extends Component<Props> {
             !this.state.isBoardVisible ? (
               <EventDetailComponent
                 detail={this.state.eventDetail}
+                isAttendanceSaving={this.state.isAttendanceSaving}
+                onAttendance={attendance => this.setEventAttendance(attendance)}
                 onImage={(image, images) => this.showImages(image, images)}
                 onOpenDiscussion={(discussionId, postId) => this.showPost(discussionId, postId)}
               />

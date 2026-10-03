@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.14.9
+- detail události má pod účastníky tlačítka jdu, zajímá mě a nejdu
+
 ## 0.14.8
 - dialog účastníků má stejnou hlavičku a řádky jako detail hodnocení, pod řádky je barva D
 

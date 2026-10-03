@@ -144,6 +144,20 @@
       "cs": "se zajímá",
       "en": "interested"
     },
+    "rsvp": {
+      "going": {
+        "cs": "jdu",
+        "en": "going"
+      },
+      "interested": {
+        "cs": "zajímá mě",
+        "en": "interested"
+      },
+      "none": {
+        "cs": "nejdu",
+        "en": "not interested"
+      }
+    },
     "attendees": {
       "cs": "Účastníci",
       "en": "Attendees"

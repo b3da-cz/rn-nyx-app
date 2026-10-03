@@ -1,5 +1,5 @@
 import type { EventAttendee } from 'nyx-api'
-import { eventBodyHtml, eventDetailImages, EventDetailData } from './events'
+import { eventBodyHtml, eventDetailImages, EventDetailData, normalizeMyAttendance } from './events'
 import { Parser } from './Parser'
 
 type EventDetailSource = {
@@ -19,6 +19,7 @@ type EventDetailSource = {
     area?: { gettext_name?: string }
     attachments?: { url?: string | null }[]
     attendees?: EventAttendee[]
+    my_attendance?: string | null
   }
 }
 
@@ -43,6 +44,7 @@ export function toEventDetail(common?: EventDetailSource | null): EventDetailDat
     images,
     going: event.going_people || 0,
     interested: event.interested_people || 0,
+    myAttendance: normalizeMyAttendance(data?.my_attendance),
     attendees: (data?.attendees || []).filter(attendee => attendee.attendance_type !== 'none'),
   }
 }

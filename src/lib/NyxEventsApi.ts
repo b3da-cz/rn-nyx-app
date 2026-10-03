@@ -14,6 +14,17 @@ export type EventsQuery = {
 // nyx-api 0.5.1 sends area, category, month and year. The same /api/events
 // endpoint also honors order, epoch and search, which the list filter needs.
 export class NyxEventsApi extends NyxApi {
+  // Empty POST. The app bearer token is enough; success body is {}.
+  async setEventAttendance(
+    discussionId: string | number,
+    attendance: 'going' | 'interested' | 'none',
+  ): Promise<Partial<{ error?: string }>> {
+    return this.fetch({
+      endpoint: `event/${discussionId}/attendance/${attendance}`,
+      method: 'POST',
+    })
+  }
+
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {
     const queryParts: string[] = []
     if (params?.area !== undefined) queryParts.push(`area=${params.area}`)
