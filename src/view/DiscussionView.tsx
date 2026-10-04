@@ -8,6 +8,7 @@ import {
   DiscussionStatsComponent,
   EventDetailComponent,
   FabComponent,
+  LlmPromptModal,
   MessageBoxDialog,
   PostComponent,
 } from '../component'
@@ -132,6 +133,7 @@ export class DiscussionView extends Component<Props> {
       isFetching: false,
       isListing: false,
       isAttendanceSaving: false,
+      isLlmModalVisible: false,
       listEpoch: 0,
       initialScrollIndex: undefined,
       theme: undefined,
@@ -794,10 +796,32 @@ export class DiscussionView extends Component<Props> {
     })
   }
 
+  async loadOlderPostsForLlm(): Promise<number> {
+    const posts = this._posts.length ? this._posts : this.state.posts
+    if (!posts || posts.length === 0) {
+      return 0
+    }
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
+    const bottomPostId = posts[posts.length - 1].id
+    const queryString = `${discussionId}?order=older_than&from_id=${bottomPostId}`
+    return await this.fetchDiscussion(queryString)
+  }
+
   getFabActions() {
     const { isBooked, hasBoard, isBoardVisible, hasHeader, isHeaderVisible } = this.state
     const { navigation } = this.props
-    const actions = [
+    const actions: any[] = []
+
+    if (this.config?.isLlmEnabled && this.config?.openRouterApiKey && this.config?.selectedLlmModel) {
+      actions.push({
+        key: 'llm',
+        icon: 'chip',
+        label: t('llm.title') || 'LLM Asistent',
+        onPress: () => this.setState({ isLlmModalVisible: true }),
+      })
+    }
+
+    actions.push(
       {
         key: 'bookmark',
         icon: isBooked ? 'bookmark-remove' : 'bookmark',
@@ -810,7 +834,7 @@ export class DiscussionView extends Component<Props> {
         label: `${t('show')} ${t('stats.title')}`,
         onPress: () => this.showStats(),
       },
-    ]
+    )
     if (hasBoard) {
       actions.push({
         key: 'board',
@@ -971,6 +995,19 @@ export class DiscussionView extends Component<Props> {
           }}
         />
         {/*</Portal>*/}
+        {this.config?.isLlmEnabled && (
+          <LlmPromptModal
+            isVisible={this.state.isLlmModalVisible}
+            discussionId={this.state.discussionId ? this.state.discussionId : this.props.id}
+            discussionTitle={this.state.title}
+            posts={this._posts?.length ? this._posts : this.state.posts}
+            apiKey={this.config?.openRouterApiKey || ''}
+            modelId={this.config?.selectedLlmModel || ''}
+            modelName={this.config?.selectedLlmModelName}
+            onClose={() => this.setState({ isLlmModalVisible: false })}
+            onLoadMorePosts={() => this.loadOlderPostsForLlm()}
+          />
+        )}
       </View>
     )
   }

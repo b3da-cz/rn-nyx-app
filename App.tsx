@@ -140,6 +140,10 @@ const App: () => ReactNode = () => {
       bookmarkSectionFilters: normalizeBookmarkSectionFilters(conf.bookmarkSectionFilters),
       fcmToken: conf.fcmToken,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
+      isLlmEnabled: conf.isLlmEnabled === undefined ? false : !!conf.isLlmEnabled,
+      openRouterApiKey: conf.openRouterApiKey || '',
+      selectedLlmModel: conf.selectedLlmModel || '',
+      selectedLlmModelName: conf.selectedLlmModelName || '',
       theme: conf.theme === undefined ? 'system' : conf.theme,
       themeOptions: conf.themeOptions === undefined ? { ...defaultThemeOptions } : conf.themeOptions,
     })

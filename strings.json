@@ -349,6 +349,60 @@
     "padding": {
       "cs": "Padding",
       "en": "Padding"
+    },
+    "llm": {
+      "title": {
+        "cs": "LLM Asistent",
+        "en": "LLM Assistant"
+      },
+      "enable": {
+        "cs": "Povolit LLM podporu",
+        "en": "Enable LLM support"
+      },
+      "apiKey": {
+        "cs": "OpenRouter API klíč",
+        "en": "OpenRouter API Key"
+      },
+      "apiKeyPlaceholder": {
+        "cs": "sk-or-v1-...",
+        "en": "sk-or-v1-..."
+      },
+      "apiKeySave": {
+        "cs": "Uložit klíč",
+        "en": "Save key"
+      },
+      "fetchModels": {
+        "cs": "Načíst dostupné modely",
+        "en": "Fetch available models"
+      },
+      "fetchingModels": {
+        "cs": "Stahuji modely...",
+        "en": "Fetching models..."
+      },
+      "selectedModel": {
+        "cs": "Vybraný model",
+        "en": "Selected model"
+      },
+      "changeModel": {
+        "cs": "Změnit model",
+        "en": "Change model"
+      },
+      "selectModel": {
+        "cs": "Vyberte model",
+        "en": "Select model"
+      },
+      "modelsCount": {
+        "cs": "Načteno %s modelů",
+        "en": "Loaded %s models"
+      },
+      "searchPlaceholder": {
+        "cs": "Hledat model (např. gemini, claude, llama)...",
+        "en": "Search model (e.g. gemini, claude, llama)..."
+      },
+      "notice": {
+        "cs": "API klíč je uložen pouze lokálně ve tvém zařízení.",
+        "en": "API key is stored locally on your device only."
+      }
     }
   },
   "delete": {
@@ -544,5 +598,100 @@
       "cs": "Pokračovat",
       "en": "Continue"
     }
+  },
+  "llm": {
+    "title": {
+      "cs": "LLM Asistent",
+      "en": "LLM Assistant"
+    },
+    "promptLabel": {
+      "cs": "Co chceš s příspěvky udělat?",
+      "en": "What do you want to do with the posts?"
+    },
+    "promptPlaceholder": {
+      "cs": "Např. Udělej mi stručný souhrn diskuze, vypiš klíčové body a neshody...",
+      "en": "E.g. Summarize the discussion, list key points and disagreements..."
+    },
+    "dateRange": {
+      "cs": "Období",
+      "en": "Date Range"
+    },
+    "dateFrom": {
+      "cs": "Od",
+      "en": "From"
+    },
+    "dateTo": {
+      "cs": "Do",
+      "en": "To"
+    },
+    "today": {
+      "cs": "Dnes",
+      "en": "Today"
+    },
+    "yesterdayAndToday": {
+      "cs": "Včera a dnes",
+      "en": "Yesterday & today"
+    },
+    "last3Days": {
+      "cs": "3 dny",
+      "en": "3 days"
+    },
+    "lastWeek": {
+      "cs": "Týden",
+      "en": "Week"
+    },
+    "allLoaded": {
+      "cs": "Vše načtené",
+      "en": "All loaded"
+    },
+    "send": {
+      "cs": "Odeslat dotaz",
+      "en": "Send request"
+    },
+    "sending": {
+      "cs": "Zpracovávám...",
+      "en": "Processing..."
+    },
+    "postsCount": {
+      "cs": "Nalezeno %s příspěvků (cca %s slov)",
+      "en": "Found %s posts (approx %s words)"
+    },
+    "noPosts": {
+      "cs": "V tomto období nebyly nalezeny žádné příspěvky",
+      "en": "No posts found for this period"
+    },
+    "loadOlderPosts": {
+      "cs": "Načíst starší příspěvky z diskuze",
+      "en": "Load older posts from discussion"
+    },
+    "loadingOlder": {
+      "cs": "Načítám starší příspěvky...",
+      "en": "Loading older posts..."
+    },
+    "copyAnswer": {
+      "cs": "Kopírovat odpověď",
+      "en": "Copy answer"
+    },
+    "copied": {
+      "cs": "Zkopírováno do schránky",
+      "en": "Copied to clipboard"
+    },
+    "presetSummary": {
+      "cs": "Shrnutí diskuze",
+      "en": "Discussion summary"
+    },
+    "presetTopics": {
+      "cs": "Klíčová témata a závěry",
+      "en": "Key topics & conclusions"
+    },
+    "presetDebate": {
+      "cs": "Názory a argumenty diskutujících",
+      "en": "Arguments & opinions"
+    },
+    "tokensUsed": {
+      "cs": "Spotřebováno tokenů",
+      "en": "Tokens used"
+    }
   }
 }
+

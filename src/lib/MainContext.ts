@@ -29,6 +29,10 @@ export type MainContextConfig = {
   bookmarkSectionFilters: Record<string, BookmarkSectionReadFilter>
   fcmToken?: string
   isFCMSubscribed: boolean
+  isLlmEnabled?: boolean
+  openRouterApiKey?: string
+  selectedLlmModel?: string
+  selectedLlmModelName?: string
   theme: string
   themeOptions: ThemeOptions
 }
@@ -65,6 +69,10 @@ export const initialConfig: MainContextConfig = {
   bookmarkSectionFilters: {},
   fcmToken: undefined,
   isFCMSubscribed: false,
+  isLlmEnabled: false,
+  openRouterApiKey: '',
+  selectedLlmModel: '',
+  selectedLlmModelName: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },
 }

@@ -1,18 +1,24 @@
 import React, { Component } from 'react'
-import { ScrollView, View } from 'react-native'
+import { ActivityIndicator, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { Text } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
 import {
+  androidStackBottomInset,
   ButtonComponent,
   confirm,
   FilterSettingsDialog,
   FormRowSelectComponent,
   FormRowToggleComponent,
+  LlmModelPickerDialog,
   SectionHeaderComponent,
 } from '../component'
 import {
+  fetchOpenRouterModels,
+  formatPricing,
   IMAGE_DOWNLOAD_LIMITS_KB,
   IMAGE_DOWNLOAD_OFF,
   MainContext,
+  OpenRouterModel,
   Storage,
   t,
   Theme,
@@ -48,6 +54,14 @@ type State = {
   isSwipeablePostHeader: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
+  isLlmEnabled: boolean
+  openRouterApiKey: string
+  selectedLlmModel: string
+  selectedLlmModelName: string
+  isFetchingModels: boolean
+  models: OpenRouterModel[]
+  isModelPickerVisible: boolean
+  llmError: string | null
   theme: Theme
   username: string
   isVisible: boolean
@@ -109,9 +123,41 @@ export class SettingsView extends Component<Props> {
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
+      isLlmEnabled: !!config?.isLlmEnabled,
+      openRouterApiKey: config?.openRouterApiKey || '',
+      selectedLlmModel: config?.selectedLlmModel || '',
+      selectedLlmModelName: config?.selectedLlmModelName || '',
+      isFetchingModels: false,
+      models: [],
+      isModelPickerVisible: false,
+      llmError: null,
       username: '',
       isVisible: true,
     }
+  }
+
+  async fetchModels(keyToUse?: string) {
+    const key = (keyToUse !== undefined ? keyToUse : this.state.openRouterApiKey) || ''
+    if (!key.trim()) {
+      this.setState({ llmError: 'Nejprve zadejte OpenRouter API klíč.' })
+      return
+    }
+    this.setState({ isFetchingModels: true, llmError: null })
+    try {
+      const models = await fetchOpenRouterModels(key)
+      this.setState({ models, isFetchingModels: false })
+      if (!this.state.selectedLlmModel && models.length > 0) {
+        await this.onSelectModel(models[0])
+      }
+    } catch (e: any) {
+      this.setState({ isFetchingModels: false, llmError: e?.message || 'Chyba při stahování modelů.' })
+    }
+  }
+
+  async onSelectModel(model: OpenRouterModel) {
+    await this.setOption('selectedLlmModel', model.id)
+    await this.setOption('selectedLlmModelName', model.name)
+    this.setState({ isModelPickerVisible: false })
   }
 
   async setOption(name, val) {
@@ -203,7 +249,9 @@ export class SettingsView extends Component<Props> {
     }
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
-        <ScrollView style={{ backgroundColor: theme.colors.background }}>
+        <ScrollView
+          style={{ backgroundColor: theme.colors.background }}
+          contentContainerStyle={{ paddingBottom: 150 + androidStackBottomInset }}>
           <SectionHeaderComponent title={t('profile.general')} backgroundColor={theme.colors.surface} />
           {/*<ButtonComponent*/}
           {/*  label={t('profile.fcm.subscribe.title')}*/}
@@ -342,7 +390,163 @@ export class SettingsView extends Component<Props> {
               { value: 'mailStack', label: t('mail') },
             ]}
           />
+          <SectionHeaderComponent
+            title={t('profile.llm.title') || 'LLM Asistent'}
+            backgroundColor={theme.colors.surface}
+          />
+          <FormRowToggleComponent
+            label={t('profile.llm.enable') || 'Povolit LLM podporu'}
+            value={!!this.state.isLlmEnabled}
+            onChange={val => this.setOption('isLlmEnabled', val)}
+          />
+          {this.state.isLlmEnabled && (
+            <View
+              style={{
+                paddingHorizontal: theme.metrics.blocks.medium,
+                paddingBottom: theme.metrics.blocks.medium,
+              }}>
+              <Text
+                style={{
+                  fontSize: theme.metrics.fontSizes.small,
+                  color: theme.colors.faded,
+                  marginBottom: 8,
+                }}>
+                {t('profile.llm.notice') || 'API klíč je uložen pouze lokálně ve tvém zařízení.'}
+              </Text>
+
+              {/* API Key Row */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.disabled,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  marginBottom: 10,
+                }}>
+                <TextInput
+                  value={this.state.openRouterApiKey}
+                  onChangeText={val => this.setState({ openRouterApiKey: val })}
+                  onBlur={() => this.setOption('openRouterApiKey', this.state.openRouterApiKey)}
+                  placeholder={t('profile.llm.apiKeyPlaceholder') || 'sk-or-v1-...'}
+                  placeholderTextColor={theme.colors.faded}
+                  secureTextEntry={true}
+                  style={{
+                    flex: 1,
+                    color: theme.colors.text,
+                    fontSize: theme.metrics.fontSizes.p,
+                    paddingVertical: 10,
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    await this.setOption('openRouterApiKey', this.state.openRouterApiKey)
+                    await this.fetchModels(this.state.openRouterApiKey)
+                  }}
+                  disabled={this.state.isFetchingModels}
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 6,
+                    marginLeft: 8,
+                  }}>
+                  {this.state.isFetchingModels ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: theme.metrics.fontSizes.small,
+                        fontWeight: 'bold',
+                      }}>
+                      {(this.state.models?.length || 0) > 0
+                        ? t('profile.llm.fetchModels') || 'Aktualizovat'
+                        : t('profile.llm.fetchModels') || 'Načíst'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Error banner */}
+              {this.state.llmError && (
+                <View
+                  style={{
+                    backgroundColor: `${theme.colors.accent}18`,
+                    borderColor: theme.colors.accent,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    padding: 10,
+                    marginBottom: 10,
+                  }}>
+                  <Text style={{ color: theme.colors.accent, fontSize: theme.metrics.fontSizes.small }}>
+                    {this.state.llmError}
+                  </Text>
+                </View>
+              )}
+
+              {/* Model Picker Trigger */}
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!this.state.models || this.state.models.length === 0) {
+                    await this.fetchModels()
+                  }
+                  if (this.state.models && this.state.models.length > 0) {
+                    this.setState({ isModelPickerVisible: true })
+                  }
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.disabled,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  padding: 12,
+                }}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.faded,
+                      fontSize: theme.metrics.fontSizes.small,
+                      marginBottom: 2,
+                    }}>
+                    {t('profile.llm.selectedModel') || 'Vybraný model'}:
+                  </Text>
+                  <Text
+                    style={{
+                      color: this.state.selectedLlmModel ? theme.colors.text : theme.colors.faded,
+                      fontSize: theme.metrics.fontSizes.p,
+                      fontWeight: '600',
+                    }}>
+                    {this.state.selectedLlmModelName ||
+                      this.state.selectedLlmModel ||
+                      t('profile.llm.selectModel') ||
+                      'Vyberte model...'}
+                  </Text>
+                  {this.state.selectedLlmModel ? (
+                    <Text style={{ color: theme.colors.faded, fontSize: 11, marginTop: 2 }}>
+                      {this.state.selectedLlmModel}
+                    </Text>
+                  ) : null}
+                </View>
+                <Icon name="chevron-right" size={20} color={theme.colors.faded} />
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
+        <LlmModelPickerDialog
+          isVisible={!!this.state.isModelPickerVisible}
+          models={this.state.models || []}
+          selectedModelId={this.state.selectedLlmModel || ''}
+          onSelect={model => this.onSelectModel(model)}
+          onCancel={() => this.setState({ isModelPickerVisible: false })}
+        />
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
       </View>
     )
