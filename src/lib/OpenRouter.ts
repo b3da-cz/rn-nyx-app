@@ -15,7 +15,8 @@ export const DEFAULT_LLM_SYSTEM_PROMPT =
   'Jsi asistent pro českou diskuzní sociální síť Nyx.cz. Tvým úkolem je analyzovat, shrnovat nebo zpracovávat příspěvky z diskuze podle zadání uživatele.\n\n' +
   'Pravidla formátování odpovědi:\n' +
   '- Odpověď formátuj v přehledném Markdownu.\n' +
-  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@EBBN](https://nyx.cz/discussion/{discussion_id}/id/67890)).\n' +
+  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@NYX](https://nyx.cz/discussion/{discussion_id}/id/12345)).\n' +
+  '- Přímo kolem odkazu nedělej žádné symboly (závorky, hvězdičky, čárku, tečku, ..) - před [ a po ) MUSÍ být mezery!\n' +
   '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.'
 
 export type OpenRouterChatParams = {

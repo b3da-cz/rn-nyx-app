@@ -1,16 +1,18 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import {
-  addLlmHistoryEntry,
   filterAndFormatPostsForLlm,
-  sendOpenRouterChat,
+  getLlmHistory,
+  LlmPendingTask,
+  LlmQueue,
   Storage,
   t,
   useTheme,
 } from '../../lib'
 import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
+import { LlmPendingItemCard } from './LlmPendingItemCard'
 import { LlmPromptInput } from './LlmPromptInput'
 import { LlmResultSection } from './LlmResultSection'
 import { LlmSystemPromptBar } from './LlmSystemPromptBar'
@@ -52,14 +54,44 @@ export const LlmAssistantTab: React.FC<Props> = ({
   const [isGlobalModel, setIsGlobalModel] = useState(false)
   const [currentSystemPrompt, setCurrentSystemPrompt] = useState(systemPrompt)
   const [isGlobalSystemPrompt, setIsGlobalSystemPrompt] = useState(false)
-  const [isSending, setIsSending] = useState(false)
+  const [pendingTasks, setPendingTasks] = useState<LlmPendingTask[]>([])
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [resultUsage, setResultUsage] = useState<any | null>(null)
   const [resultDuration, setResultDuration] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [waitLog, setWaitLog] = useState<string | null>(null)
-  const tickerRef = useRef<NodeJS.Timeout | null>(null)
+  const lastSentTaskIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    LlmQueue.init()
+    const unsubscribe = LlmQueue.subscribe(tasks => {
+      setPendingTasks(tasks)
+
+      // If we recently sent a task and it completed, load the result
+      if (lastSentTaskIdRef.current) {
+        const stillPending = tasks.some(t => t.id === lastSentTaskIdRef.current)
+        if (!stillPending) {
+          lastSentTaskIdRef.current = null
+          getLlmHistory().then(history => {
+            const latest = history.find(it => `${it.discussionId}` === `${discussionId}`)
+            if (latest) {
+              setResult(latest.response)
+              setResultUsage(latest.usage)
+              setResultDuration(latest.durationMs)
+              onHistoryEntryAdded?.()
+            }
+          })
+        }
+      }
+    })
+    return unsubscribe
+  }, [discussionId, onHistoryEntryAdded])
+
+  const activeTask = useMemo(() => {
+    return pendingTasks.find(t => `${t.discussionId}` === `${discussionId}`)
+  }, [pendingTasks, discussionId])
+
+  const isSending = activeTask?.status === 'pending'
 
   const { count: postCount, wordCount } = useMemo(
     () => filterAndFormatPostsForLlm(posts, dateFrom, dateTo, discussionTitle),
@@ -92,15 +124,8 @@ export const LlmAssistantTab: React.FC<Props> = ({
     if (!prompt.trim() || postCount === 0 || !currentModelId) {
       return
     }
-    setIsSending(true)
     setErrorMessage(null)
     setResult(null)
-    const startTime = Date.now()
-    setWaitLog('Odesílám dotaz...')
-    tickerRef.current = setInterval(() => {
-      const sec = Math.floor((Date.now() - startTime) / 1000)
-      setWaitLog(`Čekám na odpověď od modelu (${sec}s)...`)
-    }, 1000)
 
     try {
       if (isGlobalModel) {
@@ -109,47 +134,29 @@ export const LlmAssistantTab: React.FC<Props> = ({
         conf.selectedLlmModelName = currentModelName
         await Storage.setConfig(conf)
       }
-      const res = await sendOpenRouterChat({
+      if (isGlobalSystemPrompt && currentSystemPrompt) {
+        const conf = (await Storage.getConfig()) || {}
+        conf.llmSystemPrompt = currentSystemPrompt
+        await Storage.setConfig(conf)
+      }
+
+      const taskId = await LlmQueue.enqueueTask({
         apiKey,
-        model: currentModelId,
+        modelId: currentModelId,
+        modelName: currentModelName,
         userPrompt: prompt,
         discussionId,
         discussionTitle,
         posts,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        postCount,
         systemPrompt: currentSystemPrompt,
       })
-      const durationMs = Date.now() - startTime
-      if (tickerRef.current) {
-        clearInterval(tickerRef.current)
-      }
-      setWaitLog(null)
-      setResult(res.content)
-      setResultUsage(res.usage)
-      setResultDuration(durationMs)
-      await addLlmHistoryEntry({
-        discussionId,
-        discussionTitle,
-        modelId: currentModelId,
-        modelName: currentModelName,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        postCount,
-        prompt: prompt.trim(),
-        response: res.content,
-        durationMs,
-        usage: res.usage,
-      })
-      onHistoryEntryAdded?.()
+      lastSentTaskIdRef.current = taskId
+      onChangePrompt('')
     } catch (e: any) {
-      if (tickerRef.current) {
-        clearInterval(tickerRef.current)
-      }
-      setWaitLog(null)
-      setErrorMessage(e?.message || 'Chyba při komunikaci s modelem.')
-    } finally {
-      setIsSending(false)
+      setErrorMessage(e?.message || 'Chyba při zahájení dotazu.')
     }
   }
 
@@ -228,10 +235,14 @@ export const LlmAssistantTab: React.FC<Props> = ({
         </Text>
       </TouchableOpacity>
 
-      {!!waitLog && (
-        <View style={[styles.waitLogWrap, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-          <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
-          <Text style={{ color: colors.text, fontSize: metrics.fontSizes.small }}>{waitLog}</Text>
+      {/* Active or errored pending task for this discussion */}
+      {!!activeTask && (
+        <View style={{ marginTop: 10 }}>
+          <LlmPendingItemCard
+            task={activeTask}
+            onRetry={taskId => LlmQueue.retryTask(taskId)}
+            onDismiss={taskId => LlmQueue.dismissTask(taskId)}
+          />
         </View>
       )}
 
@@ -282,14 +293,6 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 4,
     marginTop: 6,
-  },
-  waitLogWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-    marginTop: 10,
   },
   errorWrap: {
     flexDirection: 'row',
