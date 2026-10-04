@@ -1004,8 +1004,13 @@ export class DiscussionView extends Component<Props> {
             apiKey={this.config?.openRouterApiKey || ''}
             modelId={this.config?.selectedLlmModel || ''}
             modelName={this.config?.selectedLlmModelName}
+            systemPrompt={this.config?.llmSystemPrompt}
             onClose={() => this.setState({ isLlmModalVisible: false })}
             onLoadMorePosts={() => this.loadOlderPostsForLlm()}
+            onNavigateToPost={(discussionId, postId) => {
+              this.setState({ isLlmModalVisible: false })
+              this.showPost(discussionId, postId)
+            }}
           />
         )}
       </View>

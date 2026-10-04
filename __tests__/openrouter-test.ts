@@ -1,4 +1,5 @@
 import {
+  DEFAULT_LLM_SYSTEM_PROMPT,
   filterAndFormatPostsForLlm,
   formatPricing,
   RECOMMENDED_MODEL_IDS,
@@ -100,6 +101,14 @@ describe('OpenRouter helper tests', () => {
       expect(RECOMMENDED_MODEL_IDS).toContain('google/gemini-2.5-flash')
       expect(RECOMMENDED_MODEL_IDS).toContain('anthropic/claude-3.5-haiku')
       expect(RECOMMENDED_MODEL_IDS.length).toBeGreaterThanOrEqual(4)
+    })
+  })
+
+  describe('DEFAULT_LLM_SYSTEM_PROMPT', () => {
+    it('contains post linking instructions with discussion and post id placeholders', () => {
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('{discussion_id}')
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('{post_id}')
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('Markdown')
     })
   })
 })

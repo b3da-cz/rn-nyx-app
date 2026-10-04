@@ -14,22 +14,26 @@ import Icon from 'react-native-vector-icons/Feather'
 import {
   clearLlmHistory,
   deleteLlmHistoryEntry,
+  formatDuration,
   getLlmHistory,
   LlmHistoryItem,
   t,
   useTheme,
 } from '../lib'
+import { MarkdownViewComponent } from './MarkdownViewComponent'
 
 type Props = {
   isVisible: boolean
   onClose: () => void
   onHistoryChanged?: () => void
+  onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
 }
 
 export const LlmHistoryModal: React.FC<Props> = ({
   isVisible,
   onClose,
   onHistoryChanged,
+  onNavigateToPost,
 }) => {
   const theme = useTheme()
   const { colors, metrics } = theme
@@ -40,6 +44,7 @@ export const LlmHistoryModal: React.FC<Props> = ({
   const [confirmClearAll, setConfirmClearAll] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
+  const [rawModeIds, setRawModeIds] = useState<Record<string, boolean>>({})
 
   const deleteTimerRef = useRef<NodeJS.Timeout | null>(null)
   const clearTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -277,9 +282,17 @@ export const LlmHistoryModal: React.FC<Props> = ({
                 {/* Period & post count info */}
                 <View style={styles.periodRow}>
                   <Icon name="calendar" size={13} color={colors.faded} style={{ marginRight: 5 }} />
-                  <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small }}>
+                  <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
                     {`${dateRangeLabel} (${item.postCount || 0} příspěvků)`}
                   </Text>
+                  {item.durationMs != null ? (
+                    <View style={styles.durationBadge}>
+                      <Icon name="clock" size={11} color={colors.faded} style={{ marginRight: 3 }} />
+                      <Text style={{ color: colors.faded, fontSize: 11 }}>
+                        {formatDuration(item.durationMs)}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
 
                 {/* Prompt Box */}
@@ -299,31 +312,72 @@ export const LlmHistoryModal: React.FC<Props> = ({
                       ODPOVĚĎ:
                     </Text>
 
-                    <TouchableOpacity
-                      onPress={() => handleCopy(item.id, item.response)}
-                      style={[
-                        styles.copyBtn,
-                        { backgroundColor: isCopied ? colors.secondary : colors.primary },
-                      ]}>
-                      <Icon
-                        name={isCopied ? 'check' : 'copy'}
-                        size={12}
-                        color="#FFFFFF"
-                        style={{ marginRight: 4 }}
-                      />
-                      <Text style={styles.copyBtnText}>
-                        {isCopied ? 'Zkopírováno' : 'Kopírovat'}
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      {/* Toggle Formát vs Zdroj */}
+                      <TouchableOpacity
+                        onPress={() =>
+                          setRawModeIds(prev => ({ ...prev, [item.id]: !prev[item.id] }))
+                        }
+                        style={[
+                          styles.modeToggleBtn,
+                          { backgroundColor: colors.background, borderColor: colors.disabled },
+                        ]}>
+                        <Icon
+                          name={rawModeIds[item.id] ? 'file-text' : 'code'}
+                          size={11}
+                          color={colors.faded}
+                          style={{ marginRight: 3 }}
+                        />
+                        <Text style={{ color: colors.faded, fontSize: 11, fontWeight: '600' }}>
+                          {rawModeIds[item.id] ? 'Formát' : 'Zdroj'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handleCopy(item.id, item.response)}
+                        style={[
+                          styles.copyBtn,
+                          { backgroundColor: isCopied ? colors.secondary : colors.primary },
+                        ]}>
+                        <Icon
+                          name={isCopied ? 'check' : 'copy'}
+                          size={12}
+                          color="#FFFFFF"
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text style={styles.copyBtnText}>
+                          {isCopied ? 'Zkopírováno' : 'Kopírovat'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
-                  <Text
-                    selectable
-                    style={[styles.responseText, { color: colors.text, fontSize: metrics.fontSizes.p }]}>
-                    {isLongText && !isExpanded
-                      ? `${item.response.substring(0, 320)}...`
-                      : item.response}
-                  </Text>
+                  {rawModeIds[item.id] ? (
+                    <Text
+                      selectable
+                      style={[
+                        styles.responseText,
+                        {
+                          color: colors.text,
+                          fontSize: metrics.fontSizes.p,
+                          fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                        },
+                      ]}>
+                      {isLongText && !isExpanded
+                        ? `${item.response.substring(0, 320)}...`
+                        : item.response}
+                    </Text>
+                  ) : (
+                    <MarkdownViewComponent
+                      content={
+                        isLongText && !isExpanded
+                          ? `${item.response.substring(0, 320)}...`
+                          : item.response
+                      }
+                      selectable
+                      onNavigateToPost={onNavigateToPost}
+                    />
+                  )}
 
                   {isLongText && (
                     <TouchableOpacity
@@ -337,12 +391,16 @@ export const LlmHistoryModal: React.FC<Props> = ({
                 </View>
 
                 {/* Usage Footer */}
-                {item.usage && (
+                {(item.usage || item.durationMs != null) && (
                   <View style={[styles.cardFooter, { borderTopColor: colors.disabled }]}>
                     <Text style={{ color: colors.faded, fontSize: 11 }}>
-                      {`Tokeny: ${item.usage.total_tokens || 0} celkem (${item.usage.prompt_tokens || 0} vstup, ${
-                        item.usage.completion_tokens || 0
-                      } výstup)`}
+                      {item.durationMs != null ? `Čas odpovědi: ${formatDuration(item.durationMs)}` : ''}
+                      {item.durationMs != null && item.usage ? ' • ' : ''}
+                      {item.usage
+                        ? `Tokeny: ${item.usage.total_tokens || 0} celkem (${item.usage.prompt_tokens || 0} vstup, ${
+                            item.usage.completion_tokens || 0
+                          } výstup)`
+                        : ''}
                     </Text>
                   </View>
                 )}
@@ -461,6 +519,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 6,
+  },
   promptBox: {
     borderRadius: 6,
     borderWidth: 1,
@@ -487,6 +550,14 @@ const styles = StyleSheet.create({
   responseLabel: {
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  modeToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
   },
   copyBtn: {
     flexDirection: 'row',

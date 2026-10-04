@@ -33,6 +33,7 @@ export type MainContextConfig = {
   openRouterApiKey?: string
   selectedLlmModel?: string
   selectedLlmModelName?: string
+  llmSystemPrompt?: string
   theme: string
   themeOptions: ThemeOptions
 }
@@ -73,6 +74,7 @@ export const initialConfig: MainContextConfig = {
   openRouterApiKey: '',
   selectedLlmModel: '',
   selectedLlmModelName: '',
+  llmSystemPrompt: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },
 }

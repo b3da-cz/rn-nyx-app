@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,11 +17,13 @@ import Icon from 'react-native-vector-icons/Feather'
 import {
   addLlmHistoryEntry,
   filterAndFormatPostsForLlm,
+  formatDuration,
   isoDate,
   sendOpenRouterChat,
   t,
   useTheme,
 } from '../lib'
+import { MarkdownViewComponent } from './MarkdownViewComponent'
 
 type Props = {
   isVisible: boolean
@@ -31,8 +33,10 @@ type Props = {
   apiKey: string
   modelId: string
   modelName?: string
+  systemPrompt?: string
   onClose: () => void
   onLoadMorePosts?: () => Promise<number>
+  onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
 }
 
 type DatePreset = 'today' | 'yesterday' | '3days' | 'week' | 'all' | 'custom'
@@ -45,8 +49,10 @@ export const LlmPromptModal: React.FC<Props> = ({
   apiKey,
   modelId,
   modelName,
+  systemPrompt,
   onClose,
   onLoadMorePosts,
+  onNavigateToPost,
 }) => {
   const theme = useTheme()
   const { colors, metrics } = theme
@@ -59,19 +65,65 @@ export const LlmPromptModal: React.FC<Props> = ({
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [resultUsage, setResultUsage] = useState<any | null>(null)
+  const [resultDuration, setResultDuration] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'formatted' | 'raw'>('formatted')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [ephemeralLogs, setEphemeralLogs] = useState<{ id: string; time: string; text: string }[]>([])
 
-  // Initialize dates to "today" when opened
+  const tickerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const stopTicker = useCallback(() => {
+    if (tickerRef.current) {
+      clearInterval(tickerRef.current)
+      tickerRef.current = null
+    }
+  }, [])
+
+  const addLog = useCallback((text: string) => {
+    const now = new Date()
+    const pad = (n: number) => `${n}`.padStart(2, '0')
+    const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+    setEphemeralLogs(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, time, text }].slice(-5))
+  }, [])
+
+  const updateOrAddWaitLog = useCallback((elapsedSec: number) => {
+    const now = new Date()
+    const pad = (n: number) => `${n}`.padStart(2, '0')
+    const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+    const text = `Čekám na odpověď od modelu (${elapsedSec}s)...`
+
+    setEphemeralLogs(prev => {
+      if (prev.length > 0 && prev[prev.length - 1].text.startsWith('Čekám na odpověď')) {
+        const copy = [...prev]
+        copy[copy.length - 1] = { ...copy[copy.length - 1], time, text }
+        return copy
+      }
+      return [...prev, { id: `${Date.now()}-${Math.random()}`, time, text }].slice(-5)
+    })
+  }, [])
+
+  // Initialize dates to "today" when opened, cleanup on close
   useEffect(() => {
     if (isVisible) {
       applyPreset('today')
       setErrorMessage(null)
       setResult(null)
       setResultUsage(null)
+      setResultDuration(null)
       setCopied(false)
+      setEphemeralLogs([])
+    } else {
+      stopTicker()
+      setEphemeralLogs([])
     }
-  }, [isVisible])
+  }, [isVisible, stopTicker])
+
+  useEffect(() => {
+    return () => {
+      stopTicker()
+    }
+  }, [stopTicker])
 
   const applyPreset = (preset: DatePreset) => {
     setDatePreset(preset)
@@ -145,24 +197,50 @@ export const LlmPromptModal: React.FC<Props> = ({
       return
     }
 
+    stopTicker()
     setIsSending(true)
     setErrorMessage(null)
     setResult(null)
     setResultUsage(null)
+    setResultDuration(null)
     setCopied(false)
+    setEphemeralLogs([])
+
+    const startTime = Date.now()
+    addLog('Zahajuji zpracování dotazu...')
+
+    tickerRef.current = setInterval(() => {
+      const elapsedSec = Math.floor((Date.now() - startTime) / 1000)
+      if (elapsedSec > 0) {
+        updateOrAddWaitLog(elapsedSec)
+      }
+    }, 1000)
 
     try {
       const res = await sendOpenRouterChat({
         apiKey,
         model: modelId,
         userPrompt: prompt,
+        discussionId,
         discussionTitle,
         posts,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        systemPrompt,
+        onProgress: msg => {
+          addLog(msg)
+        },
       })
+
+      const durationMs = Date.now() - startTime
+      stopTicker()
+      // jakmile prijde odpoved, logy zahodit
+      setEphemeralLogs([])
+
       setResult(res.content)
       setResultUsage(res.usage)
+      setResultDuration(durationMs)
+
       await addLlmHistoryEntry({
         discussionId,
         discussionTitle,
@@ -173,11 +251,16 @@ export const LlmPromptModal: React.FC<Props> = ({
         postCount,
         prompt: prompt.trim(),
         response: res.content,
+        durationMs,
         usage: res.usage,
       })
     } catch (e: any) {
-      setErrorMessage(e?.message || 'Nastala neočekávaná chyba při komunikaci s modelem.')
+      stopTicker()
+      const errorText = e?.message || 'Nastala neočekávaná chyba při komunikaci s modelem.'
+      setErrorMessage(errorText)
+      setEphemeralLogs([])
     } finally {
+      stopTicker()
       setIsSending(false)
     }
   }
@@ -418,12 +501,75 @@ export const LlmPromptModal: React.FC<Props> = ({
             </View>
 
             {/* Error Message */}
-            {errorMessage && (
-              <View style={[styles.errorBox, { backgroundColor: `${colors.accent}18`, borderColor: colors.accent }]}>
-                <Icon name="alert-triangle" size={18} color={colors.accent} style={{ marginRight: 8 }} />
-                <Text style={{ color: colors.accent, fontSize: metrics.fontSizes.small, flex: 1 }}>
-                  {errorMessage}
-                </Text>
+            {errorMessage ? (
+              <View
+                style={[
+                  styles.errorBox,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.error || colors.accent,
+                    borderLeftColor: colors.error || colors.accent,
+                    borderLeftWidth: 4,
+                  },
+                ]}>
+                <Icon
+                  name="alert-triangle"
+                  size={20}
+                  color={colors.error || colors.accent}
+                  style={{ marginRight: 10, alignSelf: 'flex-start', marginTop: 1 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.error || colors.accent,
+                      fontSize: 11,
+                      fontWeight: '700',
+                      letterSpacing: 0.5,
+                      marginBottom: 2,
+                    }}>
+                    CHYBA
+                  </Text>
+                  <Text
+                    selectable
+                    style={{
+                      color: colors.text,
+                      fontSize: metrics.fontSizes.small,
+                      lineHeight: 18,
+                    }}>
+                    {errorMessage}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Ephemeral Logs (while sending) */}
+            {isSending && ephemeralLogs.length > 0 && (
+              <View
+                style={[
+                  styles.logsBox,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.disabled,
+                  },
+                ]}>
+                <View style={styles.logsHeader}>
+                  <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={[styles.logsTitle, { color: colors.primary, fontSize: 11 }]}>
+                    PRŮBĚH POŽADAVKU
+                  </Text>
+                </View>
+                {ephemeralLogs.map(log => (
+                  <View key={log.id} style={styles.logRow}>
+                    <Text style={[styles.logTime, { color: colors.faded, fontSize: 10 }]}>
+                      {log.time}
+                    </Text>
+                    <Text
+                      style={[styles.logText, { color: colors.text, fontSize: metrics.fontSizes.small }]}
+                      numberOfLines={2}>
+                      {log.text}
+                    </Text>
+                  </View>
+                ))}
               </View>
             )}
 
@@ -462,31 +608,101 @@ export const LlmPromptModal: React.FC<Props> = ({
                     </Text>
                   </View>
 
-                  <TouchableOpacity
-                    onPress={handleCopy}
-                    style={[
-                      styles.copyBtn,
-                      { backgroundColor: copied ? colors.secondary : colors.primary },
-                    ]}>
-                    <Icon name={copied ? 'check' : 'copy'} size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-                    <Text style={styles.copyBtnText}>
-                      {copied ? t('llm.copied') || 'Zkopírováno' : t('llm.copyAnswer') || 'Kopírovat'}
-                    </Text>
-                  </TouchableOpacity>
+                  <View style={styles.resultActions}>
+                    {/* Toggle: Formatted Markdown vs Raw Source */}
+                    <View
+                      style={[
+                        styles.toggleContainer,
+                        { backgroundColor: colors.background, borderColor: colors.disabled },
+                      ]}>
+                      <TouchableOpacity
+                        onPress={() => setViewMode('formatted')}
+                        style={[
+                          styles.toggleBtn,
+                          viewMode === 'formatted' && { backgroundColor: colors.primary },
+                        ]}>
+                        <Icon
+                          name="file-text"
+                          size={12}
+                          color={viewMode === 'formatted' ? '#FFFFFF' : colors.faded}
+                          style={{ marginRight: 3 }}
+                        />
+                        <Text
+                          style={[
+                            styles.toggleBtnText,
+                            { color: viewMode === 'formatted' ? '#FFFFFF' : colors.faded },
+                          ]}>
+                          Formát
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => setViewMode('raw')}
+                        style={[
+                          styles.toggleBtn,
+                          viewMode === 'raw' && { backgroundColor: colors.primary },
+                        ]}>
+                        <Icon
+                          name="code"
+                          size={12}
+                          color={viewMode === 'raw' ? '#FFFFFF' : colors.faded}
+                          style={{ marginRight: 3 }}
+                        />
+                        <Text
+                          style={[
+                            styles.toggleBtnText,
+                            { color: viewMode === 'raw' ? '#FFFFFF' : colors.faded },
+                          ]}>
+                          Zdroj
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={handleCopy}
+                      style={[
+                        styles.copyBtn,
+                        { backgroundColor: copied ? colors.secondary : colors.primary },
+                      ]}>
+                      <Icon name={copied ? 'check' : 'copy'} size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                      <Text style={styles.copyBtnText}>
+                        {copied ? t('llm.copied') || 'Zkopírováno' : t('llm.copyAnswer') || 'Kopírovat'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <Text
-                  selectable
-                  style={[styles.resultText, { color: colors.text, fontSize: metrics.fontSizes.p }]}>
-                  {result}
-                </Text>
+                {viewMode === 'formatted' ? (
+                  <MarkdownViewComponent
+                    content={result}
+                    selectable
+                    onNavigateToPost={onNavigateToPost}
+                  />
+                ) : (
+                  <Text
+                    selectable
+                    style={[
+                      styles.resultText,
+                      {
+                        color: colors.text,
+                        fontSize: metrics.fontSizes.p,
+                        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                      },
+                    ]}>
+                    {result}
+                  </Text>
+                )}
 
-                {resultUsage && (
+                {(resultUsage || resultDuration != null) && (
                   <View style={[styles.usageRow, { borderTopColor: colors.disabled }]}>
                     <Text style={{ color: colors.faded, fontSize: 11 }}>
-                      {`Tokeny: ${resultUsage.total_tokens || 0} celkem (${resultUsage.prompt_tokens || 0} prompt, ${
-                        resultUsage.completion_tokens || 0
-                      } výstup)`}
+                      {resultDuration != null ? `Čas odpovědi: ${formatDuration(resultDuration)}` : ''}
+                      {resultDuration != null && resultUsage ? ' • ' : ''}
+                      {resultUsage
+                        ? `Tokeny: ${resultUsage.total_tokens || 0} celkem (${resultUsage.prompt_tokens || 0} prompt, ${
+                            resultUsage.completion_tokens || 0
+                          } výstup)`
+                        : ''}
                     </Text>
                   </View>
                 )}
@@ -600,6 +816,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 14,
   },
+  logsBox: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 14,
+  },
+  logsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logsTitle: {
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  logTime: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginRight: 8,
+    marginTop: 1,
+  },
+  logText: {
+    flex: 1,
+    lineHeight: 18,
+  },
   sendBtn: {
     paddingVertical: 14,
     borderRadius: 8,
@@ -631,6 +876,29 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontWeight: 'bold',
+  },
+  resultActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 2,
+  },
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  toggleBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   copyBtn: {
     flexDirection: 'row',

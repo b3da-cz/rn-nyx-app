@@ -11,6 +11,7 @@ import {
   FormRowToggleComponent,
   LlmHistoryModal,
   LlmModelPickerDialog,
+  LlmSystemPromptDialog,
   SectionHeaderComponent,
 } from '../component'
 import {
@@ -63,6 +64,7 @@ type State = {
   isFetchingModels: boolean
   models: OpenRouterModel[]
   isModelPickerVisible: boolean
+  isSystemPromptDialogVisible: boolean
   isHistoryModalVisible: boolean
   historyCount: number
   llmError: string | null
@@ -147,6 +149,7 @@ export class SettingsView extends Component<Props> {
       isFetchingModels: false,
       models: [],
       isModelPickerVisible: false,
+      isSystemPromptDialogVisible: false,
       isHistoryModalVisible: false,
       historyCount: 0,
       llmError: null,
@@ -492,21 +495,36 @@ export class SettingsView extends Component<Props> {
               </View>
 
               {/* Error banner */}
-              {this.state.llmError && (
+              {this.state.llmError ? (
                 <View
                   style={{
-                    backgroundColor: `${theme.colors.accent}18`,
-                    borderColor: theme.colors.accent,
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.error || theme.colors.accent,
                     borderWidth: 1,
+                    borderLeftWidth: 4,
                     borderRadius: 6,
                     padding: 10,
                     marginBottom: 10,
+                    flexDirection: 'row',
+                    alignItems: 'center',
                   }}>
-                  <Text style={{ color: theme.colors.accent, fontSize: theme.metrics.fontSizes.small }}>
+                  <Icon
+                    name="alert-triangle"
+                    size={18}
+                    color={theme.colors.error || theme.colors.accent}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    selectable
+                    style={{
+                      color: theme.colors.text,
+                      fontSize: theme.metrics.fontSizes.small,
+                      flex: 1,
+                    }}>
                     {this.state.llmError}
                   </Text>
                 </View>
-              )}
+              ) : null}
 
               {/* Model Picker Trigger */}
               <TouchableOpacity
@@ -553,6 +571,44 @@ export class SettingsView extends Component<Props> {
                       {this.state.selectedLlmModel}
                     </Text>
                   ) : null}
+                </View>
+                <Icon name="chevron-right" size={20} color={theme.colors.faded} />
+              </TouchableOpacity>
+
+              {/* System Prompt Row */}
+              <TouchableOpacity
+                onPress={() => this.setState({ isSystemPromptDialogVisible: true })}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.disabled,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 10,
+                }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
+                  <Icon name="sliders" size={20} color={theme.colors.primary} style={{ marginRight: 10 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: theme.colors.text,
+                        fontSize: theme.metrics.fontSizes.p,
+                        fontWeight: '600',
+                      }}>
+                      Systémový prompt
+                    </Text>
+                    <Text
+                      style={{
+                        color: theme.colors.faded,
+                        fontSize: theme.metrics.fontSizes.small,
+                        marginTop: 2,
+                      }}>
+                      Instrukce pro chování modelu a formátování odkazů
+                    </Text>
+                  </View>
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />
               </TouchableOpacity>
@@ -604,6 +660,15 @@ export class SettingsView extends Component<Props> {
           onSelect={model => this.onSelectModel(model)}
           onCancel={() => this.setState({ isModelPickerVisible: false })}
         />
+        <LlmSystemPromptDialog
+          isVisible={!!this.state.isSystemPromptDialogVisible}
+          initialPrompt={this.context?.config?.llmSystemPrompt}
+          onSave={async prompt => {
+            await this.setOption('llmSystemPrompt', prompt)
+            this.setState({ isSystemPromptDialogVisible: false })
+          }}
+          onCancel={() => this.setState({ isSystemPromptDialogVisible: false })}
+        />
         <LlmHistoryModal
           isVisible={!!this.state.isHistoryModalVisible}
           onClose={() => {
@@ -611,6 +676,10 @@ export class SettingsView extends Component<Props> {
             this.loadHistoryCount()
           }}
           onHistoryChanged={() => this.loadHistoryCount()}
+          onNavigateToPost={(discussionId, postId) => {
+            this.setState({ isHistoryModalVisible: false })
+            this.props.navigation.push('discussion', { discussionId, postId })
+          }}
         />
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
       </View>

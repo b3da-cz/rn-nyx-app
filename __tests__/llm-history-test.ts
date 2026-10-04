@@ -3,6 +3,7 @@ import {
   addLlmHistoryEntry,
   deleteLlmHistoryEntry,
   clearLlmHistory,
+  formatDuration,
 } from '../src/lib/LlmHistory'
 
 jest.mock('../src/lib/Storage', () => {
@@ -27,7 +28,15 @@ describe('LlmHistory tests', () => {
     expect(history).toEqual([])
   })
 
-  it('adds an entry and sets id, createdAt, and newest first', async () => {
+  it('formats duration correctly', () => {
+    expect(formatDuration()).toBe('')
+    expect(formatDuration(undefined)).toBe('')
+    expect(formatDuration(250)).toBe('250 ms')
+    expect(formatDuration(1500)).toBe('1.5 s')
+    expect(formatDuration(4200)).toBe('4.2 s')
+  })
+
+  it('adds an entry and sets id, createdAt, durationMs, and newest first', async () => {
     const item1 = await addLlmHistoryEntry({
       discussionId: 10,
       discussionTitle: 'Klub 1',
@@ -36,12 +45,14 @@ describe('LlmHistory tests', () => {
       postCount: 5,
       prompt: 'Shrň diskuzi',
       response: 'Souhrn diskuze...',
+      durationMs: 3450,
       usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
     })
 
     expect(item1.id).toBeDefined()
     expect(item1.createdAt).toBeDefined()
     expect(item1.prompt).toBe('Shrň diskuzi')
+    expect(item1.durationMs).toBe(3450)
     expect(item1.usage?.total_tokens).toBe(150)
 
     const item2 = await addLlmHistoryEntry({
@@ -51,11 +62,13 @@ describe('LlmHistory tests', () => {
       postCount: 2,
       prompt: 'Druhý dotaz',
       response: 'Druhá odpověď...',
+      durationMs: 1200,
     })
 
     const list = await getLlmHistory()
     expect(list.length).toBe(2)
     expect(list[0].id).toBe(item2.id)
+    expect(list[0].durationMs).toBe(1200)
     expect(list[1].id).toBe(item1.id)
   })
 

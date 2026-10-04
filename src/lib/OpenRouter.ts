@@ -11,14 +11,24 @@ export type OpenRouterModel = {
   pricing?: OpenRouterPricing
 }
 
+export const DEFAULT_LLM_SYSTEM_PROMPT =
+  'Jsi asistent pro českou diskuzní sociální síť Nyx.cz. Tvým úkolem je analyzovat, shrnovat nebo zpracovávat příspěvky z diskuze podle zadání uživatele.\n\n' +
+  'Pravidla formátování odpovědi:\n' +
+  '- Odpověď formátuj v přehledném Markdownu.\n' +
+  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@EBBN](https://nyx.cz/discussion/{discussion_id}/id/67890)).\n' +
+  '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.'
+
 export type OpenRouterChatParams = {
   apiKey: string
   model: string
   userPrompt: string
+  discussionId?: number | string
   discussionTitle?: string
   posts?: any[]
   dateFrom?: string
   dateTo?: string
+  systemPrompt?: string
+  onProgress?: (message: string) => void
 }
 
 export type OpenRouterChatResult = {
@@ -155,13 +165,14 @@ export function filterAndFormatPostsForLlm(
   let totalWords = 0
 
   for (const post of sorted) {
+    const idStr = post.id != null ? `[ID:${post.id}] ` : ''
     const dateStr = post.inserted_at ? `[${post.inserted_at}] ` : ''
     const author = post.username ? `@${post.username}: ` : ''
     const rawContent = (post.parsed?.clearText || post.content || '').trim()
     const content = rawContent.replace(/\s+/g, ' ')
 
     if (content.length > 0) {
-      const line = `${dateStr}${author}${content}`
+      const line = `${idStr}${dateStr}${author}${content}`
       lines.push(line)
       totalWords += content.split(' ').filter(Boolean).length
     }
@@ -185,10 +196,13 @@ export async function sendOpenRouterChat({
   apiKey,
   model,
   userPrompt,
+  discussionId,
   discussionTitle = '',
   posts = [],
   dateFrom,
   dateTo,
+  systemPrompt,
+  onProgress,
 }: OpenRouterChatParams): Promise<OpenRouterChatResult> {
   const trimmedKey = apiKey.trim()
   if (!trimmedKey) {
@@ -201,11 +215,14 @@ export async function sendOpenRouterChat({
     throw new Error('Zadejte zadání (prompt) pro model.')
   }
 
-  const { formattedText, count } = filterAndFormatPostsForLlm(posts, dateFrom, dateTo, discussionTitle)
+  onProgress?.('Filtruji a připravuji příspěvky...')
+  const { formattedText, count, wordCount } = filterAndFormatPostsForLlm(posts, dateFrom, dateTo, discussionTitle)
 
   if (count === 0) {
     throw new Error('V zadaném časovém období nebyly nalezeny žádné příspěvky ke zpracování.')
   }
+
+  onProgress?.(`Kontext připraven: ${count} příspěvků (cca ${wordCount.toLocaleString()} slov)`)
 
   const dateRangeLabel =
     dateFrom && dateTo
@@ -216,17 +233,29 @@ export async function sendOpenRouterChat({
       ? `do ${dateTo}`
       : 'celé vybrané období'
 
-  const systemMessage =
-    'Jsi asistent pro českou diskuzní sociální síť Nyx.cz. ' +
-    'Tvým úkolem je analyzovat, shrnovat nebo zpracovávat příspěvky z diskuze podle zadání uživatele. ' +
-    'Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk. ' +
-    'Pokud cituješ nebo zmiňuješ autory, používej formát @uživatelské_jméno.'
+  const effectiveSystemPrompt = (systemPrompt && systemPrompt.trim())
+    ? systemPrompt.trim()
+    : DEFAULT_LLM_SYSTEM_PROMPT
+
+  const resolvedSystemPrompt = effectiveSystemPrompt.replace(
+    /\{discussion_id\}/g,
+    discussionId ? String(discussionId) : '{discussion_id}',
+  )
+
+  const discIdLabel = discussionId ? ` (ID diskuze: ${discussionId})` : ''
+  const postUrlPattern = discussionId
+    ? `https://nyx.cz/discussion/${discussionId}/id/{post_id}`
+    : 'https://nyx.cz/discussion/{discussion_id}/id/{post_id}'
 
   const userMessage =
     `${userPrompt.trim()}\n\n` +
-    `--- Začátek příspěvků z diskuze "${discussionTitle || 'Klub'}" (${dateRangeLabel}, celkem ${count} příspěvků) ---\n\n` +
+    `--- Začátek příspěvků z diskuze "${discussionTitle || 'Klub'}"${discIdLabel} (${dateRangeLabel}, celkem ${count} příspěvků) ---\n` +
+    `Příspěvky mají formát [ID:{post_id}] [{datum}] @{autor}: {text}.\n` +
+    `Odkaz na příspěvek vytvoř jako [@autor](${postUrlPattern}).\n\n` +
     `${formattedText}\n\n` +
     `--- Konec příspěvků ---`
+
+  onProgress?.(`Odesílám HTTP požadavek na OpenRouter (${model})...`)
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -239,11 +268,13 @@ export async function sendOpenRouterChat({
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: systemMessage },
+        { role: 'system', content: resolvedSystemPrompt },
         { role: 'user', content: userMessage },
       ],
     }),
   })
+
+  onProgress?.(`HTTP status ${res.status}: Čekám na dokončení generování...`)
 
   const json = await res.json()
   if (!res.ok || json.error) {
@@ -251,6 +282,7 @@ export async function sendOpenRouterChat({
     throw new Error(errorMsg)
   }
 
+  onProgress?.('Odpověď přijata, zpracovávám výsledek...')
   const choice = json.choices?.[0]
   const content = choice?.message?.content || ''
 

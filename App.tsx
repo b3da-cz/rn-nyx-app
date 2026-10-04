@@ -144,6 +144,7 @@ const App: () => ReactNode = () => {
       openRouterApiKey: conf.openRouterApiKey || '',
       selectedLlmModel: conf.selectedLlmModel || '',
       selectedLlmModelName: conf.selectedLlmModelName || '',
+      llmSystemPrompt: conf.llmSystemPrompt || '',
       theme: conf.theme === undefined ? 'system' : conf.theme,
       themeOptions: conf.themeOptions === undefined ? { ...defaultThemeOptions } : conf.themeOptions,
     })
