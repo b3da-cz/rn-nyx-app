@@ -7,22 +7,28 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
+import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import Icon from 'react-native-vector-icons/Feather'
 import {
   addLlmHistoryEntry,
+  fetchOpenRouterModels,
   filterAndFormatPostsForLlm,
   formatDuration,
   isoDate,
+  OpenRouterModel,
   sendOpenRouterChat,
+  Storage,
   t,
   useTheme,
 } from '../lib'
+import { LlmModelPickerDialog } from './LlmModelPickerDialog'
 import { MarkdownViewComponent } from './MarkdownViewComponent'
 
 type Props = {
@@ -59,8 +65,17 @@ export const LlmPromptModal: React.FC<Props> = ({
 
   const [prompt, setPrompt] = useState('')
   const [datePreset, setDatePreset] = useState<DatePreset>('today')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateFrom, setDateFrom] = useState(() => isoDate(new Date()))
+  const [dateTo, setDateTo] = useState(() => isoDate(new Date()))
+  const [activeDatePicker, setActiveDatePicker] = useState<'from' | 'to' | null>(null)
+
+  const [currentModelId, setCurrentModelId] = useState(modelId)
+  const [currentModelName, setCurrentModelName] = useState(modelName || modelId)
+  const [isGlobalModel, setIsGlobalModel] = useState(false)
+  const [isModelPickerVisible, setIsModelPickerVisible] = useState(false)
+  const [availableModels, setAvailableModels] = useState<OpenRouterModel[]>([])
+  const [isFetchingModels, setIsFetchingModels] = useState(false)
+
   const [isSending, setIsSending] = useState(false)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [result, setResult] = useState<string | null>(null)
@@ -72,6 +87,30 @@ export const LlmPromptModal: React.FC<Props> = ({
   const [ephemeralLogs, setEphemeralLogs] = useState<{ id: string; time: string; text: string }[]>([])
 
   const tickerRef = useRef<NodeJS.Timeout | null>(null)
+  const prevDiscussionId = useRef(discussionId)
+
+  // Keep model in sync with props when not overridden
+  useEffect(() => {
+    if (modelId) {
+      setCurrentModelId(prev => prev || modelId)
+      setCurrentModelName(prev => (prev && prev !== modelId ? prev : modelName || modelId))
+    }
+  }, [modelId, modelName])
+
+  // Load cached models on mount
+  useEffect(() => {
+    const loadCached = async () => {
+      try {
+        const cached = await Storage.getCachedLlmModels()
+        if (Array.isArray(cached) && cached.length > 0) {
+          setAvailableModels(cached)
+        }
+      } catch (e) {
+        console.warn('Failed to load cached models in modal', e)
+      }
+    }
+    loadCached()
+  }, [])
 
   const stopTicker = useCallback(() => {
     if (tickerRef.current) {
@@ -103,17 +142,22 @@ export const LlmPromptModal: React.FC<Props> = ({
     })
   }, [])
 
-  // Initialize dates to "today" when opened, cleanup on close
+  // Reset state ONLY when navigating to a different discussion
   useEffect(() => {
-    if (isVisible) {
+    if (prevDiscussionId.current !== discussionId) {
+      prevDiscussionId.current = discussionId
+      setPrompt('')
       applyPreset('today')
-      setErrorMessage(null)
       setResult(null)
       setResultUsage(null)
       setResultDuration(null)
-      setCopied(false)
+      setErrorMessage(null)
       setEphemeralLogs([])
-    } else {
+    }
+  }, [discussionId])
+
+  useEffect(() => {
+    if (!isVisible) {
       stopTicker()
       setEphemeralLogs([])
     }
@@ -187,6 +231,95 @@ export const LlmPromptModal: React.FC<Props> = ({
     }
   }
 
+  const openDatePicker = (target: 'from' | 'to') => {
+    const currentValue = target === 'from' ? dateFrom : dateTo
+    const initialDate =
+      currentValue && !isNaN(Date.parse(currentValue))
+        ? new Date(currentValue)
+        : new Date()
+
+    if (Platform.OS === 'android' && DateTimePickerAndroid) {
+      try {
+        DateTimePickerAndroid.open({
+          value: initialDate,
+          mode: 'date',
+          is24Hour: true,
+          onChange: (event: DateTimePickerEvent, selectedDate?: Date) => {
+            if (event.type === 'set' && selectedDate) {
+              const formatted = isoDate(selectedDate)
+              if (target === 'from') {
+                setDateFrom(formatted)
+              } else {
+                setDateTo(formatted)
+              }
+              setDatePreset('custom')
+            }
+          },
+        })
+        return
+      } catch (e) {
+        console.warn('DateTimePickerAndroid error, falling back to component:', e)
+      }
+    }
+
+    setActiveDatePicker(target)
+  }
+
+  const handleOpenModelPicker = async () => {
+    setIsModelPickerVisible(true)
+    if (availableModels.length === 0 && apiKey) {
+      setIsFetchingModels(true)
+      try {
+        const models = await fetchOpenRouterModels(apiKey)
+        setAvailableModels(models)
+        await Storage.setCachedLlmModels(models)
+      } catch (e) {
+        console.warn('Failed to fetch models in prompt modal', e)
+      } finally {
+        setIsFetchingModels(false)
+      }
+    }
+  }
+
+  const handleSelectModel = async (model: OpenRouterModel) => {
+    setCurrentModelId(model.id)
+    setCurrentModelName(model.name)
+    setIsModelPickerVisible(false)
+
+    if (isGlobalModel) {
+      try {
+        const conf = (await Storage.getConfig()) || {}
+        conf.selectedLlmModel = model.id
+        conf.selectedLlmModelName = model.name
+        await Storage.setConfig(conf)
+      } catch (e) {
+        console.warn('Failed to save selected model globally', e)
+      }
+    }
+  }
+
+  const handleToggleGlobal = async (nextValue: boolean) => {
+    setIsGlobalModel(nextValue)
+    if (nextValue && currentModelId) {
+      try {
+        const conf = (await Storage.getConfig()) || {}
+        conf.selectedLlmModel = currentModelId
+        conf.selectedLlmModelName = currentModelName
+        await Storage.setConfig(conf)
+      } catch (e) {
+        console.warn('Failed to persist global model setting', e)
+      }
+    }
+  }
+
+  const handleNewQuery = () => {
+    setResult(null)
+    setResultUsage(null)
+    setResultDuration(null)
+    setErrorMessage(null)
+    setEphemeralLogs([])
+  }
+
   const handleSend = async () => {
     if (!prompt.trim()) {
       setErrorMessage('Zadej instrukci (prompt) pro model.')
@@ -194,6 +327,14 @@ export const LlmPromptModal: React.FC<Props> = ({
     }
     if (postCount === 0) {
       setErrorMessage('Ve vybraném období nejsou žádné příspěvky ke zpracování.')
+      return
+    }
+
+    const activeModelId = currentModelId || modelId
+    const activeModelName = currentModelName || modelName || activeModelId
+
+    if (!activeModelId) {
+      setErrorMessage('Není vybrán žádný model. Vyberte model před odesláním.')
       return
     }
 
@@ -217,9 +358,20 @@ export const LlmPromptModal: React.FC<Props> = ({
     }, 1000)
 
     try {
+      if (isGlobalModel) {
+        try {
+          const conf = (await Storage.getConfig()) || {}
+          conf.selectedLlmModel = activeModelId
+          conf.selectedLlmModelName = activeModelName
+          await Storage.setConfig(conf)
+        } catch (e) {
+          console.warn('Failed to save global model on send', e)
+        }
+      }
+
       const res = await sendOpenRouterChat({
         apiKey,
-        model: modelId,
+        model: activeModelId,
         userPrompt: prompt,
         discussionId,
         discussionTitle,
@@ -244,8 +396,8 @@ export const LlmPromptModal: React.FC<Props> = ({
       await addLlmHistoryEntry({
         discussionId,
         discussionTitle,
-        modelId,
-        modelName,
+        modelId: activeModelId,
+        modelName: activeModelName,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         postCount,
@@ -317,7 +469,7 @@ export const LlmPromptModal: React.FC<Props> = ({
               style={[styles.headerSubtitle, { color: colors.faded, fontSize: metrics.fontSizes.small }]}
               numberOfLines={1}>
               {discussionTitle ? `${discussionTitle} • ` : ''}
-              {modelName || modelId}
+              {currentModelName || currentModelId || modelName || modelId}
             </Text>
           </View>
         </View>
@@ -411,52 +563,76 @@ export const LlmPromptModal: React.FC<Props> = ({
             <View style={styles.dateInputsRow}>
               <View style={styles.dateInputWrap}>
                 <Text style={[styles.dateInputLabel, { color: colors.faded, fontSize: metrics.fontSizes.small }]}>
-                  {t('llm.dateFrom') || 'Od'} (RRRR-MM-DD):
+                  {t('llm.dateFrom') || 'Od'}:
                 </Text>
-                <TextInput
-                  value={dateFrom}
-                  onChangeText={val => {
-                    setDateFrom(val)
-                    setDatePreset('custom')
-                  }}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.faded}
+                <TouchableOpacity
+                  onPress={() => openDatePicker('from')}
+                  activeOpacity={0.7}
                   style={[
-                    styles.dateInput,
+                    styles.dateInputTouchable,
                     {
-                      color: colors.text,
                       backgroundColor: colors.surface,
                       borderColor: colors.disabled,
-                      fontSize: metrics.fontSizes.p,
                     },
-                  ]}
-                  autoCapitalize="none"
-                />
+                  ]}>
+                  <Icon name="calendar" size={16} color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: dateFrom ? colors.text : colors.faded,
+                      fontSize: metrics.fontSizes.p,
+                    }}>
+                    {dateFrom || 'YYYY-MM-DD'}
+                  </Text>
+                  {!!dateFrom && (
+                    <TouchableOpacity
+                      onPress={e => {
+                        e.stopPropagation()
+                        setDateFrom('')
+                        setDatePreset('custom')
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                      <Icon name="x" size={14} color={colors.faded} />
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
               </View>
 
               <View style={styles.dateInputWrap}>
                 <Text style={[styles.dateInputLabel, { color: colors.faded, fontSize: metrics.fontSizes.small }]}>
-                  {t('llm.dateTo') || 'Do'} (RRRR-MM-DD):
+                  {t('llm.dateTo') || 'Do'}:
                 </Text>
-                <TextInput
-                  value={dateTo}
-                  onChangeText={val => {
-                    setDateTo(val)
-                    setDatePreset('custom')
-                  }}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.faded}
+                <TouchableOpacity
+                  onPress={() => openDatePicker('to')}
+                  activeOpacity={0.7}
                   style={[
-                    styles.dateInput,
+                    styles.dateInputTouchable,
                     {
-                      color: colors.text,
                       backgroundColor: colors.surface,
                       borderColor: colors.disabled,
-                      fontSize: metrics.fontSizes.p,
                     },
-                  ]}
-                  autoCapitalize="none"
-                />
+                  ]}>
+                  <Icon name="calendar" size={16} color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: dateTo ? colors.text : colors.faded,
+                      fontSize: metrics.fontSizes.p,
+                    }}>
+                    {dateTo || 'YYYY-MM-DD'}
+                  </Text>
+                  {!!dateTo && (
+                    <TouchableOpacity
+                      onPress={e => {
+                        e.stopPropagation()
+                        setDateTo('')
+                        setDatePreset('custom')
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                      <Icon name="x" size={14} color={colors.faded} />
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -573,6 +749,60 @@ export const LlmPromptModal: React.FC<Props> = ({
               </View>
             )}
 
+            {/* Model Selector Row + Global Toggle */}
+            <View style={styles.modelRowContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.modelSelectorBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.disabled,
+                  },
+                ]}
+                onPress={handleOpenModelPicker}
+                activeOpacity={0.7}>
+                <Icon name="cpu" size={16} color={colors.primary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.modelSelectorLabel, { color: colors.faded, fontSize: 10 }]}>
+                    Model
+                  </Text>
+                  <Text
+                    style={[styles.modelSelectorName, { color: colors.text, fontSize: metrics.fontSizes.small }]}
+                    numberOfLines={1}>
+                    {currentModelName || currentModelId || 'Vybrat model'}
+                  </Text>
+                </View>
+                <Icon name="chevron-down" size={16} color={colors.faded} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.globalToggleWrap,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.disabled,
+                  },
+                ]}
+                onPress={() => handleToggleGlobal(!isGlobalModel)}
+                activeOpacity={0.8}>
+                <View style={styles.globalToggleTextWrap}>
+                  <Text style={[styles.globalToggleLabel, { color: colors.text, fontSize: 11 }]}>
+                    Globálně
+                  </Text>
+                  <Text style={[styles.globalToggleSub, { color: colors.faded, fontSize: 9 }]}>
+                    {isGlobalModel ? 'trvale' : 'jen jednou'}
+                  </Text>
+                </View>
+                <Switch
+                  value={isGlobalModel}
+                  onValueChange={handleToggleGlobal}
+                  thumbColor={isGlobalModel ? colors.primary : colors.disabled}
+                  trackColor={{ false: colors.disabled, true: colors.primary + '88' }}
+                  style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+                />
+              </TouchableOpacity>
+            </View>
+
             {/* Send Button */}
             <TouchableOpacity
               onPress={handleSend}
@@ -659,6 +889,18 @@ export const LlmPromptModal: React.FC<Props> = ({
                     </View>
 
                     <TouchableOpacity
+                      onPress={handleNewQuery}
+                      style={[
+                        styles.newQueryBtn,
+                        { backgroundColor: colors.background, borderColor: colors.disabled },
+                      ]}>
+                      <Icon name="plus" size={12} color={colors.text} style={{ marginRight: 3 }} />
+                      <Text style={[styles.toggleBtnText, { color: colors.text }]}>
+                        Nový
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
                       onPress={handleCopy}
                       style={[
                         styles.copyBtn,
@@ -711,6 +953,41 @@ export const LlmPromptModal: React.FC<Props> = ({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <LlmModelPickerDialog
+        isVisible={isModelPickerVisible}
+        models={availableModels}
+        selectedModelId={currentModelId || modelId}
+        isLoading={isFetchingModels}
+        onSelect={handleSelectModel}
+        onCancel={() => setIsModelPickerVisible(false)}
+      />
+
+      {activeDatePicker && (
+        <DateTimePicker
+          value={
+            (activeDatePicker === 'from' ? dateFrom : dateTo) &&
+            !isNaN(Date.parse(activeDatePicker === 'from' ? dateFrom : dateTo))
+              ? new Date(activeDatePicker === 'from' ? dateFrom : dateTo)
+              : new Date()
+          }
+          mode="date"
+          display="default"
+          onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+            const target = activeDatePicker
+            setActiveDatePicker(null)
+            if (event.type === 'set' && selectedDate && target) {
+              const formatted = isoDate(selectedDate)
+              if (target === 'from') {
+                setDateFrom(formatted)
+              } else {
+                setDateTo(formatted)
+              }
+              setDatePreset('custom')
+            }
+          }}
+        />
+      )}
     </Modal>
   )
 }
@@ -789,6 +1066,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
+  dateInputTouchable: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   statsBox: {
     borderWidth: 1,
     borderRadius: 8,
@@ -844,6 +1129,58 @@ const styles = StyleSheet.create({
   logText: {
     flex: 1,
     lineHeight: 18,
+  },
+  modelRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  modelSelectorBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 48,
+  },
+  modelSelectorLabel: {
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  modelSelectorName: {
+    fontWeight: '600',
+  },
+  globalToggleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minHeight: 48,
+  },
+  globalToggleTextWrap: {
+    marginRight: 4,
+  },
+  globalToggleLabel: {
+    fontWeight: '600',
+  },
+  globalToggleSub: {
+    marginTop: 1,
+  },
+  newQueryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginRight: 6,
   },
   sendBtn: {
     paddingVertical: 14,

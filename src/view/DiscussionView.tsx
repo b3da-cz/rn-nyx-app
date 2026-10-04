@@ -134,6 +134,7 @@ export class DiscussionView extends Component<Props> {
       isListing: false,
       isAttendanceSaving: false,
       isLlmModalVisible: false,
+      isScreenFocused: true,
       listEpoch: 0,
       initialScrollIndex: undefined,
       theme: undefined,
@@ -147,13 +148,14 @@ export class DiscussionView extends Component<Props> {
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.setState({ isScreenFocused: true })
       if (!this.state.isMsgBoxVisible) {
         this.setState({ isSubmenuVisible: true })
       }
       this.revealLoadedPlaceholders()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
-      this.setState({ isSubmenuVisible: false })
+      this.setState({ isScreenFocused: false, isSubmenuVisible: false })
     })
     this.setFocusOnStart()
     this.setTheme()
@@ -997,7 +999,7 @@ export class DiscussionView extends Component<Props> {
         {/*</Portal>*/}
         {this.config?.isLlmEnabled && (
           <LlmPromptModal
-            isVisible={this.state.isLlmModalVisible}
+            isVisible={this.state.isLlmModalVisible && this.state.isScreenFocused}
             discussionId={this.state.discussionId ? this.state.discussionId : this.props.id}
             discussionTitle={this.state.title}
             posts={this._posts?.length ? this._posts : this.state.posts}
@@ -1008,7 +1010,6 @@ export class DiscussionView extends Component<Props> {
             onClose={() => this.setState({ isLlmModalVisible: false })}
             onLoadMorePosts={() => this.loadOlderPostsForLlm()}
             onNavigateToPost={(discussionId, postId) => {
-              this.setState({ isLlmModalVisible: false })
               this.showPost(discussionId, postId)
             }}
           />

@@ -7,6 +7,7 @@ const StorageKeys = {
   config: 'config',
   user: 'user',
   llmHistory: 'llmHistory',
+  cachedLlmModels: 'cachedLlmModels',
 }
 
 const set = async (key, value) => {
@@ -50,6 +51,10 @@ const getLlmHistory = async () => (await get(StorageKeys.llmHistory)) || []
 
 const setLlmHistory = async history => set(StorageKeys.llmHistory, history)
 
+const getCachedLlmModels = async () => (await get(StorageKeys.cachedLlmModels)) || []
+
+const setCachedLlmModels = async models => set(StorageKeys.cachedLlmModels, models)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -57,6 +62,7 @@ const removeAll = async () =>
     .then(() => set(StorageKeys.config, null))
     .then(() => set(StorageKeys.user, null))
     .then(() => set(StorageKeys.llmHistory, null))
+    .then(() => set(StorageKeys.cachedLlmModels, null))
 
 export const Storage = {
   getAuth,
@@ -71,5 +77,7 @@ export const Storage = {
   setUser,
   getLlmHistory,
   setLlmHistory,
+  getCachedLlmModels,
+  setCachedLlmModels,
   removeAll,
 }

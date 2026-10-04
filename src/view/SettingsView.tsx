@@ -86,10 +86,23 @@ export class SettingsView extends Component<Props> {
     this.nyx = this.context.nyx
     this.setTheme()
     this.loadHistoryCount()
+    this.loadCachedModels()
     this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => {
       this.refreshTimelineDays()
       this.loadHistoryCount()
+      this.loadCachedModels()
     })
+  }
+
+  async loadCachedModels() {
+    try {
+      const cached = await Storage.getCachedLlmModels()
+      if (Array.isArray(cached) && cached.length > 0 && this.state.models.length === 0) {
+        this.setState({ models: cached })
+      }
+    } catch (e) {
+      console.warn('Failed to load cached LLM models', e)
+    }
   }
 
   componentWillUnmount() {
@@ -168,6 +181,7 @@ export class SettingsView extends Component<Props> {
     try {
       const models = await fetchOpenRouterModels(key)
       this.setState({ models, isFetchingModels: false })
+      await Storage.setCachedLlmModels(models)
       if (!this.state.selectedLlmModel && models.length > 0) {
         await this.onSelectModel(models[0])
       }

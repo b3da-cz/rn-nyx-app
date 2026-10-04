@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   SafeAreaView,
@@ -16,6 +17,7 @@ type Props = {
   isVisible: boolean
   models: OpenRouterModel[]
   selectedModelId: string
+  isLoading?: boolean
   onSelect: (model: OpenRouterModel) => void
   onCancel: () => void
 }
@@ -26,6 +28,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   isVisible,
   models,
   selectedModelId,
+  isLoading = false,
   onSelect,
   onCancel,
 }) => {
@@ -148,6 +151,15 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           keyExtractor={item => item.id}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 40 }}
+          ListEmptyComponent={
+            isLoading ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+            ) : (
+              <Text style={{ textAlign: 'center', color: colors.faded, marginTop: 40, fontSize: metrics.fontSizes.p }}>
+                Žádné modely nenalezeny.
+              </Text>
+            )
+          }
           renderItem={({ item }) => {
             const isSelected = item.id === selectedModelId
             const pricingStr = formatPricing(item.pricing)
