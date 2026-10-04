@@ -9,13 +9,27 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { NotificationIconComponent, StackHeaderComponent } from './component'
-import { NavOptions, Nyx, rgbToHex, showNotificationBanner, subscribeFCM, t, Theme, wait } from './lib'
+import {
+  discussionScreenOptions,
+  LlmQueue,
+  NavOptions,
+  Nyx,
+  rgbToHex,
+  showNotificationBanner,
+  subscribeFCM,
+  t,
+  Theme,
+  wait,
+} from './lib'
 import {
   BookmarksStackContainer,
+  Discussion,
+  EventsStackContainer,
   HistoryStackContainer,
   LastPostsStackContainer,
+  LlmAssistant,
+  LlmLibrary,
   MailStackContainer,
-  EventsStackContainer,
   NotificationsStackContainer,
   RemindersStackContainer,
   SearchStackContainer,
@@ -106,12 +120,35 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           break
       }
     })
+    const unsubLlm = LlmQueue.onTaskCompleted(task => {
+      showNotificationBanner({
+        title: 'LLM Asistent odpověděl',
+        body: `${task.discussionTitle || 'Diskuze'}: odpověď je připravena v Knihovně`,
+        tintColor: rgbToHex(theme.colors.primary),
+        icon: 'check-circle',
+        onClick: async () => {
+          if (nav && typeof nav.navigate === 'function') {
+            nav.navigate('tabs', { screen: 'profile' })
+            await wait(100)
+            if (typeof nav.push === 'function') {
+              nav.push('llmLibrary')
+            } else {
+              nav.navigate('llmLibrary')
+            }
+          }
+          RNNotificationBanner.Dismiss()
+        },
+      })
+    })
     return () => {
       if (sub && sub.backgroundNotificationListener) {
         sub.backgroundNotificationListener()
       }
       if (sub && sub.onMessageListener) {
         sub.onMessageListener()
+      }
+      if (unsubLlm) {
+        unsubLlm()
       }
     }
   })
@@ -258,6 +295,13 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         component={About}
         options={{ title: t('profile.about') }}
       />
+      <RootStack.Screen
+        name={'llmLibrary'}
+        component={LlmLibrary}
+        options={{ title: t('llm.tabLibrary') || 'Knihovna' }}
+      />
+      <RootStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <RootStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
       <RootStack.Screen name={'tabs'} component={TabContainer} options={{ headerShown: false }} />
     </RootStack.Navigator>
   )

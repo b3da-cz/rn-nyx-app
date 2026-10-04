@@ -148,8 +148,6 @@ export class SettingsView extends Component<Props> {
       models: [],
       isModelPickerVisible: false,
       isSystemPromptDialogVisible: false,
-      isHistoryModalVisible: false,
-      historyCount: 0,
       llmError: null,
       username: '',
       isVisible: true,

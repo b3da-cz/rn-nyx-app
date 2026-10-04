@@ -31,6 +31,8 @@ type Props = {
   onLoadMorePosts?: () => Promise<number>
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   onHistoryEntryAdded?: () => void
+  onPromptFocus?: () => void
+  onPromptLayout?: (y: number) => void
 }
 
 export const LlmAssistantTab: React.FC<Props> = ({
@@ -46,6 +48,8 @@ export const LlmAssistantTab: React.FC<Props> = ({
   onLoadMorePosts,
   onNavigateToPost,
   onHistoryEntryAdded,
+  onPromptFocus,
+  onPromptLayout,
 }) => {
   const { colors, metrics } = useTheme()
   const { datePreset, dateFrom, dateTo, setDateFrom, setDateTo, applyPreset } = useLlmDateFilter()
@@ -77,7 +81,7 @@ export const LlmAssistantTab: React.FC<Props> = ({
             if (latest) {
               setResult(latest.response)
               setResultUsage(latest.usage)
-              setResultDuration(latest.durationMs)
+              setResultDuration(latest.durationMs ?? null)
               onHistoryEntryAdded?.()
             }
           })
@@ -216,7 +220,14 @@ export const LlmAssistantTab: React.FC<Props> = ({
         )}
       </View>
 
-      <LlmPromptInput prompt={prompt} onChangePrompt={onChangePrompt} disabled={isSending} />
+      <View onLayout={e => onPromptLayout?.(e.nativeEvent.layout.y)}>
+        <LlmPromptInput
+          prompt={prompt}
+          onChangePrompt={onChangePrompt}
+          onFocus={onPromptFocus}
+          disabled={isSending}
+        />
+      </View>
 
       <TouchableOpacity
         onPress={handleSend}

@@ -812,7 +812,7 @@ export class DiscussionView extends Component<Props> {
       actions.push({
         key: 'llm',
         icon: 'chip',
-        label: t('llm.title') || 'LLM Asistent',
+        label: t('llm.tabAssistant') || 'Asistent',
         onPress: () =>
           this.props.navigation.push('llm', {
             discussionId: this.state.discussionId ? this.state.discussionId : this.props.id,

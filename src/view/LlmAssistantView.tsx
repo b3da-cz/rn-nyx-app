@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Keyboard, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import { MainContext, t, useTheme } from '../lib'
 import { LlmAssistantTab, LlmLibraryTab } from '../component/llm'
@@ -28,6 +28,33 @@ export const LlmAssistantView: React.FC<Props> = ({
   const [prompt, setPrompt] = useState('')
   const [posts, setPosts] = useState<any[]>(initialPosts)
   const [historyCount, setHistoryCount] = useState(0)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
+
+  const isPromptFocusedRef = useRef(false)
+  const promptLayoutYRef = useRef(0)
+  const scrollRef = useRef<ScrollView>(null)
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', e => {
+      setKeyboardHeight(e.endCoordinates.height)
+      if (isPromptFocusedRef.current && scrollRef.current) {
+        setTimeout(() => {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, promptLayoutYRef.current - 8),
+            animated: true,
+          })
+        }, 50)
+      }
+    })
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0)
+      isPromptFocusedRef.current = false
+    })
+    return () => {
+      showSub.remove()
+      hideSub.remove()
+    }
+  }, [])
 
   useEffect(() => {
     if (initialPosts.length > 0) {
@@ -66,8 +93,20 @@ export const LlmAssistantView: React.FC<Props> = ({
     setActiveTab('assistant')
   }
 
+  const handlePromptFocus = () => {
+    isPromptFocusedRef.current = true
+    if (scrollRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, promptLayoutYRef.current - 8),
+          animated: true,
+        })
+      }, 50)
+    }
+  }
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Unified Top Header Bar with Back Arrow and Tabs */}
       <View style={[styles.topBar, { borderBottomColor: colors.disabled, backgroundColor: colors.background }]}>
         <TouchableOpacity
@@ -79,10 +118,7 @@ export const LlmAssistantView: React.FC<Props> = ({
 
         <TouchableOpacity
           onPress={() => setActiveTab('assistant')}
-          style={[
-            styles.tabItem,
-            { borderBottomColor: activeTab === 'assistant' ? colors.primary : 'transparent', borderBottomWidth: 3 },
-          ]}>
+          style={styles.tabItem}>
           <Text
             style={{
               color: activeTab === 'assistant' ? colors.text : colors.faded,
@@ -95,10 +131,7 @@ export const LlmAssistantView: React.FC<Props> = ({
 
         <TouchableOpacity
           onPress={() => setActiveTab('library')}
-          style={[
-            styles.tabItem,
-            { borderBottomColor: activeTab === 'library' ? colors.primary : 'transparent', borderBottomWidth: 3 },
-          ]}>
+          style={styles.tabItem}>
           <Text
             style={{
               color: activeTab === 'library' ? colors.text : colors.faded,
@@ -114,8 +147,12 @@ export const LlmAssistantView: React.FC<Props> = ({
       <View style={styles.contentWrap}>
         {activeTab === 'assistant' ? (
           <ScrollView
+            ref={scrollRef}
             style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 },
+            ]}
             keyboardShouldPersistTaps="handled">
             <LlmAssistantTab
               discussionId={discussionId || ''}
@@ -129,6 +166,10 @@ export const LlmAssistantView: React.FC<Props> = ({
               onChangePrompt={setPrompt}
               onLoadMorePosts={handleLoadOlderPosts}
               onNavigateToPost={handleNavigateToPost}
+              onPromptFocus={handlePromptFocus}
+              onPromptLayout={y => {
+                promptLayoutYRef.current = y
+              }}
             />
           </ScrollView>
         ) : (
@@ -142,7 +183,7 @@ export const LlmAssistantView: React.FC<Props> = ({
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   )
 }
 

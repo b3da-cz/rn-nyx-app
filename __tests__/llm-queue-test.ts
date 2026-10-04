@@ -125,4 +125,31 @@ describe('LlmQueue tests', () => {
     // Cleanup
     await LlmQueue.dismissTask('old-task-1')
   })
+
+  it('notifies onTaskCompleted listener when task finishes', async () => {
+    let completedTask: any = null
+    const unsubscribe = LlmQueue.onTaskCompleted(task => {
+      completedTask = task
+    })
+
+    const taskId = await LlmQueue.enqueueTask({
+      apiKey: 'test-key',
+      modelId: 'google/gemini-2.5-flash',
+      modelName: 'Gemini 2.5 Flash',
+      userPrompt: 'Test completion listener',
+      discussionId: 777,
+      discussionTitle: 'Completion Diskuze',
+      posts: [{ id: 10, inserted_at: '2026-10-04 12:00:00', text: 'Text', username: 'user' }],
+      postCount: 1,
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(completedTask).toBeDefined()
+    expect(completedTask.id).toBe(taskId)
+    expect(completedTask.discussionId).toBe(777)
+    expect(completedTask.discussionTitle).toBe('Completion Diskuze')
+
+    unsubscribe()
+  })
 })

@@ -26,6 +26,7 @@ type LlmQueueListener = (tasks: LlmPendingTask[]) => void
 class LlmQueueService {
   private tasks: LlmPendingTask[] = []
   private listeners: Set<LlmQueueListener> = new Set()
+  private completionListeners: Set<(task: LlmPendingTask) => void> = new Set()
   private isInitialized = false
 
   async init(): Promise<void> {
@@ -69,6 +70,13 @@ class LlmQueueService {
     listener(this.tasks)
     return () => {
       this.listeners.delete(listener)
+    }
+  }
+
+  onTaskCompleted(listener: (task: LlmPendingTask) => void): () => void {
+    this.completionListeners.add(listener)
+    return () => {
+      this.completionListeners.delete(listener)
     }
   }
 
@@ -171,16 +179,26 @@ class LlmQueueService {
       await this.persist()
       this.notify()
 
-      try {
-        showNotificationBanner({
-          title: 'LLM Asistent odpověděl',
-          body: `${task.discussionTitle}: odpověď je připravena v Knihovně`,
-          tintColor: '#1E293B',
-          icon: 'check-circle',
-          onClick: () => {},
+      if (this.completionListeners.size > 0) {
+        this.completionListeners.forEach(fn => {
+          try {
+            fn(task)
+          } catch (e) {
+            console.warn('LlmQueue completion listener error', e)
+          }
         })
-      } catch (bannerErr) {
-        // Notification banner optional
+      } else {
+        try {
+          showNotificationBanner({
+            title: 'LLM Asistent odpověděl',
+            body: `${task.discussionTitle}: odpověď je připravena v Knihovně`,
+            tintColor: '#1E293B',
+            icon: 'check-circle',
+            onClick: () => {},
+          })
+        } catch (bannerErr) {
+          // Notification banner optional
+        }
       }
     } catch (err: any) {
       const errorMsg = err?.message || 'Chyba při komunikaci s modelem.'

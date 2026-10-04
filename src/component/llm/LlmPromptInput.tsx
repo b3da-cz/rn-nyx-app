@@ -5,10 +5,11 @@ import { t, useTheme } from '../../lib'
 type Props = {
   prompt: string
   onChangePrompt: (val: string) => void
+  onFocus?: () => void
   disabled?: boolean
 }
 
-export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabled }) => {
+export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, onFocus, disabled }) => {
   const { colors, metrics } = useTheme()
 
   const quickPresets = [
@@ -37,6 +38,7 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabl
       <TextInput
         value={prompt}
         onChangeText={onChangePrompt}
+        onFocus={onFocus}
         placeholder={t('llm.promptPlaceholder') || 'Zadej instrukci pro model...'}
         placeholderTextColor={colors.faded}
         multiline
