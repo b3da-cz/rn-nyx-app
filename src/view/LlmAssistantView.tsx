@@ -68,41 +68,25 @@ export const LlmAssistantView: React.FC<Props> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Top Header */}
-      <View style={[styles.header, { borderBottomColor: colors.disabled }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-left" size={22} color={colors.text} />
+      {/* Unified Top Header Bar with Back Arrow and Tabs */}
+      <View style={[styles.topBar, { borderBottomColor: colors.disabled, backgroundColor: colors.background }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.backBtn}>
+          <Icon name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
-        <View style={styles.titleWrap}>
-          <Text numberOfLines={1} style={[styles.title, { color: colors.text, fontSize: metrics.fontSizes.h3 }]}>
-            {t('llm.title') || 'LLM Asistent'}
-          </Text>
-          {!!discussionTitle && (
-            <Text numberOfLines={1} style={[styles.subtitle, { color: colors.faded, fontSize: metrics.fontSizes.small - 1 }]}>
-              {discussionTitle}
-            </Text>
-          )}
-        </View>
-      </View>
 
-      {/* Tab Switcher */}
-      <View style={[styles.tabBar, { borderBottomColor: colors.disabled }]}>
         <TouchableOpacity
           onPress={() => setActiveTab('assistant')}
           style={[
             styles.tabItem,
-            activeTab === 'assistant' && { borderBottomColor: colors.primary, borderBottomWidth: 3 },
+            { borderBottomColor: activeTab === 'assistant' ? colors.primary : 'transparent', borderBottomWidth: 3 },
           ]}>
-          <Icon
-            name="message-square"
-            size={16}
-            color={activeTab === 'assistant' ? colors.primary : colors.faded}
-            style={{ marginRight: 6 }}
-          />
           <Text
             style={{
               color: activeTab === 'assistant' ? colors.text : colors.faded,
-              fontSize: metrics.fontSizes.small,
+              fontSize: metrics.fontSizes.p,
               fontWeight: activeTab === 'assistant' ? 'bold' : 'normal',
             }}>
             {t('llm.tabAssistant') || 'Asistent'}
@@ -113,21 +97,15 @@ export const LlmAssistantView: React.FC<Props> = ({
           onPress={() => setActiveTab('library')}
           style={[
             styles.tabItem,
-            activeTab === 'library' && { borderBottomColor: colors.primary, borderBottomWidth: 3 },
+            { borderBottomColor: activeTab === 'library' ? colors.primary : 'transparent', borderBottomWidth: 3 },
           ]}>
-          <Icon
-            name="archive"
-            size={16}
-            color={activeTab === 'library' ? colors.primary : colors.faded}
-            style={{ marginRight: 6 }}
-          />
           <Text
             style={{
               color: activeTab === 'library' ? colors.text : colors.faded,
-              fontSize: metrics.fontSizes.small,
+              fontSize: metrics.fontSizes.p,
               fontWeight: activeTab === 'library' ? 'bold' : 'normal',
             }}>
-            {`${t('llm.tabLibrary') || 'Library'}${historyCount > 0 ? ` (${historyCount})` : ''}`}
+            {`${t('llm.tabLibrary') || 'Knihovna'}${historyCount > 0 ? ` (${historyCount})` : ''}`}
           </Text>
         </TouchableOpacity>
       </View>
@@ -170,13 +148,25 @@ export const LlmAssistantView: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { height: 50, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, paddingHorizontal: 4 },
-  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  titleWrap: { flex: 1, paddingRight: 12 },
-  title: { fontWeight: 'bold' },
-  subtitle: { marginTop: 1 },
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
-  tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12 },
+  topBar: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    paddingHorizontal: 4,
+  },
+  backBtn: {
+    width: 44,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabItem: {
+    flex: 1,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   contentWrap: { flex: 1 },
   scrollArea: { flex: 1 },
   scrollContent: { padding: 12 },

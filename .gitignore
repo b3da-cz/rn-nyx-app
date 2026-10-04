@@ -76,3 +76,5 @@ buck-out/
 /android/*.hprof
 
 keys.json
+
+tmp-screens/

@@ -34,17 +34,17 @@ export const LlmResultSection: React.FC<Props> = ({
   const tokenStr = usage?.total_tokens ? `${usage.total_tokens} tokenů` : null
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
+    <View style={[styles.container, { borderTopColor: colors.disabled }]}>
       <View style={styles.topBar}>
         <View style={styles.metaRow}>
           {!!durationStr && (
-            <View style={[styles.badge, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+            <View style={[styles.badge, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
               <Icon name="clock" size={11} color={colors.faded} style={{ marginRight: 4 }} />
               <Text style={{ color: colors.faded, fontSize: 11 }}>{durationStr}</Text>
             </View>
           )}
           {!!tokenStr && (
-            <View style={[styles.badge, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+            <View style={[styles.badge, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
               <Icon name="cpu" size={11} color={colors.faded} style={{ marginRight: 4 }} />
               <Text style={{ color: colors.faded, fontSize: 11 }}>{tokenStr}</Text>
             </View>
@@ -56,7 +56,7 @@ export const LlmResultSection: React.FC<Props> = ({
             onPress={() => setViewMode('formatted')}
             style={[
               styles.modeBtn,
-              { backgroundColor: viewMode === 'formatted' ? colors.primary : colors.background },
+              { backgroundColor: viewMode === 'formatted' ? colors.primary : colors.surface },
             ]}>
             <Text style={{ color: viewMode === 'formatted' ? '#FFFFFF' : colors.faded, fontSize: 11 }}>
               {t('llm.viewFormatted') || 'Formát'}
@@ -64,7 +64,7 @@ export const LlmResultSection: React.FC<Props> = ({
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setViewMode('raw')}
-            style={[styles.modeBtn, { backgroundColor: viewMode === 'raw' ? colors.primary : colors.background }]}>
+            style={[styles.modeBtn, { backgroundColor: viewMode === 'raw' ? colors.primary : colors.surface }]}>
             <Text style={{ color: viewMode === 'raw' ? '#FFFFFF' : colors.faded, fontSize: 11 }}>
               {t('llm.viewRaw') || 'Text'}
             </Text>
@@ -72,7 +72,7 @@ export const LlmResultSection: React.FC<Props> = ({
         </View>
       </View>
 
-      <View style={[styles.contentWrap, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+      <View style={[styles.contentWrap, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
         {viewMode === 'formatted' ? (
           <MarkdownViewComponent content={result} selectable={true} onNavigateToPost={onNavigateToPost} />
         ) : (
@@ -85,7 +85,7 @@ export const LlmResultSection: React.FC<Props> = ({
       <View style={styles.actionsRow}>
         <TouchableOpacity
           onPress={handleCopy}
-          style={[styles.actionBtn, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+          style={[styles.actionBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
           <Icon name={copied ? 'check' : 'copy'} size={14} color={copied ? colors.primary : colors.text} />
           <Text style={{ color: copied ? colors.primary : colors.text, fontSize: metrics.fontSizes.small, marginLeft: 6 }}>
             {copied ? t('llm.copied') || 'Zkopírováno' : t('llm.copyAnswer') || 'Kopírovat'}
@@ -94,7 +94,7 @@ export const LlmResultSection: React.FC<Props> = ({
 
         <TouchableOpacity
           onPress={onNewQuery}
-          style={[styles.actionBtn, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+          style={[styles.actionBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
           <Icon name="plus-circle" size={14} color={colors.text} />
           <Text style={{ color: colors.text, fontSize: metrics.fontSizes.small, marginLeft: 6 }}>
             {t('llm.newQuery') || 'Nový dotaz'}
@@ -107,9 +107,8 @@ export const LlmResultSection: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingTop: 10,
+    borderTopWidth: 1,
     marginTop: 10,
   },
   topBar: {
@@ -140,14 +139,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   contentWrap: {
-    padding: 10,
-    borderRadius: 6,
-    borderWidth: 1,
+    padding: 12,
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    marginBottom: 8,
   },
   actionsRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
   },
   actionBtn: {
     flex: 1,
@@ -155,7 +154,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
 })

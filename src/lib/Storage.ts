@@ -8,6 +8,7 @@ const StorageKeys = {
   user: 'user',
   llmHistory: 'llmHistory',
   cachedLlmModels: 'cachedLlmModels',
+  favoriteLlmModels: 'favoriteLlmModels',
 }
 
 const set = async (key, value) => {
@@ -55,6 +56,10 @@ const getCachedLlmModels = async () => (await get(StorageKeys.cachedLlmModels)) 
 
 const setCachedLlmModels = async models => set(StorageKeys.cachedLlmModels, models)
 
+const getFavoriteLlmModels = async (): Promise<string[]> => (await get(StorageKeys.favoriteLlmModels)) || []
+
+const setFavoriteLlmModels = async (models: string[]) => set(StorageKeys.favoriteLlmModels, models)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -63,6 +68,7 @@ const removeAll = async () =>
     .then(() => set(StorageKeys.user, null))
     .then(() => set(StorageKeys.llmHistory, null))
     .then(() => set(StorageKeys.cachedLlmModels, null))
+    .then(() => set(StorageKeys.favoriteLlmModels, null))
 
 export const Storage = {
   getAuth,
@@ -79,5 +85,7 @@ export const Storage = {
   setLlmHistory,
   getCachedLlmModels,
   setCachedLlmModels,
+  getFavoriteLlmModels,
+  setFavoriteLlmModels,
   removeAll,
 }

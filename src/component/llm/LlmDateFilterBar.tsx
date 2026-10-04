@@ -62,7 +62,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
   ]
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
+    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
       <View style={styles.presetsRow}>
         {presets.map(p => {
           const isActive = datePreset === p.id
@@ -73,7 +73,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
               style={[
                 styles.presetBtn,
                 {
-                  backgroundColor: isActive ? colors.primary : colors.background,
+                  backgroundColor: isActive ? colors.primary : colors.surface,
                   borderColor: isActive ? colors.primary : colors.disabled,
                 },
               ]}>
@@ -93,7 +93,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
       <View style={styles.dateInputsRow}>
         <TouchableOpacity
           onPress={() => openPicker('from')}
-          style={[styles.dateInputBtn, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+          style={[styles.dateInputBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
           <Icon name="calendar" size={14} color={colors.faded} style={{ marginRight: 6 }} />
           <Text style={{ color: dateFrom ? colors.text : colors.faded, fontSize: metrics.fontSizes.small }}>
             {dateFrom ? `${t('llm.dateFrom') || 'Od'}: ${dateFrom}` : `${t('llm.dateFrom') || 'Od'}: (neomezeno)`}
@@ -102,7 +102,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
 
         <TouchableOpacity
           onPress={() => openPicker('to')}
-          style={[styles.dateInputBtn, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+          style={[styles.dateInputBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
           <Icon name="calendar" size={14} color={colors.faded} style={{ marginRight: 6 }} />
           <Text style={{ color: dateTo ? colors.text : colors.faded, fontSize: metrics.fontSizes.small }}>
             {dateTo ? `${t('llm.dateTo') || 'Do'}: ${dateTo}` : `${t('llm.dateTo') || 'Do'}: (neomezeno)`}
@@ -115,10 +115,9 @@ export const LlmDateFilterBar: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    marginBottom: 8,
   },
   presetsRow: {
     flexDirection: 'row',
@@ -129,7 +128,7 @@ const styles = StyleSheet.create({
   presetBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
   dateInputsRow: {
@@ -140,9 +139,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
 })

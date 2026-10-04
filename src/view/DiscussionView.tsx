@@ -801,6 +801,13 @@ export class DiscussionView extends Component<Props> {
     const { navigation } = this.props
     const actions: any[] = []
 
+    actions.push({
+      key: 'bookmark',
+      icon: isBooked ? 'bookmark-remove' : 'bookmark',
+      label: isBooked ? t('unbook') : t('book'),
+      onPress: () => this.bookmarkDiscussion(),
+    })
+
     if (this.config?.isLlmEnabled && this.config?.openRouterApiKey && this.config?.selectedLlmModel) {
       actions.push({
         key: 'llm',
@@ -815,20 +822,12 @@ export class DiscussionView extends Component<Props> {
       })
     }
 
-    actions.push(
-      {
-        key: 'bookmark',
-        icon: isBooked ? 'bookmark-remove' : 'bookmark',
-        label: isBooked ? t('unbook') : t('book'),
-        onPress: () => this.bookmarkDiscussion(),
-      },
-      {
-        key: 'stats',
-        icon: 'view-list',
-        label: `${t('show')} ${t('stats.title')}`,
-        onPress: () => this.showStats(),
-      },
-    )
+    actions.push({
+      key: 'stats',
+      icon: 'view-list',
+      label: `${t('show')} ${t('stats.title')}`,
+      onPress: () => this.showStats(),
+    })
     if (hasBoard) {
       actions.push({
         key: 'board',

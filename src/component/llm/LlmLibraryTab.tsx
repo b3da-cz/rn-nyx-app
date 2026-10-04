@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { FlatList, StyleSheet, Text, View } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
 import { clearLlmHistory, deleteLlmHistoryEntry, getLlmHistory, LlmHistoryItem, t, useTheme } from '../../lib'
+import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { LlmLibraryFilterBar, ScopeFilter, SortOrder } from './LlmLibraryFilterBar'
 import { LlmLibraryItemCard } from './LlmLibraryItemCard'
 
@@ -23,8 +24,6 @@ export const LlmLibraryTab: React.FC<Props> = ({
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>(activeDiscussionId ? 'discussion' : 'all')
   const [sort, setSort] = useState<SortOrder>('newest')
-  const [confirmClearAll, setConfirmClearAll] = useState(false)
-  const clearTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadHistory = useCallback(async () => {
     const list = await getLlmHistory()
@@ -43,20 +42,9 @@ export const LlmLibraryTab: React.FC<Props> = ({
   }
 
   const handleClearAll = async () => {
-    if (confirmClearAll) {
-      if (clearTimerRef.current) {
-        clearTimeout(clearTimerRef.current)
-      }
-      setConfirmClearAll(false)
-      await clearLlmHistory()
-      setHistory([])
-      onCountChange?.(0)
-    } else {
-      setConfirmClearAll(true)
-      clearTimerRef.current = setTimeout(() => {
-        setConfirmClearAll(false)
-      }, 3000)
-    }
+    await clearLlmHistory()
+    setHistory([])
+    onCountChange?.(0)
   }
 
   const filteredAndSortedHistory = useMemo(() => {
@@ -120,25 +108,12 @@ export const LlmLibraryTab: React.FC<Props> = ({
         ListFooterComponent={
           history.length > 0 ? (
             <View style={styles.footerWrap}>
-              <TouchableOpacity
-                onPress={handleClearAll}
-                style={[
-                  styles.clearAllBtn,
-                  {
-                    backgroundColor: confirmClearAll ? colors.accent : colors.surface,
-                    borderColor: confirmClearAll ? colors.accent : colors.disabled,
-                  },
-                ]}>
-                <Icon name="trash" size={14} color={confirmClearAll ? '#FFFFFF' : colors.faded} />
-                <Text
-                  style={{
-                    color: confirmClearAll ? '#FFFFFF' : colors.faded,
-                    fontSize: metrics.fontSizes.small,
-                    marginLeft: 6,
-                  }}>
-                  {confirmClearAll ? t('llm.clearAllConfirm') || 'Opravdu smazat?' : t('llm.clearAll') || 'Smazat vše'}
-                </Text>
-              </TouchableOpacity>
+              <DoubleTapDeleteButton
+                onDelete={handleClearAll}
+                label={t('llm.clearAll') || 'Smazat vše'}
+                confirmLabel={t('llm.clearAllConfirm') || 'Opravdu smazat?'}
+                iconSize={14}
+              />
             </View>
           ) : null
         }
@@ -152,5 +127,4 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   footerWrap: { alignItems: 'center', marginVertical: 16 },
-  clearAllBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1 },
 })

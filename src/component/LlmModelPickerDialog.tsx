@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
-import { formatPricing, OpenRouterModel, RECOMMENDED_MODEL_IDS, useTheme } from '../lib'
+import { formatPricing, OpenRouterModel, RECOMMENDED_MODEL_IDS, Storage, useTheme } from '../lib'
 
 type Props = {
   isVisible: boolean
@@ -22,7 +22,7 @@ type Props = {
   onCancel: () => void
 }
 
-type FilterCategory = 'all' | 'recommended' | 'free' | 'google' | 'anthropic' | 'meta' | 'deepseek'
+type FilterCategory = 'favorites' | 'recommended' | 'all' | 'free' | 'google' | 'anthropic' | 'meta' | 'deepseek'
 
 export const LlmModelPickerDialog: React.FC<Props> = ({
   isVisible,
@@ -36,11 +36,27 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   const { colors, metrics } = theme
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<FilterCategory>('recommended')
+  const [favoriteModelIds, setFavoriteModelIds] = useState<string[]>([])
+
+  React.useEffect(() => {
+    if (isVisible) {
+      Storage.getFavoriteLlmModels().then(favs => setFavoriteModelIds(favs || []))
+    }
+  }, [isVisible])
+
+  const toggleFavorite = async (modelId: string) => {
+    const isFav = favoriteModelIds.includes(modelId)
+    const next = isFav ? favoriteModelIds.filter(id => id !== modelId) : [...favoriteModelIds, modelId]
+    setFavoriteModelIds(next)
+    await Storage.setFavoriteLlmModels(next)
+  }
 
   const filteredModels = useMemo(() => {
     let list = models
 
-    if (category === 'recommended') {
+    if (category === 'favorites') {
+      list = list.filter(m => favoriteModelIds.includes(m.id))
+    } else if (category === 'recommended') {
       list = list.filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
     } else if (category === 'free') {
       list = list.filter(m => {
@@ -64,13 +80,14 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     }
 
     return list
-  }, [models, category, search])
+  }, [models, category, search, favoriteModelIds])
 
   if (!isVisible) {
     return null
   }
 
-  const categoryChips: { key: FilterCategory; label: string }[] = [
+  const categoryChips: { key: FilterCategory; label: string; icon?: string }[] = [
+    { key: 'favorites', label: `Oblíbené (${favoriteModelIds.length})`, icon: 'star' },
     { key: 'recommended', label: 'Doporučené' },
     { key: 'all', label: 'Vše' },
     { key: 'free', label: 'Zdarma' },
@@ -86,7 +103,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.disabled }]}>
           <TouchableOpacity onPress={onCancel} style={styles.backButton}>
-            <Icon name="x" size={24} color={colors.text} />
+            <Icon name="arrow-left" size={24} color={colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <Text style={[styles.headerTitle, { color: colors.text, fontSize: metrics.fontSizes.h2 }]}>
@@ -130,8 +147,18 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                   {
                     backgroundColor: isSelected ? colors.primary : colors.surface,
                     borderColor: isSelected ? colors.primary : colors.disabled,
+                    flexDirection: 'row',
+                    alignItems: 'center',
                   },
                 ]}>
+                {chip.icon === 'star' && (
+                  <Icon
+                    name="star"
+                    size={13}
+                    color={isSelected ? '#FFFFFF' : '#F59E0B'}
+                    style={{ marginRight: 4 }}
+                  />
+                )}
                 <Text
                   style={{
                     color: isSelected ? '#FFFFFF' : colors.text,
@@ -162,6 +189,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           }
           renderItem={({ item }) => {
             const isSelected = item.id === selectedModelId
+            const isFavorite = favoriteModelIds.includes(item.id)
             const pricingStr = formatPricing(item.pricing)
             const contextStr = item.context_length
               ? `${Math.round(item.context_length / 1000)}k ctx`
@@ -213,11 +241,23 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                   )}
                 </View>
 
-                {isSelected && (
-                  <View style={[styles.selectedIconWrap, { backgroundColor: colors.primary }]}>
-                    <Icon name="check" size={16} color="#FFFFFF" />
-                  </View>
-                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {isSelected && (
+                    <View style={[styles.selectedIconWrap, { backgroundColor: colors.primary, marginRight: 8 }]}>
+                      <Icon name="check" size={16} color="#FFFFFF" />
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => toggleFavorite(item.id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{ padding: 6 }}>
+                    <Icon
+                      name="star"
+                      size={20}
+                      color={isFavorite ? '#F59E0B' : colors.disabled}
+                    />
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
             )
           }}
@@ -266,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
   },
   searchInput: {
@@ -283,7 +323,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 4,
     borderWidth: 1,
   },
   modelRow: {

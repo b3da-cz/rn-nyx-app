@@ -1,5 +1,6 @@
 export * from './LlmDateFilterBar'
 export * from './LlmModelBar'
+export * from './LlmSystemPromptBar'
 export * from './LlmPromptInput'
 export * from './LlmResultSection'
 export * from './LlmAssistantTab'

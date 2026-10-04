@@ -18,7 +18,7 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabl
   ]
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
+    <View style={styles.container}>
       <Text style={[styles.label, { color: colors.faded, fontSize: metrics.fontSizes.small }]}>
         {t('llm.promptLabel') || 'Co chceš s příspěvky udělat?'}
       </Text>
@@ -28,7 +28,7 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabl
           <TouchableOpacity
             key={idx}
             onPress={() => onChangePrompt(qp.text)}
-            style={[styles.presetChip, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+            style={[styles.presetChip, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
             <Text style={{ color: colors.faded, fontSize: 11 }}>{qp.label}</Text>
           </TouchableOpacity>
         ))}
@@ -45,7 +45,7 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabl
         style={[
           styles.input,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface,
             borderColor: colors.disabled,
             color: colors.text,
             fontSize: metrics.fontSizes.p,
@@ -58,10 +58,8 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, disabl
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
   },
   label: {
     marginBottom: 6,
@@ -76,14 +74,14 @@ const styles = StyleSheet.create({
   presetChip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1,
   },
   input: {
-    minHeight: 70,
+    minHeight: 72,
     maxHeight: 140,
-    padding: 8,
-    borderRadius: 6,
+    padding: 10,
+    borderRadius: 4,
     borderWidth: 1,
     textAlignVertical: 'top',
   },

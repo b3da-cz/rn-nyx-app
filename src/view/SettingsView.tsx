@@ -421,44 +421,29 @@ export class SettingsView extends Component<Props> {
             onChange={val => this.setOption('isLlmEnabled', val)}
           />
           {this.state.isLlmEnabled && (
-            <View
-              style={{
-                paddingHorizontal: theme.metrics.blocks.medium,
-                paddingBottom: theme.metrics.blocks.medium,
-              }}>
-              <Text
-                style={{
-                  fontSize: theme.metrics.fontSizes.small,
-                  color: theme.colors.faded,
-                  marginBottom: 8,
-                }}>
-                {t('profile.llm.notice') || 'API klíč je uložen pouze lokálně ve tvém zařízení.'}
-              </Text>
-
+            <View>
               {/* API Key Row */}
               <View
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.disabled,
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  marginBottom: 10,
+                  paddingVertical: 6,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.colors.disabled,
                 }}>
                 <TextInput
                   value={this.state.openRouterApiKey}
                   onChangeText={val => this.setState({ openRouterApiKey: val })}
                   onBlur={() => this.setOption('openRouterApiKey', this.state.openRouterApiKey)}
-                  placeholder={t('profile.llm.apiKeyPlaceholder') || 'sk-or-v1-...'}
+                  placeholder={t('profile.llm.apiKeyPlaceholder') || 'OpenRouter API klíč'}
                   placeholderTextColor={theme.colors.faded}
                   secureTextEntry={true}
                   style={{
                     flex: 1,
                     color: theme.colors.text,
                     fontSize: theme.metrics.fontSizes.p,
-                    paddingVertical: 10,
+                    paddingVertical: 8,
                   }}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -470,24 +455,23 @@ export class SettingsView extends Component<Props> {
                   }}
                   disabled={this.state.isFetchingModels}
                   style={{
-                    backgroundColor: theme.colors.primary,
                     paddingHorizontal: 12,
                     paddingVertical: 8,
-                    borderRadius: 6,
+                    borderRadius: 4,
                     marginLeft: 8,
                   }}>
                   {this.state.isFetchingModels ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
                   ) : (
                     <Text
                       style={{
-                        color: '#FFFFFF',
+                        color: theme.colors.primary,
                         fontSize: theme.metrics.fontSizes.small,
                         fontWeight: 'bold',
                       }}>
                       {(this.state.models?.length || 0) > 0
                         ? t('profile.llm.fetchModels') || 'Aktualizovat'
-                        : t('profile.llm.fetchModels') || 'Načíst'}
+                        : t('profile.llm.fetchModels') || 'Načíst modely'}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -498,25 +482,22 @@ export class SettingsView extends Component<Props> {
                 <View
                   style={{
                     backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.error || theme.colors.accent,
-                    borderWidth: 1,
-                    borderLeftWidth: 4,
-                    borderRadius: 6,
-                    padding: 10,
-                    marginBottom: 10,
+                    padding: theme.metrics.blocks.medium,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.colors.disabled,
                     flexDirection: 'row',
                     alignItems: 'center',
                   }}>
                   <Icon
                     name="alert-triangle"
-                    size={18}
-                    color={theme.colors.error || theme.colors.accent}
+                    size={16}
+                    color={theme.colors.accent}
                     style={{ marginRight: 8 }}
                   />
                   <Text
                     selectable
                     style={{
-                      color: theme.colors.text,
+                      color: theme.colors.accent,
                       fontSize: theme.metrics.fontSizes.small,
                       flex: 1,
                     }}>
@@ -525,7 +506,7 @@ export class SettingsView extends Component<Props> {
                 </View>
               ) : null}
 
-              {/* Model Picker Trigger */}
+              {/* Model Picker Row */}
               <TouchableOpacity
                 onPress={async () => {
                   if (!this.state.models || this.state.models.length === 0) {
@@ -539,37 +520,32 @@ export class SettingsView extends Component<Props> {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.disabled,
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  padding: 12,
+                  paddingVertical: theme.metrics.blocks.medium,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.colors.disabled,
                 }}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text
                     style={{
                       color: theme.colors.faded,
-                      fontSize: theme.metrics.fontSizes.small,
-                      marginBottom: 2,
+                      fontSize: theme.metrics.fontSizes.small - 1,
                     }}>
-                    {t('profile.llm.selectedModel') || 'Vybraný model'}:
+                    {t('profile.llm.selectedModel') || 'Model'}:
                   </Text>
                   <Text
+                    numberOfLines={1}
                     style={{
                       color: this.state.selectedLlmModel ? theme.colors.text : theme.colors.faded,
                       fontSize: theme.metrics.fontSizes.p,
                       fontWeight: '600',
+                      marginTop: 2,
                     }}>
                     {this.state.selectedLlmModelName ||
                       this.state.selectedLlmModel ||
                       t('profile.llm.selectModel') ||
                       'Vyberte model...'}
                   </Text>
-                  {this.state.selectedLlmModel ? (
-                    <Text style={{ color: theme.colors.faded, fontSize: 11, marginTop: 2 }}>
-                      {this.state.selectedLlmModel}
-                    </Text>
-                  ) : null}
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />
               </TouchableOpacity>
@@ -581,37 +557,33 @@ export class SettingsView extends Component<Props> {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.disabled,
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  padding: 12,
-                  marginTop: 10,
+                  paddingVertical: theme.metrics.blocks.medium,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.colors.disabled,
                 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
-                  <Icon name="sliders" size={20} color={theme.colors.primary} style={{ marginRight: 10 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: theme.colors.text,
-                        fontSize: theme.metrics.fontSizes.p,
-                        fontWeight: '600',
-                      }}>
-                      Systémový prompt
-                    </Text>
-                    <Text
-                      style={{
-                        color: theme.colors.faded,
-                        fontSize: theme.metrics.fontSizes.small,
-                        marginTop: 2,
-                      }}>
-                      Instrukce pro chování modelu a formátování odkazů
-                    </Text>
-                  </View>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text
+                    style={{
+                      color: theme.colors.text,
+                      fontSize: theme.metrics.fontSizes.p,
+                    }}>
+                    Systémový prompt
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: theme.colors.faded,
+                      fontSize: theme.metrics.fontSizes.small,
+                      marginTop: 2,
+                    }}>
+                    {this.context?.config?.llmSystemPrompt?.trim()
+                      ? 'Vlastní instrukce'
+                      : 'Výchozí instrukce pro model'}
+                  </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />
               </TouchableOpacity>
-
             </View>
           )}
         </ScrollView>

@@ -13,6 +13,7 @@ import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
 import { LlmPromptInput } from './LlmPromptInput'
 import { LlmResultSection } from './LlmResultSection'
+import { LlmSystemPromptBar } from './LlmSystemPromptBar'
 import { useLlmDateFilter } from './useLlmDateFilter'
 
 type Props = {
@@ -49,6 +50,8 @@ export const LlmAssistantTab: React.FC<Props> = ({
   const [currentModelId, setCurrentModelId] = useState(defaultModelId)
   const [currentModelName, setCurrentModelName] = useState(defaultModelName || defaultModelId)
   const [isGlobalModel, setIsGlobalModel] = useState(false)
+  const [currentSystemPrompt, setCurrentSystemPrompt] = useState(systemPrompt)
+  const [isGlobalSystemPrompt, setIsGlobalSystemPrompt] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [result, setResult] = useState<string | null>(null)
@@ -115,7 +118,7 @@ export const LlmAssistantTab: React.FC<Props> = ({
         posts,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
-        systemPrompt,
+        systemPrompt: currentSystemPrompt,
       })
       const durationMs = Date.now() - startTime
       if (tickerRef.current) {
@@ -152,6 +155,15 @@ export const LlmAssistantTab: React.FC<Props> = ({
 
   return (
     <View style={styles.tabContent}>
+      {!!discussionTitle && (
+        <View style={[styles.discussionBar, { borderBottomColor: colors.disabled }]}>
+          <Icon name="message-square" size={13} color={colors.primary} style={{ marginRight: 6 }} />
+          <Text numberOfLines={1} style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
+            {discussionTitle}
+          </Text>
+        </View>
+      )}
+
       <LlmModelBar
         apiKey={apiKey}
         currentModelId={currentModelId}
@@ -164,6 +176,13 @@ export const LlmAssistantTab: React.FC<Props> = ({
         onToggleGlobal={setIsGlobalModel}
       />
 
+      <LlmSystemPromptBar
+        systemPrompt={currentSystemPrompt}
+        isGlobalSystemPrompt={isGlobalSystemPrompt}
+        onToggleGlobal={setIsGlobalSystemPrompt}
+        onSystemPromptChange={setCurrentSystemPrompt}
+      />
+
       <LlmDateFilterBar
         datePreset={datePreset}
         dateFrom={dateFrom}
@@ -173,8 +192,8 @@ export const LlmAssistantTab: React.FC<Props> = ({
         onDateToChange={setDateTo}
       />
 
-      <View style={[styles.statsRow, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-        <Text style={{ color: colors.text, fontSize: metrics.fontSizes.small, flex: 1 }}>
+      <View style={styles.statsRow}>
+        <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
           {postCount > 0 ? `${postCount} příspěvků (cca ${wordCount} slov)` : t('llm.noPosts') || 'Žádné příspěvky'}
         </Text>
         {canLoadOlder && (
@@ -240,9 +259,44 @@ export const LlmAssistantTab: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   tabContent: { paddingBottom: 24 },
-  statsRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
-  loadOlderBtn: { marginLeft: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  sendBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 8, marginTop: 4 },
-  waitLogWrap: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, borderWidth: 1, marginTop: 10 },
-  errorWrap: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, borderWidth: 1, marginTop: 10 },
+  discussionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+    marginBottom: 6,
+  },
+  loadOlderBtn: { marginLeft: 8, paddingHorizontal: 6, paddingVertical: 4 },
+  sendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  waitLogWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  errorWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    marginTop: 10,
+  },
 })

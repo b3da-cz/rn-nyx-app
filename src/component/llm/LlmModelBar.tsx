@@ -53,21 +53,21 @@ export const LlmModelBar: React.FC<Props> = ({
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
+    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
       <TouchableOpacity onPress={handleOpenPicker} style={styles.modelRow}>
         <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small - 1 }}>
             {t('profile.llm.selectedModel') || 'Model'}:
           </Text>
-          <Text numberOfLines={1} style={{ color: colors.text, fontSize: metrics.fontSizes.small, fontWeight: '600' }}>
+          <Text numberOfLines={1} style={{ color: colors.text, fontSize: metrics.fontSizes.p, fontWeight: '600', marginTop: 2 }}>
             {currentModelName || currentModelId || 'Vyberte model...'}
           </Text>
         </View>
         <Icon name="chevron-down" size={18} color={colors.faded} />
       </TouchableOpacity>
 
-      <View style={[styles.globalRow, { borderTopColor: colors.disabled }]}>
-        <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small - 1, flex: 1 }}>
+      <View style={styles.globalRow}>
+        <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
           {t('llm.globalModelToggle') || 'Uložit jako globální model'}
         </Text>
         <Switch
@@ -93,22 +93,20 @@ export const LlmModelBar: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    marginBottom: 8,
   },
   modelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 4,
   },
   globalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    marginTop: 8,
     paddingTop: 6,
   },
 })

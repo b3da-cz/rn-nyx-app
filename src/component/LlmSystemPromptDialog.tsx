@@ -56,7 +56,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.disabled }]}>
           <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
-            <Icon name="x" size={24} color={colors.text} />
+            <Icon name="arrow-left" size={24} color={colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <Text style={[styles.headerTitle, { color: colors.text, fontSize: metrics.fontSizes.h2 }]}>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 4,
     padding: 12,
     marginBottom: 16,
   },
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   textarea: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 4,
     padding: 12,
     minHeight: 180,
     textAlignVertical: 'top',
@@ -211,13 +211,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
   cancelBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 6,
+    borderRadius: 4,
     justifyContent: 'center',
   },
   saveBtnText: {

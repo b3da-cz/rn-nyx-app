@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Icon from 'react-native-vector-icons/Feather'
 import { formatDuration, LlmHistoryItem, t, useTheme } from '../../lib'
+import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { MarkdownViewComponent } from '../MarkdownViewComponent'
 
 type Props = {
@@ -17,23 +18,6 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
   const [isExpanded, setIsExpanded] = useState(false)
   const [isRawMode, setIsRawMode] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const deleteTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  const handleDelete = () => {
-    if (confirmDelete) {
-      if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current)
-      }
-      setConfirmDelete(false)
-      onDelete(item.id)
-    } else {
-      setConfirmDelete(true)
-      deleteTimerRef.current = setTimeout(() => {
-        setConfirmDelete(false)
-      }, 3000)
-    }
-  }
 
   const handleCopy = () => {
     Clipboard.setString(item.response)
@@ -46,18 +30,22 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1, marginRight: 8 }}>
+      {/* Header with Title, Badges & Expand Chevron */}
+      <TouchableOpacity
+        onPress={() => setIsExpanded(!isExpanded)}
+        activeOpacity={0.7}
+        style={styles.cardHeader}>
+        <View style={{ flex: 1, marginRight: 6 }}>
           <Text numberOfLines={1} style={{ color: colors.text, fontSize: metrics.fontSizes.small, fontWeight: 'bold' }}>
             {item.discussionTitle || `Diskuze #${item.discussionId}`}
           </Text>
-          <Text style={{ color: colors.faded, fontSize: 10, marginTop: 2 }}>{item.createdAt}</Text>
+          <Text style={{ color: colors.faded, fontSize: 10, marginTop: 1 }}>{item.createdAt}</Text>
         </View>
 
         <View style={styles.badgesRow}>
           {!!item.modelName && (
             <View style={[styles.badge, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
-              <Text numberOfLines={1} style={{ color: colors.faded, fontSize: 10, maxWidth: 90 }}>
+              <Text numberOfLines={1} style={{ color: colors.faded, fontSize: 10, maxWidth: 85 }}>
                 {item.modelName}
               </Text>
             </View>
@@ -72,12 +60,20 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
               <Text style={{ color: colors.faded, fontSize: 10 }}>{tokensStr}</Text>
             </View>
           )}
+          <Icon
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.faded}
+            style={{ marginLeft: 2 }}
+          />
         </View>
-      </View>
+      </TouchableOpacity>
 
+      {/* Prompt preview */}
       <TouchableOpacity
         onPress={() => setIsExpanded(!isExpanded)}
-        style={[styles.promptBox, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+        activeOpacity={0.7}
+        style={styles.promptBox}>
         <Text style={{ color: colors.primary, fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>PROMPT:</Text>
         <Text
           numberOfLines={isExpanded ? undefined : 2}
@@ -86,24 +82,30 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
         </Text>
       </TouchableOpacity>
 
-      <View style={[styles.responseBox, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
-        <View style={styles.responseTop}>
-          <Text style={{ color: colors.faded, fontSize: 10, fontWeight: 'bold' }}>ODPOVĚĎ:</Text>
-          <TouchableOpacity onPress={() => setIsRawMode(!isRawMode)}>
-            <Text style={{ color: colors.primary, fontSize: 10 }}>
-              {isRawMode ? t('llm.viewFormatted') || 'Formát' : t('llm.viewRaw') || 'Zdroj'}
-            </Text>
-          </TouchableOpacity>
+      {/* Expanded Response */}
+      {isExpanded && (
+        <View style={[styles.responseBox, { borderTopColor: colors.disabled }]}>
+          <View style={styles.responseTop}>
+            <Text style={{ color: colors.faded, fontSize: 10, fontWeight: 'bold' }}>ODPOVĚĎ:</Text>
+            <TouchableOpacity onPress={() => setIsRawMode(!isRawMode)}>
+              <Text style={{ color: colors.primary, fontSize: 10 }}>
+                {isRawMode ? t('llm.viewFormatted') || 'Formát' : t('llm.viewRaw') || 'Zdroj'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.responseContent, { borderLeftColor: colors.primary }]}>
+            {isRawMode ? (
+              <Text selectable style={{ color: colors.text, fontSize: metrics.fontSizes.small - 1 }}>
+                {item.response}
+              </Text>
+            ) : (
+              <MarkdownViewComponent content={item.response} selectable={true} onNavigateToPost={onNavigateToPost} />
+            )}
+          </View>
         </View>
-        {isRawMode ? (
-          <Text selectable style={{ color: colors.text, fontSize: metrics.fontSizes.small - 1 }}>
-            {item.response}
-          </Text>
-        ) : (
-          <MarkdownViewComponent content={item.response} selectable={true} onNavigateToPost={onNavigateToPost} />
-        )}
-      </View>
+      )}
 
+      {/* Actions Row */}
       <View style={styles.cardActions}>
         <TouchableOpacity
           onPress={() => onUsePrompt(item.prompt)}
@@ -123,20 +125,10 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleDelete}
-          style={[
-            styles.btn,
-            {
-              backgroundColor: confirmDelete ? colors.accent : colors.background,
-              borderColor: confirmDelete ? colors.accent : colors.disabled,
-            },
-          ]}>
-          <Icon name="trash-2" size={13} color={confirmDelete ? '#FFFFFF' : colors.faded} />
-          <Text style={{ color: confirmDelete ? '#FFFFFF' : colors.faded, fontSize: 11, marginLeft: 4 }}>
-            {confirmDelete ? t('llm.deleteItemConfirm') || 'Smazat?' : ''}
-          </Text>
-        </TouchableOpacity>
+        <DoubleTapDeleteButton
+          onDelete={() => onDelete(item.id)}
+          iconSize={13}
+        />
       </View>
     </View>
   )
@@ -145,18 +137,19 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
 const styles = StyleSheet.create({
   card: {
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   badgesRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   badge: {
@@ -166,16 +159,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   promptBox: {
-    padding: 8,
-    borderRadius: 6,
-    borderWidth: 1,
+    paddingVertical: 4,
     marginBottom: 6,
   },
   responseBox: {
-    padding: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    marginBottom: 8,
+    borderTopWidth: 1,
+    paddingTop: 8,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  responseContent: {
+    borderLeftWidth: 2,
+    paddingLeft: 8,
+    marginTop: 4,
   },
   responseTop: {
     flexDirection: 'row',
@@ -186,13 +182,14 @@ const styles = StyleSheet.create({
   cardActions: {
     flexDirection: 'row',
     gap: 6,
+    alignItems: 'center',
   },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
 })

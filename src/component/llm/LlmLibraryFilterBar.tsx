@@ -35,8 +35,8 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
   ]
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-      <View style={[styles.searchRow, { backgroundColor: colors.background, borderColor: colors.disabled }]}>
+    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
+      <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
         <Icon name="search" size={16} color={colors.faded} style={{ marginRight: 8 }} />
         <TextInput
           value={search}
@@ -59,7 +59,7 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
               onPress={() => onScopeChange('discussion')}
               style={[
                 styles.scopeBtn,
-                { backgroundColor: scope === 'discussion' ? colors.primary : colors.background },
+                { backgroundColor: scope === 'discussion' ? colors.primary : colors.surface },
               ]}>
               <Text
                 style={{
@@ -73,7 +73,7 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
 
             <TouchableOpacity
               onPress={() => onScopeChange('all')}
-              style={[styles.scopeBtn, { backgroundColor: scope === 'all' ? colors.primary : colors.background }]}>
+              style={[styles.scopeBtn, { backgroundColor: scope === 'all' ? colors.primary : colors.surface }]}>
               <Text
                 style={{
                   color: scope === 'all' ? '#FFFFFF' : colors.faded,
@@ -96,7 +96,7 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
                 style={[
                   styles.sortChip,
                   {
-                    backgroundColor: isSelected ? colors.primary : colors.background,
+                    backgroundColor: isSelected ? colors.primary : colors.surface,
                     borderColor: isSelected ? colors.primary : colors.disabled,
                   },
                 ]}>
@@ -112,16 +112,15 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    marginBottom: 8,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     height: 38,
     marginBottom: 8,
@@ -135,7 +134,7 @@ const styles = StyleSheet.create({
   },
   scopeWrap: {
     flexDirection: 'row',
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -150,9 +149,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sortChip: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
     borderWidth: 1,
   },
 })
