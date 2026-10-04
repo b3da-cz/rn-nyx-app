@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Discussion, Notifications } from '../routes'
+import { Discussion, LlmAssistant, Notifications } from '../routes'
 
 export const NotificationsStackContainer = () => {
   const NotificationsStack = createNativeStackNavigator()
@@ -12,6 +12,7 @@ export const NotificationsStackContainer = () => {
       screenOptions={NavOptions.screenOptions(context.theme)}>
       <NotificationsStack.Screen name={'notifications'} component={Notifications} options={{ headerShown: false }} />
       <NotificationsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <NotificationsStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </NotificationsStack.Navigator>
   )
 }

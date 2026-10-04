@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Bookmarks, Discussion } from '../routes'
+import { Bookmarks, Discussion, LlmAssistant } from '../routes'
 
 export const BookmarksStackContainer = () => {
   const BookmarksStack = createNativeStackNavigator()
@@ -10,6 +10,7 @@ export const BookmarksStackContainer = () => {
     <BookmarksStack.Navigator initialRouteName={'bookmarks'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <BookmarksStack.Screen name={'bookmarks'} component={Bookmarks} options={{ headerShown: false }} />
       <BookmarksStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <BookmarksStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </BookmarksStack.Navigator>
   )
 }

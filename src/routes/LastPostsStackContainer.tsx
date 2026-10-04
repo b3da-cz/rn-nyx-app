@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Discussion, LastPosts } from '../routes'
+import { Discussion, LastPosts, LlmAssistant } from '../routes'
 
 export const LastPostsStackContainer = () => {
   const LastPostsStack = createNativeStackNavigator()
@@ -10,6 +10,7 @@ export const LastPostsStackContainer = () => {
     <LastPostsStack.Navigator initialRouteName={'last'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <LastPostsStack.Screen name={'last'} component={LastPosts} options={{ headerShown: false }} />
       <LastPostsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <LastPostsStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </LastPostsStack.Navigator>
   )
 }

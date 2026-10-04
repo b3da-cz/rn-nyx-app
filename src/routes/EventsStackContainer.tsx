@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StackHeaderComponent } from '../component'
 import { MainContext, NavOptions, discussionScreenOptions, t } from '../lib'
-import { Discussion, EventCreate, EventTimeline, Events } from '../routes'
+import { Discussion, EventCreate, EventTimeline, Events, LlmAssistant } from '../routes'
 
 export const EventsStackContainer = () => {
   const EventsStack = createNativeStackNavigator()
@@ -29,6 +29,7 @@ export const EventsStackContainer = () => {
         }}
       />
       <EventsStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <EventsStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </EventsStack.Navigator>
   )
 }

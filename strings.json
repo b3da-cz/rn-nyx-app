@@ -699,6 +699,82 @@
     "tokensUsed": {
       "cs": "Spotřebováno tokenů",
       "en": "Tokens used"
+    },
+    "tabAssistant": {
+      "cs": "Asistent",
+      "en": "Assistant"
+    },
+    "tabLibrary": {
+      "cs": "Library",
+      "en": "Library"
+    },
+    "filterCurrentDiscussion": {
+      "cs": "Tato diskuze",
+      "en": "This topic"
+    },
+    "filterAllDiscussions": {
+      "cs": "Všechny",
+      "en": "All"
+    },
+    "searchHistoryPlaceholder": {
+      "cs": "Hledat v dotazech a odpovědích...",
+      "en": "Search prompts & answers..."
+    },
+    "sortNewest": {
+      "cs": "Nejnovější",
+      "en": "Newest"
+    },
+    "sortOldest": {
+      "cs": "Nejstarší",
+      "en": "Oldest"
+    },
+    "sortDiscussion": {
+      "cs": "Dle diskuze",
+      "en": "By topic"
+    },
+    "sortDuration": {
+      "cs": "Dle trvání",
+      "en": "By duration"
+    },
+    "usePrompt": {
+      "cs": "Použít prompt",
+      "en": "Use prompt"
+    },
+    "clearAll": {
+      "cs": "Smazat vše",
+      "en": "Clear all"
+    },
+    "clearAllConfirm": {
+      "cs": "Opravdu smazat?",
+      "en": "Really clear?"
+    },
+    "deleteItemConfirm": {
+      "cs": "Smazat?",
+      "en": "Delete?"
+    },
+    "noHistory": {
+      "cs": "Žádná historie dotazů",
+      "en": "No prompt history"
+    },
+    "noFilteredHistory": {
+      "cs": "Nenalezeny žádné záznamy",
+      "en": "No matching entries"
+    },
+    "newQuery": {
+      "cs": "Nový dotaz",
+      "en": "New query"
+    },
+    "viewFormatted": {
+      "cs": "Formátovaný",
+      "en": "Formatted"
+    },
+    "viewRaw": {
+      "cs": "Zdroj",
+      "en": "Raw"
+    },
+    "globalModelToggle": {
+      "cs": "Uložit jako globální model",
+      "en": "Set as global default"
     }
   }
 }

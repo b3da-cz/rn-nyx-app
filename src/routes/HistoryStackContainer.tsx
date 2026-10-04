@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Discussion, History } from '../routes'
+import { Discussion, History, LlmAssistant } from '../routes'
 
 export const HistoryStackContainer = () => {
   const HistoryStack = createNativeStackNavigator()
@@ -10,6 +10,7 @@ export const HistoryStackContainer = () => {
     <HistoryStack.Navigator initialRouteName={'history'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <HistoryStack.Screen name={'history'} component={History} options={{ headerShown: false }} />
       <HistoryStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <HistoryStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </HistoryStack.Navigator>
   )
 }

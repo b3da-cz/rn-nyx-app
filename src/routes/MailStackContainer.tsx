@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MainContext, NavOptions, discussionScreenOptions } from '../lib'
-import { Discussion, Mail } from '../routes'
+import { Discussion, LlmAssistant, Mail } from '../routes'
 
 export const MailStackContainer = () => {
   const MailStack = createNativeStackNavigator()
@@ -10,6 +10,7 @@ export const MailStackContainer = () => {
     <MailStack.Navigator initialRouteName={'mail'} screenOptions={NavOptions.screenOptions(context.theme)}>
       <MailStack.Screen name={'mail'} component={Mail} options={{ headerShown: false }} />
       <MailStack.Screen name={'discussion'} component={Discussion} options={discussionScreenOptions} />
+      <MailStack.Screen name={'llm'} component={LlmAssistant} options={discussionScreenOptions} />
     </MailStack.Navigator>
   )
 }
