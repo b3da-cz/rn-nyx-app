@@ -402,6 +402,14 @@
       "notice": {
         "cs": "API klíč je uložen pouze lokálně ve tvém zařízení.",
         "en": "API key is stored locally on your device only."
+      },
+      "history": {
+        "cs": "Historie dotazů",
+        "en": "Prompt history"
+      },
+      "historySubtitle": {
+        "cs": "Zobrazit uložené dotazy a odpovědi (%s)",
+        "en": "View saved prompts and answers (%s)"
       }
     }
   },

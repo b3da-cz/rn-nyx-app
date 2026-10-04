@@ -15,6 +15,7 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard'
 import Icon from 'react-native-vector-icons/Feather'
 import {
+  addLlmHistoryEntry,
   filterAndFormatPostsForLlm,
   isoDate,
   sendOpenRouterChat,
@@ -162,6 +163,18 @@ export const LlmPromptModal: React.FC<Props> = ({
       })
       setResult(res.content)
       setResultUsage(res.usage)
+      await addLlmHistoryEntry({
+        discussionId,
+        discussionTitle,
+        modelId,
+        modelName,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        postCount,
+        prompt: prompt.trim(),
+        response: res.content,
+        usage: res.usage,
+      })
     } catch (e: any) {
       setErrorMessage(e?.message || 'Nastala neočekávaná chyba při komunikaci s modelem.')
     } finally {

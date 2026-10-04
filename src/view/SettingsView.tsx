@@ -9,12 +9,14 @@ import {
   FilterSettingsDialog,
   FormRowSelectComponent,
   FormRowToggleComponent,
+  LlmHistoryModal,
   LlmModelPickerDialog,
   SectionHeaderComponent,
 } from '../component'
 import {
   fetchOpenRouterModels,
   formatPricing,
+  getLlmHistory,
   IMAGE_DOWNLOAD_LIMITS_KB,
   IMAGE_DOWNLOAD_OFF,
   MainContext,
@@ -61,6 +63,8 @@ type State = {
   isFetchingModels: boolean
   models: OpenRouterModel[]
   isModelPickerVisible: boolean
+  isHistoryModalVisible: boolean
+  historyCount: number
   llmError: string | null
   theme: Theme
   username: string
@@ -79,11 +83,24 @@ export class SettingsView extends Component<Props> {
   componentDidMount() {
     this.nyx = this.context.nyx
     this.setTheme()
-    this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => this.refreshTimelineDays())
+    this.loadHistoryCount()
+    this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => {
+      this.refreshTimelineDays()
+      this.loadHistoryCount()
+    })
   }
 
   componentWillUnmount() {
     this.unsubscribeFocus?.()
+  }
+
+  async loadHistoryCount() {
+    try {
+      const history = await getLlmHistory()
+      this.setState({ historyCount: history.length })
+    } catch (e) {
+      console.warn('Failed to load LLM history count', e)
+    }
   }
 
   async refreshTimelineDays() {
@@ -130,6 +147,8 @@ export class SettingsView extends Component<Props> {
       isFetchingModels: false,
       models: [],
       isModelPickerVisible: false,
+      isHistoryModalVisible: false,
+      historyCount: 0,
       llmError: null,
       username: '',
       isVisible: true,
@@ -537,6 +556,44 @@ export class SettingsView extends Component<Props> {
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />
               </TouchableOpacity>
+
+              {/* History Row */}
+              <TouchableOpacity
+                onPress={() => this.setState({ isHistoryModalVisible: true })}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.disabled,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 10,
+                }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
+                  <Icon name="archive" size={20} color={theme.colors.primary} style={{ marginRight: 10 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: theme.colors.text,
+                        fontSize: theme.metrics.fontSizes.p,
+                        fontWeight: '600',
+                      }}>
+                      {t('profile.llm.history') || 'Historie dotazů'}
+                    </Text>
+                    <Text
+                      style={{
+                        color: theme.colors.faded,
+                        fontSize: theme.metrics.fontSizes.small,
+                        marginTop: 2,
+                      }}>
+                      {`${this.state.historyCount || 0} uložených dotazů`}
+                    </Text>
+                  </View>
+                </View>
+                <Icon name="chevron-right" size={20} color={theme.colors.faded} />
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
@@ -546,6 +603,14 @@ export class SettingsView extends Component<Props> {
           selectedModelId={this.state.selectedLlmModel || ''}
           onSelect={model => this.onSelectModel(model)}
           onCancel={() => this.setState({ isModelPickerVisible: false })}
+        />
+        <LlmHistoryModal
+          isVisible={!!this.state.isHistoryModalVisible}
+          onClose={() => {
+            this.setState({ isHistoryModalVisible: false })
+            this.loadHistoryCount()
+          }}
+          onHistoryChanged={() => this.loadHistoryCount()}
         />
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
       </View>

@@ -6,6 +6,7 @@ const StorageKeys = {
   filters: 'filters',
   config: 'config',
   user: 'user',
+  llmHistory: 'llmHistory',
 }
 
 const set = async (key, value) => {
@@ -45,12 +46,17 @@ const getUser = async () => get(StorageKeys.user)
 
 const setUser = async conf => set(StorageKeys.user, conf)
 
+const getLlmHistory = async () => (await get(StorageKeys.llmHistory)) || []
+
+const setLlmHistory = async history => set(StorageKeys.llmHistory, history)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
     .then(() => set(StorageKeys.filters, null))
     .then(() => set(StorageKeys.config, null))
     .then(() => set(StorageKeys.user, null))
+    .then(() => set(StorageKeys.llmHistory, null))
 
 export const Storage = {
   getAuth,
@@ -63,5 +69,7 @@ export const Storage = {
   setConfig,
   getUser,
   setUser,
+  getLlmHistory,
+  setLlmHistory,
   removeAll,
 }
