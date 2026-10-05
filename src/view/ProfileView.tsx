@@ -16,7 +16,6 @@ type State = {
 }
 export class ProfileView extends Component<Props> {
   static contextType = MainContext
-  declare context: React.ContextType<typeof MainContext>
   state: Readonly<State>
   nyx?: Nyx
   constructor(props) {
@@ -30,7 +29,7 @@ export class ProfileView extends Component<Props> {
   }
 
   componentDidMount() {
-    this.nyx = this.context.nyx
+    this.nyx = (this.context as any).nyx
     this.getUsername()
     this.setTheme()
     this.getActiveFriends()
@@ -41,7 +40,7 @@ export class ProfileView extends Component<Props> {
   }
 
   setTheme() {
-    this.setState({ theme: this.context.theme })
+    this.setState({ theme: (this.context as any).theme })
   }
 
   async getActiveFriends() {
@@ -67,7 +66,7 @@ export class ProfileView extends Component<Props> {
             <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
           </View>
           <View style={{ marginLeft: 'auto', flexDirection: 'row', marginTop: -20 }}>
-            {!!this.context?.config?.isLlmEnabled && (
+            {!!(this.context as any)?.config?.isLlmEnabled && (
               <IconButton
                 icon={'chip'}
                 size={24}

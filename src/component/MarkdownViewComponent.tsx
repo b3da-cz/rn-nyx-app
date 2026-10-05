@@ -46,15 +46,16 @@ export const MarkdownViewComponent: React.FC<Props> = ({
       onLinkPress(url)
       return
     }
-    const match = url.match(/(?:https?:\/\/nyx\.cz)?\/discussion\/(\d+)(?:\/id\/(\d+))?/)
+    const cleanUrl = url.trim().replace(/[.,;:!?]+$/, '')
+    const match = cleanUrl.match(/(?:https?:\/\/nyx\.cz)?\/discussion\/(\d+)(?:\/id\/(\d+))?/)
     if (match && onNavigateToPost) {
       const discussionId = match[1]
       const postId = match[2]
       onNavigateToPost(discussionId, postId)
       return
     }
-    Linking.openURL(url).catch(e => {
-      console.warn('Failed to open url:', url, e)
+    Linking.openURL(cleanUrl).catch(e => {
+      console.warn('Failed to open url:', cleanUrl, e)
     })
   }
 
@@ -70,6 +71,8 @@ export const MarkdownViewComponent: React.FC<Props> = ({
               style={[
                 styles.link,
                 { color: colors.link || colors.secondary },
+                token.bold && styles.bold,
+                token.italic && styles.italic,
                 extraStyle,
               ]}>
               {token.text}
@@ -106,7 +109,13 @@ export const MarkdownViewComponent: React.FC<Props> = ({
         case 'text':
         default:
           return (
-            <Text key={idx} style={extraStyle}>
+            <Text
+              key={idx}
+              style={[
+                token.bold && styles.bold,
+                token.italic && styles.italic,
+                extraStyle,
+              ]}>
               {token.content}
             </Text>
           )

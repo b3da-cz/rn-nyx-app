@@ -99,5 +99,65 @@ describe('MarkdownViewComponent parser tests', () => {
         url: 'https://nyx.cz',
       })
     })
+
+    it('parses bold wrapped links and links with attached punctuation', () => {
+      const boldLink = '**[@EBBN](https://nyx.cz/discussion/123/id/456)**'
+      const t1 = tokenizeInlineMarkdown(boldLink)
+      expect(t1).toEqual([
+        {
+          type: 'link',
+          text: '@EBBN',
+          url: 'https://nyx.cz/discussion/123/id/456',
+          bold: true,
+        },
+      ])
+
+      const boldLinkColon = '**[@EBBN](https://nyx.cz/discussion/123/id/456)**: text'
+      const t2 = tokenizeInlineMarkdown(boldLinkColon)
+      expect(t2[0]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+        bold: true,
+      })
+      expect(t2[1]).toEqual({
+        type: 'text',
+        content: ': text',
+      })
+
+      const linkComma = 'Podle [@EBBN](https://nyx.cz/discussion/123/id/456), který napsal'
+      const t3 = tokenizeInlineMarkdown(linkComma)
+      expect(t3[1]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+      })
+      expect(t3[2]).toEqual({
+        type: 'text',
+        content: ', který napsal',
+      })
+
+      const linkPunctInUrl = 'Viz [@EBBN](https://nyx.cz/discussion/123/id/456.) a pokračování.'
+      const t4 = tokenizeInlineMarkdown(linkPunctInUrl)
+      expect(t4[1]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+      })
+      expect(t4[2]).toEqual({
+        type: 'text',
+        content: '. a pokračování.',
+      })
+
+      const parenLink = '([@EBBN](https://nyx.cz/discussion/123/id/456))'
+      const t5 = tokenizeInlineMarkdown(parenLink)
+      expect(t5[0]).toEqual({ type: 'text', content: '(' })
+      expect(t5[1]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+      })
+      expect(t5[2]).toEqual({ type: 'text', content: ')' })
+    })
   })
 })
