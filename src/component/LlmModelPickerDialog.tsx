@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, Modal, SafeAreaView, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, FlatList, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { IconButton, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { formatPricing, OpenRouterModel, RECOMMENDED_MODEL_IDS, Storage, Styling, t, useTheme } from '../lib'
-import { FormRowSelectComponent } from './FormRowSelectComponent'
 import { FormRowToggleComponent } from './FormRowToggleComponent'
 
 type Props = {
@@ -100,7 +99,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false} onRequestClose={onCancel}>
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={[Styling.groups.flexRowCentered, { height: 50 }]}>
+        <View style={[Styling.groups.flexRowCentered, { height: 50, paddingRight: blocks.medium }]}>
           <IconButton
             icon={'arrow-left'}
             size={25}
@@ -111,6 +110,9 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           />
           <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p + 2, marginHorizontal: blocks.large }}>
             Výběr LLM modelu
+          </Text>
+          <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>
+            {`${filteredModels.length} / ${models.length}`}
           </Text>
         </View>
 
@@ -142,22 +144,50 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           )}
         </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            minHeight: 40,
-            backgroundColor: colors.surface,
-            marginBottom: blocks.small,
-            paddingLeft: blocks.medium,
-          }}>
-          <Text style={{ color: colors.faded, fontSize: fontSizes.p }}>{t('llm.category') || 'Kategorie'}</Text>
-          <FormRowSelectComponent
-            value={categoryOptions.find(c => c.value === category)?.label}
-            options={categoryOptions}
-            onSelect={(val: FilterCategory) => setCategory(val)}
-          />
+        <View style={{ marginBottom: blocks.small }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: blocks.medium,
+            }}>
+            {categoryOptions.map(option => {
+              const isSelected = category === option.value
+              return (
+                <TouchableRipple
+                  key={option.value}
+                  rippleColor={colors.ripple}
+                  onPress={() => setCategory(option.value)}
+                  style={{
+                    backgroundColor: isSelected ? colors.primary : colors.row,
+                    paddingHorizontal: blocks.medium,
+                    paddingVertical: blocks.small,
+                    marginRight: blocks.small,
+                    minHeight: 34,
+                    justifyContent: 'center',
+                  }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {option.value === 'favorites' && (
+                      <Icon
+                        name="star"
+                        size={12}
+                        color={isSelected ? '#FFFFFF' : '#F59E0B'}
+                        style={{ marginRight: 4 }}
+                      />
+                    )}
+                    <Text
+                      style={{
+                        color: isSelected ? '#FFFFFF' : colors.text,
+                        fontSize: fontSizes.small,
+                        fontWeight: isSelected ? '700' : '400',
+                      }}>
+                      {option.label}
+                    </Text>
+                  </View>
+                </TouchableRipple>
+              )
+            })}
+          </ScrollView>
         </View>
 
         {onToggleGlobal !== undefined && (

@@ -16,6 +16,7 @@ type State = {
 }
 export class ProfileView extends Component<Props> {
   static contextType = MainContext
+  declare context: React.ContextType<typeof MainContext>
   state: Readonly<State>
   nyx?: Nyx
   constructor(props) {
