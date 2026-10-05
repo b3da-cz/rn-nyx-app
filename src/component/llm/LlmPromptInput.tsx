@@ -18,9 +18,21 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, onFocu
   } = useTheme()
 
   const templates = [
-    { value: 'summary', label: t('llm.presetSummary'), text: 'Udělej mi stručné shrnutí této diskuze a vypiš hlavní body.' },
-    { value: 'topics', label: t('llm.presetTopics'), text: 'Jaká klíčová témata a závěry se v této diskuzi objevily?' },
-    { value: 'debate', label: t('llm.presetDebate'), text: 'Jaké různé názory a argumenty zde diskutující zastávají?' },
+    {
+      value: 'summary',
+      label: t('llm.presetSummary'),
+      text: t('llm.presetSummaryText') || 'Udělej mi stručné shrnutí této diskuze a vypiš hlavní body.',
+    },
+    {
+      value: 'topics',
+      label: t('llm.presetTopics'),
+      text: t('llm.presetTopicsText') || 'Jaká klíčová témata a závěry se v této diskuzi objevily?',
+    },
+    {
+      value: 'debate',
+      label: t('llm.presetDebate'),
+      text: t('llm.presetDebateText') || 'Jaké různé názory a argumenty zde diskutující zastávají?',
+    },
   ]
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { filterAndFormatPostsForLlm, getLlmHistory, LlmPendingTask, LlmQueue, Storage } from '../../lib'
+import { filterAndFormatPostsForLlm, getLlmHistory, LlmPendingTask, LlmQueue, Storage, t } from '../../lib'
 import { useLlmDateFilter } from './useLlmDateFilter'
 
 type Params = {
@@ -76,7 +76,7 @@ export function useLlmAssistant(p: Params) {
     try {
       await p.onLoadMorePosts()
     } catch (e: any) {
-      setErrorMessage(e?.message || 'Chyba při načítání starších příspěvků.')
+      setErrorMessage(e?.message || t('llm.errorLoadingOlder') || 'Chyba při načítání starších příspěvků.')
     } finally {
       setIsLoadingOlder(false)
     }
@@ -117,7 +117,7 @@ export function useLlmAssistant(p: Params) {
       })
       p.onChangePrompt('')
     } catch (e: any) {
-      setErrorMessage(e?.message || 'Chyba při zahájení dotazu.')
+      setErrorMessage(e?.message || t('llm.errorStartingQuery') || 'Chyba při zahájení dotazu.')
     }
   }
 

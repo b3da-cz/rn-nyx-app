@@ -1,6 +1,7 @@
 import { addLlmHistoryEntry } from './LlmHistory'
 import { sendOpenRouterChat } from './OpenRouter'
 import { Storage } from './Storage'
+import { t } from './Strings'
 import { showNotificationBanner } from './Util'
 
 export type LlmPendingTask = {
@@ -42,7 +43,7 @@ class LlmQueueService {
             return {
               ...t,
               status: 'error',
-              error: 'Dotaz byl přerušen ukončením aplikace.',
+              error: t('llm.errorInterrupted') || 'Dotaz byl přerušen ukončením aplikace.',
             }
           }
           return t
@@ -190,8 +191,8 @@ class LlmQueueService {
       } else {
         try {
           showNotificationBanner({
-            title: 'LLM Asistent odpověděl',
-            body: `${task.discussionTitle}: odpověď je připravena v Knihovně`,
+            title: t('llm.notificationAnsweredTitle') || 'LLM Asistent odpověděl',
+            body: `${task.discussionTitle}: ${t('llm.notificationAnsweredBody') || 'odpověď je připravena v Knihovně'}`,
             tintColor: '#1E293B',
             icon: 'check-circle',
             onClick: () => {},
@@ -201,7 +202,7 @@ class LlmQueueService {
         }
       }
     } catch (err: any) {
-      const errorMsg = err?.message || 'Chyba při komunikaci s modelem.'
+      const errorMsg = err?.message || t('llm.errorModelCommunication') || 'Chyba při komunikaci s modelem.'
       this.tasks = this.tasks.map(t =>
         t.id === task.id ? { ...t, status: 'error', error: errorMsg } : t,
       )

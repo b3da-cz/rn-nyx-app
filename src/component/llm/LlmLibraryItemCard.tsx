@@ -43,7 +43,7 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
   ])
 
   const metaContext = joinMeta([
-    formatLlmDateRange(item.dateFrom, item.dateTo) || (item.postCount != null ? 'celé období' : null),
+    formatLlmDateRange(item.dateFrom, item.dateTo) || (item.postCount != null ? t('llm.entirePeriod') || 'celé období' : null),
     formatPostCount(item.postCount),
   ])
 

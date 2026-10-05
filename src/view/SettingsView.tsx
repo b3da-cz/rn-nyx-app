@@ -160,7 +160,7 @@ export class SettingsView extends Component<Props> {
   async fetchModels(keyToUse?: string) {
     const key = (keyToUse !== undefined ? keyToUse : this.state.openRouterApiKey) || ''
     if (!key.trim()) {
-      this.setState({ llmError: 'Nejprve zadejte OpenRouter API klíč.' })
+      this.setState({ llmError: t('profile.llm.apiKeyRequired') || 'Nejprve zadejte OpenRouter API klíč.' })
       return
     }
     this.setState({ isFetchingModels: true, llmError: null })
@@ -172,7 +172,10 @@ export class SettingsView extends Component<Props> {
         await this.onSelectModel(models[0])
       }
     } catch (e: any) {
-      this.setState({ isFetchingModels: false, llmError: e?.message || 'Chyba při stahování modelů.' })
+      this.setState({
+        isFetchingModels: false,
+        llmError: e?.message || t('profile.llm.errorFetchingModels') || 'Chyba při stahování modelů.',
+      })
     }
   }
 
@@ -476,7 +479,7 @@ export class SettingsView extends Component<Props> {
                         fontWeight: 'bold',
                       }}>
                       {(this.state.models?.length || 0) > 0
-                        ? t('profile.llm.fetchModels') || 'Aktualizovat'
+                        ? t('profile.llm.refreshModels') || 'Aktualizovat'
                         : t('profile.llm.fetchModels') || 'Načíst modely'}
                     </Text>
                   )}
@@ -574,7 +577,7 @@ export class SettingsView extends Component<Props> {
                       color: theme.colors.text,
                       fontSize: theme.metrics.fontSizes.p,
                     }}>
-                    Systémový prompt
+                    {t('llm.systemPrompt') || 'Systémový prompt'}
                   </Text>
                   <Text
                     numberOfLines={1}
@@ -584,8 +587,8 @@ export class SettingsView extends Component<Props> {
                       marginTop: 2,
                     }}>
                     {this.context?.config?.llmSystemPrompt?.trim()
-                      ? 'Vlastní instrukce'
-                      : 'Výchozí instrukce pro model'}
+                      ? t('profile.llm.systemPromptCustom') || 'Vlastní instrukce'
+                      : t('profile.llm.systemPromptDefault') || 'Výchozí instrukce pro model'}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />

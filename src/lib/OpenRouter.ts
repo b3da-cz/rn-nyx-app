@@ -1,3 +1,5 @@
+import { t } from './Strings'
+
 export type OpenRouterPricing = {
   prompt?: string
   completion?: string
@@ -62,7 +64,7 @@ export function formatPricing(pricing?: OpenRouterPricing): string {
   const completionPrice = parseFloat(pricing.completion || '0')
 
   if (promptPrice === 0 && completionPrice === 0) {
-    return 'Zdarma / Free'
+    return t('llm.categoryFree') || 'Zdarma'
   }
 
   const promptPerM = promptPrice * 1_000_000
@@ -90,7 +92,7 @@ export function formatPricing(pricing?: OpenRouterPricing): string {
 export async function fetchOpenRouterModels(apiKey: string): Promise<OpenRouterModel[]> {
   const trimmedKey = apiKey.trim()
   if (!trimmedKey) {
-    throw new Error('API klíč nesmí být prázdný.')
+    throw new Error(t('profile.llm.apiKeyRequired') || 'API klíč nesmí být prázdný.')
   }
 
   const res = await fetch('https://openrouter.ai/api/v1/models', {

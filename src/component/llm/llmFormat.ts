@@ -1,3 +1,5 @@
+import { t } from '../../lib'
+
 // '2026-10-04' -> '04.10.2026', '2026-10-04 18:55:03' -> '04.10.2026 18:55:03' (same format as post headers)
 export const formatLlmDate = (value?: string): string => {
   if (!value) {
@@ -19,10 +21,10 @@ export const formatLlmDateRange = (dateFrom?: string, dateTo?: string): string =
     return `${formatLlmDate(dateFrom)} – ${formatLlmDate(dateTo)}`
   }
   if (dateFrom) {
-    return `od ${formatLlmDate(dateFrom)}`
+    return `${t('llm.fromPrefix') || 'od'} ${formatLlmDate(dateFrom)}`
   }
   if (dateTo) {
-    return `do ${formatLlmDate(dateTo)}`
+    return `${t('llm.toPrefix') || 'do'} ${formatLlmDate(dateTo)}`
   }
   return ''
 }
@@ -32,10 +34,10 @@ export const formatPostCount = (count?: number): string => {
     return ''
   }
   if (count === 1) {
-    return '1 příspěvek'
+    return `1 ${t('llm.postCountOne') || 'příspěvek'}`
   }
   if (count >= 2 && count <= 4) {
-    return `${count} příspěvky`
+    return `${count} ${t('llm.postCountFew') || 'příspěvky'}`
   }
-  return `${count} příspěvků`
+  return `${count} ${t('llm.postCountMany') || 'příspěvků'}`
 }

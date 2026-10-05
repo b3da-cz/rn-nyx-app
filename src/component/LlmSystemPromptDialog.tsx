@@ -69,7 +69,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
           <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
             {onToggleGlobal !== undefined && (
               <FormRowToggleComponent
-                label={t('llm.globalModelToggle') || 'Uložit jako výchozí'}
+                label={t('llm.globalPromptToggle') || 'Uložit jako výchozí'}
                 value={!!isGlobal}
                 onChange={onToggleGlobal}
               />
@@ -77,7 +77,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
 
             <View style={{ paddingHorizontal: blocks.medium, paddingVertical: blocks.small }}>
               <Text style={{ color: colors.faded, fontSize: fontSizes.small, lineHeight: 18 }}>
-                Určuje chování modelu. Pro funkční odkazy na příspěvky zachovej formát:
+                {t('llm.systemPromptHelp') || 'Určuje chování modelu. Pro funkční odkazy na příspěvky zachovej formát:'}
               </Text>
               <Text style={{ color: colors.primary, fontSize: fontSizes.small, marginTop: 2 }}>
                 {'[@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id})'}
@@ -89,7 +89,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
               onChangeText={setPrompt}
               multiline
               numberOfLines={10}
-              placeholder="Zadej systémový prompt..."
+              placeholder={t('llm.systemPromptPlaceholder') || 'Zadej systémový prompt...'}
               placeholderTextColor={colors.faded}
               selectionColor={colors.primary}
               style={{
@@ -103,7 +103,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
 
             <View style={{ flexDirection: 'row', marginTop: blocks.large }}>
               <ButtonComponent
-                label={t('search.clear') || 'Výchozí'}
+                label={t('llm.systemPromptDefault') || 'Výchozí'}
                 color={colors.faded}
                 fontSize={fontSizes.p}
                 width={'33%'}

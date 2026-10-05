@@ -414,6 +414,26 @@
       "historySubtitle": {
         "cs": "Zobrazit uložené dotazy a odpovědi (%s)",
         "en": "View saved prompts and answers (%s)"
+      },
+      "refreshModels": {
+        "cs": "Aktualizovat modely",
+        "en": "Refresh models"
+      },
+      "apiKeyRequired": {
+        "cs": "Nejprve zadejte OpenRouter API klíč.",
+        "en": "Please enter OpenRouter API key first."
+      },
+      "errorFetchingModels": {
+        "cs": "Chyba při stahování modelů.",
+        "en": "Error fetching models."
+      },
+      "systemPromptCustom": {
+        "cs": "Vlastní instrukce",
+        "en": "Custom instructions"
+      },
+      "systemPromptDefault": {
+        "cs": "Výchozí instrukce pro model",
+        "en": "Default model instructions"
       }
     }
   },
@@ -847,6 +867,106 @@
     "category": {
       "cs": "Kategorie",
       "en": "Category"
+    },
+    "categoryRecommended": {
+      "cs": "Doporučené",
+      "en": "Recommended"
+    },
+    "categoryFavorites": {
+      "cs": "Oblíbené",
+      "en": "Favorites"
+    },
+    "categoryFree": {
+      "cs": "Zdarma",
+      "en": "Free"
+    },
+    "categoryAll": {
+      "cs": "Vše",
+      "en": "All"
+    },
+    "modelPickerTitle": {
+      "cs": "Výběr LLM modelu",
+      "en": "Select LLM model"
+    },
+    "searchModelPlaceholder": {
+      "cs": "Hledat model (např. gemini, claude)...",
+      "en": "Search model (e.g. gemini, claude)..."
+    },
+    "noModelsFound": {
+      "cs": "Žádné modely nenalezeny.",
+      "en": "No models found."
+    },
+    "globalPromptToggle": {
+      "cs": "Uložit jako výchozí",
+      "en": "Save as default"
+    },
+    "systemPromptHelp": {
+      "cs": "Určuje chování modelu. Pro funkční odkazy na příspěvky zachovej formát:",
+      "en": "Defines model behavior. To keep post links working, preserve format:"
+    },
+    "systemPromptPlaceholder": {
+      "cs": "Zadej systémový prompt...",
+      "en": "Enter system prompt..."
+    },
+    "presetSummaryText": {
+      "cs": "Udělej mi stručné shrnutí této diskuze a vypiš hlavní body.",
+      "en": "Give me a brief summary of this discussion and list the main points."
+    },
+    "presetTopicsText": {
+      "cs": "Jaká klíčová témata a závěry se v této diskuzi objevily?",
+      "en": "What key topics and conclusions emerged in this discussion?"
+    },
+    "presetDebateText": {
+      "cs": "Jaké různé názory a argumenty zde diskutující zastávají?",
+      "en": "What different opinions and arguments do participants hold here?"
+    },
+    "errorLoadingOlder": {
+      "cs": "Chyba při načítání starších příspěvků.",
+      "en": "Error loading older posts."
+    },
+    "errorStartingQuery": {
+      "cs": "Chyba při zahájení dotazu.",
+      "en": "Error starting query."
+    },
+    "errorModelCommunication": {
+      "cs": "Chyba při komunikaci s modelem.",
+      "en": "Error communicating with model."
+    },
+    "errorInterrupted": {
+      "cs": "Dotaz byl přerušen ukončením aplikace.",
+      "en": "Request was interrupted by app termination."
+    },
+    "notificationAnsweredTitle": {
+      "cs": "LLM Asistent odpověděl",
+      "en": "LLM Assistant replied"
+    },
+    "notificationAnsweredBody": {
+      "cs": "odpověď je připravena v Knihovně",
+      "en": "answer is ready in Library"
+    },
+    "entirePeriod": {
+      "cs": "celé období",
+      "en": "entire period"
+    },
+    "fromPrefix": {
+      "cs": "od",
+      "en": "from"
+    },
+    "toPrefix": {
+      "cs": "do",
+      "en": "to"
+    },
+    "postCountOne": {
+      "cs": "příspěvek",
+      "en": "post"
+    },
+    "postCountFew": {
+      "cs": "příspěvky",
+      "en": "posts"
+    },
+    "postCountMany": {
+      "cs": "příspěvků",
+      "en": "posts"
     }
   }
 }

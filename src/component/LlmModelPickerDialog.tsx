@@ -86,10 +86,10 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   }
 
   const categoryOptions: { value: FilterCategory; label: string }[] = [
-    { value: 'recommended', label: 'Doporučené' },
-    { value: 'favorites', label: `Oblíbené (${favoriteModelIds.length})` },
-    { value: 'free', label: 'Zdarma' },
-    { value: 'all', label: 'Vše' },
+    { value: 'recommended', label: t('llm.categoryRecommended') || 'Doporučené' },
+    { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
+    { value: 'free', label: t('llm.categoryFree') || 'Zdarma' },
+    { value: 'all', label: t('llm.categoryAll') || 'Vše' },
     { value: 'google', label: 'Google' },
     { value: 'anthropic', label: 'Anthropic' },
     { value: 'deepseek', label: 'DeepSeek' },
@@ -109,7 +109,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
             onPress={onCancel}
           />
           <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p + 2, marginHorizontal: blocks.large }}>
-            Výběr LLM modelu
+            {t('llm.modelPickerTitle') || 'Výběr LLM modelu'}
           </Text>
           <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>
             {`${filteredModels.length} / ${models.length}`}
@@ -130,7 +130,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
             selectionColor={colors.primary}
             value={search}
             onChangeText={setSearch}
-            placeholder="Hledat model (např. gemini, claude)..."
+            placeholder={t('llm.searchModelPlaceholder') || 'Hledat model (např. gemini, claude)...'}
             placeholderTextColor={colors.faded}
             style={{
               flex: 1,
@@ -214,7 +214,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                   padding: blocks.large,
                   textAlign: 'center',
                 }}>
-                Žádné modely nenalezeny.
+                {t('llm.noModelsFound') || 'Žádné modely nenalezeny.'}
               </Text>
             )
           }
