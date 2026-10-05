@@ -13,3 +13,29 @@ export const formatLlmDate = (value?: string): string => {
 
 export const joinMeta = (parts: Array<string | null | undefined | false>): string =>
   parts.filter(part => typeof part === 'string' && part.length > 0).join('  ·  ')
+
+export const formatLlmDateRange = (dateFrom?: string, dateTo?: string): string => {
+  if (dateFrom && dateTo) {
+    return `${formatLlmDate(dateFrom)} – ${formatLlmDate(dateTo)}`
+  }
+  if (dateFrom) {
+    return `od ${formatLlmDate(dateFrom)}`
+  }
+  if (dateTo) {
+    return `do ${formatLlmDate(dateTo)}`
+  }
+  return ''
+}
+
+export const formatPostCount = (count?: number): string => {
+  if (count == null || isNaN(count)) {
+    return ''
+  }
+  if (count === 1) {
+    return '1 příspěvek'
+  }
+  if (count >= 2 && count <= 4) {
+    return `${count} příspěvky`
+  }
+  return `${count} příspěvků`
+}

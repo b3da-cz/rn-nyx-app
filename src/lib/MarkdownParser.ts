@@ -1,6 +1,6 @@
 export type InlineToken =
   | { type: 'text'; content: string; bold?: boolean; italic?: boolean }
-  | { type: 'link'; text: string; url: string; bold?: boolean; italic?: boolean }
+  | { type: 'link'; text: string; url: string; bold?: boolean; italic?: boolean; username?: string }
   | { type: 'bold'; text: string }
   | { type: 'italic'; text: string }
   | { type: 'code'; text: string }
@@ -119,12 +119,18 @@ export function tokenizeInlineMarkdown(text: string, inherited: InlineInherited 
         cleanText = `@${cleanText}`
       }
 
+      let username: string | undefined
+      if (cleanText.startsWith('@') && cleanText.length > 1) {
+        username = cleanText.substring(1).trim()
+      }
+
       tokens.push({
         type: 'link',
         text: cleanText,
         url,
         ...(isBold ? { bold: true } : {}),
         ...(isItalic ? { italic: true } : {}),
+        ...(username ? { username } : {}),
       })
 
       const trailingPunct = punctInside + punctOutside + urlPunct

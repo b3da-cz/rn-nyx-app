@@ -359,6 +359,10 @@
         "cs": "Povolit LLM podporu",
         "en": "Enable LLM support"
       },
+      "showUserAvatars": {
+        "cs": "Zobrazovat avatary uživatelů",
+        "en": "Show user avatars"
+      },
       "apiKey": {
         "cs": "OpenRouter API klíč",
         "en": "OpenRouter API Key"

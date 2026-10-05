@@ -141,6 +141,7 @@ const App: () => ReactNode = () => {
       fcmToken: conf.fcmToken,
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
       isLlmEnabled: conf.isLlmEnabled === undefined ? false : !!conf.isLlmEnabled,
+      isLlmUserAvatarsEnabled: conf.isLlmUserAvatarsEnabled === undefined ? true : !!conf.isLlmUserAvatarsEnabled,
       openRouterApiKey: conf.openRouterApiKey || '',
       selectedLlmModel: conf.selectedLlmModel || '',
       selectedLlmModelName: conf.selectedLlmModelName || '',

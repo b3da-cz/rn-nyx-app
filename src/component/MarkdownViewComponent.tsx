@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useContext, useMemo } from 'react'
 import {
+  Image,
   Linking,
   Platform,
   StyleProp,
@@ -8,12 +9,14 @@ import {
   View,
   ViewStyle,
 } from 'react-native'
+import { MainContext } from '../lib/MainContext'
 import { useTheme } from '../lib/Theme'
 
 type Props = {
   content: string
   selectable?: boolean
   style?: StyleProp<ViewStyle>
+  showUserAvatars?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   onLinkPress?: (url: string) => void
 }
@@ -33,11 +36,14 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   content,
   selectable = true,
   style,
+  showUserAvatars,
   onNavigateToPost,
   onLinkPress,
 }) => {
   const theme = useTheme()
   const { colors, metrics } = theme
+  const mainContext = useContext(MainContext)
+  const isAvatarsEnabled = showUserAvatars ?? mainContext?.config?.isLlmUserAvatarsEnabled ?? true
 
   const blocks = useMemo(() => parseMarkdownBlocks(content), [content])
 
@@ -59,11 +65,51 @@ export const MarkdownViewComponent: React.FC<Props> = ({
     })
   }
 
+  const isSelectable = Platform.OS === 'ios' ? selectable : false
+
+  const avatarHeight = Math.min(18, Math.max(14, Math.round(metrics.fontSizes.p * 1.15)))
+  const avatarWidth = Math.round(avatarHeight * 0.8)
+
   const renderInlines = (rawText: string, extraStyle?: any) => {
     const tokens = tokenizeInlineMarkdown(rawText)
     return tokens.map((token, idx) => {
       switch (token.type) {
-        case 'link':
+        case 'link': {
+          const uname = token.username || (token.text.startsWith('@') ? token.text.substring(1) : undefined)
+          const cleanUname = uname ? uname.trim().toUpperCase() : ''
+          const isValidUsername = cleanUname.length > 0 && /^[A-Z0-9_.-]+$/.test(cleanUname)
+          const shouldRenderAvatar = isAvatarsEnabled && isValidUsername
+          const avatarUri = shouldRenderAvatar
+            ? `https://nyx.cz/${encodeURIComponent(cleanUname[0])}/${encodeURIComponent(cleanUname)}.gif`
+            : null
+
+          if (shouldRenderAvatar && avatarUri) {
+            return (
+              <Text key={idx} onPress={() => handleLink(token.url)}>
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={{
+                    width: avatarWidth,
+                    height: avatarHeight,
+                    backgroundColor: 'transparent',
+                  }}
+                  resizeMethod={'scale'}
+                  resizeMode={'contain'}
+                />
+                <Text
+                  style={[
+                    styles.link,
+                    { color: colors.link || colors.secondary },
+                    token.bold && styles.bold,
+                    token.italic && styles.italic,
+                    extraStyle,
+                  ]}>
+                  {` ${uname}`}
+                </Text>
+              </Text>
+            )
+          }
+
           return (
             <Text
               key={idx}
@@ -78,6 +124,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
               {token.text}
             </Text>
           )
+        }
         case 'bold':
           return (
             <Text key={idx} style={[styles.bold, extraStyle]}>
@@ -137,7 +184,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
             return (
               <Text
                 key={idx}
-                selectable={selectable}
+                selectable={isSelectable}
                 style={[
                   styles.header,
                   { color: colors.text, fontSize, marginTop: idx === 0 ? 0 : 10 },
@@ -158,7 +205,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 ]}>
                 <Text style={[styles.bullet, { color: colors.primary }]}>{bullet}</Text>
                 <Text
-                  selectable={selectable}
+                  selectable={isSelectable}
                   style={[
                     styles.listItemText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
@@ -181,7 +228,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   },
                 ]}>
                 <Text
-                  selectable={selectable}
+                  selectable={isSelectable}
                   style={[
                     styles.blockquoteText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
@@ -209,7 +256,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   </Text>
                 ) : null}
                 <Text
-                  selectable={selectable}
+                  selectable={isSelectable}
                   style={[styles.codeBlockText, { color: colors.text }]}>
                   {block.content}
                 </Text>
@@ -231,7 +278,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
             return (
               <Text
                 key={idx}
-                selectable={selectable}
+                selectable={isSelectable}
                 style={[
                   styles.paragraph,
                   { color: colors.text, fontSize: metrics.fontSizes.p },

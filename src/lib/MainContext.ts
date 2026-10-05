@@ -30,6 +30,7 @@ export type MainContextConfig = {
   fcmToken?: string
   isFCMSubscribed: boolean
   isLlmEnabled?: boolean
+  isLlmUserAvatarsEnabled?: boolean
   openRouterApiKey?: string
   selectedLlmModel?: string
   selectedLlmModelName?: string
@@ -71,6 +72,7 @@ export const initialConfig: MainContextConfig = {
   fcmToken: undefined,
   isFCMSubscribed: false,
   isLlmEnabled: false,
+  isLlmUserAvatarsEnabled: true,
   openRouterApiKey: '',
   selectedLlmModel: '',
   selectedLlmModelName: '',

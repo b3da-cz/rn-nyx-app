@@ -56,6 +56,7 @@ type State = {
   imageDownloadMaxKb: number | null
   initialRouteName: string
   isLlmEnabled: boolean
+  isLlmUserAvatarsEnabled: boolean
   openRouterApiKey: string
   selectedLlmModel: string
   selectedLlmModelName: string
@@ -141,6 +142,8 @@ export class SettingsView extends Component<Props> {
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
+      isLlmUserAvatarsEnabled:
+        config?.isLlmUserAvatarsEnabled !== undefined ? !!config.isLlmUserAvatarsEnabled : true,
       openRouterApiKey: config?.openRouterApiKey || '',
       selectedLlmModel: config?.selectedLlmModel || '',
       selectedLlmModelName: config?.selectedLlmModelName || '',
@@ -420,6 +423,11 @@ export class SettingsView extends Component<Props> {
           />
           {this.state.isLlmEnabled && (
             <View>
+              <FormRowToggleComponent
+                label={t('profile.llm.showUserAvatars') || 'Zobrazovat avatary uživatelů'}
+                value={this.state.isLlmUserAvatarsEnabled !== undefined ? !!this.state.isLlmUserAvatarsEnabled : true}
+                onChange={val => this.setOption('isLlmUserAvatarsEnabled', val)}
+              />
               {/* API Key Row */}
               <View
                 style={{

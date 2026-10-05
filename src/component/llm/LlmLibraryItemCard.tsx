@@ -7,7 +7,7 @@ import { formatDuration, LayoutAnimConf, LlmHistoryItem, Styling, t, useTheme } 
 import { ButtonComponent } from '../ButtonComponent'
 import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { LlmAnswerBody } from './LlmAnswerBody'
-import { formatLlmDate, joinMeta } from './llmFormat'
+import { formatLlmDate, formatLlmDateRange, formatPostCount, joinMeta } from './llmFormat'
 
 type Props = {
   item: LlmHistoryItem
@@ -35,11 +35,16 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const meta = joinMeta([
+  const metaExecution = joinMeta([
     formatLlmDate(item.createdAt),
-    item.modelName,
+    item.modelName || item.modelId,
     formatDuration(item.durationMs),
-    item.usage?.total_tokens ? `${item.usage.total_tokens} ${t('llm.tokens')}` : null,
+    item.usage?.total_tokens ? `${item.usage.total_tokens} ${t('llm.tokens') || 'tokenů'}` : null,
+  ])
+
+  const metaContext = joinMeta([
+    formatLlmDateRange(item.dateFrom, item.dateTo) || (item.postCount != null ? 'celé období' : null),
+    formatPostCount(item.postCount),
   ])
 
   return (
@@ -62,8 +67,13 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
             <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={fontSizes.p} color={colors.faded} />
           </View>
           <Text numberOfLines={1} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
-            {meta}
+            {metaExecution}
           </Text>
+          {metaContext ? (
+            <Text numberOfLines={1} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
+              {metaContext}
+            </Text>
+          ) : null}
           <Text
             numberOfLines={isExpanded ? undefined : 2}
             style={{ color: colors.text, fontSize: fontSizes.small, marginTop: blocks.small }}>

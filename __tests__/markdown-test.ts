@@ -76,6 +76,7 @@ describe('MarkdownViewComponent parser tests', () => {
         type: 'link',
         text: '@EBBN',
         url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
       })
       expect(tokens[2]).toEqual({ type: 'text', content: ' napsal příspěvek.' })
     })
@@ -109,6 +110,7 @@ describe('MarkdownViewComponent parser tests', () => {
           text: '@EBBN',
           url: 'https://nyx.cz/discussion/123/id/456',
           bold: true,
+          username: 'EBBN',
         },
       ])
 
@@ -119,6 +121,7 @@ describe('MarkdownViewComponent parser tests', () => {
         text: '@EBBN',
         url: 'https://nyx.cz/discussion/123/id/456',
         bold: true,
+        username: 'EBBN',
       })
       expect(t2[1]).toEqual({
         type: 'text',
@@ -131,6 +134,7 @@ describe('MarkdownViewComponent parser tests', () => {
         type: 'link',
         text: '@EBBN',
         url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
       })
       expect(t3[2]).toEqual({
         type: 'text',
@@ -143,6 +147,7 @@ describe('MarkdownViewComponent parser tests', () => {
         type: 'link',
         text: '@EBBN',
         url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
       })
       expect(t4[2]).toEqual({
         type: 'text',
@@ -156,6 +161,7 @@ describe('MarkdownViewComponent parser tests', () => {
         type: 'link',
         text: '@EBBN',
         url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
       })
       expect(t5[2]).toEqual({ type: 'text', content: ')' })
     })
