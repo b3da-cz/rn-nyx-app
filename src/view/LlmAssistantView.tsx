@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { Keyboard, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
-import { MainContext, t, useTheme } from '../lib'
-import { LlmAssistantTab, LlmLibraryTab } from '../component/llm'
+import { Keyboard, ScrollView, View } from 'react-native'
+import { IconButton, Text } from 'react-native-paper'
+import { MainContext, Styling, t, useTheme } from '../lib'
+import { LlmAssistantTab, LlmLibraryTab, LlmSegmentedRow } from '../component/llm'
 
 type Props = {
   navigation: any
@@ -13,13 +13,11 @@ type Props = {
 
 type TabType = 'assistant' | 'library'
 
-export const LlmAssistantView: React.FC<Props> = ({
-  navigation,
-  discussionId,
-  discussionTitle,
-  initialPosts = [],
-}) => {
-  const { colors, metrics } = useTheme()
+export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, discussionTitle, initialPosts = [] }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   const context = useContext(MainContext)
   const config = context?.config || {}
   const nyx = context?.nyx
@@ -34,16 +32,16 @@ export const LlmAssistantView: React.FC<Props> = ({
   const promptLayoutYRef = useRef(0)
   const scrollRef = useRef<ScrollView>(null)
 
+  const scrollToPrompt = () =>
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, promptLayoutYRef.current - 8), animated: true })
+    }, 50)
+
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', e => {
       setKeyboardHeight(e.endCoordinates.height)
-      if (isPromptFocusedRef.current && scrollRef.current) {
-        setTimeout(() => {
-          scrollRef.current?.scrollTo({
-            y: Math.max(0, promptLayoutYRef.current - 8),
-            animated: true,
-          })
-        }, 50)
+      if (isPromptFocusedRef.current) {
+        scrollToPrompt()
       }
     })
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
@@ -60,11 +58,14 @@ export const LlmAssistantView: React.FC<Props> = ({
     if (initialPosts.length > 0) {
       setPosts(initialPosts)
     } else if (discussionId && nyx) {
-      nyx.api.getDiscussion(`${discussionId}`).then((res: any) => {
-        if (res?.posts?.length) {
-          setPosts(res.posts)
-        }
-      }).catch((e: any) => console.warn('Failed to fetch initial posts for LLM', e))
+      nyx.api
+        .getDiscussion(`${discussionId}`)
+        .then((res: any) => {
+          if (res?.posts?.length) {
+            setPosts(res.posts)
+          }
+        })
+        .catch((e: any) => console.warn('Failed to fetch initial posts for LLM', e))
     }
   }, [discussionId, initialPosts, nyx])
 
@@ -88,128 +89,69 @@ export const LlmAssistantView: React.FC<Props> = ({
     })
   }
 
-  const handleUsePromptFromLibrary = (usedPrompt: string) => {
-    setPrompt(usedPrompt)
-    setActiveTab('assistant')
-  }
-
-  const handlePromptFocus = () => {
-    isPromptFocusedRef.current = true
-    if (scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({
-          y: Math.max(0, promptLayoutYRef.current - 8),
-          animated: true,
-        })
-      }, 50)
-    }
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Unified Top Header Bar with Back Arrow and Tabs */}
-      <View style={[styles.topBar, { borderBottomColor: colors.disabled, backgroundColor: colors.background }]}>
-        <TouchableOpacity
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={[Styling.groups.flexRowCentered, { height: 50 }]}>
+        <IconButton
+          icon={'arrow-left'}
+          size={25}
+          style={{ marginLeft: 10 }}
+          color={colors.primary}
+          rippleColor={colors.ripple}
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={styles.backBtn}>
-          <Icon name="arrow-left" size={24} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveTab('assistant')}
-          style={styles.tabItem}>
-          <Text
-            style={{
-              color: activeTab === 'assistant' ? colors.text : colors.faded,
-              fontSize: metrics.fontSizes.p,
-              fontWeight: activeTab === 'assistant' ? 'bold' : 'normal',
-            }}>
-            {t('llm.tabAssistant') || 'Asistent'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveTab('library')}
-          style={styles.tabItem}>
-          <Text
-            style={{
-              color: activeTab === 'library' ? colors.text : colors.faded,
-              fontSize: metrics.fontSizes.p,
-              fontWeight: activeTab === 'library' ? 'bold' : 'normal',
-            }}>
-            {`${t('llm.tabLibrary') || 'Knihovna'}${historyCount > 0 ? ` (${historyCount})` : ''}`}
-          </Text>
-        </TouchableOpacity>
+        />
+        <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p + 2, marginHorizontal: blocks.large }}>
+          {discussionTitle || t('llm.title')}
+        </Text>
       </View>
-
-      {/* Tab Content */}
-      <View style={styles.contentWrap}>
-        {activeTab === 'assistant' ? (
-          <ScrollView
-            ref={scrollRef}
-            style={styles.scrollArea}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 },
-            ]}
-            keyboardShouldPersistTaps="handled">
-            <LlmAssistantTab
-              discussionId={discussionId || ''}
-              discussionTitle={discussionTitle || ''}
-              posts={posts}
-              apiKey={config.openRouterApiKey || ''}
-              defaultModelId={config.selectedLlmModel || ''}
-              defaultModelName={config.selectedLlmModelName}
-              systemPrompt={config.llmSystemPrompt}
-              prompt={prompt}
-              onChangePrompt={setPrompt}
-              onLoadMorePosts={handleLoadOlderPosts}
-              onNavigateToPost={handleNavigateToPost}
-              onPromptFocus={handlePromptFocus}
-              onPromptLayout={y => {
-                promptLayoutYRef.current = y
-              }}
-            />
-          </ScrollView>
-        ) : (
-          <View style={styles.libraryWrap}>
-            <LlmLibraryTab
-              activeDiscussionId={discussionId}
-              onUsePrompt={handleUsePromptFromLibrary}
-              onNavigateToPost={handleNavigateToPost}
-              onCountChange={setHistoryCount}
-            />
-          </View>
-        )}
-      </View>
+      {!!discussionId && (
+        <LlmSegmentedRow
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { key: 'assistant', label: t('llm.tabAssistant') },
+            { key: 'library', label: `${t('llm.tabLibrary')}${historyCount > 0 ? ` (${historyCount})` : ''}` },
+          ]}
+        />
+      )}
+      {activeTab === 'assistant' ? (
+        <ScrollView
+          ref={scrollRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
+          keyboardShouldPersistTaps="handled">
+          <LlmAssistantTab
+            discussionId={discussionId || ''}
+            discussionTitle={discussionTitle || ''}
+            posts={posts}
+            apiKey={config.openRouterApiKey || ''}
+            defaultModelId={config.selectedLlmModel || ''}
+            defaultModelName={config.selectedLlmModelName}
+            systemPrompt={config.llmSystemPrompt}
+            prompt={prompt}
+            onChangePrompt={setPrompt}
+            onLoadMorePosts={handleLoadOlderPosts}
+            onNavigateToPost={handleNavigateToPost}
+            onPromptFocus={() => {
+              isPromptFocusedRef.current = true
+              scrollToPrompt()
+            }}
+            onPromptLayout={y => {
+              promptLayoutYRef.current = y
+            }}
+          />
+        </ScrollView>
+      ) : (
+        <LlmLibraryTab
+          activeDiscussionId={discussionId}
+          onUsePrompt={usedPrompt => {
+            setPrompt(usedPrompt)
+            setActiveTab('assistant')
+          }}
+          onNavigateToPost={handleNavigateToPost}
+          onCountChange={setHistoryCount}
+        />
+      )}
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  topBar: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    paddingHorizontal: 4,
-  },
-  backBtn: {
-    width: 44,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabItem: {
-    flex: 1,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentWrap: { flex: 1 },
-  scrollArea: { flex: 1 },
-  scrollContent: { padding: 12 },
-  libraryWrap: { flex: 1, padding: 12 },
-})

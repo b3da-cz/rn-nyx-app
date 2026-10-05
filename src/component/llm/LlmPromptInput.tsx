@@ -1,6 +1,8 @@
 import React from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { TextInput } from 'react-native'
 import { t, useTheme } from '../../lib'
+import { FormRowSelectComponent } from '../FormRowSelectComponent'
+import { LlmFormRow } from './LlmFormRow'
 
 type Props = {
   prompt: string
@@ -10,81 +12,50 @@ type Props = {
 }
 
 export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, onFocus, disabled }) => {
-  const { colors, metrics } = useTheme()
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
 
-  const quickPresets = [
-    { label: t('llm.presetSummary') || 'Shrnutí diskuze', text: 'Udělej mi stručné shrnutí této diskuze a vypiš hlavní body.' },
-    { label: t('llm.presetTopics') || 'Klíčová témata', text: 'Jaká klíčová témata a závěry se v této diskuzi objevily?' },
-    { label: t('llm.presetDebate') || 'Názory a argumenty', text: 'Jaké různé názory a argumenty zde diskutující zastávají?' },
+  const templates = [
+    { value: 'summary', label: t('llm.presetSummary'), text: 'Udělej mi stručné shrnutí této diskuze a vypiš hlavní body.' },
+    { value: 'topics', label: t('llm.presetTopics'), text: 'Jaká klíčová témata a závěry se v této diskuzi objevily?' },
+    { value: 'debate', label: t('llm.presetDebate'), text: 'Jaké různé názory a argumenty zde diskutující zastávají?' },
   ]
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.label, { color: colors.faded, fontSize: metrics.fontSizes.small }]}>
-        {t('llm.promptLabel') || 'Co chceš s příspěvky udělat?'}
-      </Text>
-
-      <View style={styles.presetsRow}>
-        {quickPresets.map((qp, idx) => (
-          <TouchableOpacity
-            key={idx}
-            onPress={() => onChangePrompt(qp.text)}
-            style={[styles.presetChip, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-            <Text style={{ color: colors.faded, fontSize: 11 }}>{qp.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
+    <>
+      <LlmFormRow label={t('llm.template')}>
+        <FormRowSelectComponent
+          value={t('llm.templatePick')}
+          selectionColor={colors.faded}
+          options={templates.map(({ value, label }) => ({ value, label }))}
+          onSelect={(value: string) => {
+            const template = templates.find(item => item.value === value)
+            if (template) {
+              onChangePrompt(template.text)
+            }
+          }}
+        />
+      </LlmFormRow>
       <TextInput
         value={prompt}
         onChangeText={onChangePrompt}
         onFocus={onFocus}
-        placeholder={t('llm.promptPlaceholder') || 'Zadej instrukci pro model...'}
+        placeholder={t('llm.promptPlaceholder')}
         placeholderTextColor={colors.faded}
+        selectionColor={colors.primary}
         multiline
-        numberOfLines={3}
         editable={!disabled}
-        style={[
-          styles.input,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.disabled,
-            color: colors.text,
-            fontSize: metrics.fontSizes.p,
-          },
-        ]}
+        style={{
+          marginHorizontal: blocks.medium,
+          minHeight: 80,
+          maxHeight: 200,
+          fontSize: fontSizes.p,
+          color: colors.text,
+          textAlignVertical: 'top',
+        }}
       />
-    </View>
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 4,
-    marginBottom: 8,
-  },
-  label: {
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-  presetsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 8,
-  },
-  presetChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  input: {
-    minHeight: 72,
-    maxHeight: 140,
-    padding: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-    textAlignVertical: 'top',
-  },
-})

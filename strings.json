@@ -775,7 +775,74 @@
     "globalModelToggle": {
       "cs": "Uložit jako globální model",
       "en": "Set as global default"
+    },
+    "custom": {
+      "cs": "Vlastní",
+      "en": "Custom"
+    },
+    "model": {
+      "cs": "Model",
+      "en": "Model"
+    },
+    "systemPrompt": {
+      "cs": "Systémový prompt",
+      "en": "System prompt"
+    },
+    "systemPromptCustom": {
+      "cs": "Vlastní",
+      "en": "Custom"
+    },
+    "systemPromptDefault": {
+      "cs": "Výchozí",
+      "en": "Default"
+    },
+    "template": {
+      "cs": "Šablona",
+      "en": "Template"
+    },
+    "templatePick": {
+      "cs": "Vybrat šablonu...",
+      "en": "Select template..."
+    },
+    "retry": {
+      "cs": "Zkusit znovu",
+      "en": "Retry"
+    },
+    "error": {
+      "cs": "Chyba",
+      "en": "Error"
+    },
+    "answer": {
+      "cs": "Odpověď",
+      "en": "Answer"
+    },
+    "tokens": {
+      "cs": "tokenů",
+      "en": "tokens"
+    },
+    "copy": {
+      "cs": "Kopírovat",
+      "en": "Copy"
+    },
+    "copiedShort": {
+      "cs": "Zkopírováno",
+      "en": "Copied"
+    },
+    "loadOlder": {
+      "cs": "Načíst starší",
+      "en": "Load older"
+    },
+    "sortBy": {
+      "cs": "Řadit dle",
+      "en": "Sort by"
+    },
+    "cancel": {
+      "cs": "Zrušit",
+      "en": "Cancel"
+    },
+    "category": {
+      "cs": "Kategorie",
+      "en": "Category"
     }
   }
 }
-

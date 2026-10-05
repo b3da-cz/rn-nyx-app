@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { FlatList, StyleSheet, Text, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
+import { FlatList, View } from 'react-native'
+import { Text } from 'react-native-paper'
 import {
   clearLlmHistory,
   deleteLlmHistoryEntry,
@@ -29,7 +29,10 @@ export const LlmLibraryTab: React.FC<Props> = ({
   onNavigateToPost,
   onCountChange,
 }) => {
-  const { colors, metrics } = useTheme()
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
   const [history, setHistory] = useState<LlmHistoryItem[]>([])
   const [pendingTasks, setPendingTasks] = useState<LlmPendingTask[]>([])
   const [search, setSearch] = useState('')
@@ -108,7 +111,7 @@ export const LlmLibraryTab: React.FC<Props> = ({
   }, [history, scope, activeDiscussionId, search, sort])
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1 }}>
       <LlmLibraryFilterBar
         search={search}
         onSearchChange={setSearch}
@@ -124,7 +127,7 @@ export const LlmLibraryTab: React.FC<Props> = ({
         keyExtractor={item => item.id}
         ListHeaderComponent={
           filteredPendingTasks.length > 0 ? (
-            <View style={styles.pendingWrap}>
+            <View>
               {filteredPendingTasks.map(task => (
                 <LlmPendingItemCard
                   key={task.id}
@@ -146,23 +149,21 @@ export const LlmLibraryTab: React.FC<Props> = ({
         )}
         ListEmptyComponent={
           filteredPendingTasks.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Icon name="archive" size={32} color={colors.faded} style={{ marginBottom: 8 }} />
-              <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small }}>
-                {search.trim()
-                  ? t('llm.noFilteredHistory') || 'Nenalezeny žádné záznamy'
-                  : t('llm.noHistory') || 'Žádná historie dotazů'}
-              </Text>
-            </View>
+            <Text style={{ color: colors.faded, fontSize: fontSizes.p, padding: blocks.large, textAlign: 'center' }}>
+              {search.trim() ? t('llm.noFilteredHistory') : t('llm.noHistory')}
+            </Text>
           ) : null
         }
         ListFooterComponent={
           history.length > 0 ? (
-            <View style={styles.footerWrap}>
+            <View style={{ alignItems: 'center', marginVertical: blocks.large }}>
               <DoubleTapDeleteButton
                 onDelete={handleClearAll}
-                label={t('llm.clearAll') || 'Smazat vše'}
-                iconSize={14}
+                label={t('llm.clearAll')}
+                iconSize={fontSizes.p}
+                textStyle={{ fontSize: fontSizes.p, fontWeight: '400' }}
+                flat
+                style={{ padding: blocks.medium }}
               />
             </View>
           ) : null
@@ -172,10 +173,3 @@ export const LlmLibraryTab: React.FC<Props> = ({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  pendingWrap: { marginBottom: 4 },
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  footerWrap: { alignItems: 'center', marginVertical: 16 },
-})

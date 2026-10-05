@@ -1,22 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
-import {
-  filterAndFormatPostsForLlm,
-  getLlmHistory,
-  LlmPendingTask,
-  LlmQueue,
-  Storage,
-  t,
-  useTheme,
-} from '../../lib'
+import React from 'react'
+import { ActivityIndicator, View } from 'react-native'
+import { Button, Text } from 'react-native-paper'
+import { LlmQueue, Styling, t, useTheme } from '../../lib'
+import { ButtonComponent } from '../ButtonComponent'
 import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
 import { LlmPendingItemCard } from './LlmPendingItemCard'
 import { LlmPromptInput } from './LlmPromptInput'
 import { LlmResultSection } from './LlmResultSection'
 import { LlmSystemPromptBar } from './LlmSystemPromptBar'
-import { useLlmDateFilter } from './useLlmDateFilter'
+import { useLlmAssistant } from './useLlmAssistant'
 
 type Props = {
   discussionId: number | string
@@ -35,282 +28,110 @@ type Props = {
   onPromptLayout?: (y: number) => void
 }
 
-export const LlmAssistantTab: React.FC<Props> = ({
-  discussionId,
-  discussionTitle,
-  posts,
-  apiKey,
-  defaultModelId,
-  defaultModelName,
-  systemPrompt,
-  prompt,
-  onChangePrompt,
-  onLoadMorePosts,
-  onNavigateToPost,
-  onHistoryEntryAdded,
-  onPromptFocus,
-  onPromptLayout,
-}) => {
-  const { colors, metrics } = useTheme()
-  const { datePreset, dateFrom, dateTo, setDateFrom, setDateTo, applyPreset } = useLlmDateFilter()
-  const [currentModelId, setCurrentModelId] = useState(defaultModelId)
-  const [currentModelName, setCurrentModelName] = useState(defaultModelName || defaultModelId)
-  const [isGlobalModel, setIsGlobalModel] = useState(false)
-  const [currentSystemPrompt, setCurrentSystemPrompt] = useState(systemPrompt)
-  const [isGlobalSystemPrompt, setIsGlobalSystemPrompt] = useState(false)
-  const [pendingTasks, setPendingTasks] = useState<LlmPendingTask[]>([])
-  const [isLoadingOlder, setIsLoadingOlder] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
-  const [resultUsage, setResultUsage] = useState<any | null>(null)
-  const [resultDuration, setResultDuration] = useState<number | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const lastSentTaskIdRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    LlmQueue.init()
-    const unsubscribe = LlmQueue.subscribe(tasks => {
-      setPendingTasks(tasks)
-
-      // If we recently sent a task and it completed, load the result
-      if (lastSentTaskIdRef.current) {
-        const stillPending = tasks.some(t => t.id === lastSentTaskIdRef.current)
-        if (!stillPending) {
-          lastSentTaskIdRef.current = null
-          getLlmHistory().then(history => {
-            const latest = history.find(it => `${it.discussionId}` === `${discussionId}`)
-            if (latest) {
-              setResult(latest.response)
-              setResultUsage(latest.usage)
-              setResultDuration(latest.durationMs ?? null)
-              onHistoryEntryAdded?.()
-            }
-          })
-        }
-      }
-    })
-    return unsubscribe
-  }, [discussionId, onHistoryEntryAdded])
-
-  const activeTask = useMemo(() => {
-    return pendingTasks.find(t => `${t.discussionId}` === `${discussionId}`)
-  }, [pendingTasks, discussionId])
-
-  const isSending = activeTask?.status === 'pending'
-
-  const { count: postCount, wordCount } = useMemo(
-    () => filterAndFormatPostsForLlm(posts, dateFrom, dateTo, discussionTitle),
-    [posts, dateFrom, dateTo, discussionTitle],
-  )
-
-  const canLoadOlder = useMemo(() => {
-    if (!onLoadMorePosts || !dateFrom) {
-      return false
-    }
-    const valid = posts.filter(p => p && p.inserted_at && p.location !== 'header')
-    return valid.length > 0 && valid[valid.length - 1].inserted_at.substring(0, 10) > dateFrom
-  }, [posts, dateFrom, onLoadMorePosts])
-
-  const handleLoadOlder = async () => {
-    if (!onLoadMorePosts || isLoadingOlder) {
-      return
-    }
-    setIsLoadingOlder(true)
-    try {
-      await onLoadMorePosts()
-    } catch (e: any) {
-      setErrorMessage(e?.message || 'Chyba při načítání starších příspěvků.')
-    } finally {
-      setIsLoadingOlder(false)
-    }
-  }
-
-  const handleSend = async () => {
-    if (!prompt.trim() || postCount === 0 || !currentModelId) {
-      return
-    }
-    setErrorMessage(null)
-    setResult(null)
-
-    try {
-      if (isGlobalModel) {
-        const conf = (await Storage.getConfig()) || {}
-        conf.selectedLlmModel = currentModelId
-        conf.selectedLlmModelName = currentModelName
-        await Storage.setConfig(conf)
-      }
-      if (isGlobalSystemPrompt && currentSystemPrompt) {
-        const conf = (await Storage.getConfig()) || {}
-        conf.llmSystemPrompt = currentSystemPrompt
-        await Storage.setConfig(conf)
-      }
-
-      const taskId = await LlmQueue.enqueueTask({
-        apiKey,
-        modelId: currentModelId,
-        modelName: currentModelName,
-        userPrompt: prompt,
-        discussionId,
-        discussionTitle,
-        posts,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        postCount,
-        systemPrompt: currentSystemPrompt,
-      })
-      lastSentTaskIdRef.current = taskId
-      onChangePrompt('')
-    } catch (e: any) {
-      setErrorMessage(e?.message || 'Chyba při zahájení dotazu.')
-    }
-  }
+export const LlmAssistantTab: React.FC<Props> = props => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
+  const a = useLlmAssistant(props)
+  const { dateFilter, model, system } = a
 
   return (
-    <View style={styles.tabContent}>
-      {!!discussionTitle && (
-        <View style={[styles.discussionBar, { borderBottomColor: colors.disabled }]}>
-          <Icon name="message-square" size={13} color={colors.primary} style={{ marginRight: 6 }} />
-          <Text numberOfLines={1} style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
-            {discussionTitle}
-          </Text>
-        </View>
-      )}
-
+    <View style={{ paddingBottom: blocks.xlarge }}>
       <LlmModelBar
-        apiKey={apiKey}
-        currentModelId={currentModelId}
-        currentModelName={currentModelName}
-        isGlobalModel={isGlobalModel}
+        apiKey={props.apiKey}
+        currentModelId={model.modelId}
+        currentModelName={model.modelName}
+        isGlobalModel={model.isGlobalModel}
         onModelSelected={m => {
-          setCurrentModelId(m.id)
-          setCurrentModelName(m.name)
+          model.setModelId(m.id)
+          model.setModelName(m.name)
         }}
-        onToggleGlobal={setIsGlobalModel}
+        onToggleGlobal={model.setIsGlobalModel}
       />
-
       <LlmSystemPromptBar
-        systemPrompt={currentSystemPrompt}
-        isGlobalSystemPrompt={isGlobalSystemPrompt}
-        onToggleGlobal={setIsGlobalSystemPrompt}
-        onSystemPromptChange={setCurrentSystemPrompt}
+        systemPrompt={system.systemPrompt}
+        isGlobalSystemPrompt={system.isGlobalSystemPrompt}
+        onToggleGlobal={system.setIsGlobalSystemPrompt}
+        onSystemPromptChange={system.setSystemPrompt}
       />
-
       <LlmDateFilterBar
-        datePreset={datePreset}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        onPresetChange={applyPreset}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
+        datePreset={dateFilter.datePreset}
+        dateFrom={dateFilter.dateFrom}
+        dateTo={dateFilter.dateTo}
+        onPresetChange={dateFilter.applyPreset}
+        onDateFromChange={dateFilter.setDateFrom}
+        onDateToChange={dateFilter.setDateTo}
       />
 
-      <View style={styles.statsRow}>
-        <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
-          {postCount > 0 ? `${postCount} příspěvků (cca ${wordCount} slov)` : t('llm.noPosts') || 'Žádné příspěvky'}
+      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: 40, paddingLeft: blocks.medium }]}>
+        <Text style={{ flex: 1, color: colors.faded, fontSize: fontSizes.small }}>
+          {a.postCount > 0
+            ? `${t('llm.postsCount')}`.replace('%s', `${a.postCount}`).replace('%s', `${a.wordCount}`)
+            : t('llm.noPosts')}
         </Text>
-        {canLoadOlder && (
-          <TouchableOpacity onPress={handleLoadOlder} disabled={isLoadingOlder} style={styles.loadOlderBtn}>
-            {isLoadingOlder ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Text style={{ color: colors.primary, fontSize: metrics.fontSizes.small - 1, fontWeight: 'bold' }}>
-                {t('llm.loadOlderPosts') || 'Načíst starší'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
+        {a.canLoadOlder &&
+          (a.isLoadingOlder ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginHorizontal: blocks.large }} />
+          ) : (
+            <Button uppercase={false} color={colors.accent} onPress={a.loadOlder}>
+              {t('llm.loadOlder')}
+            </Button>
+          ))}
       </View>
 
-      <View onLayout={e => onPromptLayout?.(e.nativeEvent.layout.y)}>
+      <View onLayout={e => props.onPromptLayout?.(e.nativeEvent.layout.y)}>
         <LlmPromptInput
-          prompt={prompt}
-          onChangePrompt={onChangePrompt}
-          onFocus={onPromptFocus}
-          disabled={isSending}
+          prompt={props.prompt}
+          onChangePrompt={props.onChangePrompt}
+          onFocus={props.onPromptFocus}
+          disabled={a.isSending}
         />
       </View>
 
-      <TouchableOpacity
-        onPress={handleSend}
-        disabled={isSending || !prompt.trim() || postCount === 0}
-        style={[
-          styles.sendBtn,
-          { backgroundColor: isSending || !prompt.trim() || postCount === 0 ? colors.disabled : colors.primary },
-        ]}>
-        {isSending ? (
-          <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-        ) : (
-          <Icon name="send" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
-        )}
-        <Text style={{ color: '#FFFFFF', fontSize: metrics.fontSizes.p, fontWeight: 'bold' }}>
-          {isSending ? t('llm.sending') || 'Zpracovávám...' : t('llm.send') || 'Odeslat dotaz'}
+      <View style={{ flexDirection: 'row', marginTop: blocks.medium }}>
+        <ButtonComponent
+          label={t('search.clear')}
+          color={colors.faded}
+          fontSize={fontSizes.p}
+          width={'50%'}
+          onPress={() => props.onChangePrompt('')}
+        />
+        <ButtonComponent
+          label={a.isSending ? t('llm.sending') : t('llm.send')}
+          color={a.canSend ? colors.accent : colors.disabled}
+          isDisabled={!a.canSend}
+          fontSize={fontSizes.p}
+          width={'50%'}
+          onPress={a.send}
+        />
+      </View>
+
+      {!!a.activeTask && (
+        <LlmPendingItemCard
+          task={a.activeTask}
+          onRetry={taskId => LlmQueue.retryTask(taskId)}
+          onDismiss={taskId => LlmQueue.dismissTask(taskId)}
+        />
+      )}
+
+      {!!a.errorMessage && (
+        <Text
+          selectable
+          style={{ color: colors.error, fontSize: fontSizes.small, paddingHorizontal: blocks.medium }}>
+          {a.errorMessage}
         </Text>
-      </TouchableOpacity>
-
-      {/* Active or errored pending task for this discussion */}
-      {!!activeTask && (
-        <View style={{ marginTop: 10 }}>
-          <LlmPendingItemCard
-            task={activeTask}
-            onRetry={taskId => LlmQueue.retryTask(taskId)}
-            onDismiss={taskId => LlmQueue.dismissTask(taskId)}
-          />
-        </View>
       )}
 
-      {!!errorMessage && (
-        <View style={[styles.errorWrap, { backgroundColor: colors.surface, borderColor: colors.accent }]}>
-          <Icon name="alert-triangle" size={16} color={colors.accent} style={{ marginRight: 8 }} />
-          <Text selectable style={{ color: colors.text, fontSize: metrics.fontSizes.small, flex: 1 }}>
-            {errorMessage}
-          </Text>
-        </View>
-      )}
-
-      {!!result && (
+      {!!a.result && (
         <LlmResultSection
-          result={result}
-          usage={resultUsage}
-          durationMs={resultDuration}
-          onNewQuery={() => setResult(null)}
-          onNavigateToPost={onNavigateToPost}
+          result={a.result.text}
+          usage={a.result.usage}
+          durationMs={a.result.durationMs}
+          onNewQuery={a.clearResult}
+          onNavigateToPost={props.onNavigateToPost}
         />
       )}
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  tabContent: { paddingBottom: 24 },
-  discussionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-    marginBottom: 6,
-  },
-  loadOlderBtn: { marginLeft: 8, paddingHorizontal: 6, paddingVertical: 4 },
-  sendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 44,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  errorWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-    marginTop: 10,
-  },
-})

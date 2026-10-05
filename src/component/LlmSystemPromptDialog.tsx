@@ -1,22 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
-import { DEFAULT_LLM_SYSTEM_PROMPT, useTheme } from '../lib'
+import { KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, TextInput, View } from 'react-native'
+import { IconButton, Text } from 'react-native-paper'
+import { ButtonComponent } from './ButtonComponent'
+import { FormRowToggleComponent } from './FormRowToggleComponent'
+import { DEFAULT_LLM_SYSTEM_PROMPT, Styling, t, useTheme } from '../lib'
 
 type Props = {
   isVisible: boolean
   initialPrompt?: string
+  isGlobal?: boolean
+  onToggleGlobal?: (val: boolean) => void
   onSave: (prompt: string) => void
   onCancel: () => void
 }
@@ -24,11 +17,16 @@ type Props = {
 export const LlmSystemPromptDialog: React.FC<Props> = ({
   isVisible,
   initialPrompt,
+  isGlobal,
+  onToggleGlobal,
   onSave,
   onCancel,
 }) => {
   const theme = useTheme()
-  const { colors, metrics } = theme
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = theme
 
   const [prompt, setPrompt] = useState(initialPrompt || DEFAULT_LLM_SYSTEM_PROMPT)
 
@@ -52,50 +50,40 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false} onRequestClose={onCancel}>
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.disabled }]}>
-          <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
-            <Icon name="arrow-left" size={24} color={colors.primary} />
-          </TouchableOpacity>
-          <View style={styles.headerTitleWrap}>
-            <Text style={[styles.headerTitle, { color: colors.text, fontSize: metrics.fontSizes.h2 }]}>
-              Systémový prompt
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.faded, fontSize: metrics.fontSizes.small }]}>
-              Instrukce pro chování modelu a formátování odkazů
-            </Text>
-          </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={[Styling.groups.flexRowCentered, { height: 50 }]}>
+          <IconButton
+            icon={'arrow-left'}
+            size={25}
+            style={{ marginLeft: 10 }}
+            color={colors.primary}
+            rippleColor={colors.ripple}
+            onPress={onCancel}
+          />
+          <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p + 2, marginHorizontal: blocks.large }}>
+            {t('llm.systemPrompt') || 'Systémový prompt'}
+          </Text>
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled">
-            {/* Info notice */}
-            <View style={[styles.infoBox, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-              <Icon name="info" size={18} color={colors.primary} style={{ marginRight: 8, marginTop: 2 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: metrics.fontSizes.small, lineHeight: 18 }}>
-                  Tento prompt určuje chování a styl odpovědí LLM modelu.
-                </Text>
-                <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, lineHeight: 18, marginTop: 4 }}>
-                  Pro správné proklikávání na příspěvky zachovej pravidlo s odkazem ve tvaru{' '}
-                  <Text style={{ color: colors.primary, fontWeight: 'bold' }}>
-                    [@autor](https://nyx.cz/discussion/{'{discussion_id}'}/id/{'{post_id}'})
-                  </Text>
-                  .
-                </Text>
-              </View>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
+            {onToggleGlobal !== undefined && (
+              <FormRowToggleComponent
+                label={t('llm.globalModelToggle') || 'Uložit jako výchozí'}
+                value={!!isGlobal}
+                onChange={onToggleGlobal}
+              />
+            )}
+
+            <View style={{ paddingHorizontal: blocks.medium, paddingVertical: blocks.small }}>
+              <Text style={{ color: colors.faded, fontSize: fontSizes.small, lineHeight: 18 }}>
+                Určuje chování modelu. Pro funkční odkazy na příspěvky zachovej formát:
+              </Text>
+              <Text style={{ color: colors.primary, fontSize: fontSizes.small, marginTop: 2 }}>
+                {'[@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id})'}
+              </Text>
             </View>
 
-            {/* Prompt Textarea */}
-            <Text style={[styles.label, { color: colors.text, fontSize: metrics.fontSizes.p }]}>
-              Text systémového promptu:
-            </Text>
             <TextInput
               value={prompt}
               onChangeText={setPrompt}
@@ -103,46 +91,38 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
               numberOfLines={10}
               placeholder="Zadej systémový prompt..."
               placeholderTextColor={colors.faded}
-              style={[
-                styles.textarea,
-                {
-                  color: colors.text,
-                  backgroundColor: colors.surface,
-                  borderColor: colors.disabled,
-                  fontSize: metrics.fontSizes.p,
-                },
-              ]}
+              selectionColor={colors.primary}
+              style={{
+                marginHorizontal: blocks.medium,
+                minHeight: 180,
+                fontSize: fontSizes.p,
+                color: colors.text,
+                textAlignVertical: 'top',
+              }}
             />
 
-            {/* Actions */}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
+            <View style={{ flexDirection: 'row', marginTop: blocks.large }}>
+              <ButtonComponent
+                label={t('search.clear') || 'Výchozí'}
+                color={colors.faded}
+                fontSize={fontSizes.p}
+                width={'33%'}
                 onPress={handleReset}
-                style={[styles.resetBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-                <Icon name="rotate-ccw" size={14} color={colors.faded} style={{ marginRight: 6 }} />
-                <Text style={{ color: colors.text, fontSize: metrics.fontSizes.small }}>
-                  Obnovit výchozí
-                </Text>
-              </TouchableOpacity>
-
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity
-                  onPress={onCancel}
-                  style={[styles.cancelBtn, { borderColor: colors.disabled }]}>
-                  <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.p }}>
-                    Zrušit
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSave}
-                  style={[styles.saveBtn, { backgroundColor: colors.primary }]}>
-                  <Icon name="check" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.saveBtnText}>
-                    Uložit
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              />
+              <ButtonComponent
+                label={t('cancel')}
+                color={colors.faded}
+                fontSize={fontSizes.p}
+                width={'33%'}
+                onPress={onCancel}
+              />
+              <ButtonComponent
+                label={t('confirm')}
+                color={colors.accent}
+                fontSize={fontSizes.p}
+                width={'34%'}
+                onPress={handleSave}
+              />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -150,88 +130,3 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
     </Modal>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  closeBtn: {
-    padding: 6,
-    marginRight: 10,
-  },
-  headerTitleWrap: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    marginTop: 2,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 4,
-    padding: 12,
-    marginBottom: 16,
-  },
-  label: {
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  textarea: {
-    borderWidth: 1,
-    borderRadius: 4,
-    padding: 12,
-    minHeight: 180,
-    textAlignVertical: 'top',
-    marginBottom: 16,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  cancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 4,
-    justifyContent: 'center',
-  },
-  saveBtnText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-})

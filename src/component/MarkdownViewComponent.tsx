@@ -25,7 +25,8 @@ import {
   tokenizeInlineMarkdown,
 } from '../lib/MarkdownParser'
 
-export { InlineToken, MarkdownBlock, parseMarkdownBlocks, tokenizeInlineMarkdown }
+export type { InlineToken, MarkdownBlock }
+export { parseMarkdownBlocks, tokenizeInlineMarkdown }
 
 
 export const MarkdownViewComponent: React.FC<Props> = ({

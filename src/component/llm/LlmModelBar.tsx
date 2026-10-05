@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
-import { fetchOpenRouterModels, OpenRouterModel, Storage, t, useTheme } from '../../lib'
+import { fetchOpenRouterModels, OpenRouterModel, Storage, t } from '../../lib'
 import { LlmModelPickerDialog } from '../LlmModelPickerDialog'
+import { LlmFormRow } from './LlmFormRow'
 
 type Props = {
   apiKey: string
@@ -21,7 +20,6 @@ export const LlmModelBar: React.FC<Props> = ({
   onModelSelected,
   onToggleGlobal,
 }) => {
-  const { colors, metrics } = useTheme()
   const [isPickerVisible, setIsPickerVisible] = useState(false)
   const [models, setModels] = useState<OpenRouterModel[]>([])
   const [isFetching, setIsFetching] = useState(false)
@@ -53,60 +51,25 @@ export const LlmModelBar: React.FC<Props> = ({
   }
 
   return (
-    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
-      <TouchableOpacity onPress={handleOpenPicker} style={styles.modelRow}>
-        <View style={{ flex: 1, marginRight: 8 }}>
-          <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small - 1 }}>
-            {t('profile.llm.selectedModel') || 'Model'}:
-          </Text>
-          <Text numberOfLines={1} style={{ color: colors.text, fontSize: metrics.fontSizes.p, fontWeight: '600', marginTop: 2 }}>
-            {currentModelName || currentModelId || 'Vyberte model...'}
-          </Text>
-        </View>
-        <Icon name="chevron-down" size={18} color={colors.faded} />
-      </TouchableOpacity>
-
-      <View style={styles.globalRow}>
-        <Text style={{ color: colors.faded, fontSize: metrics.fontSizes.small, flex: 1 }}>
-          {t('llm.globalModelToggle') || 'Uložit jako globální model'}
-        </Text>
-        <Switch
-          value={isGlobalModel}
-          onValueChange={onToggleGlobal}
-          trackColor={{ false: colors.disabled, true: colors.primary }}
-        />
-      </View>
-
+    <>
+      <LlmFormRow
+        label={t('llm.model')}
+        value={currentModelName || currentModelId || t('profile.llm.selectModel')}
+        onPress={handleOpenPicker}
+      />
       <LlmModelPickerDialog
         isVisible={isPickerVisible}
         models={models}
+        isLoading={isFetching}
         selectedModelId={currentModelId}
+        isGlobal={isGlobalModel}
+        onToggleGlobal={onToggleGlobal}
         onSelect={model => {
           setIsPickerVisible(false)
           onModelSelected(model)
         }}
         onCancel={() => setIsPickerVisible(false)}
       />
-    </View>
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  modelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  globalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 6,
-  },
-})

@@ -65,38 +65,42 @@ export class ProfileView extends Component<Props> {
             </Text>
             <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
           </View>
-          <IconButton
-            icon={'chip'}
-            size={24}
-            color={theme.colors.text}
-            style={{ marginLeft: 'auto', marginTop: -20, marginRight: 10 }}
-            onPress={() => this.props.navigation.push('llmLibrary')}
-            rippleColor={theme.colors.ripple}
-          />
-          <IconButton
-            icon={'github'}
-            size={24}
-            color={theme.colors.text}
-            style={{ marginTop: -20, marginRight: 10 }}
-            onPress={() => this.props.navigation.push('about')}
-            rippleColor={theme.colors.ripple}
-          />
-          <IconButton
-            icon={'palette-advanced'}
-            size={24}
-            color={theme.colors.text}
-            style={{ marginTop: -20, marginRight: 10 }}
-            onPress={() => this.props.navigation.push('theme')}
-            rippleColor={theme.colors.ripple}
-          />
-          <IconButton
-            icon={'cog-outline'}
-            size={24}
-            color={theme.colors.text}
-            style={{ marginTop: -20, marginRight: 10 }}
-            onPress={() => this.props.navigation.push('settings')}
-            rippleColor={theme.colors.ripple}
-          />
+          <View style={{ marginLeft: 'auto', flexDirection: 'row', marginTop: -20 }}>
+            {!!this.context?.config?.isLlmEnabled && (
+              <IconButton
+                icon={'chip'}
+                size={24}
+                color={theme.colors.text}
+                style={{ marginRight: 10 }}
+                onPress={() => this.props.navigation.push('llmLibrary')}
+                rippleColor={theme.colors.ripple}
+              />
+            )}
+            <IconButton
+              icon={'github'}
+              size={24}
+              color={theme.colors.text}
+              style={{ marginRight: 10 }}
+              onPress={() => this.props.navigation.push('about')}
+              rippleColor={theme.colors.ripple}
+            />
+            <IconButton
+              icon={'palette-advanced'}
+              size={24}
+              color={theme.colors.text}
+              style={{ marginRight: 10 }}
+              onPress={() => this.props.navigation.push('theme')}
+              rippleColor={theme.colors.ripple}
+            />
+            <IconButton
+              icon={'cog-outline'}
+              size={24}
+              color={theme.colors.text}
+              style={{ marginRight: 10 }}
+              onPress={() => this.props.navigation.push('settings')}
+              rippleColor={theme.colors.ripple}
+            />
+          </View>
         </View>
         <View>
           <SectionHeaderComponent title={t('friends')} backgroundColor={theme.colors.tertiary} />

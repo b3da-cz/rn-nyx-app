@@ -1,7 +1,10 @@
 import React from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather'
+import { TextInput, View } from 'react-native'
+import { IconButton } from 'react-native-paper'
 import { t, useTheme } from '../../lib'
+import { FormRowSelectComponent } from '../FormRowSelectComponent'
+import { LlmFormRow } from './LlmFormRow'
+import { LlmSegmentedRow } from './LlmSegmentedRow'
 
 export type SortOrder = 'newest' | 'oldest' | 'discussion' | 'duration'
 export type ScopeFilter = 'discussion' | 'all'
@@ -25,133 +28,59 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
   onSortChange,
   hasActiveDiscussion,
 }) => {
-  const { colors, metrics } = useTheme()
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
 
-  const sortOptions: { id: SortOrder; label: string }[] = [
-    { id: 'newest', label: t('llm.sortNewest') || 'Nejnovější' },
-    { id: 'oldest', label: t('llm.sortOldest') || 'Nejstarší' },
-    { id: 'discussion', label: t('llm.sortDiscussion') || 'Diskuze' },
-    { id: 'duration', label: t('llm.sortDuration') || 'Trvání' },
+  const sortOptions: { value: SortOrder; label: string }[] = [
+    { value: 'newest', label: t('llm.sortNewest') },
+    { value: 'oldest', label: t('llm.sortOldest') },
+    { value: 'discussion', label: t('llm.sortDiscussion') },
+    { value: 'duration', label: t('llm.sortDuration') },
   ]
 
   return (
-    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
-      <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-        <Icon name="search" size={16} color={colors.faded} style={{ marginRight: 8 }} />
+    <View>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginHorizontal: blocks.medium,
+          marginBottom: blocks.small,
+          height: 42,
+        }}>
         <TextInput
+          numberOfLines={1}
+          textAlignVertical={'center'}
+          selectionColor={colors.primary}
           value={search}
           onChangeText={onSearchChange}
-          placeholder={t('llm.searchHistoryPlaceholder') || 'Hledat v dotazech a odpovědích...'}
+          placeholder={t('llm.searchHistoryPlaceholder')}
           placeholderTextColor={colors.faded}
-          style={[styles.searchInput, { color: colors.text, fontSize: metrics.fontSizes.small }]}
+          style={{ flex: 1, height: 42, color: colors.text, fontSize: fontSizes.p }}
         />
         {!!search && (
-          <TouchableOpacity onPress={() => onSearchChange('')} style={{ padding: 4 }}>
-            <Icon name="x" size={14} color={colors.faded} />
-          </TouchableOpacity>
+          <IconButton icon={'close'} size={18} color={colors.faded} onPress={() => onSearchChange('')} />
         )}
       </View>
-
-      <View style={styles.filtersRow}>
-        {hasActiveDiscussion && (
-          <View style={[styles.scopeWrap, { borderColor: colors.disabled }]}>
-            <TouchableOpacity
-              onPress={() => onScopeChange('discussion')}
-              style={[
-                styles.scopeBtn,
-                { backgroundColor: scope === 'discussion' ? colors.primary : colors.surface },
-              ]}>
-              <Text
-                style={{
-                  color: scope === 'discussion' ? '#FFFFFF' : colors.faded,
-                  fontSize: 11,
-                  fontWeight: scope === 'discussion' ? 'bold' : 'normal',
-                }}>
-                {t('llm.filterCurrentDiscussion') || 'Tato diskuze'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => onScopeChange('all')}
-              style={[styles.scopeBtn, { backgroundColor: scope === 'all' ? colors.primary : colors.surface }]}>
-              <Text
-                style={{
-                  color: scope === 'all' ? '#FFFFFF' : colors.faded,
-                  fontSize: 11,
-                  fontWeight: scope === 'all' ? 'bold' : 'normal',
-                }}>
-                {t('llm.filterAllDiscussions') || 'Všechny'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={styles.sortRow}>
-          {sortOptions.map(opt => {
-            const isSelected = sort === opt.id
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                onPress={() => onSortChange(opt.id)}
-                style={[
-                  styles.sortChip,
-                  {
-                    backgroundColor: isSelected ? colors.primary : colors.surface,
-                    borderColor: isSelected ? colors.primary : colors.disabled,
-                  },
-                ]}>
-                <Text style={{ color: isSelected ? '#FFFFFF' : colors.faded, fontSize: 10 }}>{opt.label}</Text>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
-      </View>
+      {hasActiveDiscussion && (
+        <LlmSegmentedRow
+          value={scope}
+          onChange={onScopeChange}
+          options={[
+            { key: 'discussion', label: t('llm.filterCurrentDiscussion') },
+            { key: 'all', label: t('llm.filterAllDiscussions') },
+          ]}
+        />
+      )}
+      <LlmFormRow label={t('llm.sortBy')}>
+        <FormRowSelectComponent
+          value={sortOptions.find(option => option.value === sort)?.label}
+          options={sortOptions}
+          onSelect={(value: SortOrder) => onSortChange(value)}
+        />
+      </LlmFormRow>
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    borderWidth: 1,
-    height: 38,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 4,
-  },
-  filtersRow: {
-    gap: 8,
-  },
-  scopeWrap: {
-    flexDirection: 'row',
-    borderRadius: 4,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  scopeBtn: {
-    flex: 1,
-    paddingVertical: 5,
-    alignItems: 'center',
-  },
-  sortRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  sortChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-})

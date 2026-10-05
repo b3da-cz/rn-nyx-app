@@ -19,6 +19,8 @@ type Props = {
   textStyle?: StyleProp<TextStyle>
   timeoutMs?: number
   disabled?: boolean
+  // borderless, transparent variant; the confirm state tints icon + label instead of the background
+  flat?: boolean
 }
 
 export const DoubleTapDeleteButton: React.FC<Props> = ({
@@ -29,6 +31,7 @@ export const DoubleTapDeleteButton: React.FC<Props> = ({
   textStyle,
   timeoutMs = 3500,
   disabled = false,
+  flat = false,
 }) => {
   const { colors } = useTheme()
   const [confirming, setConfirming] = useState(false)
@@ -64,6 +67,7 @@ export const DoubleTapDeleteButton: React.FC<Props> = ({
 
   const dangerColor = '#DC2626'
   const textToShow = confirming ? '' : label
+  const fgColor = confirming ? (flat ? dangerColor : '#FFFFFF') : colors.faded
 
   return (
     <TouchableOpacity
@@ -71,22 +75,24 @@ export const DoubleTapDeleteButton: React.FC<Props> = ({
       disabled={disabled}
       style={[
         styles.button,
-        {
-          backgroundColor: confirming ? dangerColor : colors.background,
-          borderColor: confirming ? dangerColor : colors.disabled,
-        },
+        flat
+          ? { backgroundColor: colors.transparent, borderWidth: 0 }
+          : {
+              backgroundColor: confirming ? dangerColor : colors.background,
+              borderColor: confirming ? dangerColor : colors.disabled,
+            },
         style,
       ]}>
       <Icon
         name={confirming ? 'check' : 'trash-2'}
         size={iconSize}
-        color={confirming ? '#FFFFFF' : colors.faded}
+        color={fgColor}
       />
       {!!textToShow && (
         <Text
           style={[
             styles.text,
-            { color: confirming ? '#FFFFFF' : colors.faded },
+            { color: fgColor },
             textStyle,
           ]}>
           {textToShow}

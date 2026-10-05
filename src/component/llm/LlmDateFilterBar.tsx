@@ -1,8 +1,11 @@
 import React from 'react'
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Platform } from 'react-native'
+import { Button, Text } from 'react-native-paper'
 import { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker'
-import Icon from 'react-native-vector-icons/Feather'
 import { isoDate, t, useTheme } from '../../lib'
+import { FormRowSelectComponent } from '../FormRowSelectComponent'
+import { LlmFormRow } from './LlmFormRow'
+import { formatLlmDate } from './llmFormat'
 
 export type DatePreset = 'today' | 'yesterday' | '3days' | 'week' | 'all' | 'custom'
 
@@ -23,7 +26,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
   onDateFromChange,
   onDateToChange,
 }) => {
-  const { colors, metrics } = useTheme()
+  const { colors } = useTheme()
 
   const openPicker = (target: 'from' | 'to') => {
     const currentValue = target === 'from' ? dateFrom : dateTo
@@ -53,95 +56,34 @@ export const LlmDateFilterBar: React.FC<Props> = ({
     }
   }
 
-  const presets: { id: DatePreset; label: string }[] = [
-    { id: 'today', label: t('llm.today') || 'Dnes' },
-    { id: 'yesterday', label: t('llm.yesterdayAndToday') || 'Včera' },
-    { id: '3days', label: t('llm.last3Days') || '3 dny' },
-    { id: 'week', label: t('llm.lastWeek') || 'Týden' },
-    { id: 'all', label: t('llm.allLoaded') || 'Vše' },
+  const presets: { value: DatePreset; label: string }[] = [
+    { value: 'today', label: t('llm.today') },
+    { value: 'yesterday', label: t('llm.yesterdayAndToday') },
+    { value: '3days', label: t('llm.last3Days') },
+    { value: 'week', label: t('llm.lastWeek') },
+    { value: 'all', label: t('llm.allLoaded') },
   ]
+  const presetLabel =
+    datePreset === 'custom' ? t('llm.custom') : presets.find(p => p.value === datePreset)?.label || ''
 
   return (
-    <View style={[styles.container, { borderBottomColor: colors.disabled }]}>
-      <View style={styles.presetsRow}>
-        {presets.map(p => {
-          const isActive = datePreset === p.id
-          return (
-            <TouchableOpacity
-              key={p.id}
-              onPress={() => onPresetChange(p.id)}
-              style={[
-                styles.presetBtn,
-                {
-                  backgroundColor: isActive ? colors.primary : colors.surface,
-                  borderColor: isActive ? colors.primary : colors.disabled,
-                },
-              ]}>
-              <Text
-                style={{
-                  color: isActive ? '#FFFFFF' : colors.text,
-                  fontSize: metrics.fontSizes.small,
-                  fontWeight: isActive ? '600' : 'normal',
-                }}>
-                {p.label}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
-      </View>
-
-      <View style={styles.dateInputsRow}>
-        <TouchableOpacity
-          onPress={() => openPicker('from')}
-          style={[styles.dateInputBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-          <Icon name="calendar" size={14} color={colors.faded} style={{ marginRight: 6 }} />
-          <Text style={{ color: dateFrom ? colors.text : colors.faded, fontSize: metrics.fontSizes.small }}>
-            {dateFrom ? `${t('llm.dateFrom') || 'Od'}: ${dateFrom}` : `${t('llm.dateFrom') || 'Od'}: (neomezeno)`}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => openPicker('to')}
-          style={[styles.dateInputBtn, { backgroundColor: colors.surface, borderColor: colors.disabled }]}>
-          <Icon name="calendar" size={14} color={colors.faded} style={{ marginRight: 6 }} />
-          <Text style={{ color: dateTo ? colors.text : colors.faded, fontSize: metrics.fontSizes.small }}>
-            {dateTo ? `${t('llm.dateTo') || 'Do'}: ${dateTo}` : `${t('llm.dateTo') || 'Do'}: (neomezeno)`}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <>
+      <LlmFormRow label={t('llm.dateRange')}>
+        <FormRowSelectComponent
+          value={presetLabel}
+          options={presets}
+          onSelect={(preset: DatePreset) => onPresetChange(preset)}
+        />
+      </LlmFormRow>
+      <LlmFormRow label={`${t('llm.dateFrom')} – ${t('llm.dateTo')}`}>
+        <Button compact uppercase={false} color={colors.text} onPress={() => openPicker('from')}>
+          {dateFrom ? formatLlmDate(dateFrom) : '…'}
+        </Button>
+        <Text style={{ color: colors.faded }}>–</Text>
+        <Button compact uppercase={false} color={colors.text} onPress={() => openPicker('to')}>
+          {dateTo ? formatLlmDate(dateTo) : '…'}
+        </Button>
+      </LlmFormRow>
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  presetsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 8,
-  },
-  presetBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  dateInputsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dateInputBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-})

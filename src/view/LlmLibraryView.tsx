@@ -22,7 +22,7 @@ export const LlmLibraryView: React.FC<Props> = ({ navigation }) => {
     Clipboard.setString(prompt)
     try {
       showNotificationBanner({
-        title: t('llm.copied') || 'Zkopírováno',
+        title: t('llm.copied'),
         body: prompt.length > 80 ? `${prompt.substring(0, 80)}...` : prompt,
         tintColor: colors.primary,
         icon: 'copy',
@@ -51,6 +51,5 @@ const styles = StyleSheet.create({
   },
   contentWrap: {
     flex: 1,
-    padding: 12,
   },
 })
