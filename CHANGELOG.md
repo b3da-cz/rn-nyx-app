@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.17.0
+- LLM asistent přes OpenRouter se zapíná v profilu, klíč zůstává jen v zařízení
+- asistent a knihovna mají výběr modelu, vlastní instrukce, historii a frontu dotazů na pozadí
+- v podmínkách a v About je odkaz na zásady ochrany soukromí
+
 ## 0.16.4
 - hlavička časové osy je Timeline událostí a počet dní ukazuje jako 1 den, 2 dny nebo 5 dní
 - linky mezi dny jsou 1 px a končí se stejnou mezerou před nulou
