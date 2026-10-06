@@ -1,5 +1,5 @@
 import React from 'react'
-import { BackHandler, View, ScrollView } from 'react-native'
+import { BackHandler, Linking, View, ScrollView } from 'react-native'
 import { Text } from 'react-native-paper'
 import { name as appName } from '../../app.json'
 import { ButtonComponent } from '../component'
@@ -47,8 +47,13 @@ Prosím, nepoužívej veřejně symboly, které jsou obvykle spojovány s hnutí
 Administrátoři serveru mohou ve výjimečných případech změnit majitele či spolusprávce veřejných diskuzí, u kterých to uznají za vhodné – zejména v případě, že se o ně majitel či spolusprávci nestarají, případně je jejich chování v rozporu s posláním serveru.`}
         </Text>
         <Text style={{ fontSize: fontSizes.h3, marginTop: blocks.large }}>Cookies</Text>
-        <Text style={{ marginBottom: blocks.xlarge }}>
+        <Text>
           Web používá cookies pro evidenci přihlášení, případně pro Google Adsense v případě, že nemáte vypnuté reklamy.
+        </Text>
+        <Text
+          onPress={() => Linking.openURL('https://docs.rnd.blue/nnn-privacy-policy.html').catch(() => null)}
+          style={{ color: colors.link, marginTop: blocks.large, marginBottom: blocks.xlarge }}>
+          Zásady ochrany soukromí
         </Text>
         <View style={Styling.groups.flexRowSpbCentered}>
           <ButtonComponent label={t('exit')} width={'50%'} theme={theme} onPress={() => BackHandler.exitApp()} />

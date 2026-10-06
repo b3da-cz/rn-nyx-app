@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Nnn</title>
+  <meta name="description" content="Privacy policy for the Nnn Android app (net.b3da.nnn), an unofficial client for the nyx.cz discussion forum.">
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.75rem; }
+    p, li { font-size: 1rem; }
+    .meta { color: #444; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Zásady ochrany soukromí aplikace Nnn<br>
+  Vývojář: b3da.net · Android balíček <code>net.b3da.nnn</code><br>
+  Platné od 6. října 2026</p>
+
+  <p>Nnn je neoficiální mobilní klient diskuzního serveru <a href="https://nyx.cz">nyx.cz</a>. Aplikace účet nezakládá. Přihlášení používá účet, který už existuje na nyx.cz. Obsah fóra, účty a pravidla fóra spravuje provozovatel nyx.cz, ne vývojář aplikace. Tato stránka popisuje jen to, co dělá aplikace Nnn s údaji na zařízení a co z něj odchází.</p>
+
+  <h2>Kdo zásady vydává a jak se ozvat</h2>
+  <p>Zásady vydává vývojář aplikace Nnn (b3da.net). Nejsou to podmínky serveru nyx.cz.</p>
+  <p>Dotazy k ochraně soukromí v aplikaci: <a href="https://github.com/b3da-cz/rn-nyx-app">github.com/b3da-cz/rn-nyx-app</a> nebo diskuze k vývoji na <a href="https://nyx.cz/discussion/271373">nyx.cz/discussion/271373</a>.</p>
+
+  <h2>Jaké údaje aplikace zpracovává</h2>
+  <p>Aplikace nesbírá polohu, kontakty, e-mail, telefon, platební údaje, seznam nainstalovaných aplikací ani reklamní identifikátor. Nemá vlastní analytiku a údaje neprodává.</p>
+  <ul>
+    <li><strong>Uživatelské jméno a identifikátor účtu na nyx.cz.</strong> Jméno zadává uživatel při přihlášení. Aplikace si na zařízení uloží autorizační token, který vydá nyx.cz. Heslo se do aplikace neukládá. Bez účtu aplikace obsah fóra nenačte.</li>
+    <li><strong>Příspěvky, soukromé zprávy a další text, který uživatel napíše nebo otevře.</strong> Text se zobrazí v aplikaci a při odeslání jde na nyx.cz. Odeslání je volba uživatele.</li>
+    <li><strong>Fotky a soubory.</strong> Jen když je uživatel sám připojí k příspěvku nebo zprávě. Soubor se nahraje na nyx.cz. Aplikace nečte úložiště na pozadí.</li>
+    <li><strong>Token oznámení (FCM) a identifikátor zařízení pro doručení push zpráv.</strong> Po přihlášení aplikace požádá o oprávnění k oznámením, získá token Firebase Cloud Messaging a předá ho API nyx.cz, aby server mohl poslat upozornění na nové příspěvky a zprávy.</li>
+    <li><strong>Údaje o zařízení v požadavcích na nyx.cz.</strong> Verze aplikace, systém (Android a jeho verze) a model zařízení jdou v identifikaci klienta, aby šlo požadavky obsloužit a chyby přiřadit ke verzi.</li>
+    <li><strong>Záznamy pádů a diagnostika.</strong> Při chybě aplikace odešle technický záznam (stack trace) a uživatelské jméno na Nyxu službě Bugfender. Záznam slouží k opravě chyb. Není určen k odesílání hesla ani autorizačního tokenu. Vypnout ho v aplikaci nelze.</li>
+    <li><strong>Volitelný požadavek na jazykový model.</strong> Když uživatel v aplikaci použije funkci s OpenRouter, odešle se tam text, který k tomu vybral, a jeho vlastní API klíč. Klíč je uložený jen na zařízení. Vývojář aplikace ho na svůj server nedostává. Bez použití této funkce se na OpenRouter nic neposílá.</li>
+  </ul>
+  <p>Na zařízení zůstává nastavení aplikace (vzhled, filtry, blokovaní uživatelé, historie požadavků na jazykový model). Tyto údaje samy o sobě nikam neodcházejí.</p>
+
+  <h2>Komu údaje odcházejí</h2>
+  <ul>
+    <li><strong>nyx.cz</strong> — účet, token, příspěvky, zprávy, nahrané soubory, token oznámení a identifikace klienta. Zpracování účtu a obsahu se řídí provozem serveru nyx.cz (<a href="https://nyx.cz/terms">nyx.cz/terms</a>).</li>
+    <li><strong>Google Firebase Cloud Messaging</strong> — doručení oznámení. Zásady Google: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</li>
+    <li><strong>Bugfender</strong> (bugfender.com) — záznamy pádů a diagnostika, včetně uživatelského jména na Nyxu jako označení zařízení. Zásady: <a href="https://bugfender.com/privacy-policy/">bugfender.com/privacy-policy</a>.</li>
+    <li><strong>OpenRouter</strong> (openrouter.ai) — jen když uživatel funkci sám spustí. Zásady: <a href="https://openrouter.ai/privacy">openrouter.ai/privacy</a>.</li>
+  </ul>
+  <p>Údaje se nepředávají za účelem reklamy vývojáře aplikace. Aplikace nepoužívá reklamní SDK. Reklama, která se případně objeví v obsahu fóra, pochází ze serveru nyx.cz.</p>
+
+  <h2>K čemu údaje jsou</h2>
+  <p>Přihlášení, čtení a psaní na fóru, nahrání přílohy, doručení oznámení a oprava chyb aplikace. Jazykový model zpracuje text jen na výslovný pokyn uživatele. Jiný účel aplikace nemá.</p>
+
+  <h2>Jak dlouho údaje zůstávají a jak je smazat</h2>
+  <ul>
+    <li><strong>V aplikaci.</strong> Odhlášení smaže místní údaje aplikace (účet, token, nastavení, historii jazykového modelu). Odinstalace smaže data aplikace v úložišti zařízení.</li>
+    <li><strong>Účet a obsah na nyx.cz.</strong> Aplikace účet nevytváří ani neruší. Zrušení účtu a smazání příspěvků řeší provozovatel nyx.cz na <a href="https://nyx.cz">nyx.cz</a>. Dokud účet na serveru existuje, server si obsah dál drží podle svých pravidel.</li>
+    <li><strong>Bugfender a Firebase.</strong> Diagnostické záznamy a token oznámení drží tito zpracovatelé podle vlastních zásad. Žádost o výmaz záznamů v Bugfenderu, které jsou označené uživatelským jménem, lze poslat vývojáři kontakty výše.</li>
+    <li><strong>OpenRouter.</strong> Vývojář aplikace kopii odeslaného textu neuchovává. Co si ponechá OpenRouter, popisují jeho zásady.</li>
+  </ul>
+
+  <h2>Zabezpečení</h2>
+  <p>Spojení s nyx.cz, Firebase, Bugfenderem a OpenRouterem jde přes HTTPS. Autorizační token je v soukromém úložišti aplikace. Záloha aplikace systémem Android je vypnutá (<code>allowBackup=false</code>). Přístup k oznámením si systém vyžádá až za běhu, před registrací tokenu.</p>
+
+  <h2>Děti</h2>
+  <p>Aplikace není určená dětem a není zařazená do programu Designed for Families. Účet vzniká na nyx.cz mimo aplikaci.</p>
+
+  <h2>Změny</h2>
+  <p>Když se změní způsob, jakým aplikace s údaji nakládá, aktualizuje se tato stránka a datum nahoře. Odkaz v záznamu Google Play musí vést na tuto stránku, ne na podmínky fóra.</p>
+</body>
+</html>

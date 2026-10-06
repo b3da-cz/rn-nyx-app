@@ -58,6 +58,10 @@ export class AboutView extends Component<Props> {
           <LinkComponent onPress={() => this.props.navigation.navigate('discussion', { discussionId: 271373 })}>
             Klub věnovaný vývoji
           </LinkComponent>
+          <LinkComponent
+            onPress={() => Linking.openURL('https://docs.rnd.blue/nnn-privacy-policy.html').catch(() => null)}>
+            Zásady ochrany soukromí
+          </LinkComponent>
           <Text style={{ padding: 5 }}>
             {'Děkuji všem, kteří se podíleli na testování a ladění prvních vydání aplikace, či přispěli svým kódem později, zejména pak IDs níže.' +
               '\nTaké bych rád poděkoval těm, kteří se rozhodli podpořit vývoj aplikace na buymeacoffee.'}
