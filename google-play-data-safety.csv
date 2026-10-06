@@ -12,7 +12,7 @@ PSL_ACCOUNT_DELETION_URL,,,MAYBE_REQUIRED,Add a link that users can use to reque
 PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_YES,true,SINGLE_CHOICE,Do you provide a way for users to request that their data is deleted? / Yes
 PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_NO,,SINGLE_CHOICE,Do you provide a way for users to request that their data is deleted? / No
 PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_NO_AUTO_DELETED,,SINGLE_CHOICE,"Do you provide a way for users to request that their data is deleted? / No, but user data is automatically deleted within 90 days"
-PSL_DATA_DELETION_URL,,https://nyx.cz,MAYBE_REQUIRED,Delete data URL
+PSL_DATA_DELETION_URL,,https://docs.rnd.blue/nnn-privacy-policy.html,MAYBE_REQUIRED,Delete data URL
 PSL_DATA_COLLECTION_COMPLIES_FAMILY_POLICY,,,OPTIONAL,"Only answer this question if you've indicated that your app's target age group includes children, or you've opted into the Designed for Families program. If either of the above is true, you are required to follow the Google Play Families Policy (https://support.google.com/googleplay/android-developer/answer/9893335). Do you want to let users know about this commitment in the Data safety section on your store listing?"
 PSL_INDEPENDENTLY_VALIDATED,,,OPTIONAL,"Has your app successfully completed an independent security review, according to the Mobile Application Security Assessment (MASA) framework? Only answer ""yes"" if the review is in good standing."
 PSL_UPI_BADGE_OPT_IN,,,OPTIONAL,Do you want to show this badge on your store listing?
