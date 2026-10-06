@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.17.3
+- ikona aplikace je adaptivní znak N, bez šedého rámečku, a na kruhové masce se kroužky neořezávají
+
 ## 0.17.2
 - asistent ukládá a nabízí vlastní šablony promptu
 - výchozí šablony jdou ve stejném dialogu přepsat a smazat
