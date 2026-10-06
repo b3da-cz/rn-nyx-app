@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.17.2
+- asistent ukládá a nabízí vlastní šablony promptu
+- výchozí šablony jdou ve stejném dialogu přepsat a smazat
+
 ## 0.17.1
 - model vybraný v asistentovi se použije v dalším dotazu, jako výchozí se uloží jen se zapnutým přepínačem
 - systémový prompt se uloží jako výchozí až po potvrzení se zaškrtnutým uložením

@@ -828,6 +828,26 @@
       "cs": "Vybrat šablonu...",
       "en": "Select template..."
     },
+    "templateSave": {
+      "cs": "Uložit šablonu",
+      "en": "Save template"
+    },
+    "templateName": {
+      "cs": "Název šablony",
+      "en": "Template name"
+    },
+    "templateEmpty": {
+      "cs": "Žádné šablony",
+      "en": "No templates"
+    },
+    "templateOverwrite": {
+      "cs": "Přepsat šablonu?",
+      "en": "Overwrite template?"
+    },
+    "templateOverwriteBody": {
+      "cs": "Šablona „%s“ se přepíše aktuálním promptem.",
+      "en": "Template “%s” will be replaced with the current prompt."
+    },
     "retry": {
       "cs": "Zkusit znovu",
       "en": "Retry"

@@ -10,6 +10,7 @@ const StorageKeys = {
   cachedLlmModels: 'cachedLlmModels',
   favoriteLlmModels: 'favoriteLlmModels',
   llmPendingTasks: 'llmPendingTasks',
+  llmPromptTemplates: 'llmPromptTemplates',
 }
 
 const set = async (key, value) => {
@@ -65,6 +66,10 @@ const getLlmPendingTasks = async (): Promise<any[]> => (await get(StorageKeys.ll
 
 const setLlmPendingTasks = async (tasks: any[]) => set(StorageKeys.llmPendingTasks, tasks)
 
+const getLlmPromptTemplates = async () => (await get(StorageKeys.llmPromptTemplates)) || []
+
+const setLlmPromptTemplates = async templates => set(StorageKeys.llmPromptTemplates, templates)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -75,6 +80,7 @@ const removeAll = async () =>
     .then(() => set(StorageKeys.cachedLlmModels, null))
     .then(() => set(StorageKeys.favoriteLlmModels, null))
     .then(() => set(StorageKeys.llmPendingTasks, null))
+    .then(() => set(StorageKeys.llmPromptTemplates, null))
 
 export const Storage = {
   getAuth,
@@ -95,5 +101,7 @@ export const Storage = {
   setFavoriteLlmModels,
   getLlmPendingTasks,
   setLlmPendingTasks,
+  getLlmPromptTemplates,
+  setLlmPromptTemplates,
   removeAll,
 }
