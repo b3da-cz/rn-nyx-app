@@ -8,8 +8,7 @@ type Props = {
   currentModelId: string
   currentModelName: string
   isGlobalModel: boolean
-  onModelSelected: (model: OpenRouterModel) => void
-  onToggleGlobal: (val: boolean) => void
+  onModelSelected: (model: OpenRouterModel, saveAsGlobal: boolean) => void
 }
 
 export const LlmModelBar: React.FC<Props> = ({
@@ -18,7 +17,6 @@ export const LlmModelBar: React.FC<Props> = ({
   currentModelName,
   isGlobalModel,
   onModelSelected,
-  onToggleGlobal,
 }) => {
   const [isPickerVisible, setIsPickerVisible] = useState(false)
   const [models, setModels] = useState<OpenRouterModel[]>([])
@@ -63,10 +61,10 @@ export const LlmModelBar: React.FC<Props> = ({
         isLoading={isFetching}
         selectedModelId={currentModelId}
         isGlobal={isGlobalModel}
-        onToggleGlobal={onToggleGlobal}
-        onSelect={model => {
+        showGlobalToggle
+        onSelect={(model, saveAsGlobal) => {
           setIsPickerVisible(false)
-          onModelSelected(model)
+          onModelSelected(model, !!saveAsGlobal)
         }}
         onCancel={() => setIsPickerVisible(false)}
       />

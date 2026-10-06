@@ -43,17 +43,16 @@ export const LlmAssistantTab: React.FC<Props> = props => {
         currentModelId={model.modelId}
         currentModelName={model.modelName}
         isGlobalModel={model.isGlobalModel}
-        onModelSelected={m => {
-          model.setModelId(m.id)
-          model.setModelName(m.name)
+        onModelSelected={(m, saveAsGlobal) => {
+          void model.chooseModel(m.id, m.name, saveAsGlobal)
         }}
-        onToggleGlobal={model.setIsGlobalModel}
       />
       <LlmSystemPromptBar
         systemPrompt={system.systemPrompt}
         isGlobalSystemPrompt={system.isGlobalSystemPrompt}
-        onToggleGlobal={system.setIsGlobalSystemPrompt}
-        onSystemPromptChange={system.setSystemPrompt}
+        onSystemPromptSave={(prompt, saveAsDefault) => {
+          void system.saveSystemPrompt(prompt, saveAsDefault)
+        }}
       />
       <LlmDateFilterBar
         datePreset={dateFilter.datePreset}

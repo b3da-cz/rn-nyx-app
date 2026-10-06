@@ -1,51 +1,27 @@
 import React, { useState } from 'react'
-import { DEFAULT_LLM_SYSTEM_PROMPT, Storage, t, useTheme } from '../../lib'
+import { DEFAULT_LLM_SYSTEM_PROMPT, t, useTheme } from '../../lib'
 import { LlmSystemPromptDialog } from '../LlmSystemPromptDialog'
 import { LlmFormRow } from './LlmFormRow'
 
 type Props = {
   systemPrompt?: string
   isGlobalSystemPrompt: boolean
-  onToggleGlobal: (val: boolean) => void
-  onSystemPromptChange: (val: string) => void
+  onSystemPromptSave: (prompt: string, saveAsDefault: boolean) => void
 }
 
 export const LlmSystemPromptBar: React.FC<Props> = ({
   systemPrompt,
   isGlobalSystemPrompt,
-  onToggleGlobal,
-  onSystemPromptChange,
+  onSystemPromptSave,
 }) => {
   const { colors } = useTheme()
   const [isDialogVisible, setIsDialogVisible] = useState(false)
 
   const isCustomized = !!systemPrompt?.trim() && systemPrompt.trim() !== DEFAULT_LLM_SYSTEM_PROMPT.trim()
 
-  const handleSave = async (newPrompt: string) => {
+  const handleSave = (newPrompt: string, saveAsDefault?: boolean) => {
     setIsDialogVisible(false)
-    onSystemPromptChange(newPrompt)
-    if (isGlobalSystemPrompt) {
-      try {
-        const conf = (await Storage.getConfig()) || {}
-        conf.llmSystemPrompt = newPrompt
-        await Storage.setConfig(conf)
-      } catch (e) {
-        console.warn('Failed to save global system prompt', e)
-      }
-    }
-  }
-
-  const handleToggleGlobal = async (nextVal: boolean) => {
-    onToggleGlobal(nextVal)
-    if (nextVal && systemPrompt) {
-      try {
-        const conf = (await Storage.getConfig()) || {}
-        conf.llmSystemPrompt = systemPrompt
-        await Storage.setConfig(conf)
-      } catch (e) {
-        console.warn('Failed to persist global system prompt toggle', e)
-      }
-    }
+    onSystemPromptSave(newPrompt, !!saveAsDefault)
   }
 
   return (
@@ -60,7 +36,7 @@ export const LlmSystemPromptBar: React.FC<Props> = ({
         isVisible={isDialogVisible}
         initialPrompt={systemPrompt}
         isGlobal={isGlobalSystemPrompt}
-        onToggleGlobal={handleToggleGlobal}
+        showGlobalToggle
         onSave={handleSave}
         onCancel={() => setIsDialogVisible(false)}
       />

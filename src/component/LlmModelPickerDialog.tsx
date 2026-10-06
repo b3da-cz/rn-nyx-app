@@ -11,8 +11,9 @@ type Props = {
   selectedModelId: string
   isLoading?: boolean
   isGlobal?: boolean
+  showGlobalToggle?: boolean
   onToggleGlobal?: (val: boolean) => void
-  onSelect: (model: OpenRouterModel) => void
+  onSelect: (model: OpenRouterModel, saveAsGlobal?: boolean) => void
   onCancel: () => void
 }
 
@@ -24,6 +25,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   selectedModelId,
   isLoading = false,
   isGlobal,
+  showGlobalToggle,
   onToggleGlobal,
   onSelect,
   onCancel,
@@ -36,6 +38,13 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<FilterCategory>('recommended')
   const [favoriteModelIds, setFavoriteModelIds] = useState<string[]>([])
+  const [saveAsGlobal, setSaveAsGlobal] = useState(!!isGlobal)
+
+  React.useEffect(() => {
+    if (isVisible) {
+      setSaveAsGlobal(!!isGlobal)
+    }
+  }, [isVisible, isGlobal])
 
   React.useEffect(() => {
     if (isVisible) {
@@ -190,11 +199,14 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           </ScrollView>
         </View>
 
-        {onToggleGlobal !== undefined && (
+        {(showGlobalToggle || onToggleGlobal !== undefined) && (
           <FormRowToggleComponent
             label={t('llm.globalModelToggle') || 'Uložit jako globální model'}
-            value={!!isGlobal}
-            onChange={onToggleGlobal}
+            value={saveAsGlobal}
+            onChange={val => {
+              setSaveAsGlobal(!!val)
+              onToggleGlobal?.(!!val)
+            }}
           />
         )}
 
@@ -228,7 +240,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
             return (
               <TouchableRipple
                 rippleColor={colors.ripple}
-                onPress={() => onSelect(item)}
+                onPress={() => onSelect(item, saveAsGlobal)}
                 style={{
                   backgroundColor: colors.row,
                   borderLeftWidth: 3,

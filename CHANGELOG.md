@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.17.1
+- model vybraný v asistentovi se použije v dalším dotazu, jako výchozí se uloží jen se zapnutým přepínačem
+- systémový prompt se uloží jako výchozí až po potvrzení se zaškrtnutým uložením
+
 ## 0.17.0
 - LLM asistent přes OpenRouter se zapíná v profilu, klíč zůstává jen v zařízení
 - asistent a knihovna mají výběr modelu, vlastní instrukce, historii a frontu dotazů na pozadí

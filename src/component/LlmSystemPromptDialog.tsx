@@ -9,8 +9,9 @@ type Props = {
   isVisible: boolean
   initialPrompt?: string
   isGlobal?: boolean
+  showGlobalToggle?: boolean
   onToggleGlobal?: (val: boolean) => void
-  onSave: (prompt: string) => void
+  onSave: (prompt: string, saveAsDefault?: boolean) => void
   onCancel: () => void
 }
 
@@ -18,6 +19,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
   isVisible,
   initialPrompt,
   isGlobal,
+  showGlobalToggle,
   onToggleGlobal,
   onSave,
   onCancel,
@@ -29,12 +31,14 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
   } = theme
 
   const [prompt, setPrompt] = useState(initialPrompt || DEFAULT_LLM_SYSTEM_PROMPT)
+  const [saveAsDefault, setSaveAsDefault] = useState(!!isGlobal)
 
   useEffect(() => {
     if (isVisible) {
       setPrompt(initialPrompt?.trim() ? initialPrompt : DEFAULT_LLM_SYSTEM_PROMPT)
+      setSaveAsDefault(!!isGlobal)
     }
-  }, [isVisible, initialPrompt])
+  }, [isVisible, initialPrompt, isGlobal])
 
   if (!isVisible) {
     return null
@@ -45,7 +49,7 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
   }
 
   const handleSave = () => {
-    onSave(prompt.trim())
+    onSave(prompt.trim(), saveAsDefault)
   }
 
   return (
@@ -67,11 +71,11 @@ export const LlmSystemPromptDialog: React.FC<Props> = ({
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
-            {onToggleGlobal !== undefined && (
+            {(showGlobalToggle || onToggleGlobal !== undefined) && (
               <FormRowToggleComponent
                 label={t('llm.globalPromptToggle') || 'Uložit jako výchozí'}
-                value={!!isGlobal}
-                onChange={onToggleGlobal}
+                value={saveAsDefault}
+                onChange={val => setSaveAsDefault(!!val)}
               />
             )}
 

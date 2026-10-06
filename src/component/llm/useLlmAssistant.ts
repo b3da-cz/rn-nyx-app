@@ -1,5 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { filterAndFormatPostsForLlm, getLlmHistory, LlmPendingTask, LlmQueue, Storage, t } from '../../lib'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  applyModelChoice,
+  applySystemPromptChoice,
+  filterAndFormatPostsForLlm,
+  getLlmHistory,
+  LlmPendingTask,
+  LlmQueue,
+  MainContext,
+  Storage,
+  t,
+} from '../../lib'
+import type { MainContextConfig } from '../../lib'
 import { useLlmDateFilter } from './useLlmDateFilter'
 
 type Params = {
@@ -17,6 +28,7 @@ type Params = {
 }
 
 export function useLlmAssistant(p: Params) {
+  const context = useContext(MainContext)
   const dateFilter = useLlmDateFilter()
   const { dateFrom, dateTo } = dateFilter
   const [modelId, setModelId] = useState(p.defaultModelId)
@@ -24,6 +36,11 @@ export function useLlmAssistant(p: Params) {
   const [isGlobalModel, setIsGlobalModel] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState(p.systemPrompt)
   const [isGlobalSystemPrompt, setIsGlobalSystemPrompt] = useState(false)
+  const modelRef = useRef({ id: p.defaultModelId, name: p.defaultModelName || p.defaultModelId })
+  const systemPromptRef = useRef(p.systemPrompt)
+  const modelTouched = useRef(false)
+  const promptTouched = useRef(false)
+  const persistQueue = useRef(Promise.resolve())
   const [pendingTasks, setPendingTasks] = useState<LlmPendingTask[]>([])
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [result, setResult] = useState<{ text: string; usage: any; durationMs: number | null } | null>(null)
@@ -48,6 +65,69 @@ export function useLlmAssistant(p: Params) {
       }
     })
   }, [discussionId, onHistoryEntryAdded])
+
+  useEffect(() => {
+    if (modelTouched.current) {
+      return
+    }
+    const name = p.defaultModelName || p.defaultModelId
+    modelRef.current = { id: p.defaultModelId, name }
+    setModelId(p.defaultModelId)
+    setModelName(name)
+  }, [p.defaultModelId, p.defaultModelName])
+
+  useEffect(() => {
+    if (promptTouched.current) {
+      return
+    }
+    systemPromptRef.current = p.systemPrompt
+    setSystemPrompt(p.systemPrompt)
+  }, [p.systemPrompt])
+
+  const persistLlmConfig = (patch: Partial<MainContextConfig>) => {
+    persistQueue.current = persistQueue.current
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          const stored = (await Storage.getConfig()) || {}
+          await Storage.setConfig({ ...stored, ...patch })
+          if (context?.config) {
+            Object.assign(context.config, patch)
+          }
+        } catch (e) {
+          console.warn('Failed to save LLM default', e)
+        }
+      })
+    return persistQueue.current
+  }
+
+  const chooseModel = (id: string, name: string | undefined, saveAsGlobal: boolean) => {
+    const applied = applyModelChoice({ id, name: name || id }, saveAsGlobal)
+    modelTouched.current = true
+    modelRef.current = applied.model
+    setModelId(applied.model.id)
+    setModelName(applied.model.name)
+    setIsGlobalModel(saveAsGlobal)
+    if (applied.globalModel) {
+      return persistLlmConfig({
+        selectedLlmModel: applied.globalModel.id,
+        selectedLlmModelName: applied.globalModel.name,
+      })
+    }
+    return Promise.resolve()
+  }
+
+  const saveSystemPrompt = (prompt: string, saveAsDefault: boolean) => {
+    const applied = applySystemPromptChoice(prompt, saveAsDefault)
+    promptTouched.current = true
+    systemPromptRef.current = applied.prompt
+    setSystemPrompt(applied.prompt)
+    setIsGlobalSystemPrompt(saveAsDefault)
+    if (applied.globalPrompt !== null) {
+      return persistLlmConfig({ llmSystemPrompt: applied.globalPrompt })
+    }
+    return Promise.resolve()
+  }
 
   const activeTask = useMemo(
     () => pendingTasks.find(task => `${task.discussionId}` === `${discussionId}`),
@@ -82,7 +162,7 @@ export function useLlmAssistant(p: Params) {
     }
   }
 
-  const canSend = !isSending && !!p.prompt.trim() && postCount > 0 && !!modelId
+  const canSend = !isSending && !!p.prompt.trim() && postCount > 0 && !!modelRef.current.id
 
   const send = async () => {
     if (!canSend) {
@@ -91,21 +171,11 @@ export function useLlmAssistant(p: Params) {
     setErrorMessage(null)
     setResult(null)
     try {
-      if (isGlobalModel || (isGlobalSystemPrompt && systemPrompt)) {
-        const conf = (await Storage.getConfig()) || {}
-        if (isGlobalModel) {
-          conf.selectedLlmModel = modelId
-          conf.selectedLlmModelName = modelName
-        }
-        if (isGlobalSystemPrompt && systemPrompt) {
-          conf.llmSystemPrompt = systemPrompt
-        }
-        await Storage.setConfig(conf)
-      }
+      const model = modelRef.current
       lastSentTaskIdRef.current = await LlmQueue.enqueueTask({
         apiKey: p.apiKey,
-        modelId,
-        modelName,
+        modelId: model.id,
+        modelName: model.name,
         userPrompt: p.prompt,
         discussionId,
         discussionTitle: p.discussionTitle,
@@ -113,7 +183,7 @@ export function useLlmAssistant(p: Params) {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         postCount,
-        systemPrompt,
+        systemPrompt: systemPromptRef.current,
       })
       p.onChangePrompt('')
     } catch (e: any) {
@@ -123,8 +193,8 @@ export function useLlmAssistant(p: Params) {
 
   return {
     dateFilter,
-    model: { modelId, modelName, setModelId, setModelName, isGlobalModel, setIsGlobalModel },
-    system: { systemPrompt, setSystemPrompt, isGlobalSystemPrompt, setIsGlobalSystemPrompt },
+    model: { modelId, modelName, isGlobalModel, chooseModel },
+    system: { systemPrompt, isGlobalSystemPrompt, saveSystemPrompt },
     activeTask,
     isSending,
     postCount,

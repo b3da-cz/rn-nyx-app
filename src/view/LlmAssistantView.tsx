@@ -114,34 +114,37 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
           ]}
         />
       )}
-      {activeTab === 'assistant' ? (
-        <ScrollView
-          ref={scrollRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
-          keyboardShouldPersistTaps="handled">
-          <LlmAssistantTab
-            discussionId={discussionId || ''}
-            discussionTitle={discussionTitle || ''}
-            posts={posts}
-            apiKey={config.openRouterApiKey || ''}
-            defaultModelId={config.selectedLlmModel || ''}
-            defaultModelName={config.selectedLlmModelName}
-            systemPrompt={config.llmSystemPrompt}
-            prompt={prompt}
-            onChangePrompt={setPrompt}
-            onLoadMorePosts={handleLoadOlderPosts}
-            onNavigateToPost={handleNavigateToPost}
-            onPromptFocus={() => {
-              isPromptFocusedRef.current = true
-              scrollToPrompt()
-            }}
-            onPromptLayout={y => {
-              promptLayoutYRef.current = y
-            }}
-          />
-        </ScrollView>
-      ) : (
+      {!!discussionId && (
+        <View style={{ flex: 1, display: activeTab === 'assistant' ? 'flex' : 'none' }}>
+          <ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
+            keyboardShouldPersistTaps="handled">
+            <LlmAssistantTab
+              discussionId={discussionId}
+              discussionTitle={discussionTitle || ''}
+              posts={posts}
+              apiKey={config.openRouterApiKey || ''}
+              defaultModelId={config.selectedLlmModel || ''}
+              defaultModelName={config.selectedLlmModelName}
+              systemPrompt={config.llmSystemPrompt}
+              prompt={prompt}
+              onChangePrompt={setPrompt}
+              onLoadMorePosts={handleLoadOlderPosts}
+              onNavigateToPost={handleNavigateToPost}
+              onPromptFocus={() => {
+                isPromptFocusedRef.current = true
+                scrollToPrompt()
+              }}
+              onPromptLayout={y => {
+                promptLayoutYRef.current = y
+              }}
+            />
+          </ScrollView>
+        </View>
+      )}
+      {activeTab !== 'assistant' && (
         <LlmLibraryTab
           activeDiscussionId={discussionId}
           onUsePrompt={usedPrompt => {
