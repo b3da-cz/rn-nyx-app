@@ -6,65 +6,179 @@
   <title>Privacy Policy — Nnn</title>
   <meta name="description" content="Privacy policy for the Nnn Android app (net.b3da.nnn), an unofficial client for the nyx.cz discussion forum.">
   <style>
-    body { font-family: system-ui, sans-serif; line-height: 1.5; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
-    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.15rem; margin-top: 1.75rem; }
-    p, li { font-size: 1rem; }
-    .meta { color: #444; }
+      :root {
+          --bg: #fff;
+          --ink: #000;
+          --muted: #404040;
+          --mark: #ffe500;
+          --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+          --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+          :root:not([data-theme="light"]) { --bg: #000; --ink: #fff; --muted: #bdbdbd; }
+      }
+      :root[data-theme="dark"] { --bg: #000; --ink: #fff; --muted: #bdbdbd; }
+
+      * { box-sizing: border-box; }
+      html { scroll-padding-top: 1rem; }
+      body {
+          margin: 0;
+          background: var(--bg);
+          color: var(--ink);
+          font: 1rem/1.55 var(--sans);
+          -webkit-text-size-adjust: 100%;
+      }
+      .page { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+      header { border-bottom: 8px solid var(--ink); padding-bottom: 1.5rem; }
+      h1 {
+          margin: 0 0 1.5rem;
+          font-size: clamp(2.75rem, 13vw, 7.5rem);
+          font-weight: 900;
+          line-height: .88;
+          letter-spacing: -.045em;
+          overflow-wrap: anywhere;
+      }
+      .meta {
+          display: inline-block;
+          margin: 0;
+          padding: .75rem 1rem;
+          border: 2px solid var(--ink);
+          font: .875rem/1.6 var(--mono);
+          color: var(--muted);
+      }
+      .meta strong { color: var(--ink); }
+
+      section {
+          display: grid;
+          grid-template-columns: 15rem minmax(0, 1fr);
+          gap: 0 2rem;
+          border-bottom: 2px solid var(--ink);
+          padding: 1.5rem 0 2rem;
+      }
+      h2 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 900;
+          line-height: 1.15;
+          letter-spacing: -.01em;
+      }
+      .body > :first-child { margin-top: 0; }
+      .body > :last-child { margin-bottom: 0; }
+      p { margin: 0 0 1rem; max-width: 40rem; }
+
+      ul { list-style: none; margin: 0 0 1rem; padding: 0; max-width: 40rem; }
+      li { padding: .85rem 0; border-top: 1px solid var(--ink); }
+      li:last-child { border-bottom: 1px solid var(--ink); }
+      li strong { display: block; font-weight: 800; }
+
+      a { color: inherit; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .15em; overflow-wrap: anywhere; }
+      a:hover { background: var(--mark); color: #000; text-decoration-color: #000; }
+      a:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+      code { font: .9em var(--mono); border: 1px solid var(--ink); padding: 0 .3em; }
+
+      @media (max-width: 720px) {
+          section { grid-template-columns: 1fr; gap: .75rem; }
+          h2 { border-top: 4px solid var(--ink); padding-top: .5rem; }
+          section { border-bottom: 0; padding-bottom: 1rem; }
+      }
   </style>
 </head>
 <body>
-  <h1>Privacy Policy</h1>
-  <p class="meta">Zásady ochrany soukromí aplikace Nnn<br>
-  Vývojář: b3da.net · Android balíček <code>net.b3da.nnn</code><br>
-  Platné od 6. října 2026</p>
+<div class="page">
+  <header>
+    <h1>Privacy Policy</h1>
+    <p class="meta"><strong>Zásady ochrany soukromí aplikace Nnn</strong><br>
+      Vývojář: b3da.net<br>
+      Android balíček: <code>net.b3da.nnn</code><br>
+      Platné od 6. října 2026</p>
+  </header>
 
-  <p>Nnn je neoficiální mobilní klient diskuzního serveru <a href="https://nyx.cz">nyx.cz</a>. Aplikace účet nezakládá. Přihlášení používá účet, který už existuje na nyx.cz. Obsah fóra, účty a pravidla fóra spravuje provozovatel nyx.cz, ne vývojář aplikace. Tato stránka popisuje jen to, co dělá aplikace Nnn s údaji na zařízení a co z něj odchází.</p>
+  <section>
+    <h2>O aplikaci</h2>
+    <div class="body">
+      <p>Nnn je neoficiální mobilní klient diskuzního serveru <a href="https://nyx.cz">nyx.cz</a>. Aplikace nezakládá žádný účet, přihlašuje se k tomu, který už na nyx.cz existuje. Obsah fóra, účty i pravidla fóra spravuje provozovatel nyx.cz, ne vývojář aplikace. Tahle stránka popisuje jen to, co aplikace Nnn dělá s údaji v zařízení a co z něj odchází.</p>
+    </div>
+  </section>
 
-  <h2>Kdo zásady vydává a jak se ozvat</h2>
-  <p>Zásady vydává vývojář aplikace Nnn (b3da.net). Nejsou to podmínky serveru nyx.cz.</p>
-  <p>Dotazy k ochraně soukromí v aplikaci: <a href="https://github.com/b3da-cz/rn-nyx-app">github.com/b3da-cz/rn-nyx-app</a> nebo diskuze k vývoji na <a href="https://nyx.cz/discussion/271373">nyx.cz/discussion/271373</a>.</p>
+  <section>
+    <h2>Kdo zásady vydává a jak se ozvat</h2>
+    <div class="body">
+      <p>Zásady vydává vývojář aplikace Nnn (b3da.net). Nejde o podmínky serveru nyx.cz.</p>
+      <p>S dotazy k ochraně soukromí v aplikaci se obracejte na <a href="https://github.com/b3da-cz/rn-nyx-app">github.com/b3da-cz/rn-nyx-app</a> nebo do diskuze k vývoji na <a href="https://nyx.cz/discussion/271373">nyx.cz/discussion/271373</a>.</p>
+    </div>
+  </section>
 
-  <h2>Jaké údaje aplikace zpracovává</h2>
-  <p>Aplikace nesbírá polohu, kontakty, e-mail, telefon, platební údaje, seznam nainstalovaných aplikací ani reklamní identifikátor. Nemá vlastní analytiku a údaje neprodává.</p>
-  <ul>
-    <li><strong>Uživatelské jméno a identifikátor účtu na nyx.cz.</strong> Jméno zadává uživatel při přihlášení. Aplikace si na zařízení uloží autorizační token, který vydá nyx.cz. Heslo se do aplikace neukládá. Bez účtu aplikace obsah fóra nenačte.</li>
-    <li><strong>Příspěvky, soukromé zprávy a další text, který uživatel napíše nebo otevře.</strong> Text se zobrazí v aplikaci a při odeslání jde na nyx.cz. Odeslání je volba uživatele.</li>
-    <li><strong>Fotky a soubory.</strong> Jen když je uživatel sám připojí k příspěvku nebo zprávě. Soubor se nahraje na nyx.cz. Aplikace nečte úložiště na pozadí.</li>
-    <li><strong>Token oznámení (FCM) a identifikátor zařízení pro doručení push zpráv.</strong> Po přihlášení aplikace požádá o oprávnění k oznámením, získá token Firebase Cloud Messaging a předá ho API nyx.cz, aby server mohl poslat upozornění na nové příspěvky a zprávy.</li>
-    <li><strong>Údaje o zařízení v požadavcích na nyx.cz.</strong> Verze aplikace, systém (Android a jeho verze) a model zařízení jdou v identifikaci klienta, aby šlo požadavky obsloužit a chyby přiřadit ke verzi.</li>
-    <li><strong>Záznamy pádů a diagnostika.</strong> Při chybě aplikace odešle technický záznam (stack trace) a uživatelské jméno na Nyxu službě Bugfender. Záznam slouží k opravě chyb. Není určen k odesílání hesla ani autorizačního tokenu. Vypnout ho v aplikaci nelze.</li>
-    <li><strong>Volitelný požadavek na jazykový model.</strong> Když uživatel v aplikaci použije funkci s OpenRouter, odešle se tam text, který k tomu vybral, a jeho vlastní API klíč. Klíč je uložený jen na zařízení. Vývojář aplikace ho na svůj server nedostává. Bez použití této funkce se na OpenRouter nic neposílá.</li>
-  </ul>
-  <p>Na zařízení zůstává nastavení aplikace (vzhled, filtry, blokovaní uživatelé, historie požadavků na jazykový model). Tyto údaje samy o sobě nikam neodcházejí.</p>
+  <section>
+    <h2>Jaké údaje aplikace zpracovává</h2>
+    <div class="body">
+      <p>Aplikace nesbírá polohu, kontakty, e-mail, telefon, platební údaje, seznam nainstalovaných aplikací ani reklamní identifikátor. Nemá vlastní analytiku a žádné údaje neprodává.</p>
+      <ul>
+        <li><strong>Uživatelské jméno a identifikátor účtu na nyx.cz</strong> Jméno uživatel zadává při přihlášení. Autorizační token, který vydá nyx.cz, si aplikace uloží do zařízení. Heslo se do aplikace neukládá. Bez účtu aplikace obsah fóra nenačte.</li>
+        <li><strong>Příspěvky, soukromé zprávy a další text, který uživatel napíše nebo otevře</strong> Text se zobrazí v aplikaci a při odeslání putuje na nyx.cz. O odeslání rozhoduje uživatel.</li>
+        <li><strong>Fotky a soubory</strong> Jen ty, které uživatel sám připojí k příspěvku nebo zprávě. Soubor se nahraje na nyx.cz. Úložiště aplikace na pozadí nečte.</li>
+        <li><strong>Token oznámení (FCM) a identifikátor zařízení pro doručování push zpráv</strong> Po přihlášení aplikace požádá o oprávnění k oznámením, získá token Firebase Cloud Messaging a předá ho API nyx.cz, aby server mohl posílat upozornění na nové příspěvky a zprávy.</li>
+        <li><strong>Údaje o zařízení v požadavcích na nyx.cz</strong> Verze aplikace, systém (Android a jeho verze) a model zařízení se posílají v identifikaci klienta. Díky tomu lze požadavky obsloužit a chyby přiřadit ke konkrétní verzi.</li>
+        <li><strong>Záznamy pádů a diagnostika</strong> Při chybě aplikace odešle technický záznam (stack trace) a uživatelské jméno na Nyxu službě Bugfender. Záznam slouží k opravě chyb. Není určen k přenosu hesla ani autorizačního tokenu. V aplikaci ho nelze vypnout.</li>
+        <li><strong>Volitelný požadavek na jazykový model</strong> Když uživatel v aplikaci použije funkci s OpenRouter, odešle se tam text, který k tomu sám vybral, a jeho vlastní API klíč. Klíč je uložený jen v zařízení a vývojář aplikace ho na svůj server nedostává. Dokud se funkce nepoužije, na OpenRouter nejde nic.</li>
+      </ul>
+      <p>V zařízení zůstává nastavení aplikace (vzhled, filtry, blokovaní uživatelé, historie požadavků na jazykový model). Tyto údaje samy od sebe nikam neodcházejí.</p>
+    </div>
+  </section>
 
-  <h2>Komu údaje odcházejí</h2>
-  <ul>
-    <li><strong>nyx.cz</strong> — účet, token, příspěvky, zprávy, nahrané soubory, token oznámení a identifikace klienta. Zpracování účtu a obsahu se řídí provozem serveru nyx.cz (<a href="https://nyx.cz/terms">nyx.cz/terms</a>).</li>
-    <li><strong>Google Firebase Cloud Messaging</strong> — doručení oznámení. Zásady Google: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</li>
-    <li><strong>Bugfender</strong> (bugfender.com) — záznamy pádů a diagnostika, včetně uživatelského jména na Nyxu jako označení zařízení. Zásady: <a href="https://bugfender.com/privacy-policy/">bugfender.com/privacy-policy</a>.</li>
-    <li><strong>OpenRouter</strong> (openrouter.ai) — jen když uživatel funkci sám spustí. Zásady: <a href="https://openrouter.ai/privacy">openrouter.ai/privacy</a>.</li>
-  </ul>
-  <p>Údaje se nepředávají za účelem reklamy vývojáře aplikace. Aplikace nepoužívá reklamní SDK. Reklama, která se případně objeví v obsahu fóra, pochází ze serveru nyx.cz.</p>
+  <section>
+    <h2>Komu údaje odcházejí</h2>
+    <div class="body">
+      <ul>
+        <li><strong>nyx.cz</strong> Účet, token, příspěvky, zprávy, nahrané soubory, token oznámení a identifikace klienta. Účet a obsah zpracovává provozovatel serveru podle svých podmínek (<a href="https://nyx.cz/terms">nyx.cz/terms</a>).</li>
+        <li><strong>Google Firebase Cloud Messaging</strong> Doručování oznámení. Zásady Googlu: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</li>
+        <li><strong>Bugfender</strong> (bugfender.com) Záznamy pádů a diagnostika, včetně uživatelského jména na Nyxu, které slouží jako označení zařízení. Zásady: <a href="https://bugfender.com/privacy-policy/">bugfender.com/privacy-policy</a>.</li>
+        <li><strong>OpenRouter</strong> (openrouter.ai) Jen když uživatel funkci sám spustí. Zásady: <a href="https://openrouter.ai/privacy">openrouter.ai/privacy</a>.</li>
+      </ul>
+      <p>Vývojář aplikace údaje nepředává za účelem reklamy. Aplikace neobsahuje žádné reklamní SDK. Reklama, která se případně objeví v obsahu fóra, pochází ze serveru nyx.cz.</p>
+    </div>
+  </section>
 
-  <h2>K čemu údaje jsou</h2>
-  <p>Přihlášení, čtení a psaní na fóru, nahrání přílohy, doručení oznámení a oprava chyb aplikace. Jazykový model zpracuje text jen na výslovný pokyn uživatele. Jiný účel aplikace nemá.</p>
+  <section>
+    <h2>K čemu údaje slouží</h2>
+    <div class="body">
+      <p>K přihlášení, čtení a psaní na fóru, nahrávání příloh, doručování oznámení a opravě chyb aplikace. Jazykový model zpracuje text jen na výslovný pokyn uživatele. K ničemu jinému aplikace údaje nepoužívá.</p>
+    </div>
+  </section>
 
-  <h2>Jak dlouho údaje zůstávají a jak je smazat</h2>
-  <ul>
-    <li><strong>V aplikaci.</strong> Odhlášení smaže místní údaje aplikace (účet, token, nastavení, historii jazykového modelu). Odinstalace smaže data aplikace v úložišti zařízení.</li>
-    <li><strong>Účet a obsah na nyx.cz.</strong> Aplikace účet nevytváří ani neruší. Zrušení účtu a smazání příspěvků řeší provozovatel nyx.cz na <a href="https://nyx.cz">nyx.cz</a>. Dokud účet na serveru existuje, server si obsah dál drží podle svých pravidel.</li>
-    <li><strong>Bugfender a Firebase.</strong> Diagnostické záznamy a token oznámení drží tito zpracovatelé podle vlastních zásad. Žádost o výmaz záznamů v Bugfenderu, které jsou označené uživatelským jménem, lze poslat vývojáři kontakty výše.</li>
-    <li><strong>OpenRouter.</strong> Vývojář aplikace kopii odeslaného textu neuchovává. Co si ponechá OpenRouter, popisují jeho zásady.</li>
-  </ul>
+  <section>
+    <h2>Jak dlouho údaje zůstávají a jak je smazat</h2>
+    <div class="body">
+      <ul>
+        <li><strong>V aplikaci</strong> Odhlášení smaže místní údaje aplikace (účet, token, nastavení, historii jazykového modelu). Odinstalace smaže data aplikace z úložiště zařízení.</li>
+        <li><strong>Účet a obsah na nyx.cz</strong> Aplikace účet nevytváří ani neruší. Zrušení účtu a smazání příspěvků vyřizuje provozovatel nyx.cz na <a href="https://nyx.cz">nyx.cz</a>. Dokud účet na serveru existuje, server obsah uchovává podle svých pravidel.</li>
+        <li><strong>Bugfender a Firebase</strong> Diagnostické záznamy a token oznámení uchovávají tito zpracovatelé podle vlastních zásad. Žádost o výmaz záznamů v Bugfenderu označených uživatelským jménem můžete poslat vývojáři na kontakty uvedené výše.</li>
+        <li><strong>OpenRouter</strong> Vývojář aplikace kopii odeslaného textu neuchovává. Co si ponechává OpenRouter, popisují jeho zásady.</li>
+      </ul>
+    </div>
+  </section>
 
-  <h2>Zabezpečení</h2>
-  <p>Spojení s nyx.cz, Firebase, Bugfenderem a OpenRouterem jde přes HTTPS. Autorizační token je v soukromém úložišti aplikace. Záloha aplikace systémem Android je vypnutá (<code>allowBackup=false</code>). Přístup k oznámením si systém vyžádá až za běhu, před registrací tokenu.</p>
+  <section>
+    <h2>Zabezpečení</h2>
+    <div class="body">
+      <p>Spojení s nyx.cz, Firebase, Bugfenderem a OpenRouterem probíhá přes HTTPS. Autorizační token je v soukromém úložišti aplikace. Zálohování aplikace systémem Android je vypnuté (<code>allowBackup=false</code>). Systém se na oprávnění k oznámením zeptá až za běhu aplikace, před registrací tokenu.</p>
+    </div>
+  </section>
 
-  <h2>Děti</h2>
-  <p>Aplikace není určená dětem a není zařazená do programu Designed for Families. Účet vzniká na nyx.cz mimo aplikaci.</p>
+  <section>
+    <h2>Děti</h2>
+    <div class="body">
+      <p>Aplikace není určená dětem a není součástí programu Designed for Families. Účet se zakládá na nyx.cz, mimo aplikaci.</p>
+    </div>
+  </section>
 
-  <h2>Změny</h2>
-  <p>Když se změní způsob, jakým aplikace s údaji nakládá, aktualizuje se tato stránka a datum nahoře. Odkaz v záznamu Google Play musí vést na tuto stránku, ne na podmínky fóra.</p>
+  <section>
+    <h2>Změny</h2>
+    <div class="body">
+      <p>Když se změní způsob, jakým aplikace nakládá s údaji, aktualizuje se tato stránka i datum nahoře.</p>
+    </div>
+  </section>
+</div>
 </body>
 </html>
