@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.17.6
+- v poště pod swipem doleva u odeslaných zpráv remind a delete, u přijatých reply, remind a nahlasit
+
 ## 0.17.5
 - swipeable header na zprávách v poště
 

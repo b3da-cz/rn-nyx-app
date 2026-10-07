@@ -182,16 +182,18 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
   }
 
   renderMailLeftActions() {
-    const { post, theme: { colors } } = this.props
+    const { post, theme: { colors }, isReply } = this.props
     return (
       <View style={{ flexDirection: 'row' }} collapsable={false}>
         {[
-          <ButtonSquareComponent
-            key={`${post.id}_btn_reply`}
-            icon={'corner-down-right'}
-            rectButton
-            onPress={() => this.onReply()}
-          />,
+          isReply && (
+            <ButtonSquareComponent
+              key={`${post.id}_btn_reply`}
+              icon={'corner-down-right'}
+              rectButton
+              onPress={() => this.onReply()}
+            />
+          ),
           <ButtonSquareComponent
             key={`${post.id}_btn_remind`}
             icon={'bell'}
@@ -199,20 +201,24 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
             color={post.reminder ? colors.primary : undefined}
             onPress={() => this.setReminder(post)}
           />,
-          <ButtonSquareComponent
-            key={`${post.id}_btn_delete`}
-            icon={'trash-2'}
-            rectButton
-            color={'red'}
-            onPress={() => this.deletePost(post)}
-          />,
-          <ButtonSquareComponent
-            key={`${post.id}_btn_report`}
-            icon={'alert-triangle'}
-            rectButton
-            color={'red'}
-            onPress={() => this.reportPost(post)}
-          />,
+          !isReply && (
+            <ButtonSquareComponent
+              key={`${post.id}_btn_delete`}
+              icon={'trash-2'}
+              rectButton
+              color={'red'}
+              onPress={() => this.deletePost(post)}
+            />
+          ),
+          isReply && (
+            <ButtonSquareComponent
+              key={`${post.id}_btn_report`}
+              icon={'alert-triangle'}
+              rectButton
+              color={'red'}
+              onPress={() => this.reportPost(post)}
+            />
+          ),
         ].filter(b => !!b)}
       </View>
     )
