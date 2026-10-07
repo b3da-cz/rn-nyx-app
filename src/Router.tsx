@@ -5,10 +5,10 @@
 import React, { useEffect, useRef } from 'react'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
+import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
-import { NotificationIconComponent, StackHeaderComponent } from './component'
+import { ExpandableTabBar, NotificationIconComponent, StackHeaderComponent } from './component'
 import {
   discussionScreenOptions,
   LlmQueue,
@@ -158,6 +158,13 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
   const RootStack = createNativeStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
+  const renderTabBar = props =>
+    config.isNavbarExpandEnabled ? (
+      <ExpandableTabBar {...props} config={config} theme={theme} />
+    ) : (
+      <MaterialTopTabBar {...props} />
+    )
+
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
   const About = ({ navigation }) => <AboutView navigation={navigation} />
   const Settings = ({ navigation }) => (
@@ -177,6 +184,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         initialRouteName={config.initialRouteName}
         tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
         backBehavior="history"
+        tabBar={renderTabBar}
         // gestureHandlerProps={{
         //   wip, needs more testing
         //   maxPointers: 1,
@@ -199,6 +207,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'historyStack'}
             component={HistoryStackContainer}
             options={{
+              title: t('history'),
               tabBarLabel: ({ focused }) => <Icon name="book-open" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -208,6 +217,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'bookmarksStack'}
             component={BookmarksStackContainer}
             options={{
+              title: t('bookmarks'),
               tabBarLabel: ({ focused }) => <Icon name="bookmark" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -217,6 +227,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'searchStack'}
             component={SearchStackContainer}
             options={{
+              title: t('search.title'),
               tabBarLabel: ({ focused }) => <Icon name="search" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -226,6 +237,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'lastPostsStack'}
             component={LastPostsStackContainer}
             options={{
+              title: t('last'),
               tabBarLabel: ({ focused }) => <Icon name="inbox" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -235,6 +247,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'remindersStack'}
             component={RemindersStackContainer}
             options={{
+              title: t('reminders.title'),
               tabBarLabel: ({ focused }) => <Icon name="bell" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -244,6 +257,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
             name={'eventsStack'}
             component={EventsStackContainer}
             options={{
+              title: t('events.title'),
               tabBarLabel: ({ focused }) => <Icon name="calendar" size={14} color={getTabIconColor(focused)} />,
             }}
           />
@@ -252,6 +266,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           name={'notificationsStack'}
           component={NotificationsStackContainer}
           options={{
+            title: t('notifications'),
             tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} />,
           }}
         />
@@ -259,6 +274,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           name={'mailStack'}
           component={MailStackContainer}
           options={{
+            title: t('mail'),
             tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} isMail={true} />,
           }}
         />
@@ -266,6 +282,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           name={'profile'}
           component={Profile}
           options={{
+            title: t('profile.tab'),
             tabBarLabel: ({ focused }) => <Icon name={'user'} size={14} color={getTabIconColor(focused)} />,
           }}
         />

@@ -10,6 +10,7 @@ export type MainContextConfig = {
   isLoaded: boolean
   isBookmarksEnabled: boolean
   isBottomTabs: boolean
+  isNavbarExpandEnabled: boolean
   isHistoryEnabled: boolean
   isSearchEnabled: boolean
   isLastEnabled: boolean
@@ -53,6 +54,7 @@ export const initialConfig: MainContextConfig = {
   isLoaded: false,
   isBookmarksEnabled: true,
   isBottomTabs: true,
+  isNavbarExpandEnabled: false,
   isHistoryEnabled: true,
   isSearchEnabled: true,
   isLastEnabled: true,

@@ -43,6 +43,10 @@
     "cs": "Poslední",
     "en": "Last"
   },
+  "notifications": {
+    "cs": "Oznámení",
+    "en": "Notifications"
+  },
   "search": {
     "title": {
       "cs": "Hledání",
@@ -285,6 +289,14 @@
     "navGestures": {
       "cs": "Navigační gesta",
       "en": "Navigation gestures"
+    },
+    "navbarExpand": {
+      "cs": "Rozbalovací navigační lišta",
+      "en": "Expandable navigation bar"
+    },
+    "tab": {
+      "cs": "Profil",
+      "en": "Profile"
     },
     "sections": {
       "cs": "Sekce",

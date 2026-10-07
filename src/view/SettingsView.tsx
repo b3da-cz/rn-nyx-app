@@ -41,6 +41,7 @@ type State = {
   isFetching: boolean
   isBookmarksEnabled: boolean
   isBottomTabs: boolean
+  isNavbarExpandEnabled: boolean
   isHistoryEnabled: boolean
   isSearchEnabled: boolean
   isLastEnabled: boolean
@@ -126,6 +127,8 @@ export class SettingsView extends Component<Props> {
       isFetching: false,
       isBookmarksEnabled: config?.isBookmarksEnabled !== undefined ? !!config.isBookmarksEnabled : true,
       isBottomTabs: config?.isBottomTabs !== undefined ? !!config.isBottomTabs : true,
+      isNavbarExpandEnabled:
+        config?.isNavbarExpandEnabled !== undefined ? !!config.isNavbarExpandEnabled : false,
       isHistoryEnabled: config?.isHistoryEnabled !== undefined ? !!config.isHistoryEnabled : true,
       isSearchEnabled: config?.isSearchEnabled !== undefined ? !!config.isSearchEnabled : true,
       isLastEnabled: config?.isLastEnabled !== undefined ? !!config.isLastEnabled : true,
@@ -311,6 +314,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.tabsOnBottom')}
             value={!!this.state.isBottomTabs}
             onChange={val => this.setOption('isBottomTabs', val)}
+          />
+          <FormRowToggleComponent
+            label={t('profile.navbarExpand')}
+            value={!!this.state.isNavbarExpandEnabled}
+            onChange={val => this.setOption('isNavbarExpandEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('profile.navGestures')}

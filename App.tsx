@@ -119,6 +119,8 @@ const App: () => ReactNode = () => {
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
       isBottomTabs: conf.isBottomTabs === undefined ? true : !!conf.isBottomTabs,
+      isNavbarExpandEnabled:
+        conf.isNavbarExpandEnabled === undefined ? false : !!conf.isNavbarExpandEnabled,
       isHistoryEnabled: conf.isHistoryEnabled === undefined ? true : !!conf.isHistoryEnabled,
       isSearchEnabled: conf?.isSearchEnabled !== undefined ? !!conf.isSearchEnabled : true,
       isLastEnabled: conf?.isLastEnabled !== undefined ? !!conf.isLastEnabled : true,

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.18.0
+- v obecném nastavení jde zapnout rozbalovací navigační lišta; tažení lišty prstem do středu displeje ji nechá sledovat prst (lze zastavit, vrátit i dokončit), lišta se fadeuje do karty, která vyjíždí z kraje displeje; taby se přepínají jen z karty a ta se dá tažením zpět k okraji zavřít
+
 ## 0.17.6
 - v poště pod swipem doleva u odeslaných zpráv remind a delete, u přijatých reply, remind a nahlasit
 
