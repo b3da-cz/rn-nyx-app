@@ -9,7 +9,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native'
-import { MainContext } from '../lib/MainContext'
+import { isTextSelectionEnabled, MainContext } from '../lib/MainContext'
 import { useTheme } from '../lib/Theme'
 
 type Props = {
@@ -65,7 +65,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
     })
   }
 
-  const isSelectable = Platform.OS === 'ios' ? selectable : false
+  const isSelectable = selectable && isTextSelectionEnabled(mainContext?.config)
 
   const avatarHeight = Math.min(18, Math.max(14, Math.round(metrics.fontSizes.p * 1.15)))
   const avatarWidth = Math.round(avatarHeight * 0.8)

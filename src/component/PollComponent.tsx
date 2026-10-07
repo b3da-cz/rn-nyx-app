@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { View } from 'react-native'
 import { Text, ProgressBar } from 'react-native-paper'
 import { ButtonComponent, UserRowComponent } from '../component'
-import { useTheme } from '../lib'
+import { isTextSelectionEnabled, MainContext, useTheme } from '../lib'
 
 export const PollComponent = ({
   label,
@@ -20,6 +20,7 @@ export const PollComponent = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   const onAnswer = key => {
     if (selected.includes(key)) {
       setSelected([...selected].filter(k => k !== key))
@@ -34,6 +35,7 @@ export const PollComponent = ({
   return (
     <View style={{ paddingHorizontal: blocks.medium }}>
       <Text
+        selectable={selectable}
         style={{
           padding: blocks.large,
           fontSize: fontSizes.h3,
@@ -41,6 +43,7 @@ export const PollComponent = ({
         {label}
       </Text>
       <Text
+        selectable={selectable}
         style={{
           paddingHorizontal: blocks.large,
           paddingBottom: blocks.large,

@@ -21,6 +21,7 @@ export type MainContextConfig = {
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
+  isTextSelectionEnabled: boolean
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
@@ -63,6 +64,7 @@ export const initialConfig: MainContextConfig = {
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
+  isTextSelectionEnabled: true,
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
@@ -79,6 +81,10 @@ export const initialConfig: MainContextConfig = {
   llmSystemPrompt: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },
+}
+
+export function isTextSelectionEnabled(config?: { isTextSelectionEnabled?: boolean } | null) {
+  return config?.isTextSelectionEnabled !== false
 }
 
 export const MainContext: Context<MainContext> = createContext<MainContext>({

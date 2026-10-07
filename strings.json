@@ -306,6 +306,10 @@
       "cs": "Swipovací hlavička příspěvku",
       "en": "Swipeable post header"
     },
+    "isTextSelectionEnabled": {
+      "cs": "Označování textu příspěvků",
+      "en": "Select text in posts"
+    },
     "imageDownload": {
       "cs": "Stahování obrázků",
       "en": "Image download"

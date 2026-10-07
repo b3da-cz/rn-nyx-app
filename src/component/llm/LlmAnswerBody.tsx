@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { View } from 'react-native'
 import { Text } from 'react-native-paper'
-import { useTheme } from '../../lib'
+import { isTextSelectionEnabled, MainContext, useTheme } from '../../lib'
 import { MarkdownViewComponent } from '../MarkdownViewComponent'
 
 type Props = {
@@ -16,10 +16,12 @@ export const LlmAnswerBody = ({ content, isRaw, onNavigateToPost }: Props) => {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const { config } = useContext(MainContext)
+  const selectable = isTextSelectionEnabled(config)
   return (
     <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>
       {isRaw ? (
-        <Text selectable style={{ color: colors.text, fontSize: fontSizes.p }}>
+        <Text selectable={selectable} style={{ color: colors.text, fontSize: fontSizes.p }}>
           {content}
         </Text>
       ) : (

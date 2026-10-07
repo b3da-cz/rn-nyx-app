@@ -16,7 +16,7 @@ import {
   VideoTagComponent,
   DiscussionRequestComponent,
 } from '../component'
-import { eventFromPost, Nyx, TOKEN, generateUuidV4, MainContext } from '../lib'
+import { eventFromPost, Nyx, TOKEN, generateUuidV4, isTextSelectionEnabled, MainContext } from '../lib'
 
 type Props = {
   post: any
@@ -67,7 +67,8 @@ export class PostComponent extends Component<Props> {
           img.height !== nextProps.post.parsed?.images?.[i]?.height ||
           img.byteLength !== nextProps.post.parsed?.images?.[i]?.byteLength,
       ) ||
-      this.context.theme !== nextContext.theme
+      this.context.theme !== nextContext.theme ||
+      isTextSelectionEnabled(this.context.config) !== isTextSelectionEnabled(nextContext.config)
     )
   }
 
@@ -387,7 +388,10 @@ export class PostComponent extends Component<Props> {
           blocks.map(block => {
             if (block.isText) {
               return (
-                <Text style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'red' }} key={generateUuidV4()}>
+                <Text
+                  selectable={isTextSelectionEnabled(this.context.config)}
+                  style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'red' }}
+                  key={generateUuidV4()}>
                   {block.blocks.map(part => {
                     if (part.startsWith(TOKEN.REPLY)) {
                       const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]

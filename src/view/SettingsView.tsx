@@ -53,6 +53,7 @@ type State = {
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   isSwipeablePostHeader: boolean
+  isTextSelectionEnabled: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
   isLlmEnabled: boolean
@@ -139,6 +140,7 @@ export class SettingsView extends Component<Props> {
       isBookmarkSectionReadFilterEnabled:
         config.isBookmarkSectionReadFilterEnabled === undefined ? true : !!config.isBookmarkSectionReadFilterEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
+      isTextSelectionEnabled: config.isTextSelectionEnabled === undefined ? true : !!config.isTextSelectionEnabled,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
@@ -329,6 +331,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.isSwipeablePostHeader')}
             value={!!this.state.isSwipeablePostHeader}
             onChange={val => this.setOption('isSwipeablePostHeader', val)}
+          />
+          <FormRowToggleComponent
+            label={t('profile.isTextSelectionEnabled')}
+            value={this.state.isTextSelectionEnabled !== false}
+            onChange={val => this.setOption('isTextSelectionEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('events.friendBadges')}

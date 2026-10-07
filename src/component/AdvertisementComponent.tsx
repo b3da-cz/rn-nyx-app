@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { ScrollView, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import { ImageComponent } from './ImageComponent'
-import { useTheme } from '../lib'
+import { isTextSelectionEnabled, MainContext, useTheme } from '../lib'
 
 type Props = {
   action: string
@@ -38,6 +38,7 @@ export const AdvertisementComponent = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   const imgW = isDetail ? undefined : 100
   const imgH = isDetail ? 200 : 100
   return (
@@ -66,10 +67,11 @@ export const AdvertisementComponent = ({
               {isDetail ? updated : repliesCount && repliesCount > 0 ? repliesCount : ''}
             </Text>
           </View>
-          <Text style={{ fontSize: fontSizes.p }}>{title}</Text>
-          <Text style={{ fontSize: fontSizes.p }}>{summary}</Text>
+          <Text selectable={selectable} style={{ fontSize: fontSizes.p }}>{title}</Text>
+          <Text selectable={selectable} style={{ fontSize: fontSizes.p }}>{summary}</Text>
           {!!shipping && shipping.length > 0 && (
             <Text
+              selectable={selectable}
               style={{
                 fontSize: fontSizes.p,
                 paddingTop: blocks.medium,

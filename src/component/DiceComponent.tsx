@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import { UserRowComponent } from '../component'
-import { useTheme } from '../lib'
+import { isTextSelectionEnabled, MainContext, useTheme } from '../lib'
 
 type Props = {
   label: string
@@ -17,9 +17,11 @@ export const DiceComponent = ({ label, count, sides, rolls, canRoll, onRoll }: P
     colors,
     metrics: { blocks, fontSizes, line },
   } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   return (
     <View style={{ paddingHorizontal: blocks.medium }}>
       <Text
+        selectable={selectable}
         style={{
           padding: blocks.large,
           fontSize: fontSizes.h3,

@@ -6,6 +6,7 @@ import type { EventAttendee } from 'nyx-api'
 import {
   discussionTarget,
   EventDetailData,
+  isTextSelectionEnabled,
   EventDetailImage,
   eventIconRow,
   formatEventDuration,
@@ -343,6 +344,7 @@ const EventBody = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   if (!parsed?.contentParts?.length && images.length === 0) {
     return null
   }
@@ -468,6 +470,7 @@ const EventBody = ({
         block.isText ? (
           <Text
             key={`b-${index}`}
+            selectable={selectable}
             style={{ color: colors.text, fontSize: fontSizes.p, paddingHorizontal: blocks.medium }}>
             {block.parts.map(renderText)}
           </Text>

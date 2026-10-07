@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { ScrollView } from 'react-native'
 import { Dialog, Portal, Text } from 'react-native-paper'
-import { useTheme } from '../lib'
+import { isTextSelectionEnabled, MainContext, useTheme } from '../lib'
 
 export const SpoilerComponent = ({ text }) => {
   const [isVisible, setIsVisible] = useState(false)
@@ -9,6 +9,7 @@ export const SpoilerComponent = ({ text }) => {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   return (
     <Text>
       <Portal>
@@ -16,6 +17,7 @@ export const SpoilerComponent = ({ text }) => {
           <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
             <ScrollView>
               <Text
+                selectable={selectable}
                 style={{
                   padding: blocks.large,
                   fontSize: fontSizes.p,

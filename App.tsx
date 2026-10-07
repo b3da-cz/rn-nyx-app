@@ -131,6 +131,7 @@ const App: () => ReactNode = () => {
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,
+      isTextSelectionEnabled: conf.isTextSelectionEnabled === undefined ? true : !!conf.isTextSelectionEnabled,
       isUnreadToggleEnabled: conf.isUnreadToggleEnabled === undefined ? true : !!conf.isUnreadToggleEnabled,
       isBookmarkSectionReadFilterEnabled:
         conf.isBookmarkSectionReadFilterEnabled === undefined ? true : !!conf.isBookmarkSectionReadFilterEnabled,

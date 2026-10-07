@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.17.4
+- text příspěvků, mailů a výsledků asistenta jde označit a zkopírovat
+- v obecném nastavení je přepínač označování textu, zapnutý
+
 ## 0.17.3
 - ikona aplikace je adaptivní znak N, bez šedého rámečku, a na kruhové masce se kroužky neořezávají
 
