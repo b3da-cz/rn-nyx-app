@@ -1,4 +1,4 @@
-import { Dimensions, Image } from 'react-native'
+import { Dimensions, Image, PixelRatio } from 'react-native'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import rnTextSize, { TSFontSpecs } from 'react-native-text-size'
 import {
@@ -138,8 +138,8 @@ export const measureImagePixels = async (img: any, isFullImgSize = true) => {
   return { ...img, width, height }
 }
 
-const layoutScreenWidth = (themeBaseFontSize: number) =>
-  Dimensions.get('window').width - (themeBaseFontSize > 16 ? 12 : 2)
+const layoutScreenWidth = (themeBaseFontSize?: number) =>
+  Dimensions.get('window').width - 12
 
 export const applyRevealedImageLayout = (posts: any[] = [], themeBaseFontSize: number) =>
   applyRevealedImageLayoutAtWidth(posts, layoutScreenWidth(themeBaseFontSize))
@@ -249,26 +249,33 @@ export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | nu
   }
 }
 
-export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => {
+export const getBlockSizes = async (
+  posts: any[],
+  themeBaseFontSize: number,
+  fontScale: number = PixelRatio.getFontScale() || 1,
+) => {
   try {
     themeBaseFontSize = themeBaseFontSize > 15 ? themeBaseFontSize : themeBaseFontSize * 1.075
+    const effectiveFontSize = themeBaseFontSize * fontScale
     const fontSpecs: TSFontSpecs = {
       fontFamily: undefined,
-      fontSize: themeBaseFontSize,
+      fontSize: effectiveFontSize,
       // fontStyle: 'italic',
       // fontWeight: 'bold',
     }
     if (themeBaseFontSize > 16) {
       fontSpecs.fontWeight = 'bold'
     }
-    const headerSize = themeBaseFontSize * 3.3
-    const paddingBottom = themeBaseFontSize / 2
-    const screenWidth = Dimensions.get('window').width - (themeBaseFontSize > 16 ? 12 : 2)
+    const headerSize = themeBaseFontSize * 3.3 * fontScale
+    const paddingBottom = (themeBaseFontSize * fontScale) / 2
+    const screenWidth = layoutScreenWidth(themeBaseFontSize)
+    const minPostHeight = Math.round(75 * fontScale)
     let index = 0
     for (const post of posts) {
       const textHeights = await rnTextSize.flatHeights({
         text: [post.parsed.clearText],
         width: screenWidth,
+        allowFontScaling: false,
         ...fontSpecs,
       })
       const textHeight = textHeights.reduce((a, b) => a + b)
@@ -278,7 +285,8 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
           ? await rnTextSize.flatHeights({
               text: post.parsed.codeBlocks.map(c => c.raw),
               width: 99999,
-              fontSize: 11,
+              fontSize: 11 * fontScale,
+              allowFontScaling: false,
             })
           : []
       const codeBlocksHeight =
@@ -290,32 +298,36 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
       }
       const diceHeight =
         post.content_raw?.type === 'dice'
-          ? (post.content_raw?.data?.computed_values?.user_did_roll ? 40 : 90) +
-            post.content_raw?.data?.rolls?.length * 40
+          ? ((post.content_raw?.data?.computed_values?.user_did_roll ? 40 : 90) +
+              post.content_raw?.data?.rolls?.length * 40) *
+            fontScale
           : 0
       const pollTextHeights =
         post.content_raw?.type === 'poll'
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.question, post.content_raw?.data?.instructions, '\nrespondents\nvotes'],
               width: Dimensions.get('window').width - 40,
-              fontSize: themeBaseFontSize,
+              fontSize: effectiveFontSize,
+              allowFontScaling: false,
             })
           : []
       const pollHeight =
         pollTextHeights.length > 0
-          ? (post.content_raw?.data?.computed_values?.user_did_vote ? 60 : 115) +
-            pollTextHeights.reduce((a, b) => a + b) +
-            Object.keys(post.content_raw?.data?.answers || {}).length * 56
+          ? ((post.content_raw?.data?.computed_values?.user_did_vote ? 60 : 115) +
+              Object.keys(post.content_raw?.data?.answers || {}).length * 56) *
+              fontScale +
+            pollTextHeights.reduce((a, b) => a + b)
           : 0
       const adTextHeights =
         post.content_raw?.type === 'advertisement'
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.summary, '\n\naction\nlocation/price'],
               width: Dimensions.get('window').width - 22,
-              fontSize: 16,
+              fontSize: 16 * fontScale,
+              allowFontScaling: false,
             })
           : []
-      const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 : 0
+      const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 * fontScale : 0
       const eventData = post.content_raw?.type === 'event' ? post.content_raw.data : null
       let eventHeight = 0
       if (eventData?.discussion_id) {
@@ -324,34 +336,43 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
         const headHeights = await rnTextSize.flatHeights({
           text: [eventData.full_name || ' ', eventData.category_path || ' ', eventData.location || ' '],
           width: Math.max(80, fullWidth - (hasThumb ? 84 : 0)),
-          fontSize: themeBaseFontSize,
+          fontSize: effectiveFontSize,
+          allowFontScaling: false,
         })
         const summaryHeights = eventData.summary
           ? await rnTextSize.flatHeights({
               text: [eventData.summary],
               width: fullWidth,
-              fontSize: Math.max(11, themeBaseFontSize * 0.8),
+              fontSize: Math.max(11 * fontScale, effectiveFontSize * 0.8),
+              allowFontScaling: false,
             })
           : [0]
         const head = Math.max(
           headHeights.reduce((a, b) => a + b, 0),
           hasThumb ? 72 : 0,
         )
-        eventHeight = head + summaryHeights.reduce((a, b) => a + b, 0) + (eventData.going_people > 0 ? 36 : 8) + 28
+        eventHeight =
+          head +
+          summaryHeights.reduce((a, b) => a + b, 0) +
+          (eventData.going_people > 0 ? 36 * fontScale : 8) +
+          28 * fontScale
       }
       const discussionRequestTextHeights =
         post.content_raw?.type === 'discussion_request'
           ? await rnTextSize.flatHeights({
               text: [post.parsed.clearText],
               width: Dimensions.get('window').width + 100,
-              fontSize: 10,
+              fontSize: 10 * fontScale,
+              allowFontScaling: false,
             })
           : []
       const discussionRequestHeight =
-        discussionRequestTextHeights.length > 0 ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 : 0
+        discussionRequestTextHeights.length > 0
+          ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 * fontScale
+          : 0
       // each video renders a square WebView plus a "copy link" row below it;
       // reserve the row height too or the row gets clipped by the fixed post height
-      const videoCopyRowHeight = 16 + (2 * themeBaseFontSize) / 5 + 6
+      const videoCopyRowHeight = 16 + (2 * effectiveFontSize) / 5 + 6
       const videoHeight =
         post.parsed?.videos?.length > 0 ? post.parsed.videos.length * (screenWidth + videoCopyRowHeight) : 0
       const height =
@@ -367,7 +388,7 @@ export const getBlockSizes = async (posts: any[], themeBaseFontSize: number) => 
             videoHeight +
             paddingBottom
       post.parsed.imagesHeight = imagesHeight
-      post.parsed.height = height < 75 ? 75 : height
+      post.parsed.height = height < minPostHeight ? minPostHeight : height
       post.parsed.offset = posts
         .filter((_, i) => i <= index)
         .map(p => p.parsed.height)

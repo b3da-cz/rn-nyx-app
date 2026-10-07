@@ -325,7 +325,7 @@ export class PostComponent extends Component<Props> {
     return (
       <View
         style={{
-          height: post?.parsed?.height,
+          minHeight: post?.parsed?.height,
           paddingBottom: post?.parsed?.height > 0 ? undefined : 10,
           backgroundColor: colors.background,
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,

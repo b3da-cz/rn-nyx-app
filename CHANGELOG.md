@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-## 0.18.0
+## 0.19.0
+- oprava výpočtu výšky příspěvků ve flatlistu se zohledněním systémového měřítka písma (fontScale)
+- oprava ořezávání posledního příspěvku v diskuzi: FlatList má flex: 1 namísto přetékající 100% výšky s horním odsazením a bezpečný spodní padding pro linku gest/FAB
+- kontejner příspěvku používá minHeight pro zamezení oříznutí textu při drobných odchylkách měření
 - v obecném nastavení jde zapnout rozbalovací navigační lišta; tažení lišty prstem do středu displeje ji nechá sledovat prst (lze zastavit, vrátit i dokončit), lišta se fadeuje do karty, která vyjíždí z kraje displeje; taby se přepínají jen z karty a ta se dá tažením zpět k okraji zavřít
 
 ## 0.17.6

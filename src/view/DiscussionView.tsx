@@ -10,6 +10,7 @@ import {
   FabComponent,
   MessageBoxDialog,
   PostComponent,
+  androidStackBottomInset,
 } from '../component'
 import {
   applyRevealedImageLayout,
@@ -42,6 +43,7 @@ type Props = {
   navigation: any
   id: number
   postId?: number
+  bottomInset?: number
   showBoard?: boolean
   showHeader?: boolean
   showReplies?: boolean
@@ -857,7 +859,7 @@ export class DiscussionView extends Component<Props> {
     }
     const isListing = this.state.isListing || isListingDiscussion(this.state.title, this.state.posts)
     return (
-      <View style={{ backgroundColor: theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         {this.state.imgPrefetchProgress?.length > 0 && (
           <ProgressBar
             progress={this.state.imgPrefetchProgress.done / (this.state.imgPrefetchProgress.length / 100) / 100}
@@ -920,9 +922,12 @@ export class DiscussionView extends Component<Props> {
             />
           }
           style={{
-            height: '100%',
+            flex: 1,
             marginTop: 50,
             backgroundColor: theme.colors.background,
+          }}
+          contentContainerStyle={{
+            paddingBottom: Math.max(this.props.bottomInset || 0, androidStackBottomInset) + 16,
           }}
           ListHeaderComponent={
             this.state.eventDetail &&
