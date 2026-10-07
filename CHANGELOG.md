@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.17.5
+- swipeable header na zprávách v poště
+
 ## 0.17.4
 - text příspěvků, mailů a výsledků asistenta jde označit a zkopírovat
 - v obecném nastavení je přepínač označování textu, zapnutý
