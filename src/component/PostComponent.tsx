@@ -25,6 +25,7 @@ type Props = {
   isUnread?: boolean
   isHeaderInteractive?: boolean
   isHeaderPressable?: boolean
+  mailMode?: boolean
   onHeaderPress?: Function
   onHeaderSwipe?: Function
   onDiscussionDetailShow: Function
@@ -339,6 +340,7 @@ export class PostComponent extends Component<Props> {
             isUnread={!!this.props.isUnread}
             isInteractive={!!this.props.isHeaderInteractive}
             isPressable={!!this.props.isHeaderPressable}
+            mailMode={!!this.props.mailMode}
             onPress={(discussionId, postId) =>
               typeof this.props.onHeaderPress === 'function' ? this.props.onHeaderPress(discussionId, postId) : null
             }

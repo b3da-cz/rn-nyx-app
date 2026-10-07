@@ -1,5 +1,5 @@
 import NyxApi from 'nyx-api'
-import type { EventsResponse } from 'nyx-api'
+import type { EventsResponse, Response as NyxResponse } from 'nyx-api'
 
 export type EventsQuery = {
   area?: number
@@ -15,6 +15,13 @@ export type EventsQuery = {
 // /api/events also honors order, epoch and search, which the list filter needs.
 // setEventAttendance comes from NyxApi.
 export class NyxEventsApi extends NyxApi {
+  async deleteMail(postId: string | number): Promise<Partial<NyxResponse>> {
+    return this.fetch({
+      endpoint: `mail/delete/${postId}`,
+      method: 'DELETE',
+    })
+  }
+
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {
     const queryParts: string[] = []
     if (params?.area !== undefined) queryParts.push(`area=${params.area}`)

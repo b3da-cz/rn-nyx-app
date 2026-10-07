@@ -24,6 +24,7 @@ type Props = {
   onReminder?: Function
   onPostRated?: Function
   onSwipe?: Function
+  mailMode?: boolean
 }
 type State = {
   isFetching: boolean
@@ -59,7 +60,11 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
 
   onReply() {
     if (typeof this.props.onReply === 'function') {
-      this.props.onReply(this.props.post.discussion_id, this.props.post.id, this.props.post.username)
+      if (this.props.mailMode) {
+        this.props.onReply(this.props.post.username)
+      } else {
+        this.props.onReply(this.props.post.discussion_id, this.props.post.id, this.props.post.username)
+      }
     }
     setTimeout(() => this.refSwipeable?.close(), 300)
   }
@@ -128,7 +133,11 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
   }
 
   async setReminder(post) {
-    await this.props.nyx.api.setReminder(post.discussion_id, post.id, !post.reminder)
+    if (this.props.mailMode) {
+      await this.props.nyx.api.setReminder(0, post.id, !post.reminder)
+    } else {
+      await this.props.nyx.api.setReminder(post.discussion_id, post.id, !post.reminder)
+    }
     this.refSwipeable?.close()
     typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
   }
@@ -136,7 +145,11 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
   async deletePost(post) {
     const res = await confirm(t('confirm'), `${t('delete.post')}?`)
     if (res) {
-      await this.props.nyx.api.deletePost(post.discussion_id, post.id)
+      if (this.props.mailMode) {
+        await this.props.nyx.api.deleteMail(post.id)
+      } else {
+        await this.props.nyx.api.deletePost(post.discussion_id, post.id)
+      }
       if (this.refSwipeable) {
         this.refSwipeable.close()
       }
@@ -168,6 +181,47 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     typeof this.props.onRepliesShow === 'function' ? this.props.onRepliesShow(post.discussion_id, post.id) : null
   }
 
+  renderMailLeftActions() {
+    const { post, theme: { colors } } = this.props
+    return (
+      <View style={{ flexDirection: 'row' }} collapsable={false}>
+        {[
+          <ButtonSquareComponent
+            key={`${post.id}_btn_reply`}
+            icon={'corner-down-right'}
+            rectButton
+            onPress={() => this.onReply()}
+          />,
+          <ButtonSquareComponent
+            key={`${post.id}_btn_remind`}
+            icon={'bell'}
+            rectButton
+            color={post.reminder ? colors.primary : undefined}
+            onPress={() => this.setReminder(post)}
+          />,
+          <ButtonSquareComponent
+            key={`${post.id}_btn_delete`}
+            icon={'trash-2'}
+            rectButton
+            color={'red'}
+            onPress={() => this.deletePost(post)}
+          />,
+          <ButtonSquareComponent
+            key={`${post.id}_btn_report`}
+            icon={'alert-triangle'}
+            rectButton
+            color={'red'}
+            onPress={() => this.reportPost(post)}
+          />,
+        ].filter(b => !!b)}
+      </View>
+    )
+  }
+
+  renderMailRightActions() {
+    return null
+  }
+
   render() {
     const {
       post,
@@ -189,59 +243,65 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           rightThreshold={40}
           dragOffsetFromLeftEdge={24}
           dragOffsetFromRightEdge={24}
-          renderLeftActions={() => (
-            <View style={{ flexDirection: 'row' }} collapsable={false}>
-              {[
-                !post.parsed?.advertisement && (
-                  <ButtonSquareComponent
-                    key={`${post.id}_btn_reply`}
-                    icon={'corner-down-right'}
-                    rectButton
-                    onPress={() => this.onReply()}
-                  />
-                ),
-                <ButtonSquareComponent
-                  key={`${post.id}_btn_share_content`}
-                  icon={'copy'}
-                  rectButton
-                  onPress={() => this.onShare(true)}
-                />,
-                <ButtonSquareComponent
-                  key={`${post.id}_btn_share`}
-                  icon={'share'}
-                  rectButton
-                  onPress={() => this.onShare()}
-                />,
-                post.can_be_reminded && (
-                  <ButtonSquareComponent
-                    key={`${post.id}_btn_remind`}
-                    icon={'bell'}
-                    rectButton
-                    color={post.reminder ? colors.primary : undefined}
-                    onPress={() => this.setReminder(post)}
-                  />
-                ),
-                post.can_be_deleted && (
-                  <ButtonSquareComponent
-                    key={`${post.id}_btn_delete`}
-                    icon={'trash-2'}
-                    rectButton
-                    color={'red'}
-                    onPress={() => this.deletePost(post)}
-                  />
-                ),
-                <ButtonSquareComponent
-                  key={`${post.id}_btn_report`}
-                  icon={'alert-triangle'}
-                  rectButton
-                  color={'red'}
-                  onPress={() => this.reportPost(post)}
-                />,
-              ].filter(b => !!b)}
-            </View>
-          )}
+          renderLeftActions={
+            this.props.mailMode
+              ? () => this.renderMailLeftActions()
+              : () => (
+                  <View style={{ flexDirection: 'row' }} collapsable={false}>
+                    {[
+                      !post.parsed?.advertisement && (
+                        <ButtonSquareComponent
+                          key={`${post.id}_btn_reply`}
+                          icon={'corner-down-right'}
+                          rectButton
+                          onPress={() => this.onReply()}
+                        />
+                      ),
+                      <ButtonSquareComponent
+                        key={`${post.id}_btn_share_content`}
+                        icon={'copy'}
+                        rectButton
+                        onPress={() => this.onShare(true)}
+                      />,
+                      <ButtonSquareComponent
+                        key={`${post.id}_btn_share`}
+                        icon={'share'}
+                        rectButton
+                        onPress={() => this.onShare()}
+                      />,
+                      post.can_be_reminded && (
+                        <ButtonSquareComponent
+                          key={`${post.id}_btn_remind`}
+                          icon={'bell'}
+                          rectButton
+                          color={post.reminder ? colors.primary : undefined}
+                          onPress={() => this.setReminder(post)}
+                        />
+                      ),
+                      post.can_be_deleted && (
+                        <ButtonSquareComponent
+                          key={`${post.id}_btn_delete`}
+                          icon={'trash-2'}
+                          rectButton
+                          color={'red'}
+                          onPress={() => this.deletePost(post)}
+                        />
+                      ),
+                      <ButtonSquareComponent
+                        key={`${post.id}_btn_report`}
+                        icon={'alert-triangle'}
+                        rectButton
+                        color={'red'}
+                        onPress={() => this.reportPost(post)}
+                      />,
+                    ].filter(b => !!b)}
+                  </View>
+                )
+          }
           renderRightActions={
-            post.can_be_rated
+            this.props.mailMode
+              ? undefined
+              : post.can_be_rated
               ? () => (
                   <View style={{ flexDirection: 'row' }} collapsable={false}>
                     <ButtonSquareComponent

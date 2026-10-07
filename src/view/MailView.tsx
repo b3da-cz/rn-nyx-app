@@ -185,6 +185,21 @@ export class MailView extends Component<Props> {
     this.refMsgBoxDialog?.showDialog()
   }
 
+  async onMailDelete(postId: number) {
+    this.getLatestMessages()
+  }
+
+  async onMailReminder(post, isReminder: boolean) {
+    const next = post
+    next.reminder = isReminder
+    const messages = [...this.state.messages]
+    const idx = messages.findIndex(m => m.id === post.id)
+    if (idx >= 0) {
+      messages[idx] = next
+      this.setState({ messages })
+    }
+  }
+
   getPickerItemColor(val, hasUnreadMail?: boolean) {
     return hasUnreadMail
       ? this.state.theme!.colors.accent
@@ -201,12 +216,17 @@ export class MailView extends Component<Props> {
         nyx={this.nyx!}
         isReply={msg.incoming}
         isUnread={msg.unread}
-        isHeaderInteractive={false}
+        isHeaderInteractive={true}
         isHeaderPressable={true}
+        mailMode={true}
         onHeaderPress={() => this.onReply(msg.username)}
+        onReply={(discussionId, postId, username) => {
+          this.onReply(username || msg.username)
+        }}
         onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
         onImage={image => this.showImages(image)}
-        onDelete={postId => this.onPostDelete(postId)}
+        onDelete={postId => this.onMailDelete(postId)}
+        onReminder={(post, isReminder) => this.onMailReminder(post, isReminder)}
       />
     )
   }
