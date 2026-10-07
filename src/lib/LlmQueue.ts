@@ -38,15 +38,15 @@ class LlmQueueService {
       const persisted = await Storage.getLlmPendingTasks()
       if (Array.isArray(persisted) && persisted.length > 0) {
         // Any task that was 'pending' when app was terminated is marked as interrupted
-        this.tasks = persisted.map(t => {
-          if (t.status === 'pending') {
+        this.tasks = persisted.map(task => {
+          if (task.status === 'pending') {
             return {
-              ...t,
+              ...task,
               status: 'error',
               error: t('llm.errorInterrupted') || 'Dotaz byl přerušen ukončením aplikace.',
             }
           }
-          return t
+          return task
         })
         await Storage.setLlmPendingTasks(this.tasks)
         this.notify()

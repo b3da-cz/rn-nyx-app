@@ -114,14 +114,14 @@ export function tokenizeInlineMarkdown(text: string, inherited: InlineInherited 
           /^\*.*\*$/.test(rawLinkText),
       )
 
-      let cleanText = rawLinkText.replace(/^\*\*|\*\*$/g, '').replace(/^\*|\*$/g, '')
+      let cleanText = rawLinkText.trim().replace(/^\*\*|\*\*$/g, '').replace(/^\*|\*$/g, '').trim()
       if (atSign && !cleanText.startsWith('@')) {
         cleanText = `@${cleanText}`
       }
 
       let username: string | undefined
       if (cleanText.startsWith('@') && cleanText.length > 1) {
-        username = cleanText.substring(1).trim()
+        username = cleanText.substring(1).replace(/[.,;:!?]+$/, '').trim()
       }
 
       tokens.push({

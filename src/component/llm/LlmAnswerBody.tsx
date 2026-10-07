@@ -18,6 +18,7 @@ export const LlmAnswerBody = ({ content, isRaw, onNavigateToPost }: Props) => {
   } = useTheme()
   const { config } = useContext(MainContext)
   const selectable = isTextSelectionEnabled(config)
+  const showUserAvatars = config?.isLlmUserAvatarsEnabled !== false
   return (
     <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>
       {isRaw ? (
@@ -25,7 +26,12 @@ export const LlmAnswerBody = ({ content, isRaw, onNavigateToPost }: Props) => {
           {content}
         </Text>
       ) : (
-        <MarkdownViewComponent content={content} selectable={true} onNavigateToPost={onNavigateToPost} />
+        <MarkdownViewComponent
+          content={content}
+          selectable={selectable}
+          showUserAvatars={showUserAvatars}
+          onNavigateToPost={onNavigateToPost}
+        />
       )}
     </View>
   )

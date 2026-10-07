@@ -65,7 +65,10 @@ export const MarkdownViewComponent: React.FC<Props> = ({
     })
   }
 
-  const isSelectable = selectable && isTextSelectionEnabled(mainContext?.config)
+  const isSelectable =
+    Platform.OS === 'ios'
+      ? selectable && isTextSelectionEnabled(mainContext?.config)
+      : !isAvatarsEnabled && selectable && isTextSelectionEnabled(mainContext?.config)
 
   const avatarHeight = Math.min(18, Math.max(14, Math.round(metrics.fontSizes.p * 1.15)))
   const avatarWidth = Math.round(avatarHeight * 0.8)
@@ -76,7 +79,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
       switch (token.type) {
         case 'link': {
           const uname = token.username || (token.text.startsWith('@') ? token.text.substring(1) : undefined)
-          const cleanUname = uname ? uname.trim().toUpperCase() : ''
+          const cleanUname = uname ? uname.replace(/[.,;:!?]+$/, '').trim().toUpperCase() : ''
           const isValidUsername = cleanUname.length > 0 && /^[A-Z0-9_.-]+$/.test(cleanUname)
           const shouldRenderAvatar = isAvatarsEnabled && isValidUsername
           const avatarUri = shouldRenderAvatar

@@ -3,8 +3,10 @@ import strings from '../../strings.json'
 
 export const locale =
   Platform.OS === 'ios'
-    ? NativeModules.SettingsManager.settings.AppleLocale || NativeModules.SettingsManager.settings.AppleLanguages[0]
-    : NativeModules.I18nManager.localeIdentifier
+    ? NativeModules.SettingsManager?.settings?.AppleLocale ||
+      NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ||
+      'cs_CZ'
+    : NativeModules.I18nManager?.localeIdentifier || 'cs_CZ'
 
 const loc = locale.substr(0, 2)
 

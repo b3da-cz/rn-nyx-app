@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## 0.19.1
+- oprava vykreslování avatarů uživatelů ve výsledcích LLM (zamezení konfliktu s označením textu na Androidu, explicitní předávání nastavení a robustnější extrakce uživatelských jmen)
 
 ## 0.19.0
 - oprava výpočtu výšky příspěvků ve flatlistu se zohledněním systémového měřítka písma (fontScale)

@@ -164,6 +164,33 @@ describe('MarkdownViewComponent parser tests', () => {
         username: 'EBBN',
       })
       expect(t5[2]).toEqual({ type: 'text', content: ')' })
+
+      const linkColonInside = 'Podle [@EBBN:](https://nyx.cz/discussion/123/id/456) pokračuje'
+      const t6 = tokenizeInlineMarkdown(linkColonInside)
+      expect(t6[1]).toEqual({
+        type: 'link',
+        text: '@EBBN:',
+        url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
+      })
+
+      const linkSpacesInside = 'Podle [ @EBBN ](https://nyx.cz/discussion/123/id/456) pokračuje'
+      const t7 = tokenizeInlineMarkdown(linkSpacesInside)
+      expect(t7[1]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
+      })
+
+      const linkAtOutside = 'Podle @[EBBN](https://nyx.cz/discussion/123/id/456) pokračuje'
+      const t8 = tokenizeInlineMarkdown(linkAtOutside)
+      expect(t8[1]).toEqual({
+        type: 'link',
+        text: '@EBBN',
+        url: 'https://nyx.cz/discussion/123/id/456',
+        username: 'EBBN',
+      })
     })
   })
 })
