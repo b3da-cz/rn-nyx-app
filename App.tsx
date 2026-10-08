@@ -12,7 +12,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import { Bugfender } from '@bugfender/rn-bugfender'
-import { confirm, LoaderComponent, NestedBackHandler } from './src/component'
+import { confirm, LoaderComponent, NestedBackHandler, RatingPromptComponent } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
@@ -236,6 +236,7 @@ const App: () => ReactNode = () => {
                     onFiltersReload={() => loadStorage({ getConfig: false })}
                   />
                 </NavigationContainer>
+                <RatingPromptComponent theme={theme} />
               </UnreadContextProvider>
             </MainContext.Provider>
           )}

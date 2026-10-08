@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.20.0
+- výzva k hodnocení na Google Play (vyskakovací karta zespodu displeje s možností ohodnotit nebo odložit na později)
+
 ## 0.19.4
 - deletable replies v mailu
 

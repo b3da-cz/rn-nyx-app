@@ -1004,5 +1004,23 @@
       "cs": "příspěvků",
       "en": "posts"
     }
+  },
+  "ratingPrompt": {
+    "title": {
+      "cs": "Líbí se vám Nnn?",
+      "en": "Enjoying Nnn?"
+    },
+    "message": {
+      "cs": "Pokud vám aplikace dělá radost, budeme moc rádi za krátké hodnocení na Google Play. Pomáhá nám to v dalším vývoji!",
+      "en": "If you are enjoying the app, please consider leaving a rating on Google Play. It helps development and other users!"
+    },
+    "rate": {
+      "cs": "Ohodnotit na Google Play",
+      "en": "Rate on Google Play"
+    },
+    "later": {
+      "cs": "Později",
+      "en": "Later"
+    }
   }
 }

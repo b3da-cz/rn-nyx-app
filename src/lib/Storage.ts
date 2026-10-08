@@ -11,6 +11,7 @@ const StorageKeys = {
   favoriteLlmModels: 'favoriteLlmModels',
   llmPendingTasks: 'llmPendingTasks',
   llmPromptTemplates: 'llmPromptTemplates',
+  ratingPrompt: 'ratingPrompt',
 }
 
 const set = async (key, value) => {
@@ -70,6 +71,10 @@ const getLlmPromptTemplates = async () => (await get(StorageKeys.llmPromptTempla
 
 const setLlmPromptTemplates = async templates => set(StorageKeys.llmPromptTemplates, templates)
 
+const getRatingPrompt = async () => get(StorageKeys.ratingPrompt)
+
+const setRatingPrompt = async state => set(StorageKeys.ratingPrompt, state)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -103,5 +108,7 @@ export const Storage = {
   setLlmPendingTasks,
   getLlmPromptTemplates,
   setLlmPromptTemplates,
+  getRatingPrompt,
+  setRatingPrompt,
   removeAll,
 }
