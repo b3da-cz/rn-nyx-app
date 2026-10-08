@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.19.4
+- deletable replies v mailu
+
 ## 0.19.3
 - aktualizace odkazu pro autorizaci aplikace na přihlašovací obrazovce (nastavení propojených aplikací na Nyx.cz)
 

@@ -201,15 +201,13 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
             color={post.reminder ? colors.primary : undefined}
             onPress={() => this.setReminder(post)}
           />,
-          !isReply && (
-            <ButtonSquareComponent
-              key={`${post.id}_btn_delete`}
-              icon={'trash-2'}
-              rectButton
-              color={'red'}
-              onPress={() => this.deletePost(post)}
-            />
-          ),
+          <ButtonSquareComponent
+            key={`${post.id}_btn_delete`}
+            icon={'trash-2'}
+            rectButton
+            color={'red'}
+            onPress={() => this.deletePost(post)}
+          />,
           isReply && (
             <ButtonSquareComponent
               key={`${post.id}_btn_report`}
