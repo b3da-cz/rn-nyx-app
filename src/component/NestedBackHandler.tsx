@@ -52,7 +52,14 @@ export const NestedBackHandler = ({ navigationRef }: Props) => {
         if (!navigationRef.isReady()) {
           return false
         }
-        return goBackInState(navigationRef, navigationRef.getRootState())
+        if (goBackInState(navigationRef, navigationRef.getRootState())) {
+          return true
+        }
+        if (navigationRef.canGoBack()) {
+          navigationRef.goBack()
+          return true
+        }
+        return false
       })
     }, 0)
     return () => {

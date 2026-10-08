@@ -20,6 +20,23 @@ class MainActivity : ReactActivity() {
     super.onCreate(null)
   }
 
+  override fun invokeDefaultOnBackPressed() {
+    // Avoid calling super.invokeDefaultOnBackPressed() because ReactActivity permanently
+    // disables mBackPressedCallback without re-enabling it when the app is moved to the background.
+    moveTaskToBack(true)
+  }
+
+  override fun onResume() {
+    super.onResume()
+    try {
+      val field = ReactActivity::class.java.getDeclaredField("mBackPressedCallback")
+      field.isAccessible = true
+      val callback = field.get(this) as? androidx.activity.OnBackPressedCallback
+      callback?.isEnabled = true
+    } catch (_: Throwable) {
+    }
+  }
+
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
