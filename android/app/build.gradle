@@ -41,6 +41,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode nodeBuildVersion
         versionName nodePackageVersion
+        missingDimensionStrategy 'store', 'play'
     }
     signingConfigs {
         debug {

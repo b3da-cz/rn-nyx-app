@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import {
-  Animated,
-  BackHandler,
-  Linking,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native'
+import { Animated, BackHandler, Linking, StyleSheet, TouchableWithoutFeedback, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Feather'
@@ -19,9 +12,10 @@ const PLAY_STORE_WEB_URL = 'https://play.google.com/store/apps/details?id=net.b3
 type Props = {
   theme: Theme
   onDismiss?: () => void
+  onSupport?: () => void
 }
 
-export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss }) => {
+export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss, onSupport }) => {
   const [isMounted, setIsMounted] = useState(false)
   const anim = useRef(new Animated.Value(0)).current
   const insets = useSafeAreaInsets()
@@ -43,11 +37,8 @@ export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss }) => 
     let timer: NodeJS.Timeout
     const init = async () => {
       const auth = await Storage.getAuth()
-      const hasAuth = !!auth?.username
-      const shouldShow = await checkAndRecordAppStart(buildVersion, hasAuth)
-      if (shouldShow) {
-        timer = setTimeout(() => show(), 700)
-      }
+      const shouldShow = await checkAndRecordAppStart(buildVersion, !!auth?.username)
+      if (shouldShow) timer = setTimeout(() => show(), 700)
     }
     init()
     return () => clearTimeout(timer)
@@ -57,6 +48,12 @@ export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss }) => 
     await recordRatingPromptAction('gplay', buildVersion)
     Linking.openURL(PLAY_STORE_URL).catch(() => Linking.openURL(PLAY_STORE_WEB_URL).catch(() => null))
     hide()
+  }
+
+  const handleSupport = async () => {
+    await recordRatingPromptAction('support', buildVersion)
+    hide()
+    onSupport?.()
   }
 
   const handleLater = async () => {
@@ -78,6 +75,7 @@ export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss }) => 
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [400, 0] })
   const backdropOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] })
   const btnTextColor = theme.dark ? '#000' : '#fff'
+  const btnBaseStyle = { height: 44, borderRadius: roundness * 2, alignItems: 'center' as const, justifyContent: 'center' as const, flexDirection: 'row' as const, marginBottom: 8 }
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents={'box-none'}>
@@ -115,32 +113,22 @@ export const RatingPromptComponent: React.FC<Props> = ({ theme, onDismiss }) => 
           <Text style={{ fontSize: fontSizes.h2, fontWeight: '700', color: colors.text, marginBottom: 8 }}>
             {t('ratingPrompt.title')}
           </Text>
-          <Text style={{ fontSize: fontSizes.p, color: colors.text, opacity: 0.85, lineHeight: 21, marginBottom: 20 }}>
+          <Text style={{ fontSize: fontSizes.p, color: colors.text, opacity: 0.85, lineHeight: 21, marginBottom: 18 }}>
             {t('ratingPrompt.message')}
           </Text>
-          <TouchableRipple
-            rippleColor={colors.ripple}
-            onPress={handleRate}
-            style={{
-              height: 46,
-              borderRadius: roundness * 2,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
-              marginBottom: 10,
-            }}>
+          <TouchableRipple rippleColor={colors.ripple} onPress={handleRate} style={[btnBaseStyle, { backgroundColor: colors.primary }]}>
             <>
               <Icon name={'external-link'} size={16} color={btnTextColor} style={{ marginRight: 8 }} />
-              <Text style={{ fontSize: fontSizes.p, fontWeight: 'bold', color: btnTextColor }}>
-                {t('ratingPrompt.rate')}
-              </Text>
+              <Text style={{ fontSize: fontSizes.p, fontWeight: 'bold', color: btnTextColor }}>{t('ratingPrompt.rate')}</Text>
             </>
           </TouchableRipple>
-          <TouchableRipple
-            rippleColor={colors.ripple}
-            onPress={handleLater}
-            style={{ height: 40, borderRadius: roundness * 2, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableRipple rippleColor={colors.ripple} onPress={handleSupport} style={[btnBaseStyle, { borderWidth: 1, borderColor: colors.primary }]}>
+            <>
+              <Icon name={'heart'} size={16} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={{ fontSize: fontSizes.p, fontWeight: 'bold', color: colors.primary }}>{t('ratingPrompt.support')}</Text>
+            </>
+          </TouchableRipple>
+          <TouchableRipple rippleColor={colors.ripple} onPress={handleLater} style={{ height: 38, borderRadius: roundness * 2, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: fontSizes.p, color: colors.faded }}>{t('ratingPrompt.later')}</Text>
           </TouchableRipple>
         </View>

@@ -34,7 +34,7 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import { AboutView, ImageModal, ProfileView, SettingsView, ThemeView } from './view'
+import { AboutView, ImageModal, ProfileView, SettingsView, SupportView, ThemeView } from './view'
 
 type Props = {
   config: any
@@ -167,6 +167,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
 
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
   const About = ({ navigation }) => <AboutView navigation={navigation} />
+  const Support = ({ navigation }) => <SupportView navigation={navigation} />
   const Settings = ({ navigation }) => (
     <SettingsView
       navigation={navigation}
@@ -311,6 +312,11 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         name={'about'}
         component={About}
         options={{ title: t('profile.about') }}
+      />
+      <RootStack.Screen
+        name={'support'}
+        component={Support}
+        options={{ title: t('profile.support') || 'Podpora vývoje' }}
       />
       <RootStack.Screen
         name={'llmLibrary'}

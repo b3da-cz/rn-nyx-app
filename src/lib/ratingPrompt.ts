@@ -1,6 +1,6 @@
 import { Storage } from './Storage'
 
-export type RatingAction = 'gplay' | 'later'
+export type RatingAction = 'gplay' | 'later' | 'support'
 
 export type RatingPromptState = {
   installedAt: number
@@ -28,7 +28,7 @@ export const shouldShowPrompt = (
     }
     return true
   }
-  if (state.lastAction === 'gplay') {
+  if (state.lastAction === 'gplay' || state.lastAction === 'support') {
     return now - state.lastPromptedAt >= SIX_WEEKS_MS
   }
   if (state.lastAction === 'later') {

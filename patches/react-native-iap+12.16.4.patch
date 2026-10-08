@@ -1,0 +1,20 @@
+diff --git a/node_modules/react-native-iap/android/src/play/java/com/dooboolab/rniap/RNIapModule.kt b/node_modules/react-native-iap/android/src/play/java/com/dooboolab/rniap/RNIapModule.kt
+index 54ca696..97c2727 100644
+--- a/node_modules/react-native-iap/android/src/play/java/com/dooboolab/rniap/RNIapModule.kt
++++ b/node_modules/react-native-iap/android/src/play/java/com/dooboolab/rniap/RNIapModule.kt
+@@ -1,5 +1,6 @@
+ package com.dooboolab.rniap
+ 
++import android.app.Activity
+ import android.util.Log
+ import com.android.billingclient.api.AcknowledgePurchaseParams
+ import com.android.billingclient.api.BillingClient
+@@ -461,7 +462,7 @@ class RNIapModule(
+         isOfferPersonalized: Boolean, // New parameter in V5
+         promise: Promise,
+     ) {
+-        val activity = currentActivity
++        val activity: Activity? = reactContext.currentActivity
+         if (activity == null) {
+             promise.safeReject(PromiseUtils.E_UNKNOWN, "getCurrentActivity returned null")
+             return

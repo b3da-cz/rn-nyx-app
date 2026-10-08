@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
-import { IconButton } from 'react-native-paper'
-import { SectionHeaderComponent, UserIconComponent, UserRowComponent } from '../component'
+import { ProfileActionsComponent, SectionHeaderComponent, UserIconComponent, UserRowComponent } from '../component'
 import { formatDate, MainContext, Nyx, t, Theme, LayoutAnimConf } from '../lib'
 
 type Props = {
@@ -13,6 +12,8 @@ type State = {
   username: string
   activeFriends: any[]
   theme?: Theme
+  containerWidth: number
+  userInfoWidth: number
 }
 export class ProfileView extends Component<Props> {
   static contextType = MainContext
@@ -25,6 +26,8 @@ export class ProfileView extends Component<Props> {
       username: '',
       activeFriends: [],
       theme: undefined,
+      containerWidth: 0,
+      userInfoWidth: 0,
     }
   }
 
@@ -57,50 +60,30 @@ export class ProfileView extends Component<Props> {
     }
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%', padding: theme.metrics.blocks.medium }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.metrics.blocks.xlarge }}>
-          <UserIconComponent username={username} marginRight={10} />
-          <View>
-            <Text style={{ backgroundColor: theme.colors.background, fontSize: theme.metrics.fontSizes.h1 }}>
-              {username}
-            </Text>
-            <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
+        <View
+          onLayout={e => this.setState({ containerWidth: e.nativeEvent.layout.width })}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.metrics.blocks.xlarge }}>
+          <View
+            onLayout={e => this.setState({ userInfoWidth: e.nativeEvent.layout.width })}
+            style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <UserIconComponent username={username} marginRight={10} />
+            <View>
+              <Text style={{ backgroundColor: theme.colors.background, fontSize: theme.metrics.fontSizes.h1 }}>
+                {username}
+              </Text>
+              <Text style={{ fontSize: theme.metrics.fontSizes.small, marginTop: -5 }}>{`v${this.nyx?.appVersion}`}</Text>
+            </View>
           </View>
-          <View style={{ marginLeft: 'auto', flexDirection: 'row', marginTop: -20 }}>
-            {!!(this.context as any)?.config?.isLlmEnabled && (
-              <IconButton
-                icon={'chip'}
-                size={24}
-                color={theme.colors.text}
-                style={{ marginRight: 10 }}
-                onPress={() => this.props.navigation.push('llmLibrary')}
-                rippleColor={theme.colors.ripple}
-              />
-            )}
-            <IconButton
-              icon={'github'}
-              size={24}
-              color={theme.colors.text}
-              style={{ marginRight: 10 }}
-              onPress={() => this.props.navigation.push('about')}
-              rippleColor={theme.colors.ripple}
-            />
-            <IconButton
-              icon={'palette-advanced'}
-              size={24}
-              color={theme.colors.text}
-              style={{ marginRight: 10 }}
-              onPress={() => this.props.navigation.push('theme')}
-              rippleColor={theme.colors.ripple}
-            />
-            <IconButton
-              icon={'cog-outline'}
-              size={24}
-              color={theme.colors.text}
-              style={{ marginRight: 10 }}
-              onPress={() => this.props.navigation.push('settings')}
-              rippleColor={theme.colors.ripple}
-            />
-          </View>
+          <ProfileActionsComponent
+            navigation={this.props.navigation}
+            theme={theme}
+            isLlmEnabled={!!(this.context as any)?.config?.isLlmEnabled}
+            availableWidth={
+              this.state.containerWidth > 0 && this.state.userInfoWidth > 0
+                ? this.state.containerWidth - this.state.userInfoWidth - 10
+                : undefined
+            }
+          />
         </View>
         <View>
           <SectionHeaderComponent title={t('friends')} backgroundColor={theme.colors.tertiary} />

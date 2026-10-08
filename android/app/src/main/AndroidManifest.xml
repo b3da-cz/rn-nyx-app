@@ -3,6 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <!-- Merged in by react-native-blob-util's manifest; the app only uses its own
          cache dir + share, so scoped-storage permissions are not needed. -->

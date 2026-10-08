@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.0
+- podpora vývoje aplikace formou In-App nákupů na Google Play
+- ikona podpory v profilu vedle O aplikaci a responsivní sbalení řady ikon do kontextového menu pod 3 svislé tečky na menších displejích
+
 ## 0.20.0
 - výzva k hodnocení na Google Play (vyskakovací karta zespodu displeje s možností ohodnotit nebo odložit na později)
 

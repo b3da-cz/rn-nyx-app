@@ -234,6 +234,10 @@
       "cs": "O aplikaci",
       "en": "About"
     },
+    "support": {
+      "cs": "Podpora vývoje",
+      "en": "Support development"
+    },
     "settings": {
       "cs": "Nastavení",
       "en": "Settings"
@@ -1011,16 +1015,118 @@
       "en": "Enjoying Nnn?"
     },
     "message": {
-      "cs": "Pokud vám aplikace dělá radost, budeme moc rádi za krátké hodnocení na Google Play. Pomáhá nám to v dalším vývoji!",
-      "en": "If you are enjoying the app, please consider leaving a rating on Google Play. It helps development and other users!"
+      "cs": "Pokud vám aplikace dělá radost, budeme moc rádi za krátké hodnocení na Google Play. Případně můžete podpořit vývoj přímo!",
+      "en": "If you are enjoying the app, please consider leaving a rating on Google Play. Alternatively, you can support development directly!"
     },
     "rate": {
       "cs": "Ohodnotit na Google Play",
       "en": "Rate on Google Play"
     },
+    "support": {
+      "cs": "Podpořit vývoj",
+      "en": "Support development"
+    },
     "later": {
       "cs": "Později",
       "en": "Later"
+    }
+  },
+  "support": {
+    "title": {
+      "cs": "Podpora vývoje",
+      "en": "Support development"
+    },
+    "description": {
+      "cs": "Nnn je zdarma a open-source bez reklam. Pokud chcete podpořit vývoj a provoz aplikace, můžete pozvat vývojáře na něco dobrého:",
+      "en": "Nnn is free and open-source without ads. If you would like to support the development and maintenance of the app, you can treat the developer to something nice:"
+    },
+    "thankYouTitle": {
+      "cs": "Děkujeme!",
+      "en": "Thank you!"
+    },
+    "thankYou": {
+      "cs": "Moc děkujeme za vaši podporu! Velice si toho vážíme.",
+      "en": "Thank you so much for your support! We truly appreciate it."
+    },
+    "unavailable": {
+      "cs": "Platby nejsou v tomto zařízení momentálně dostupné.",
+      "en": "In-app purchases are not currently available on this device."
+    },
+    "error": {
+      "cs": "Při platbě došlo k chybě.",
+      "en": "An error occurred during purchase."
+    },
+    "products": {
+      "kafe": {
+        "title": {
+          "cs": "Kafe pro vývojáře",
+          "en": "Coffee for dev"
+        },
+        "desc": {
+          "cs": "Espresso na posílení",
+          "en": "An espresso boost"
+        }
+      },
+      "aglio_olio": {
+        "title": {
+          "cs": "Aglio Olio",
+          "en": "Aglio Olio"
+        },
+        "desc": {
+          "cs": "Talíř česnekových špaget",
+          "en": "Garlic & oil spaghetti"
+        }
+      },
+      "burger": {
+        "title": {
+          "cs": "Burger",
+          "en": "Burger"
+        },
+        "desc": {
+          "cs": "Poctivý burger s hranolkami",
+          "en": "Juicy burger with fries"
+        }
+      },
+      "vegeburger": {
+        "title": {
+          "cs": "Vegeburger",
+          "en": "Vegeburger"
+        },
+        "desc": {
+          "cs": "Bezmasá dobrota",
+          "en": "Plant-based burger"
+        }
+      },
+      "pizza_vegetariana": {
+        "title": {
+          "cs": "Pizza Vegetariana",
+          "en": "Pizza Vegetariana"
+        },
+        "desc": {
+          "cs": "Křupavá zeleninová pizza",
+          "en": "Crispy vegetarian pizza"
+        }
+      },
+      "pizza_prosciutto_crudo": {
+        "title": {
+          "cs": "Pizza Prosciutto Crudo",
+          "en": "Pizza Prosciutto Crudo"
+        },
+        "desc": {
+          "cs": "S pravým italským prosciuttem",
+          "en": "With Italian prosciutto"
+        }
+      },
+      "sushi": {
+        "title": {
+          "cs": "Sushi",
+          "en": "Sushi"
+        },
+        "desc": {
+          "cs": "Porce maki a nigiri",
+          "en": "A portion of maki & nigiri"
+        }
+      }
     }
   }
 }

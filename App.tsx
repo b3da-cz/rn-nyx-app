@@ -236,7 +236,14 @@ const App: () => ReactNode = () => {
                     onFiltersReload={() => loadStorage({ getConfig: false })}
                   />
                 </NavigationContainer>
-                <RatingPromptComponent theme={theme} />
+                <RatingPromptComponent
+                  theme={theme}
+                  onSupport={() => {
+                    if (navigationRef.isReady()) {
+                      ;(navigationRef.current as any)?.navigate('support')
+                    }
+                  }}
+                />
               </UnreadContextProvider>
             </MainContext.Provider>
           )}

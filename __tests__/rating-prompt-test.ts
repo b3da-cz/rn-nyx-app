@@ -89,4 +89,25 @@ describe('ratingPrompt logic', () => {
       expect(shouldShowPrompt(laterState, newVersion, day1)).toBe(true)
     })
   })
+
+  describe('after user tapped support', () => {
+    const supportState: RatingPromptState = {
+      installedAt: baseTime - SEVEN_DAYS_MS,
+      isFreshInstall: false,
+      lastAction: 'support',
+      lastPromptedAt: baseTime,
+      lastPromptedVersion: currentVersion,
+    }
+
+    it('does not show before 6 weeks', () => {
+      const fiveWeeks = baseTime + 5 * 7 * 24 * 60 * 60 * 1000
+      expect(shouldShowPrompt(supportState, currentVersion, fiveWeeks)).toBe(false)
+    })
+
+    it('shows again after 6 weeks', () => {
+      const sixWeeks = baseTime + SIX_WEEKS_MS
+      expect(shouldShowPrompt(supportState, currentVersion, sixWeeks)).toBe(true)
+    })
+  })
 })
+
