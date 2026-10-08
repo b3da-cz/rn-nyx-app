@@ -90,7 +90,7 @@ export class LoginView extends Component<Props> {
             onPress={() =>
               Linking.openURL(
                 confirmationCode && confirmationCode.length > 0
-                  ? `https://nyx.cz/profile/${username.toUpperCase()}/settings/authorizations`
+                  ? `https://nyx.cz/profile/${username.toUpperCase()}/settings/linked-apps`
                   : 'https://nyx.cz',
               ).catch(() => null)
             }>
@@ -115,7 +115,7 @@ export class LoginView extends Component<Props> {
               }}>
               <Text
                 onPress={() =>
-                  Linking.openURL(`https://nyx.cz/profile/${username.toUpperCase()}/settings/authorizations`).catch(
+                  Linking.openURL(`https://nyx.cz/profile/${username.toUpperCase()}/settings/linked-apps`).catch(
                     () => null,
                   )
                 }

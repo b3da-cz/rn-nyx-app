@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.3
+- aktualizace odkazu pro autorizaci aplikace na přihlašovací obrazovce (nastavení propojených aplikací na Nyx.cz)
+
+## 0.19.2
+- oprava nefunkčního Android gesta zpět po návratu aplikace z pozadí (přepsání invokeDefaultOnBackPressed v MainActivity a obnova callbacku při onResume, fallback v NestedBackHandler)
+
 ## 0.19.1
 - oprava vykreslování avatarů uživatelů ve výsledcích LLM (zamezení konfliktu s označením textu na Androidu, explicitní předávání nastavení a robustnější extrakce uživatelských jmen)
 
