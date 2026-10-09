@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { BackHandler, Platform } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FAB, Portal } from 'react-native-paper'
 
@@ -39,6 +39,7 @@ export const FabComponent = ({
   onPress,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
+  const isFocused = useIsFocused()
   const { bottom: insetBottom } = useSafeAreaInsets()
   useFocusEffect(
     useCallback(() => {
@@ -56,10 +57,16 @@ export const FabComponent = ({
     }, [isOpen]),
   )
 
+  useEffect(() => {
+    if (!isFocused && isOpen) {
+      setIsOpen(false)
+    }
+  }, [isFocused])
+
   return (
     <Portal>
       <FAB.Group
-        visible={isVisible}
+        visible={Boolean(isVisible && isFocused)}
         open={isOpen}
         icon={isOpen ? iconOpen : iconClosed}
         fabStyle={{ backgroundColor }}

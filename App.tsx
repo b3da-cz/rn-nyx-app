@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Linking, LogBox, Platform, UIManager, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -12,10 +12,11 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import { Bugfender } from '@bugfender/rn-bugfender'
-import { confirm, LoaderComponent, NestedBackHandler, RatingPromptComponent } from './src/component'
+import { confirm, LoaderComponent, NestedBackHandler, RatingPromptComponent, ShareTargetDialog, ShareDestination } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
+  getInitialShare,
   importTheme,
   initialConfig,
   initFCM,
@@ -26,7 +27,9 @@ import {
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
   setAppLanguage,
+  SharedData,
   Storage,
+  subscribeShareReceived,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -62,9 +65,11 @@ const App: () => ReactNode = () => {
   const [config, setConfig] = useState<MainContextConfig>(initialConfig)
   const [filters, setFilters] = useState([])
   const [blockedUsers, setBlockedUsers] = useState([])
-  const refs = {}
+  const refs = useRef<any>({}).current
   const systemTheme = useColorScheme()
   const themeType = config.theme === 'system' ? systemTheme : config.theme
+  const [sharedData, setSharedData] = useState<SharedData | null>(null)
+  const [isShareDialogVisible, setIsShareDialogVisible] = useState(false)
 
   useEffect(() => {
     Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
@@ -72,6 +77,78 @@ const App: () => ReactNode = () => {
       Linking.removeAllListeners('url')
     }
   })
+
+  useEffect(() => {
+    if (!isAppLoaded || !isAuthenticated) return
+    getInitialShare().then(data => {
+      if (data && (data.text || data.file)) {
+        setSharedData(data)
+        setIsShareDialogVisible(true)
+      }
+    })
+    const unsub = subscribeShareReceived(data => {
+      if (data && (data.text || data.file)) {
+        setSharedData(data)
+        setIsShareDialogVisible(true)
+      }
+    })
+    return unsub
+  }, [isAppLoaded, isAuthenticated])
+
+  const handleShareDestination = (dest: ShareDestination, data: SharedData) => {
+    setIsShareDialogVisible(false)
+    setSharedData(null)
+    if (!navigationRef.isReady()) return
+    const isGallery = (navigationRef.getCurrentRoute() as any)?.name === 'gallery'
+    if (isGallery) {
+      navigationRef.goBack()
+    }
+    const doNavigate = () => {
+      if (!navigationRef.isReady()) return
+      const sharedAt = Date.now()
+      if (dest.type === 'mail') {
+        const mailParams = {
+          sharedText: data.text,
+          sharedFile: data.file,
+          sharedAt,
+        }
+        const currentRoute = (navigationRef.getCurrentRoute() as any)?.name
+        if (currentRoute && currentRoute !== 'tabs') {
+          ;(navigationRef.current as any)?.navigate('tabs')
+        }
+        const mailRoute = refs?.tabState?.routes?.find((r: any) => r.name === 'mailStack')
+        const targetKey = mailRoute?.key || 'mailStack'
+        if (refs?.jumpTo) {
+          refs.jumpTo(targetKey)
+        }
+        if (refs?.tabNav?.navigate) {
+          refs.tabNav.navigate('mailStack', { screen: 'mail', params: mailParams })
+        } else if (refs?.nav?.navigate) {
+          refs.nav.navigate('mailStack', { screen: 'mail', params: mailParams })
+        } else {
+          ;(navigationRef.current as any)?.navigate('tabs', {
+            screen: 'mailStack',
+            params: { screen: 'mail', params: mailParams },
+          })
+        }
+        setTimeout(() => {
+          refs?.MailView?.handleSharedContent?.(mailParams)
+        }, 300)
+      } else if (dest.type === 'discussion') {
+        ;(navigationRef.current as any)?.navigate('discussion', {
+          discussionId: dest.discussionId,
+          sharedText: data.text,
+          sharedFile: data.file,
+          sharedAt,
+        })
+      }
+    }
+    if (isGallery) {
+      setTimeout(doNavigate, 150)
+    } else {
+      doNavigate()
+    }
+  }
 
   const initNyx = async (username?: string, isAutologin = true) => {
     if (!username) {
@@ -245,6 +322,17 @@ const App: () => ReactNode = () => {
                     if (navigationRef.isReady()) {
                       ;(navigationRef.current as any)?.navigate('support')
                     }
+                  }}
+                />
+                <ShareTargetDialog
+                  visible={isShareDialogVisible}
+                  sharedData={sharedData}
+                  nyx={nyx}
+                  theme={theme}
+                  onSelectDestination={handleShareDestination}
+                  onDismiss={() => {
+                    setIsShareDialogVisible(false)
+                    setSharedData(null)
                   }}
                 />
               </UnreadContextProvider>

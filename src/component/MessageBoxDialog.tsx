@@ -3,6 +3,7 @@ import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation, Keyboard, 
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
+import ImageResizer from '@bam.tech/react-native-image-resizer'
 import {
   MainContext,
   createIssue,
@@ -12,8 +13,13 @@ import {
   pickFileAndResizeJpegs,
   isVideoUpload,
   videoTagFromUpload,
+  isResizableImageUpload,
+  jpegUploadName,
+  clampJpegQuality,
   t,
   Nyx,
+  Storage,
+  asFileUri,
 } from '../lib'
 
 type Props = {
@@ -54,6 +60,7 @@ export class MessageBoxDialog extends Component<Props> {
   sizes: any
   keyboardShowSub?: { remove: () => void }
   keyboardHideSub?: { remove: () => void }
+  _isUploadingCustomFile = false
   constructor(props) {
     super(props)
     this.state = {
@@ -97,6 +104,19 @@ export class MessageBoxDialog extends Component<Props> {
     this.keyboardHideSub = Keyboard.addListener('keyboardDidHide', () => {
       this.setState({ keyboardHeight: 0 })
     })
+    this.loadUploadSettings()
+  }
+
+  async loadUploadSettings() {
+    try {
+      const settings = await Storage.getUploadSettings()
+      if (settings) {
+        this.setState({
+          selectedSize: settings.size !== undefined ? settings.size : this.state.selectedSize,
+          selectedQuality: settings.quality !== undefined ? settings.quality : this.state.selectedQuality,
+        })
+      }
+    } catch (_) {}
   }
 
   componentWillUnmount() {
@@ -109,6 +129,7 @@ export class MessageBoxDialog extends Component<Props> {
     if (this.props.params.mailRecipient?.length && !isFromFab) {
       this.setState({ selectedRecipient: this.props.params.mailRecipient, searchPhrase: '', users: [] })
     }
+    this.loadUploadSettings()
     this.fetchUploadedFiles()
     setTimeout(() => this.refMsgBox?.focus(), 100)
   }
@@ -139,9 +160,20 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   async fetchUploadedFiles() {
-    this.setState({ isUploading: true })
-    const res = await this.props.nyx.api.getWaitingFiles(this.props.params?.discussionId ?? 0)
-    this.setState({ isUploading: false, uploadedFiles: res?.waiting_files || [] })
+    try {
+      const res = await this.props.nyx.api.getWaitingFiles(this.props.params?.discussionId ?? 0)
+      if (res?.waiting_files) {
+        this.setState(prev => {
+          const existingIds = new Set((res.waiting_files || []).map((f: any) => f.id))
+          const justUploaded = (prev.uploadedFiles || []).filter((f: any) => !existingIds.has(f.id))
+          return {
+            uploadedFiles: [...res.waiting_files, ...justUploaded],
+          }
+        })
+      }
+    } catch (e) {
+      console.warn('[MessageBoxDialog] fetchUploadedFiles error:', e)
+    }
   }
 
   async searchUsername(searchPhrase) {
@@ -163,10 +195,12 @@ export class MessageBoxDialog extends Component<Props> {
 
   selectSize = size => {
     this.setState({ selectedSize: size, isMenuVisible: false, isQualityMenuVisible: false })
+    Storage.setUploadSettings({ size, quality: this.state.selectedQuality })
   }
 
   selectQuality = quality => {
     this.setState({ selectedQuality: quality, isQualityMenuVisible: false, isMenuVisible: false })
+    Storage.setUploadSettings({ size: this.state.selectedSize, quality })
   }
 
   async appendFile() {
@@ -207,6 +241,98 @@ export class MessageBoxDialog extends Component<Props> {
     } catch (e) {
       this.setState({ isUploading: false })
       console.warn(e)
+    }
+  }
+
+  async uploadCustomFile(file: { uri: string; type: string; name: string; size?: number }) {
+    if (!file?.uri || this._isUploadingCustomFile) {
+      return
+    }
+    this._isUploadingCustomFile = true
+    this.setState({ isUploading: true })
+    try {
+      let size = this.state.selectedSize
+      let quality = this.state.selectedQuality
+      try {
+        const saved = await Storage.getUploadSettings()
+        if (saved) {
+          if (saved.size !== undefined) size = saved.size
+          if (saved.quality !== undefined) quality = saved.quality
+          this.setState({ selectedSize: size, selectedQuality: quality })
+        }
+      } catch (_) {}
+      let targetFile: any = { ...file }
+      if (!targetFile.type || targetFile.type === '*/*') {
+        const lowerName = (targetFile.name || '').toLowerCase()
+        if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) targetFile.type = 'image/jpeg'
+        else if (lowerName.endsWith('.png')) targetFile.type = 'image/png'
+        else if (lowerName.endsWith('.gif')) targetFile.type = 'image/gif'
+        else if (lowerName.endsWith('.webp')) targetFile.type = 'image/webp'
+        else if (lowerName.endsWith('.mp4')) targetFile.type = 'video/mp4'
+      }
+      if (isResizableImageUpload(targetFile) && size !== 'Original') {
+        const dim = Number(size)
+        if (Number.isFinite(dim) && dim > 0) {
+          try {
+            const resized = await ImageResizer.createResizedImage(
+              targetFile.uri,
+              dim,
+              dim,
+              'JPEG',
+              clampJpegQuality(quality),
+              0,
+              undefined,
+              false,
+              { onlyScaleDown: true },
+            )
+            if (resized) {
+              targetFile = {
+                uri: asFileUri(resized.uri, resized.path),
+                type: 'image/jpeg',
+                name: jpegUploadName(targetFile.name),
+                size: resized.size != null ? resized.size : targetFile.size,
+              }
+            }
+          } catch (resizeErr) {
+            console.warn('[MessageBoxDialog] Resize error, using original:', resizeErr)
+          }
+        }
+      }
+      const discId = this.props.params?.discussionId
+      const res = await this.props.nyx.api.uploadFile(targetFile, discId)
+      if (res?.id && res.id > 0) {
+        LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+        const uploaded = {
+          ...res,
+          size: targetFile.size != null ? targetFile.size : res.size,
+        }
+        this.setState(prev => {
+          const next: Partial<State> = {
+            isUploading: false,
+            uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
+              ? prev.uploadedFiles
+              : [...(prev.uploadedFiles || []), uploaded],
+          }
+          if (isVideoUpload(uploaded)) {
+            const tag = videoTagFromUpload(uploaded)
+            if (tag) {
+              next.message = `${prev.message}${prev.message?.length > 0 ? '\n' : ''}${tag}`
+            }
+          }
+          return next
+        })
+        Bugfender.log('INFO', 'upload shared file ok')
+        await this.fetchUploadedFiles()
+      } else {
+        this.setState({ isUploading: false })
+        Bugfender.warn('WARNING', 'upload shared file not ok? ' + (res?.error ? res.error : ''))
+      }
+    } catch (e) {
+      this.setState({ isUploading: false })
+      console.warn(e)
+    } finally {
+      this._isUploadingCustomFile = false
+      this.setState({ isUploading: false })
     }
   }
 

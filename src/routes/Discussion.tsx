@@ -7,7 +7,7 @@ export const Discussion = ({ navigation, route }) => {
   const viewRef = useRef<DiscussionView>(null)
   const insets = useSafeAreaInsets()
   const bottomInset = Math.max(insets.bottom, androidStackBottomInset)
-  const { discussionId, postId, showBoard, showHeader, showReplies, showStats, jumpToLastSeen, lastSeenPostId } =
+  const { discussionId, postId, showBoard, showHeader, showReplies, showStats, jumpToLastSeen, lastSeenPostId, sharedText, sharedFile, sharedAt } =
     route.params
   return (
     <DiscussionView
@@ -22,6 +22,9 @@ export const Discussion = ({ navigation, route }) => {
       showStats={showStats}
       jumpToLastSeen={jumpToLastSeen}
       lastSeenPostId={lastSeenPostId}
+      sharedText={sharedText}
+      sharedFile={sharedFile}
+      sharedAt={sharedAt}
       onDiscussionFetched={({ title, uploadedFiles }) => navigation.setOptions({ title })} //todo show uploaded files len if any
       onImages={(images, imgIndex) =>
         navigation.navigate('gallery', {

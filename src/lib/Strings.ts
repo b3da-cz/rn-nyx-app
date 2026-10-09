@@ -26,23 +26,18 @@ export const getActiveLanguage = (): 'cs' | 'en' => {
 
 export const loc = locale.substr(0, 2)
 
-export function t(key) {
-  // @ts-ignore
-  this.s = { ...strings } // eval cant see imported
+export function t(key: string): any {
+  if (!key || typeof key !== 'string') return ''
   const currentLoc = getActiveLanguage()
   try {
     const keys = key.split('.')
-    let res = 'this.s'
-    if (keys?.length > 1) {
-      for (const k of keys) {
-        res += `['${k}']`
-      }
-      // eslint-disable-next-line no-eval
-      return eval(res)[currentLoc] // used only for known strings
-    } else {
-      return strings[key]?.[currentLoc] || strings[key]?.cs || strings[key]?.en
+    let res: any = strings
+    for (const k of keys) {
+      if (res === undefined || res === null) return ''
+      res = res[k]
     }
+    return res?.[currentLoc] || res?.cs || res?.en || (typeof res === 'string' ? res : '')
   } catch (e) {
-    console.warn(e)
+    return ''
   }
 }

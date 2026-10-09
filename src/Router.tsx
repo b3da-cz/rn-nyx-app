@@ -79,8 +79,24 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
       nyx.api.getContext()
       switch (message.type) {
         case 'new_mail':
-          if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
-            setTimeout(() => nav.navigate('mailStack', { screen: 'mail' }), 300)
+          const navigateToMail = async () => {
+            const mailRoute = refs?.tabState?.routes?.find((r: any) => r.name === 'mailStack')
+            const targetKey = mailRoute?.key || 'mailStack'
+            if (refs?.jumpTo) {
+              refs.jumpTo(targetKey)
+            }
+            if (refs?.tabNav?.navigate) {
+              refs.tabNav.navigate('mailStack', { screen: 'mail' })
+            } else if (refs?.nav?.navigate) {
+              refs.nav.navigate('mailStack', { screen: 'mail' })
+            } else if (nav?.navigate) {
+              nav.navigate('mailStack', { screen: 'mail' })
+            }
+            await wait(200)
+            refs?.MailView?.getLatestMessages()
+          }
+          if (!message.isForegroundMsg) {
+            setTimeout(navigateToMail, 300)
           }
           if (message.isForegroundMsg) {
             showNotificationBanner({
@@ -89,9 +105,7 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
               tintColor: rgbToHex(theme.colors.secondary),
               icon: 'mail',
               onClick: async () => {
-                nav?.navigate('mailStack', { screen: 'mail' })
-                await wait()
-                refs?.MailView?.getLatestMessages()
+                await navigateToMail()
                 RNNotificationBanner.Dismiss()
               },
             })
@@ -158,12 +172,18 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
   const RootStack = createNativeStackNavigator()
   const Tab = createMaterialTopTabNavigator()
 
-  const renderTabBar = props =>
-    config.isNavbarExpandEnabled ? (
+  const renderTabBar = props => {
+    if (refs) {
+      refs.tabNav = props.navigation
+      refs.jumpTo = props.jumpTo
+      refs.tabState = props.state
+    }
+    return config.isNavbarExpandEnabled ? (
       <ExpandableTabBar {...props} config={config} theme={theme} />
     ) : (
       <MaterialTopTabBar {...props} />
     )
+  }
 
   const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
   const About = ({ navigation }) => <AboutView navigation={navigation} />
@@ -180,6 +200,9 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
 
   const TabContainer = ({ navigation }) => {
     nav = navigation
+    if (refs) {
+      refs.nav = navigation
+    }
     return (
       <Tab.Navigator
         initialRouteName={config.initialRouteName}

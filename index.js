@@ -13,14 +13,23 @@ import { Bugfender } from '@bugfender/rn-bugfender'
 import messaging from '@react-native-firebase/messaging'
 
 if (bugfenderKey) {
-  Bugfender.init({ appKey: bugfenderKey, overrideConsoleMethods: false })
+  Bugfender.init({ appKey: bugfenderKey, overrideConsoleMethods: false, printToConsole: false })
 }
 
+let inExceptionHandler = false
 const exceptionhandler = (error, isFatal) => {
-  if (isFatal) {
-    Bugfender.error('ERROR_FATAL', error.stack)
-  } else {
-    Bugfender.error('ERROR', error.stack)
+  if (inExceptionHandler) return
+  inExceptionHandler = true
+  try {
+    const errorMsg = error?.stack || error?.message || String(error)
+    if (isFatal) {
+      Bugfender.fatal('ERROR_FATAL', errorMsg)
+    } else {
+      Bugfender.error('ERROR', errorMsg)
+    }
+  } catch (_) {
+  } finally {
+    inExceptionHandler = false
   }
 }
 setJSExceptionHandler(exceptionhandler, true)

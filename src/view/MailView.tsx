@@ -17,6 +17,9 @@ type Props = {
   onImages: Function
   onNavigation: Function
   navigation: any
+  sharedText?: string
+  sharedFile?: any
+  sharedAt?: number
 }
 type State = {
   activeRecipient: string
@@ -37,6 +40,9 @@ export class MailView extends Component<Props> {
   navBlurListener?: Function
   navTabPressListener?: Function
   _revealQueue: Promise<any> = Promise.resolve()
+  _lastHandledSharedText?: string
+  _lastHandledSharedFile?: any
+  _lastHandledSharedAt?: number
   constructor(props) {
     super(props)
     this.state = {
@@ -51,8 +57,12 @@ export class MailView extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
+    if (this.context?.refs) {
+      this.context.refs.MailView = this
+    }
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
+      this.handleSharedContent()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
@@ -65,9 +75,45 @@ export class MailView extends Component<Props> {
     })
     this.setTheme()
     setTimeout(() => this.getLatestMessages(), 100)
+    this.handleSharedContent()
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    this.handleSharedContent()
+  }
+
+  handleSharedContent(overrideParams?: { sharedText?: string; sharedFile?: any; sharedAt?: number }) {
+    const sharedText = overrideParams?.sharedText ?? this.props.sharedText
+    const sharedFile = overrideParams?.sharedFile ?? this.props.sharedFile
+    const sharedAt = overrideParams?.sharedAt ?? this.props.sharedAt
+    const isNewShare = Boolean(sharedAt && sharedAt !== this._lastHandledSharedAt)
+    const hasText = Boolean(sharedText && (sharedText !== this._lastHandledSharedText || isNewShare))
+    const hasFile = Boolean(sharedFile && (sharedFile !== this._lastHandledSharedFile || isNewShare))
+    if (hasText || hasFile) {
+      this._lastHandledSharedText = sharedText
+      this._lastHandledSharedFile = sharedFile
+      this._lastHandledSharedAt = sharedAt
+      const tryOpen = (attempt = 0) => {
+        if (this.refMsgBoxDialog) {
+          this.refMsgBoxDialog.showDialog()
+          if (sharedText) {
+            this.refMsgBoxDialog.addText(sharedText)
+          }
+          if (sharedFile) {
+            this.refMsgBoxDialog.uploadCustomFile(sharedFile)
+          }
+        } else if (attempt < 10) {
+          setTimeout(() => tryOpen(attempt + 1), 200)
+        }
+      }
+      setTimeout(() => tryOpen(), 300)
+    }
   }
 
   componentWillUnmount() {
+    if (this.context?.refs?.MailView === this) {
+      this.context.refs.MailView = null
+    }
     if (this.navFocusListener) {
       this.navFocusListener()
     }

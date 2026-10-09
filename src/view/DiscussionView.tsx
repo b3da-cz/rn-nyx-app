@@ -50,6 +50,9 @@ type Props = {
   showStats?: boolean
   jumpToLastSeen?: boolean
   lastSeenPostId?: number
+  sharedText?: string
+  sharedFile?: any
+  sharedAt?: number
   onDiscussionFetched: Function
   onImages: Function
   // onHeaderSwipe: Function,
@@ -106,6 +109,9 @@ export class DiscussionView extends Component<Props> {
   refMsgBoxDialog: any
   navFocusListener?: Function
   navBlurListener?: Function
+  _lastHandledSharedText?: string
+  _lastHandledSharedFile?: any
+  _lastHandledSharedAt?: number
   constructor(props) {
     super(props)
     this.state = {
@@ -153,6 +159,7 @@ export class DiscussionView extends Component<Props> {
         this.setState({ isSubmenuVisible: true })
       }
       this.revealLoadedPlaceholders()
+      this.handleSharedContent()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isScreenFocused: false, isSubmenuVisible: false })
@@ -177,6 +184,41 @@ export class DiscussionView extends Component<Props> {
           this.jumpToLastSeen()
         }
       })
+    }
+    this.handleSharedContent()
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.props.id && this.props.id !== prevProps.id) {
+      this.setState({ discussionId: this.props.id, posts: [], isFetching: true }, () => {
+        this.reloadDiscussionLatest(true)
+      })
+    }
+    this.handleSharedContent()
+  }
+
+  handleSharedContent() {
+    const isNewShare = Boolean(this.props.sharedAt && this.props.sharedAt !== this._lastHandledSharedAt)
+    const hasText = Boolean(this.props.sharedText && (this.props.sharedText !== this._lastHandledSharedText || isNewShare))
+    const hasFile = Boolean(this.props.sharedFile && (this.props.sharedFile !== this._lastHandledSharedFile || isNewShare))
+    if (hasText || hasFile) {
+      this._lastHandledSharedText = this.props.sharedText
+      this._lastHandledSharedFile = this.props.sharedFile
+      this._lastHandledSharedAt = this.props.sharedAt
+      const tryOpen = (attempt = 0) => {
+        if (this.refMsgBoxDialog) {
+          this.refMsgBoxDialog.showDialog()
+          if (this.props.sharedText) {
+            this.refMsgBoxDialog.addText(this.props.sharedText)
+          }
+          if (this.props.sharedFile) {
+            this.refMsgBoxDialog.uploadCustomFile(this.props.sharedFile)
+          }
+        } else if (attempt < 10) {
+          setTimeout(() => tryOpen(attempt + 1), 200)
+        }
+      }
+      setTimeout(() => tryOpen(), 300)
     }
   }
 
@@ -874,7 +916,7 @@ export class DiscussionView extends Component<Props> {
           onCategoryId={id => this.bookmarkDiscussion(id)}
         />
         <FabComponent
-          isVisible={this.state.isSubmenuVisible}
+          isVisible={Boolean(this.state.isSubmenuVisible && this.state.isScreenFocused && this.props.navigation.isFocused())}
           iconOpen={isListing ? 'arrow-left' : 'message'}
           paddingBottom={this.config?.isBottomTabs ? 45 : 0}
           actions={this.getFabActions()}

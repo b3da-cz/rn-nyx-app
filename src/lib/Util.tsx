@@ -97,7 +97,7 @@ export const wait = async (ms = 100) => {
 //   </Portal>
 // )
 
-const asFileUri = (uri?: string, path?: string) => {
+export const asFileUri = (uri?: string, path?: string) => {
   const value = uri || path
   if (!value) {
     return value
@@ -115,19 +115,22 @@ export const pickFileAndResizeJpegs = async (size, quality = JPEG_QUALITY_DEFAUL
     })
     let resized: RNIRResponse | null = null
     if (isResizableImageUpload(file) && size !== 'Original') {
-      resized = await ImageResizer.createResizedImage(
-        file.uri,
-        size,
-        size,
-        'JPEG',
-        clampJpegQuality(quality),
-        0,
-        undefined,
-        false,
-        {
-          onlyScaleDown: true,
-        },
-      )
+      const dim = Number(size)
+      if (Number.isFinite(dim) && dim > 0) {
+        resized = await ImageResizer.createResizedImage(
+          file.uri,
+          dim,
+          dim,
+          'JPEG',
+          clampJpegQuality(quality),
+          0,
+          undefined,
+          false,
+          {
+            onlyScaleDown: true,
+          },
+        )
+      }
     }
     return {
       uri: resized ? asFileUri(resized.uri, resized.path) : file.uri,

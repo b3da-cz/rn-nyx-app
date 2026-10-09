@@ -563,10 +563,6 @@
     "cs": "Záhlaví",
     "en": "Header"
   },
-  "share": {
-    "cs": "Sdílet",
-    "en": "Share"
-  },
   "copyUrl": {
     "cs": "Kopírovat odkaz",
     "en": "Copy link"
@@ -1151,6 +1147,54 @@
           "en": "A portion of maki & nigiri"
         }
       }
+    }
+  },
+  "share": {
+    "cs": "Sdílet",
+    "en": "Share",
+    "title": {
+      "cs": "Sdílet do Nyxu",
+      "en": "Share to Nyx"
+    },
+    "toClub": {
+      "cs": "Do klubu",
+      "en": "To club"
+    },
+    "toClubDesc": {
+      "cs": "Vybrat diskuzi / klub",
+      "en": "Choose discussion / club"
+    },
+    "toMail": {
+      "cs": "Do pošty",
+      "en": "To mail"
+    },
+    "toMailDesc": {
+      "cs": "Nová zpráva v poště",
+      "en": "New mail message"
+    },
+    "chooseClub": {
+      "cs": "Vyberte klub",
+      "en": "Choose club"
+    },
+    "searchClub": {
+      "cs": "Hledat klub...",
+      "en": "Search club..."
+    },
+    "noClubs": {
+      "cs": "Žádné kluby nenalezeny",
+      "en": "No clubs found"
+    },
+    "recentClubs": {
+      "cs": "Poslední navštívené",
+      "en": "Recently visited"
+    },
+    "bookmarks": {
+      "cs": "Záložky",
+      "en": "Bookmarks"
+    },
+    "searchResults": {
+      "cs": "Výsledky hledání",
+      "en": "Search results"
     }
   }
 }

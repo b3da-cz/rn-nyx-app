@@ -14,6 +14,7 @@ const StorageKeys = {
   ratingPrompt: 'ratingPrompt',
   supportPurchases: 'supportPurchases',
   lastPurchaseSync: 'lastPurchaseSync',
+  uploadSettings: 'uploadSettings',
 }
 
 const set = async (key, value) => {
@@ -85,6 +86,12 @@ const getLastPurchaseSync = async (): Promise<number> => (await get(StorageKeys.
 
 const setLastPurchaseSync = async (ts: number) => set(StorageKeys.lastPurchaseSync, ts)
 
+const getUploadSettings = async (): Promise<{ size?: string | number; quality?: number } | null> =>
+  get(StorageKeys.uploadSettings)
+
+const setUploadSettings = async (settings: { size?: string | number; quality?: number }) =>
+  set(StorageKeys.uploadSettings, settings)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -124,5 +131,7 @@ export const Storage = {
   setSupportPurchases,
   getLastPurchaseSync,
   setLastPurchaseSync,
+  getUploadSettings,
+  setUploadSettings,
   removeAll,
 }

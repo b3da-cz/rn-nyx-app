@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.0
+- sdílení textu a souborů (obrázky, videa, přílohy) z ostatních aplikací do Nyxu (do diskuzí i do pošty)
+- sdílení obrázků z interní galerie aplikace přímo do pošty s automatickým nahráním přílohy
+- dialog výběru cíle sdílení (diskuze / pošta) v designu aplikace s náhledem obsahu
+- výběr diskuze se seznamem 5 naposledy navštívených klubů a vyhledáváním
+- komprese a zmenšování sdílených obrázků podle nastavení v dialogu zprávy s ukládáním preferencí
+- oprava zobrazení a překrývání FAB tlačítek mezi diskuzí a poštou
+- oprava navigace do pošty ze sdílení i z in-app a systémových notifikací
+- oprava lokalizační funkce t() na Hermes enginu a zamezení rekurzivního pádu chybového handleru
+
 ## 0.21.3
 - zobrazení zakoupených položek podpory v profilu s odznáčky počtu kusů
 - možnost volby jazyka aplikace v nastavení (Auto / Čeština / English)
