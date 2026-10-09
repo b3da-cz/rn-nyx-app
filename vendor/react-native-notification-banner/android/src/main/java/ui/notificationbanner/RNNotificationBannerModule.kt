@@ -62,7 +62,16 @@ class RNNotificationBannerModule(reactContext: ReactApplicationContext) :
     }
 
     if (!tintColorValue.isNullOrEmpty()) {
-      alerter.setBackgroundColorInt(Color.parseColor(tintColorValue))
+      try {
+        alerter.setBackgroundColorInt(Color.parseColor(tintColorValue))
+      } catch (e: Exception) {
+        try {
+          val match = Regex("""\d+""").findAll(tintColorValue).map { it.value.toInt() }.toList()
+          if (match.size >= 3) {
+            alerter.setBackgroundColorInt(Color.rgb(match[0], match[1], match[2]))
+          }
+        } catch (_: Exception) {}
+      }
     }
 
     if (!dismissable) {

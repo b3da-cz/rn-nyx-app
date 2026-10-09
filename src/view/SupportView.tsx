@@ -3,7 +3,7 @@ import { Alert, ScrollView, View } from 'react-native'
 import { ActivityIndicator, Text, TouchableRipple } from 'react-native-paper'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import { FoodPictogramComponent, SectionHeaderComponent } from '../component'
-import { IapService, SUPPORT_PRODUCTS, SupportProduct, Styling, showNotificationBanner, t, useTheme } from '../lib'
+import { IapService, SUPPORT_PRODUCTS, SupportProduct, Styling, rgbToHex, showNotificationBanner, t, useTheme } from '../lib'
 
 type Props = {
   navigation: any
@@ -26,7 +26,14 @@ export const SupportView: React.FC<Props> = () => {
         () => {
           if (!mounted) return
           setPurchasingSku(null)
-          Alert.alert(t('support.thankYouTitle') || 'Děkujeme!', t('support.thankYou'))
+          showNotificationBanner({
+            title: t('support.thankYouTitle') || 'Děkujeme!',
+            body: t('support.thankYou') || 'Moc děkujeme za vaši podporu! Velice si toho vážíme.',
+            tintColor: rgbToHex(colors.primary),
+            textColor: '#FFFFFF',
+            icon: 'heart',
+            onClick: () => RNNotificationBanner.Dismiss(),
+          })
         },
         () => mounted && setPurchasingSku(null),
       )

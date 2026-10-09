@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.3
+- zobrazení zakoupených položek podpory v profilu s odznáčky počtu kusů
+- možnost volby jazyka aplikace v nastavení (Auto / Čeština / English)
+- poděkování po nákupu přes in-app notifikaci se srdíčkem
+- oprava pádu aplikace po nákupu při zobrazení in-app notifikace
+- periodická 24h synchronizace zakoupených položek z Google Play
+
 ## 0.21.2
 - vizuální odlišení nedostupných / nepotvrzených produktů v obrazovce podpory (snížená opacita, odstranění levého borderu, orientační cena se znakem ~)
 - in-app notifikace s pulzující chybovou ikonou při klepnutí na položku nedostupnou v dané oblasti

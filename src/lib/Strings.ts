@@ -8,11 +8,28 @@ export const locale =
       'cs_CZ'
     : NativeModules.I18nManager?.localeIdentifier || 'cs_CZ'
 
-const loc = locale.substr(0, 2)
+let appLanguage: 'auto' | 'cs' | 'en' = 'auto'
+
+export const setAppLanguage = (lang: string) => {
+  appLanguage = (lang as any) || 'auto'
+}
+
+export const getAppLanguage = (): string => appLanguage
+
+export const getActiveLanguage = (): 'cs' | 'en' => {
+  if (appLanguage === 'cs' || appLanguage === 'en') {
+    return appLanguage
+  }
+  const sys = (locale || '').substr(0, 2).toLowerCase()
+  return sys === 'cs' || sys === 'sk' ? 'cs' : 'en'
+}
+
+export const loc = locale.substr(0, 2)
 
 export function t(key) {
   // @ts-ignore
   this.s = { ...strings } // eval cant see imported
+  const currentLoc = getActiveLanguage()
   try {
     const keys = key.split('.')
     let res = 'this.s'
@@ -21,9 +38,9 @@ export function t(key) {
         res += `['${k}']`
       }
       // eslint-disable-next-line no-eval
-      return eval(res)[loc] // used only for known strings
+      return eval(res)[currentLoc] // used only for known strings
     } else {
-      return strings[key][loc]
+      return strings[key]?.[currentLoc] || strings[key]?.cs || strings[key]?.en
     }
   } catch (e) {
     console.warn(e)

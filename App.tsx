@@ -25,6 +25,7 @@ import {
   normalizeBookmarkSectionFilters,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
+  setAppLanguage,
   Storage,
   UnreadContextProvider,
   wait,
@@ -115,6 +116,7 @@ const App: () => ReactNode = () => {
 
   const loadConfig = async () => {
     const conf = (await Storage.getConfig()) || initialConfig
+    setAppLanguage(conf.language || 'auto')
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
@@ -151,6 +153,7 @@ const App: () => ReactNode = () => {
       llmSystemPrompt: conf.llmSystemPrompt || '',
       theme: conf.theme === undefined ? 'system' : conf.theme,
       themeOptions: conf.themeOptions === undefined ? { ...defaultThemeOptions } : conf.themeOptions,
+      language: conf.language || 'auto',
     })
     return conf
   }

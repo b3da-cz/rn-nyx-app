@@ -5,6 +5,7 @@ import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-i
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { clampJpegQuality, isResizableImageUpload, jpegUploadName, JPEG_QUALITY_DEFAULT } from './compose'
+import { rgbToHex } from './Palette'
 
 // ImageViewer treats IImageInfo width/height as the display size and never
 // scales up, so discussion thumbnail layout sizes must not be forwarded.
@@ -152,9 +153,9 @@ export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tin
   RNNotificationBanner.Show({
     title,
     subTitle: body,
-    titleColor: textColor,
-    subTitleColor: textColor,
-    tintColor,
+    titleColor: rgbToHex(textColor),
+    subTitleColor: rgbToHex(textColor),
+    tintColor: tintColor ? rgbToHex(tintColor) : undefined,
     duration: 5000,
     enableProgress: false,
     withIcon: true,

@@ -95,17 +95,11 @@ export const IBMColorPalette = {
 export const withAlpha = (rgb: string, alpha: number): string =>
   rgb.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
 
-export const rgbToHex = rgbStr => {
-  const [r, g, b] = rgbStr.replace('rgb(', '').replace(')', '').split(', ')
-  return (
-    '#' +
-    [r, g, b]
-      .map(x => {
-        const hex = Number(x).toString(16)
-        return hex.length === 1 ? '0' + hex : hex
-      })
-      .join('')
-  )
+export const rgbToHex = (rgbStr?: string) => {
+  if (!rgbStr || rgbStr.startsWith('#')) return rgbStr || ''
+  const m = rgbStr.match(/\d+/g)
+  if (!m || m.length < 3) return rgbStr
+  return '#' + m.slice(0, 3).map(x => Number(x).toString(16).padStart(2, '0')).join('')
 }
 
 export const createPalette = (

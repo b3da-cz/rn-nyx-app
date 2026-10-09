@@ -39,6 +39,7 @@ export type MainContextConfig = {
   llmSystemPrompt?: string
   theme: string
   themeOptions: ThemeOptions
+  language?: string
 }
 
 type MainContext = {
@@ -83,6 +84,7 @@ export const initialConfig: MainContextConfig = {
   llmSystemPrompt: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },
+  language: 'auto',
 }
 
 export function isTextSelectionEnabled(config?: { isTextSelectionEnabled?: boolean } | null) {

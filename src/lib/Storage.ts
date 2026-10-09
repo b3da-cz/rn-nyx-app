@@ -12,6 +12,8 @@ const StorageKeys = {
   llmPendingTasks: 'llmPendingTasks',
   llmPromptTemplates: 'llmPromptTemplates',
   ratingPrompt: 'ratingPrompt',
+  supportPurchases: 'supportPurchases',
+  lastPurchaseSync: 'lastPurchaseSync',
 }
 
 const set = async (key, value) => {
@@ -75,6 +77,14 @@ const getRatingPrompt = async () => get(StorageKeys.ratingPrompt)
 
 const setRatingPrompt = async state => set(StorageKeys.ratingPrompt, state)
 
+const getSupportPurchases = async (): Promise<Record<string, number>> => (await get(StorageKeys.supportPurchases)) || {}
+
+const setSupportPurchases = async (purchases: Record<string, number>) => set(StorageKeys.supportPurchases, purchases)
+
+const getLastPurchaseSync = async (): Promise<number> => (await get(StorageKeys.lastPurchaseSync)) || 0
+
+const setLastPurchaseSync = async (ts: number) => set(StorageKeys.lastPurchaseSync, ts)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -110,5 +120,9 @@ export const Storage = {
   setLlmPromptTemplates,
   getRatingPrompt,
   setRatingPrompt,
+  getSupportPurchases,
+  setSupportPurchases,
+  getLastPurchaseSync,
+  setLastPurchaseSync,
   removeAll,
 }

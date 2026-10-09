@@ -28,6 +28,7 @@ import {
   Nyx,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
+  setAppLanguage,
   timelineVisibleDayOptions,
 } from '../lib'
 
@@ -70,6 +71,7 @@ type State = {
   theme: Theme
   username: string
   isVisible: boolean
+  language: string
 }
 export class SettingsView extends Component<Props> {
   static contextType = MainContext
@@ -159,6 +161,7 @@ export class SettingsView extends Component<Props> {
       llmError: null,
       username: '',
       isVisible: true,
+      language: config?.language || 'auto',
     }
   }
 
@@ -210,6 +213,31 @@ export class SettingsView extends Component<Props> {
     }
     await Storage.setConfig(conf)
     this.props.onConfigChange()
+  }
+
+  languageLabel(lang?: string) {
+    switch (lang) {
+      case 'cs':
+        return t('profile.languageCs') || 'Čeština'
+      case 'en':
+        return t('profile.languageEn') || 'English'
+      case 'auto':
+      default:
+        return t('profile.languageAuto') || 'Auto (podle systému)'
+    }
+  }
+
+  languageOptions() {
+    return [
+      { value: 'auto', label: t('profile.languageAuto') || 'Auto (podle systému)' },
+      { value: 'cs', label: t('profile.languageCs') || 'Čeština' },
+      { value: 'en', label: t('profile.languageEn') || 'English' },
+    ]
+  }
+
+  async onSelectLanguage(lang: string) {
+    setAppLanguage(lang)
+    await this.setOption('language', lang)
   }
 
   imageDownloadLabel(maxKb?: number | null) {
@@ -310,6 +338,23 @@ export class SettingsView extends Component<Props> {
             marginBottom={theme.metrics.blocks.medium}
             onPress={() => this.logout()}
           />
+          <View
+            style={{
+              paddingVertical: theme.metrics.blocks.medium,
+              paddingHorizontal: theme.metrics.blocks.medium,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+              {t('profile.language')}
+            </Text>
+            <FormRowSelectComponent
+              value={this.languageLabel(this.state.language)}
+              onSelect={val => this.onSelectLanguage(val)}
+              options={this.languageOptions()}
+            />
+          </View>
           <FormRowToggleComponent
             label={t('profile.tabsOnBottom')}
             value={!!this.state.isBottomTabs}

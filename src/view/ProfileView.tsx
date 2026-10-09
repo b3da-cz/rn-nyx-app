@@ -1,7 +1,13 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
-import { ProfileActionsComponent, SectionHeaderComponent, UserIconComponent, UserRowComponent } from '../component'
+import {
+  ProfileActionsComponent,
+  PurchasedSupportItemsComponent,
+  SectionHeaderComponent,
+  UserIconComponent,
+  UserRowComponent,
+} from '../component'
 import { formatDate, MainContext, Nyx, t, Theme, LayoutAnimConf } from '../lib'
 
 type Props = {
@@ -85,6 +91,7 @@ export class ProfileView extends Component<Props> {
             }
           />
         </View>
+        <PurchasedSupportItemsComponent navigation={this.props.navigation} theme={theme} />
         <View>
           <SectionHeaderComponent title={t('friends')} backgroundColor={theme.colors.tertiary} />
         </View>
