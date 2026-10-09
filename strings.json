@@ -3,6 +3,10 @@
     "cs": "Nnn",
     "en": "Nnn"
   },
+  "error": {
+    "cs": "Chyba",
+    "en": "Error"
+  },
   "all": {
     "cs": "Vše",
     "en": "All"
@@ -1051,6 +1055,10 @@
     "unavailable": {
       "cs": "Platby nejsou v tomto zařízení momentálně dostupné.",
       "en": "In-app purchases are not currently available on this device."
+    },
+    "notAvailableInRegion": {
+      "cs": "Tato položka není dostupná v této oblasti.",
+      "en": "This item is not available in this region."
     },
     "error": {
       "cs": "Při platbě došlo k chybě.",

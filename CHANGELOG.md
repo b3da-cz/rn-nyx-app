@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.2
+- vizuální odlišení nedostupných / nepotvrzených produktů v obrazovce podpory (snížená opacita, odstranění levého borderu, orientační cena se znakem ~)
+- in-app notifikace s pulzující chybovou ikonou při klepnutí na položku nedostupnou v dané oblasti
+
 ## 0.21.1
 - sjednocení designu dialogu hodnocení (RatingPromptComponent) se zbytkem aplikace (nativní Paper Dialog a ButtonComponent)
 - přepracování obrazovky podpory (SupportView) do signaturního stylu řádků Nyx s levým akcentním proužkem a vlněním

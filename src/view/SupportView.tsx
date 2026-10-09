@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, View } from 'react-native'
 import { ActivityIndicator, Text, TouchableRipple } from 'react-native-paper'
+import { RNNotificationBanner } from 'react-native-notification-banner'
 import { FoodPictogramComponent, SectionHeaderComponent } from '../component'
-import { IapService, SUPPORT_PRODUCTS, SupportProduct, Styling, t, useTheme } from '../lib'
+import { IapService, SUPPORT_PRODUCTS, SupportProduct, Styling, showNotificationBanner, t, useTheme } from '../lib'
 
 type Props = {
   navigation: any
@@ -22,15 +23,12 @@ export const SupportView: React.FC<Props> = () => {
     let mounted = true
     const setupIap = async () => {
       await IapService.init(
-        purchase => {
+        () => {
           if (!mounted) return
           setPurchasingSku(null)
           Alert.alert(t('support.thankYouTitle') || 'Děkujeme!', t('support.thankYou'))
         },
-        error => {
-          if (!mounted) return
-          setPurchasingSku(null)
-        },
+        () => mounted && setPurchasingSku(null),
       )
       const items = await IapService.fetchProducts()
       if (mounted && items?.length > 0) {
@@ -50,10 +48,14 @@ export const SupportView: React.FC<Props> = () => {
 
   const handleBuy = async (product: SupportProduct) => {
     if (!productPrices[product.sku]) {
-      Alert.alert(
-        t('support.title') || 'Podpora vývoje',
-        t('support.unavailable') || 'Platby nejsou v tomto zařízení momentálně dostupné.',
-      )
+      showNotificationBanner({
+        title: t('error') || 'Chyba',
+        body: t('support.notAvailableInRegion') || 'Tato položka není dostupná v této oblasti.',
+        tintColor: '#d81919',
+        textColor: '#FFFFFF',
+        icon: 'alert-circle',
+        onClick: () => RNNotificationBanner.Dismiss(),
+      })
       return
     }
     try {
@@ -72,19 +74,13 @@ export const SupportView: React.FC<Props> = () => {
   return (
     <ScrollView style={{ backgroundColor: colors.background, flex: 1 }}>
       <SectionHeaderComponent title={t('support.title') || 'Podpora vývoje'} backgroundColor={colors.surface} />
-      <Text
-        style={{
-          paddingHorizontal: blocks.medium,
-          paddingVertical: blocks.medium,
-          color: colors.text,
-          fontSize: fontSizes.p,
-          lineHeight: 22,
-        }}>
+      <Text style={{ padding: blocks.medium, color: colors.text, fontSize: fontSizes.p, lineHeight: 22 }}>
         {t('support.description')}
       </Text>
       <View style={{ marginBottom: blocks.large }}>
         {SUPPORT_PRODUCTS.map(product => {
-          const price = productPrices[product.sku] || product.approxPrice
+          const isAvailable = Boolean(productPrices[product.sku])
+          const price = isAvailable ? productPrices[product.sku] : `~ ${product.approxPrice}`
           const isBuying = purchasingSku === product.sku
           return (
             <TouchableRipple
@@ -94,21 +90,15 @@ export const SupportView: React.FC<Props> = () => {
               onPress={() => handleBuy(product)}
               style={{
                 backgroundColor: colors.row || colors.surface,
-                borderLeftWidth: 3,
+                borderLeftWidth: isAvailable ? 3 : 0,
                 borderColor: colors.primary,
+                opacity: isAvailable ? 1 : 0.5,
                 marginBottom: blocks.small,
                 paddingHorizontal: blocks.medium,
                 paddingVertical: blocks.medium,
               }}>
               <View style={[Styling.groups.flexRowSpbCentered, { minHeight: 44 }]}>
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: blocks.medium,
-                  }}>
+                <View style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: blocks.medium }}>
                   <FoodPictogramComponent name={product.icon} color={colors.primary} size={26} />
                 </View>
                 <View style={{ flex: 1, marginRight: blocks.medium }}>

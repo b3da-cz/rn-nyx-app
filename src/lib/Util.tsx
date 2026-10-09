@@ -148,7 +148,7 @@ export const formatDate = str => {
   return `${d}.${m}.${y}  ${str.substr(11)}`
 }
 
-export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tintColor, icon, onClick }) => {
+export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tintColor, icon, onClick }: any) => {
   RNNotificationBanner.Show({
     title,
     subTitle: body,
@@ -161,6 +161,6 @@ export const showNotificationBanner = ({ title, body, textColor = '#FFFFFF', tin
     dismissable: true,
     isSwipeToDismissEnabled: true,
     icon: <Icon name={icon} size={20} color={textColor} family={'Feather'} />,
-    onClick: () => onClick(),
+    onClick: () => (onClick ? onClick() : RNNotificationBanner.Dismiss()),
   })
 }
