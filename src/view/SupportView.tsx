@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, View } from 'react-native'
 import { ActivityIndicator, Text, TouchableRipple } from 'react-native-paper'
 import { FoodPictogramComponent, SectionHeaderComponent } from '../component'
-import { IapService, SUPPORT_PRODUCTS, SupportProduct, t, useTheme } from '../lib'
+import { IapService, SUPPORT_PRODUCTS, SupportProduct, Styling, t, useTheme } from '../lib'
 
 type Props = {
   navigation: any
@@ -10,7 +10,11 @@ type Props = {
 
 export const SupportView: React.FC<Props> = () => {
   const theme = useTheme()
-  const { colors, metrics: { fontSizes }, roundness } = theme
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+    roundness,
+  } = theme
   const [purchasingSku, setPurchasingSku] = useState<string | null>(null)
   const [productPrices, setProductPrices] = useState<Record<string, string>>({})
 
@@ -46,7 +50,10 @@ export const SupportView: React.FC<Props> = () => {
 
   const handleBuy = async (product: SupportProduct) => {
     if (!productPrices[product.sku]) {
-      Alert.alert(t('support.title') || 'Podpora vývoje', t('support.unavailable') || 'Položka zatím není v Google Play aktivní.')
+      Alert.alert(
+        t('support.title') || 'Podpora vývoje',
+        t('support.unavailable') || 'Platby nejsou v tomto zařízení momentálně dostupné.',
+      )
       return
     }
     try {
@@ -65,70 +72,73 @@ export const SupportView: React.FC<Props> = () => {
   return (
     <ScrollView style={{ backgroundColor: colors.background, flex: 1 }}>
       <SectionHeaderComponent title={t('support.title') || 'Podpora vývoje'} backgroundColor={colors.surface} />
-      <View style={{ padding: 16 }}>
-        <Text style={{ fontSize: fontSizes.p, color: colors.text, opacity: 0.9, lineHeight: 22, marginBottom: 16 }}>
-          {t('support.description')}
-        </Text>
+      <Text
+        style={{
+          paddingHorizontal: blocks.medium,
+          paddingVertical: blocks.medium,
+          color: colors.text,
+          fontSize: fontSizes.p,
+          lineHeight: 22,
+        }}>
+        {t('support.description')}
+      </Text>
+      <View style={{ marginBottom: blocks.large }}>
         {SUPPORT_PRODUCTS.map(product => {
           const price = productPrices[product.sku] || product.approxPrice
           const isBuying = purchasingSku === product.sku
           return (
-            <View
+            <TouchableRipple
               key={product.sku}
+              disabled={isBuying || purchasingSku !== null}
+              rippleColor={colors.ripple}
+              onPress={() => handleBuy(product)}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: colors.surface,
-                borderRadius: roundness * 2,
-                borderWidth: 1,
-                borderColor: colors.border,
-                padding: 12,
-                marginBottom: 10,
+                backgroundColor: colors.row || colors.surface,
+                borderLeftWidth: 3,
+                borderColor: colors.primary,
+                marginBottom: blocks.small,
+                paddingHorizontal: blocks.medium,
+                paddingVertical: blocks.medium,
               }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}>
-                <FoodPictogramComponent name={product.icon} color={colors.primary} size={24} />
-              </View>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={{ fontSize: fontSizes.h3, fontWeight: '700', color: colors.text }}>
-                  {t(product.titleKey) || product.id}
-                </Text>
-                <Text style={{ fontSize: fontSizes.small, color: colors.faded, marginTop: 2 }}>
-                  {t(product.descKey)}
-                </Text>
-              </View>
-              <TouchableRipple
-                rippleColor={colors.ripple}
-                disabled={isBuying || purchasingSku !== null}
-                onPress={() => handleBuy(product)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: roundness * 1.5,
-                  backgroundColor: colors.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: 78,
-                }}>
-                {isBuying ? (
-                  <ActivityIndicator size={16} color={btnTextColor} />
-                ) : (
-                  <Text style={{ fontSize: fontSizes.small, fontWeight: 'bold', color: btnTextColor }}>
-                    {price}
+              <View style={[Styling.groups.flexRowSpbCentered, { minHeight: 44 }]}>
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: blocks.medium,
+                  }}>
+                  <FoodPictogramComponent name={product.icon} color={colors.primary} size={26} />
+                </View>
+                <View style={{ flex: 1, marginRight: blocks.medium }}>
+                  <Text numberOfLines={1} style={{ fontSize: fontSizes.p, fontWeight: '700', color: colors.text }}>
+                    {t(product.titleKey) || product.id}
                   </Text>
-                )}
-              </TouchableRipple>
-            </View>
+                  <Text numberOfLines={1} style={{ fontSize: fontSizes.small, color: colors.faded, marginTop: 2 }}>
+                    {t(product.descKey)}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    paddingHorizontal: blocks.medium,
+                    height: 32,
+                    borderRadius: roundness,
+                    backgroundColor: colors.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: 74,
+                  }}>
+                  {isBuying ? (
+                    <ActivityIndicator size={16} color={btnTextColor} />
+                  ) : (
+                    <Text style={{ fontSize: fontSizes.small, fontWeight: 'bold', color: btnTextColor }}>
+                      {price}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </TouchableRipple>
           )
         })}
       </View>

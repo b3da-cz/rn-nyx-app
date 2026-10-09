@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.1
+- sjednocení designu dialogu hodnocení (RatingPromptComponent) se zbytkem aplikace (nativní Paper Dialog a ButtonComponent)
+- přepracování obrazovky podpory (SupportView) do signaturního stylu řádků Nyx s levým akcentním proužkem a vlněním
+
 ## 0.21.0
 - podpora vývoje aplikace formou In-App nákupů na Google Play
 - ikona podpory v profilu vedle O aplikaci a responsivní sbalení řady ikon do kontextového menu pod 3 svislé tečky na menších displejích

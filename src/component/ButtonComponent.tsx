@@ -20,6 +20,7 @@ type Props = {
   marginTop?: number
   marginHorizontal?: number
   borderWidth?: number
+  borderRadius?: number
   lineHeight?: number
 }
 export const ButtonComponent = ({
@@ -31,6 +32,7 @@ export const ButtonComponent = ({
   color,
   backgroundColor = 'transparent',
   borderColor,
+  borderRadius,
   fontSize,
   paddingHorizontal,
   width = '100%',
@@ -49,6 +51,7 @@ export const ButtonComponent = ({
   const {
     colors,
     metrics: { blocks },
+    roundness,
   } = th
   return (
     <TouchableRipple
@@ -62,6 +65,7 @@ export const ButtonComponent = ({
           marginHorizontal,
           borderColor,
           borderWidth,
+          borderRadius: borderRadius !== undefined ? borderRadius : roundness || 0,
           backgroundColor,
           height: lineHeight,
           alignItems: 'center',
