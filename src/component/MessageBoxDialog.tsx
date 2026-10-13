@@ -748,7 +748,7 @@ export class MessageBoxDialog extends Component<Props> {
               }}
             >
               {!params?.isGitIssue ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', height: footerHeight }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', height: footerHeight, gap: 8 }}>
                   <IconButton
                     icon={'unfold-more-horizontal'}
                     style={{ margin: 0 }}
@@ -778,7 +778,9 @@ export class MessageBoxDialog extends Component<Props> {
                   <Text style={{ fontSize: fontSizes.p }}>Github issue</Text>
                 </View>
               )}
-              <View style={{ height: '70%', width: 1, borderLeftWidth: 1, borderColor: colors.disabled }} />
+              <View
+                style={{ height: '70%', width: 1, marginHorizontal: 6, borderLeftWidth: 1, borderColor: colors.disabled }}
+              />
               <View
                 style={{
                   flex: 1,
@@ -786,6 +788,7 @@ export class MessageBoxDialog extends Component<Props> {
                   alignItems: 'center',
                   justifyContent: 'flex-start',
                   flexWrap: 'nowrap',
+                  gap: 8,
                 }}
               >
                 <IconButton
@@ -831,7 +834,7 @@ export class MessageBoxDialog extends Component<Props> {
                 {/*  rippleColor={colors.ripple}*/}
                 {/*/>*/}
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
                 {/*<IconButton icon={'backspace'} size={22} onPress={() => setMessage('')} />*/}
                 {isFetching ? (
                   <ActivityIndicator size="large" color={colors.primary} />

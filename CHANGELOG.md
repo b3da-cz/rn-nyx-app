@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.5
+- větší rozestupy mezi ikonami v patičce dialogu zprávy
+
 ## 0.22.4
 - dialog zprávy se po zavření klávesnice už nerozšíří pod řadu ikon
 
