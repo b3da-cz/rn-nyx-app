@@ -527,11 +527,13 @@ export class MessageBoxDialog extends Component<Props> {
     const actionRowShift = keyboardVisible ? 42 : 0
     // Explicit 50px row, about one fifth shorter.
     const footerHeight = 40
+    // Closed keyboard: cap the whole card so a long message cannot push the
+    // surface past the icon row into the nav area (that tail grew up to ~80px).
     const dialogMaxHeight = keyboardVisible
-      ? Math.max(160, windowHeight - Math.max(0, keyboardHeight) - 16)
+      ? Math.max(160, windowHeight - Math.max(0, keyboardHeight) - actionRowShift - 16)
       : isAnyMenuVisible
       ? windowHeight * 0.69
-      : windowHeight * 0.86
+      : windowHeight - 96
     const dialog = (
         <Dialog
           visible={isDialogVisible}
@@ -549,7 +551,17 @@ export class MessageBoxDialog extends Component<Props> {
                   maxHeight: dialogMaxHeight,
                   zIndex: 1,
                 }
-              : { marginLeft: 5, marginRight: 5, marginTop: 5, marginBottom: 0, zIndex: 1 }
+              : {
+                  marginLeft: 5,
+                  marginRight: 5,
+                  marginTop: 5,
+                  marginBottom: 0,
+                  marginVertical: 0,
+                  paddingBottom: 0,
+                  maxHeight: dialogMaxHeight,
+                  overflow: 'hidden',
+                  zIndex: 1,
+                }
           }
         >
           <Dialog.ScrollArea
@@ -559,7 +571,7 @@ export class MessageBoxDialog extends Component<Props> {
               paddingTop: 5,
               paddingBottom: 0,
               flexGrow: 0,
-              maxHeight: keyboardVisible ? dialogMaxHeight - footerHeight : isAnyMenuVisible ? '69%' : '86%',
+              maxHeight: dialogMaxHeight - footerHeight,
             }}
           >
             <ScrollView
@@ -619,13 +631,25 @@ export class MessageBoxDialog extends Component<Props> {
                   onChangeText={val => this.onMessageChange(val)}
                   value={`${message}`}
                   placeholder={`${t('message')} ..`}
+                  style={{ paddingBottom: 0, marginBottom: 0 }}
                 />
               )}
             </ScrollView>
           </Dialog.ScrollArea>
 
           <Dialog.Actions
-            style={{ flexDirection: 'column', alignItems: 'stretch', paddingTop: 0, paddingBottom: 0, marginBottom: 0 }}
+            style={{
+              height: areDetailsShown ? undefined : footerHeight,
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              justifyContent: 'center',
+              padding: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+              margin: 0,
+              marginBottom: 0,
+              overflow: 'hidden',
+            }}
           >
             {areDetailsShown && (
               <View

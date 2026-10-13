@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.4
+- dialog zprávy se po zavření klávesnice už nerozšíří pod řadu ikon
+
 ## 0.22.3
 - dialog zprávy sedí těsně nad klávesnicí a řada ikon je celá vidět
 - nižší patička s ikonami
