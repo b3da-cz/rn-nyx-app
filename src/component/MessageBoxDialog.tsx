@@ -523,6 +523,10 @@ export class MessageBoxDialog extends Component<Props> {
     } = this.context.theme
     const windowHeight = Dimensions.get('window').height
     const isAnyMenuVisible = isMenuVisible || isQualityMenuVisible
+    // Just enough to keep the icon row above the keys. 72 left a gap of post text.
+    const actionRowShift = keyboardVisible ? 42 : 0
+    // Explicit 50px row, about one fifth shorter.
+    const footerHeight = 40
     const dialogMaxHeight = keyboardVisible
       ? Math.max(160, windowHeight - Math.max(0, keyboardHeight) - 16)
       : isAnyMenuVisible
@@ -538,14 +542,14 @@ export class MessageBoxDialog extends Component<Props> {
                   position: 'absolute',
                   left: 5,
                   right: 5,
-                  bottom: keyboardHeight,
+                  bottom: Math.max(0, keyboardHeight) + actionRowShift,
                   marginTop: 0,
                   marginBottom: 0,
                   marginHorizontal: 0,
                   maxHeight: dialogMaxHeight,
                   zIndex: 1,
                 }
-              : { marginLeft: 5, marginRight: 5, marginTop: 5, zIndex: 1 }
+              : { marginLeft: 5, marginRight: 5, marginTop: 5, marginBottom: 0, zIndex: 1 }
           }
         >
           <Dialog.ScrollArea
@@ -554,7 +558,8 @@ export class MessageBoxDialog extends Component<Props> {
               paddingRight: 5,
               paddingTop: 5,
               paddingBottom: 0,
-              maxHeight: keyboardVisible ? dialogMaxHeight - 56 : isAnyMenuVisible ? '69%' : '86%',
+              flexGrow: 0,
+              maxHeight: keyboardVisible ? dialogMaxHeight - footerHeight : isAnyMenuVisible ? '69%' : '86%',
             }}
           >
             <ScrollView
@@ -619,7 +624,9 @@ export class MessageBoxDialog extends Component<Props> {
             </ScrollView>
           </Dialog.ScrollArea>
 
-          <Dialog.Actions style={{ flexDirection: 'column', alignItems: 'stretch', paddingTop: 0, paddingBottom: 0 }}>
+          <Dialog.Actions
+            style={{ flexDirection: 'column', alignItems: 'stretch', paddingTop: 0, paddingBottom: 0, marginBottom: 0 }}
+          >
             {areDetailsShown && (
               <View
                 style={{
@@ -707,12 +714,20 @@ export class MessageBoxDialog extends Component<Props> {
               </View>
             )}
             <View
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                height: footerHeight,
+                overflow: 'hidden',
+              }}
             >
               {!params?.isGitIssue ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', height: footerHeight }}>
                   <IconButton
                     icon={'unfold-more-horizontal'}
+                    style={{ margin: 0 }}
                     onPress={() => this.toggleDetail(!areDetailsShown)}
                     rippleColor={colors.ripple}
                   />
@@ -725,12 +740,17 @@ export class MessageBoxDialog extends Component<Props> {
                           {uploadedFiles.length}
                         </Badge>
                       )}
-                      <IconButton icon={'file'} onPress={() => this.appendFile()} rippleColor={colors.ripple} />
+                      <IconButton
+                        icon={'file'}
+                        style={{ margin: 0 }}
+                        onPress={() => this.appendFile()}
+                        rippleColor={colors.ripple}
+                      />
                     </View>
                   )}
                 </View>
               ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', height: footerHeight }}>
                   <Text style={{ fontSize: fontSizes.p }}>Github issue</Text>
                 </View>
               )}
@@ -794,7 +814,8 @@ export class MessageBoxDialog extends Component<Props> {
                 ) : (
                   <IconButton
                     icon={'play'}
-                    size={27}
+                    size={22}
+                    style={{ margin: 0 }}
                     color={colors.primary}
                     onPress={() => this.sendMessage()}
                     rippleColor={colors.ripple}

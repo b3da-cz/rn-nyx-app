@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.3
+- dialog zprávy sedí těsně nad klávesnicí a řada ikon je celá vidět
+- nižší patička s ikonami
+
 ## 0.22.2
 - dialog zprávy zůstane nad klávesnicí a nezmizí z displeje
 

@@ -39,7 +39,7 @@ describe('keyboardLift', () => {
     ).toBe(320)
   })
 
-  it('pulls the dialog down when it stops a little above the keyboard', () => {
+  it('does not pull the dialog down under the keyboard', () => {
     expect(
       keyboardLift({
         containerY: 0,
@@ -48,7 +48,19 @@ describe('keyboardLift', () => {
         screenHeight: 800,
         frame: frame(740, 60),
       }),
-    ).toBe(-40)
+    ).toBe(0)
+  })
+
+  it('shifts a full-screen container up when the window shrank but the keyboard top did not', () => {
+    expect(
+      keyboardLift({
+        containerY: 0,
+        containerHeight: 800,
+        windowHeight: 480,
+        screenHeight: 800,
+        frame: frame(800, 320),
+      }),
+    ).toBe(320)
   })
 
   it('caps a stale full-screen height so the dialog cannot leave the screen', () => {
