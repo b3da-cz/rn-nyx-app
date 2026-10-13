@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.2
+- dialog zprávy zůstane nad klávesnicí a nezmizí z displeje
+
 ## 0.22.1
 - v diskuzi zůstanou příspěvky novější než poslední viděný z okamžiku otevření označené jako nepřečtené po celou dobu, co je diskuze otevřená
 

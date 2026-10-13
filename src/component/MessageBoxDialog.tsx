@@ -1,5 +1,15 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, View, ScrollView, Image, LayoutAnimation, Keyboard, Dimensions } from 'react-native'
+import {
+  ActivityIndicator,
+  View,
+  ScrollView,
+  Image,
+  LayoutAnimation,
+  Keyboard,
+  Dimensions,
+  StyleSheet,
+  Modal,
+} from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
@@ -20,6 +30,7 @@ import {
   Nyx,
   Storage,
   asFileUri,
+  keyboardLift,
 } from '../lib'
 
 type Props = {
@@ -51,6 +62,7 @@ type State = {
   selectedRecipient?: string
   lastTypingNotificationTs: number
   keyboardHeight: number
+  keyboardVisible: boolean
 }
 export class MessageBoxDialog extends Component<Props> {
   static contextType = MainContext
@@ -60,6 +72,11 @@ export class MessageBoxDialog extends Component<Props> {
   sizes: any
   keyboardShowSub?: { remove: () => void }
   keyboardHideSub?: { remove: () => void }
+  dimensionsSub?: { remove: () => void }
+  overlayRef: any
+  kbTimers: Array<ReturnType<typeof setTimeout>>
+  alive = true
+  openedFocus = false
   _isUploadingCustomFile = false
   constructor(props) {
     super(props)
@@ -81,9 +98,12 @@ export class MessageBoxDialog extends Component<Props> {
       selectedRecipient: undefined,
       lastTypingNotificationTs: 0,
       keyboardHeight: 0,
+      keyboardVisible: false,
     }
     this.refMsgBox = null
     this.refScroll = null
+    this.overlayRef = null
+    this.kbTimers = []
     this.sizes = [
       { title: 'Original', value: 'Original' },
       { title: null, value: null },
@@ -99,12 +119,79 @@ export class MessageBoxDialog extends Component<Props> {
 
   componentDidMount() {
     this.keyboardShowSub = Keyboard.addListener('keyboardDidShow', e => {
-      this.setState({ keyboardHeight: e.endCoordinates.height })
+      this.kbEvent = e
+      this.scheduleKeyboardSync()
     })
     this.keyboardHideSub = Keyboard.addListener('keyboardDidHide', () => {
-      this.setState({ keyboardHeight: 0 })
+      this.kbEvent = null
+      this.clearKeyboardSync()
+      if (this.state.keyboardHeight !== 0 || this.state.keyboardVisible) {
+        this.setState({ keyboardHeight: 0, keyboardVisible: false })
+      }
+    })
+    this.dimensionsSub = Dimensions.addEventListener('change', () => {
+      if (this.kbEvent) {
+        this.scheduleKeyboardSync()
+      }
     })
     this.loadUploadSettings()
+  }
+
+  kbEvent: any = null
+
+  clearKeyboardSync() {
+    this.kbTimers.forEach(clearTimeout)
+    this.kbTimers = []
+  }
+
+  scheduleKeyboardSync() {
+    this.clearKeyboardSync()
+    if (!this.state.isDialogVisible) {
+      return
+    }
+    this.syncKeyboardInset()
+    // The first Android event often arrives before the visible frame settles.
+    // Rotation fixes it because the next event is measured after layout.
+    this.kbTimers = [50, 200, 500].map(ms => setTimeout(() => this.syncKeyboardInset(), ms))
+  }
+
+  syncKeyboardInset = () => {
+    if (!this.alive) {
+      return
+    }
+    const metrics = this.kbEvent?.endCoordinates || (Keyboard.isVisible() ? Keyboard.metrics() : null)
+    if (!metrics || !this.state.isDialogVisible) {
+      return
+    }
+    const apply = (inset: number) => {
+      if (!this.alive) {
+        return
+      }
+      if (inset !== this.state.keyboardHeight || !this.state.keyboardVisible) {
+        this.setState({ keyboardHeight: inset, keyboardVisible: true })
+      }
+    }
+    const windowHeight = Dimensions.get('window').height
+    const screenHeight = Dimensions.get('screen').height
+    const node = this.overlayRef
+    if (!node?.measureInWindow) {
+      apply(keyboardLift({ containerY: 0, containerHeight: windowHeight, windowHeight, screenHeight, frame: metrics }))
+      return
+    }
+    node.measureInWindow((_x: number, y: number, _w: number, height: number) => {
+      if (!height) {
+        return
+      }
+      apply(
+        keyboardLift({
+          containerY: y,
+          containerHeight: height,
+          windowHeight,
+          screenHeight,
+          frame: metrics,
+        }),
+      )
+    })
   }
 
   async loadUploadSettings() {
@@ -120,11 +207,24 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   componentWillUnmount() {
+    this.alive = false
+    this.clearKeyboardSync()
     this.keyboardShowSub?.remove()
     this.keyboardHideSub?.remove()
+    this.dimensionsSub?.remove()
+  }
+
+  componentDidUpdate(_prevProps, prevState) {
+    if (this.state.isDialogVisible && !prevState.isDialogVisible && (this.kbEvent || Keyboard.isVisible())) {
+      if (!this.kbEvent && Keyboard.metrics()) {
+        this.kbEvent = { endCoordinates: Keyboard.metrics() }
+      }
+      this.scheduleKeyboardSync()
+    }
   }
 
   showDialog(isFromFab = false) {
+    this.openedFocus = false
     this.setState({ isDialogVisible: true })
     if (this.props.params.mailRecipient?.length && !isFromFab) {
       this.setState({ selectedRecipient: this.props.params.mailRecipient, searchPhrase: '', users: [] })
@@ -376,12 +476,21 @@ export class MessageBoxDialog extends Component<Props> {
       console.warn(res)
       return
     }
-    this.setState({ isFetching: false, message: '', uploadedFiles: [], isDialogVisible: false })
+    this.clearKeyboardSync()
+    this.setState({
+      isFetching: false,
+      message: '',
+      uploadedFiles: [],
+      isDialogVisible: false,
+      keyboardVisible: false,
+      keyboardHeight: 0,
+    })
     this.props.onSend()
   }
 
   dismissDialog() {
-    this.setState({ isDialogVisible: false })
+    this.clearKeyboardSync()
+    this.setState({ isDialogVisible: false, keyboardVisible: false, keyboardHeight: 0 })
     typeof this.props.onDismiss === 'function' && this.props.onDismiss()
   }
 
@@ -406,6 +515,7 @@ export class MessageBoxDialog extends Component<Props> {
       uploadedFiles,
       users,
       keyboardHeight,
+      keyboardVisible,
     } = this.state
     const {
       colors,
@@ -413,33 +523,24 @@ export class MessageBoxDialog extends Component<Props> {
     } = this.context.theme
     const windowHeight = Dimensions.get('window').height
     const isAnyMenuVisible = isMenuVisible || isQualityMenuVisible
-    const dialogMaxHeight =
-      keyboardHeight > 0
-        ? windowHeight - keyboardHeight - 24
-        : isAnyMenuVisible
-        ? windowHeight * 0.69
-        : windowHeight * 0.86
-    return (
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          height: isDialogVisible ? '100%' : 100,
-          left: isDialogVisible ? 0 : undefined,
-          right: 0,
-        }}
-      >
+    const dialogMaxHeight = keyboardVisible
+      ? Math.max(160, windowHeight - Math.max(0, keyboardHeight) - 16)
+      : isAnyMenuVisible
+      ? windowHeight * 0.69
+      : windowHeight * 0.86
+    const dialog = (
         <Dialog
           visible={isDialogVisible}
           onDismiss={() => this.dismissDialog()}
           style={
-            keyboardHeight > 0
+            keyboardVisible
               ? {
                   position: 'absolute',
                   left: 5,
                   right: 5,
                   bottom: keyboardHeight,
-                  marginVertical: 0,
+                  marginTop: 0,
+                  marginBottom: 0,
                   marginHorizontal: 0,
                   maxHeight: dialogMaxHeight,
                   zIndex: 1,
@@ -453,16 +554,16 @@ export class MessageBoxDialog extends Component<Props> {
               paddingRight: 5,
               paddingTop: 5,
               paddingBottom: 0,
-              maxHeight: keyboardHeight > 0 ? dialogMaxHeight - 56 : isAnyMenuVisible ? '69%' : '86%',
+              maxHeight: keyboardVisible ? dialogMaxHeight - 56 : isAnyMenuVisible ? '69%' : '86%',
             }}
           >
             <ScrollView
               ref={r => (this.refScroll = r)}
               keyboardDismissMode={'on-drag'}
               keyboardShouldPersistTaps={'always'}
-              automaticallyAdjustKeyboardInsets={true}
+              automaticallyAdjustKeyboardInsets={false}
               onContentSizeChange={() => {
-                if (keyboardHeight > 0) {
+                if (keyboardVisible) {
                   this.refScroll?.scrollToEnd({ animated: false })
                 }
               }}
@@ -703,6 +804,44 @@ export class MessageBoxDialog extends Component<Props> {
             </View>
           </Dialog.Actions>
         </Dialog>
+    )
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          height: 100,
+          right: 0,
+        }}
+        pointerEvents="box-none"
+      >
+        {isDialogVisible && (
+          <Modal
+            visible
+            transparent
+            animationType="none"
+            statusBarTranslucent
+            navigationBarTranslucent
+            onRequestClose={() => this.dismissDialog()}
+          >
+            <View
+              ref={r => {
+                this.overlayRef = r
+              }}
+              pointerEvents="box-none"
+              style={StyleSheet.absoluteFill}
+              onLayout={() => {
+              this.syncKeyboardInset()
+              if (!this.openedFocus) {
+                this.openedFocus = true
+                this.refMsgBox?.focus()
+              }
+            }}
+            >
+              {dialog}
+            </View>
+          </Modal>
+        )}
         <SafeBottom>
           {insetBottom => (
             <FAB
