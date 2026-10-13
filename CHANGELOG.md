@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.1
+- v diskuzi zůstanou příspěvky novější než poslední viděný z okamžiku otevření označené jako nepřečtené po celou dobu, co je diskuze otevřená
+
 ## 0.22.0
 - sdílení textu a souborů (obrázky, videa, přílohy) z ostatních aplikací do Nyxu (do diskuzí i do pošty)
 - sdílení obrázků z interní galerie aplikace přímo do pošty s automatickým nahráním přílohy

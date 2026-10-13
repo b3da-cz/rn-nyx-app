@@ -15,6 +15,7 @@ import {
 import {
   applyRevealedImageLayout,
   applyRevealedImageToPosts,
+  applyUnreadFlags,
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
@@ -102,6 +103,7 @@ export class DiscussionView extends Component<Props> {
   _freshEventDetail: EventDetailData | null = null
   _posts: any[] = []
   _lastSeenPostId?: number
+  _sessionInitialLastSeenPostId?: number
   _pendingDiscussion: any = null
   _skipJumpToLastSeen = false
   _revealQueue: Promise<void> = Promise.resolve()
@@ -145,7 +147,9 @@ export class DiscussionView extends Component<Props> {
       initialScrollIndex: undefined,
       theme: undefined,
     }
-    this._lastSeenPostId = props.lastSeenPostId
+    this._lastSeenPostId = props.lastSeenPostId ? Number(props.lastSeenPostId) : undefined
+    this._sessionInitialLastSeenPostId =
+      props.lastSeenPostId && Number(props.lastSeenPostId) > 0 ? Number(props.lastSeenPostId) : undefined
   }
 
   componentDidMount() {
@@ -190,6 +194,11 @@ export class DiscussionView extends Component<Props> {
 
   componentDidUpdate(prevProps: Props) {
     if (this.props.id && this.props.id !== prevProps.id) {
+      this._sessionInitialLastSeenPostId =
+        this.props.lastSeenPostId && Number(this.props.lastSeenPostId) > 0
+          ? Number(this.props.lastSeenPostId)
+          : undefined
+      this._lastSeenPostId = this._sessionInitialLastSeenPostId
       this.setState({ discussionId: this.props.id, posts: [], isFetching: true }, () => {
         this.reloadDiscussionLatest(true)
       })
@@ -274,6 +283,9 @@ export class DiscussionView extends Component<Props> {
           return
         }
       }
+      if (!this._sessionInitialLastSeenPostId && lastSeenPostId && Number(lastSeenPostId) > 0) {
+        this._sessionInitialLastSeenPostId = Number(lastSeenPostId)
+      }
       await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
         holdLock: true,
         deferUi: true,
@@ -295,6 +307,7 @@ export class DiscussionView extends Component<Props> {
       return
     }
     this._pendingDiscussion = null
+    applyUnreadFlags(this._posts, this._sessionInitialLastSeenPostId)
     const firstUnreadIndex = aroundLastSeen ? getOldestUnreadIndex(this._posts, this._lastSeenPostId) : 0
     if (aroundLastSeen) {
       this._skipJumpToLastSeen = true
@@ -398,6 +411,17 @@ export class DiscussionView extends Component<Props> {
         this.blockedUsers?.length > 0
           ? filterPostsByContent(filterPostsByAuthor(res.posts, this.blockedUsers), this.filters)
           : filterPostsByContent(res.posts, this.filters)
+      if (
+        this.props.jumpToLastSeen &&
+        !this._sessionInitialLastSeenPostId &&
+        res?.discussion_common?.bookmark?.last_seen_post_id
+      ) {
+        const bLastSeen = Number(res.discussion_common.bookmark.last_seen_post_id)
+        if (bLastSeen > 0) {
+          this._sessionInitialLastSeenPostId = bLastSeen
+        }
+      }
+      applyUnreadFlags(filteredPosts, this._sessionInitialLastSeenPostId)
       const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
       const nextPosts = await preparePosts(
         filteredPosts,
@@ -406,6 +430,7 @@ export class DiscussionView extends Component<Props> {
         themeBaseFontSize,
         this.imageDownloadMaxKb(),
       )
+      applyUnreadFlags(nextPosts, this._sessionInitialLastSeenPostId)
       const title = `${res?.discussion_common?.discussion.name_static}${
         res?.discussion_common?.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
       }`
@@ -420,7 +445,10 @@ export class DiscussionView extends Component<Props> {
       }
       this._posts = nextPosts
       this._lastSeenPostId =
-        this.props.lastSeenPostId ?? res?.discussion_common?.bookmark?.last_seen_post_id ?? this._lastSeenPostId
+        this._sessionInitialLastSeenPostId ??
+        this.props.lastSeenPostId ??
+        res?.discussion_common?.bookmark?.last_seen_post_id ??
+        this._lastSeenPostId
       const uploadedFiles = res?.discussion_common?.waiting_files || []
       const isBooked = res?.discussion_common?.bookmark?.bookmark
       const eventDetail = this.eventDetailFromResponse(
