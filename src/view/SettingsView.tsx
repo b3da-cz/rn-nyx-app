@@ -56,6 +56,7 @@ type State = {
   isBookmarkSectionReadFilterEnabled: boolean
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
+  isUploadVideoTagEnabled: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
   isLlmEnabled: boolean
@@ -146,6 +147,8 @@ export class SettingsView extends Component<Props> {
         config.isBookmarkSectionReadFilterEnabled === undefined ? true : !!config.isBookmarkSectionReadFilterEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
       isTextSelectionEnabled: config.isTextSelectionEnabled === undefined ? true : !!config.isTextSelectionEnabled,
+      isUploadVideoTagEnabled:
+        config.isUploadVideoTagEnabled === undefined ? true : !!config.isUploadVideoTagEnabled,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
@@ -389,6 +392,11 @@ export class SettingsView extends Component<Props> {
             label={t('profile.isTextSelectionEnabled')}
             value={this.state.isTextSelectionEnabled !== false}
             onChange={val => this.setOption('isTextSelectionEnabled', val)}
+          />
+          <FormRowToggleComponent
+            label={t('profile.uploadVideoTag')}
+            value={this.state.isUploadVideoTagEnabled !== false}
+            onChange={val => this.setOption('isUploadVideoTagEnabled', val)}
           />
           <FormRowToggleComponent
             label={t('events.friendBadges')}

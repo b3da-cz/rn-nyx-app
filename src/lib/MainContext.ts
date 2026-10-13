@@ -23,6 +23,7 @@ export type MainContextConfig = {
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
+  isUploadVideoTagEnabled: boolean
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
@@ -68,6 +69,7 @@ export const initialConfig: MainContextConfig = {
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
   isTextSelectionEnabled: true,
+  isUploadVideoTagEnabled: true,
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,

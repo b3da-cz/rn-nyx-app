@@ -9,6 +9,7 @@ import {
   Dimensions,
   StyleSheet,
   Modal,
+  Alert,
 } from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
@@ -16,11 +17,16 @@ import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../compo
 import ImageResizer from '@bam.tech/react-native-image-resizer'
 import {
   MainContext,
+  isUploadVideoTagEnabled,
+  isUploadTooLarge,
+  uploadSizeKb,
   createIssue,
   LayoutAnimConf,
   JPEG_QUALITY_DEFAULT,
   JPEG_QUALITY_PERCENTS,
   pickFileAndResizeJpegs,
+  isVideoUpload,
+  videoTagFromUpload,
   isResizableImageUpload,
   jpegUploadName,
   clampJpegQuality,
@@ -301,6 +307,25 @@ export class MessageBoxDialog extends Component<Props> {
     Storage.setUploadSettings({ size: this.state.selectedSize, quality })
   }
 
+  rejectIfTooLarge(size?: number | null) {
+    if (!isUploadTooLarge(size)) {
+      return false
+    }
+    Alert.alert(t('error'), `${t('profile.fileTooLarge')}`.replace('%s', `${uploadSizeKb(size as number)}`))
+    return true
+  }
+
+  messageWithVideoTag(message: string, uploaded: { url?: string; mimetype?: string; type?: string; filename?: string; name?: string }) {
+    if (!isUploadVideoTagEnabled(this.context?.config) || !isVideoUpload(uploaded)) {
+      return message
+    }
+    const tag = videoTagFromUpload(uploaded)
+    if (!tag) {
+      return message
+    }
+    return `${message}${message?.length > 0 ? '\n' : ''}${tag}`
+  }
+
   async appendFile() {
     if (this.state.isUploading) {
       return
@@ -308,6 +333,9 @@ export class MessageBoxDialog extends Component<Props> {
     try {
       const file = await pickFileAndResizeJpegs(this.state.selectedSize, this.state.selectedQuality)
       if (!file) {
+        return
+      }
+      if (this.rejectIfTooLarge(file.size)) {
         return
       }
       this.setState({ isUploading: true })
@@ -322,6 +350,7 @@ export class MessageBoxDialog extends Component<Props> {
           return {
             isUploading: false,
             uploadedFiles: prev.uploadedFiles?.length ? [...prev.uploadedFiles, uploaded] : [uploaded],
+            message: this.messageWithVideoTag(prev.message, uploaded),
           }
         })
         Bugfender.log('INFO', 'upload file ok')
@@ -389,6 +418,9 @@ export class MessageBoxDialog extends Component<Props> {
           }
         }
       }
+      if (this.rejectIfTooLarge(targetFile.size)) {
+        return
+      }
       const discId = this.props.params?.discussionId
       const res = await this.props.nyx.api.uploadFile(targetFile, discId)
       if (res?.id && res.id > 0) {
@@ -402,6 +434,7 @@ export class MessageBoxDialog extends Component<Props> {
           uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
             ? prev.uploadedFiles
             : [...(prev.uploadedFiles || []), uploaded],
+          message: this.messageWithVideoTag(prev.message, uploaded),
         }))
         Bugfender.log('INFO', 'upload shared file ok')
         await this.fetchUploadedFiles()

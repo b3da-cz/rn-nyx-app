@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.7
+- v obecném nastavení je přepínač video tagu u nahraných videí, výchozí je zapnuto
+- příloha od 10 MB se nenahraje a ukáže se chyba s velikostí v kB
+
 ## 0.22.6
 - nahrané video už nepřidá druhý přehrávač, v příspěvku zůstane jeden
 

@@ -2,9 +2,15 @@ import {
   JPEG_QUALITY_DEFAULT,
   JPEG_QUALITY_PERCENTS,
   clampJpegQuality,
+  UPLOAD_MAX_BYTES,
   isResizableImageUpload,
+  isUploadTooLarge,
+  isVideoUpload,
   jpegUploadName,
   uniqueVideoTags,
+  isUploadVideoTagEnabled,
+  uploadSizeKb,
+  videoTagFromUpload,
 } from '../src/lib/compose'
 
 describe('jpeg quality', () => {
@@ -20,7 +26,35 @@ describe('jpeg quality', () => {
   })
 })
 
+describe('upload size', () => {
+  it('rejects a file that is not smaller than 10 MB and reports kilobytes', () => {
+    expect(UPLOAD_MAX_BYTES).toBe(10 * 1024 * 1024)
+    expect(isUploadTooLarge(UPLOAD_MAX_BYTES - 1)).toBe(false)
+    expect(isUploadTooLarge(UPLOAD_MAX_BYTES)).toBe(true)
+    expect(isUploadTooLarge(null)).toBe(false)
+    expect(uploadSizeKb(UPLOAD_MAX_BYTES)).toBe(10240)
+    expect(uploadSizeKb(1536 * 1024)).toBe(1536)
+  })
+})
+
+describe('uploaded video tag setting', () => {
+  it('stays on unless the general setting is turned off', () => {
+    expect(isUploadVideoTagEnabled(undefined)).toBe(true)
+    expect(isUploadVideoTagEnabled({})).toBe(true)
+    expect(isUploadVideoTagEnabled({ isUploadVideoTagEnabled: false })).toBe(false)
+  })
+})
+
 describe('uploaded video', () => {
+  it('inserts a video tag when the upload is a video', () => {
+    expect(isVideoUpload({ mimetype: 'video/mp4', filename: 'a.bin' })).toBe(true)
+    expect(isVideoUpload({ type: 'image/jpeg', filename: 'clip.webm' })).toBe(true)
+    expect(isVideoUpload({ mimetype: 'image/jpeg', filename: 'pic.jpg' })).toBe(false)
+    expect(videoTagFromUpload({ url: '/data/files/clip.mp4' })).toBe(
+      '<video src="https://nyx.cz/data/files/clip.mp4" controls="controls" loop></video>',
+    )
+  })
+
   it('keeps one tag when the message and the attachment point at the same file', () => {
     const { kept, dropped } = uniqueVideoTags([
       { link: 'https://nyx.cz/data/files/clip.mp4', raw: 'message' },
