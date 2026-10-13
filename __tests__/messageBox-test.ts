@@ -3,9 +3,8 @@ import {
   JPEG_QUALITY_PERCENTS,
   clampJpegQuality,
   isResizableImageUpload,
-  isVideoUpload,
   jpegUploadName,
-  videoTagFromUpload,
+  uniqueVideoTags,
 } from '../src/lib/compose'
 
 describe('jpeg quality', () => {
@@ -21,13 +20,20 @@ describe('jpeg quality', () => {
   })
 })
 
-describe('uploaded video tag', () => {
-  it('detects video uploads by mime or filename', () => {
-    expect(isVideoUpload({ mimetype: 'video/mp4', filename: 'a.bin' })).toBe(true)
-    expect(isVideoUpload({ type: 'image/jpeg', filename: 'clip.webm' })).toBe(true)
-    expect(isVideoUpload({ mimetype: 'image/jpeg', filename: 'pic.jpg' })).toBe(false)
+describe('uploaded video', () => {
+  it('keeps one tag when the message and the attachment point at the same file', () => {
+    const { kept, dropped } = uniqueVideoTags([
+      { link: 'https://nyx.cz/data/files/clip.mp4', raw: 'message' },
+      { link: 'https://nyx.cz/data/files/clip.mp4?x=1', raw: 'same-file' },
+      { link: '/data/files/clip.mp4', raw: 'attachment' },
+      { link: 'https://nyx.cz/data/files/other.mp4', raw: 'other' },
+    ])
+    expect(kept.map(tag => tag.raw)).toEqual(['message', 'other'])
+    expect(dropped.map(tag => tag.raw)).toEqual(['same-file', 'attachment'])
   })
+})
 
+describe('uploaded image', () => {
   it('treats common gallery mime types as resizable jpegs', () => {
     expect(isResizableImageUpload({ type: 'image/jpeg', name: 'a.jpg' })).toBe(true)
     expect(isResizableImageUpload({ type: 'image/jpg', name: 'a.jpg' })).toBe(true)
@@ -35,14 +41,5 @@ describe('uploaded video tag', () => {
     expect(isResizableImageUpload({ type: 'image/gif', name: 'a.gif' })).toBe(false)
     expect(isResizableImageUpload({ type: 'video/mp4', name: 'a.mp4' })).toBe(false)
     expect(jpegUploadName('PXL_photo.HEIC')).toBe('PXL_photo.jpg')
-  })
-
-  it('inserts a video tag matching nyx display', () => {
-    expect(videoTagFromUpload({ url: '/data/files/clip.mp4' })).toBe(
-      '<video src="https://nyx.cz/data/files/clip.mp4" controls="controls" loop></video>',
-    )
-    expect(videoTagFromUpload({ url: 'https://nyx.cz/data/files/clip.mp4' })).toBe(
-      '<video src="https://nyx.cz/data/files/clip.mp4" controls="controls" loop></video>',
-    )
   })
 })

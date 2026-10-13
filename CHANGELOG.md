@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.6
+- nahrané video už nepřidá druhý přehrávač, v příspěvku zůstane jeden
+
 ## 0.22.5
 - větší rozestupy mezi ikonami v patičce dialogu zprávy
 

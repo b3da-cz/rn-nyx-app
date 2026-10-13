@@ -21,8 +21,6 @@ import {
   JPEG_QUALITY_DEFAULT,
   JPEG_QUALITY_PERCENTS,
   pickFileAndResizeJpegs,
-  isVideoUpload,
-  videoTagFromUpload,
   isResizableImageUpload,
   jpegUploadName,
   clampJpegQuality,
@@ -321,17 +319,10 @@ export class MessageBoxDialog extends Component<Props> {
             ...res,
             size: file.size != null ? file.size : res.size,
           }
-          const next: Partial<State> = {
+          return {
             isUploading: false,
             uploadedFiles: prev.uploadedFiles?.length ? [...prev.uploadedFiles, uploaded] : [uploaded],
           }
-          if (isVideoUpload(uploaded)) {
-            const tag = videoTagFromUpload(uploaded)
-            if (tag) {
-              next.message = `${prev.message}${prev.message?.length > 0 ? '\n' : ''}${tag}`
-            }
-          }
-          return next
         })
         Bugfender.log('INFO', 'upload file ok')
       } else {
@@ -406,21 +397,12 @@ export class MessageBoxDialog extends Component<Props> {
           ...res,
           size: targetFile.size != null ? targetFile.size : res.size,
         }
-        this.setState(prev => {
-          const next: Partial<State> = {
-            isUploading: false,
-            uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
-              ? prev.uploadedFiles
-              : [...(prev.uploadedFiles || []), uploaded],
-          }
-          if (isVideoUpload(uploaded)) {
-            const tag = videoTagFromUpload(uploaded)
-            if (tag) {
-              next.message = `${prev.message}${prev.message?.length > 0 ? '\n' : ''}${tag}`
-            }
-          }
-          return next
-        })
+        this.setState(prev => ({
+          isUploading: false,
+          uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
+            ? prev.uploadedFiles
+            : [...(prev.uploadedFiles || []), uploaded],
+        }))
         Bugfender.log('INFO', 'upload shared file ok')
         await this.fetchUploadedFiles()
       } else {

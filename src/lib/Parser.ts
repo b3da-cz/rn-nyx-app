@@ -2,6 +2,7 @@ import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
 import { applyImageDownloadPolicy, getBlockSizes } from './LayoutHelper'
+import { uniqueVideoTags } from './compose'
 import { generateUuidV4, getDistinctPosts } from './Util'
 
 export const TOKEN = {
@@ -39,6 +40,7 @@ export class Parser {
   textsItalic: any[] = []
   ytBlocks: any[] = []
   videos: any[] = []
+  videosToDelete: any[] = []
   ytBlocksToDelete: any[] = []
   pcBlocksToDelete: any[] = []
   constructor(htmlString: string, postType = 'text') {
@@ -157,6 +159,7 @@ export class Parser {
     )
     this.ytBlocks.forEach(y => (content = this.replaceRaw(content, y.raw, `${T.SPLIT}${T.YT}${y.id}${T.SPLIT}`)))
     this.videos.forEach(v => (content = this.replaceRaw(content, v.raw, `${T.SPLIT}${T.VIDEO}${v.id}${T.SPLIT}`)))
+    this.videosToDelete.forEach(v => (content = this.replaceRaw(content, v.raw, '')))
     this.ytBlocksToDelete.forEach(y => (content = this.replaceRaw(content, y.raw, '')))
     this.pcBlocksToDelete.forEach(p => (content = this.replaceRaw(content, p.raw, '')))
     this.contentParts = content.split(T.SPLIT)
@@ -283,13 +286,18 @@ export class Parser {
   }
 
   getVideoTags() {
-    return this.html.querySelectorAll('video').map(v => ({
+    const tags = this.html.querySelectorAll('video').map(v => ({
       id: generateUuidV4(),
       raw: v.toString(),
       // nyx-hosted files have relative src; the video WebView renders inline
       // HTML with no base URL, so relative links would silently fail to load
       link: this.fixLink(v.getAttribute('src') ?? v.querySelector('source')?.getAttribute('src')),
     }))
+    // An upload is stored as an attachment, and older clients also pasted a
+    // <video> into the message. Both point at the same file.
+    const { kept, dropped } = uniqueVideoTags(tags)
+    this.videosToDelete = dropped
+    return kept
   }
 
   getYtBlocksForCleanup() {
