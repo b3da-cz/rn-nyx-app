@@ -37,6 +37,44 @@ export function rightsLogLabel(label: string, boardLabel: string): string {
   return label.replace(/zm[eě]na pr[aá]v/gi, boardLabel)
 }
 
+// "ščřžýáíéě" and "scrzyaiee" compare equal. Each original character keeps its index.
+export function foldSearch(value: string): string {
+  let folded = ''
+  for (const ch of value) {
+    folded += ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase()
+  }
+  return folded
+}
+
+export function searchMatchRanges(text: string, query: string): Array<[number, number]> {
+  const needle = foldSearch(query.trim())
+  if (!needle) {
+    return []
+  }
+  const originAt: number[] = []
+  let folded = ''
+  let origin = 0
+  for (const ch of text) {
+    const piece = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase()
+    for (let i = 0; i < piece.length; i++) {
+      originAt.push(origin)
+    }
+    folded += piece
+    origin += ch.length
+  }
+  const ranges: Array<[number, number]> = []
+  let from = 0
+  while (from <= folded.length - needle.length) {
+    const at = folded.indexOf(needle, from)
+    if (at < 0) {
+      break
+    }
+    ranges.push([originAt[at], originAt[at + needle.length] ?? text.length])
+    from = at + needle.length
+  }
+  return ranges
+}
+
 const USER_RIGHTS: DiscussionRightKey[] = ['read', 'write', 'delete', 'edit', 'edit_rights']
 const REGISTERED_RIGHTS: DiscussionRightKey[] = ['read', 'write', 'delete', 'edit']
 

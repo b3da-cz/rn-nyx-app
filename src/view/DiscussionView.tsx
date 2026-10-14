@@ -936,16 +936,16 @@ export class DiscussionView extends Component<Props> {
     }
 
     actions.push({
-      key: 'stats',
-      icon: 'view-list',
-      label: `${t('show')} ${t('stats.title')}`,
-      onPress: () => this.showStats(),
-    })
-    actions.push({
       key: 'rights',
       icon: 'account-key',
       label: `${t('show')} ${t('rights.title')}`,
       onPress: () => this.showRights(),
+    })
+    actions.push({
+      key: 'stats',
+      icon: 'view-list',
+      label: `${t('show')} ${t('stats.title')}`,
+      onPress: () => this.showStats(),
     })
     if (hasBoard) {
       actions.push({

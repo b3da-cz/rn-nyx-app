@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.2
+- ve FAB jsou práva nad statistikami
+- hledání v právech je v hlavičce nad jmény, ve výpisu změn pod záložkami
+- hledání ignoruje diakritiku a zvýrazní nalezenou frázi
+
 ## 0.23.1
 - do práv diskuze lze přidat uživatele
 - změna nástěnky se ve výpisu změn ukáže jako správa nástěnky

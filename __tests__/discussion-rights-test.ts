@@ -1,10 +1,12 @@
 import {
   applyRightsResponse,
   isRightsManager,
+  foldSearch,
   parseDiscussionRightsPage,
   rightKeysFor,
   rightsLogLabel,
   rightsTableCell,
+  searchMatchRanges,
 } from '../src/lib/discussionRights'
 
 const PAGE = `
@@ -216,6 +218,18 @@ describe('applyRightsResponse', () => {
 
   it('leaves the row unchanged when the call failed', () => {
     expect(applyRightsResponse(row, { error: 'nope' })).toBe(row)
+  })
+})
+
+describe('foldSearch', () => {
+  it('matches Czech letters without diacritics', () => {
+    expect(foldSearch('ščřžýáíéě')).toBe('scrzyaiee')
+    expect(foldSearch('ŠČŘŽÝÁÍÉĚ').includes(foldSearch('scrzy'))).toBe(true)
+    expect(foldSearch('B3DA').includes(foldSearch('b3da'))).toBe(true)
+    expect(searchMatchRanges('Šárka', 'sar')).toEqual([[0, 3]])
+    const name = 'přihlášení'
+    const [start, end] = searchMatchRanges(name, 'prihl')[0]
+    expect(name.slice(start, end)).toBe('přihl')
   })
 })
 

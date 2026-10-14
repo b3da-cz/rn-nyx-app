@@ -15,8 +15,10 @@ import {
   DiscussionRightsRow,
   isRightsManager,
   MainContext,
+  foldSearch,
   parseDiscussionRightsPage,
   rightsLogLabel,
+  searchMatchRanges,
   RIGHTS_TABLE_COLUMNS,
   rightKeysFor,
   rightsTableCell,
@@ -24,6 +26,7 @@ import {
   t,
   Theme,
   useTheme,
+  withAlpha,
 } from '../lib'
 
 type Props = {
@@ -73,6 +76,7 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+  const [listQuery, setListQuery] = useState('')
 
   const load = async () => {
     setIsFetching(true)
@@ -147,12 +151,17 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
     load()
   }
 
+  const listNeedle = listQuery.trim()
+  const visibleRows = listNeedle
+    ? page.rows.filter(row => foldSearch(rowLabel(row)).includes(foldSearch(listNeedle)))
+    : page.rows
+
   const list = (
     <View style={{ flex: 1 }}>
-      <RightsTableHeader />
+      <RightsTableHeader value={listQuery} onChangeText={setListQuery} />
       <FlatList
-        data={page.rows}
-        extraData={page}
+        data={visibleRows}
+        extraData={{ page, listNeedle }}
         keyExtractor={row => `${row.kind}-${row.username || rowLabel(row)}`}
         refreshControl={
           <RefreshControl refreshing={isFetching} onRefresh={load} colors={[colors.primary, colors.secondary, colors.tertiary]} />
@@ -190,9 +199,12 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
                       marginRight={10}
                     />
                   )}
-                  <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p }}>
-                    {rowLabel(item)}
-                  </Text>
+                  <Highlighted
+                    text={rowLabel(item)}
+                    query={listNeedle}
+                    numberOfLines={1}
+                    style={{ flex: 1, fontSize: fontSizes.p }}
+                  />
                 </View>
                 <View style={{ width: DAYS_W, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: fontSizes.small }}>{daysLabel(item.daysLeft)}</Text>
@@ -290,13 +302,31 @@ const VerticalHeader = ({ label, width, marginLeft }: { label: string; width: nu
   )
 }
 
-const RightsTableHeader = () => {
+const RightsTableHeader = ({ value, onChangeText }: { value: string; onChangeText: (value: string) => void }) => {
   const {
+    colors,
     metrics: { blocks },
   } = useTheme()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end' }}>
+        <TextInput
+          numberOfLines={1}
+          textAlignVertical="center"
+          selectionColor={colors.primary}
+          onChangeText={onChangeText}
+          value={value}
+          placeholder={t('rights.logSearch')}
+          style={{
+            flex: 1,
+            height: 42,
+            marginLeft: blocks.small,
+            marginRight: blocks.small,
+            marginBottom: blocks.small,
+            backgroundColor: 'inherit',
+            borderRadius: 0,
+          }}
+        />
         <VerticalHeader label={t('rights.colDays')} width={DAYS_W} marginLeft={0} />
       </View>
       {RIGHTS_TABLE_COLUMNS.map(key => (
@@ -306,16 +336,90 @@ const RightsTableHeader = () => {
   )
 }
 
+const logLine = (action: { op: 'add' | 'remove'; label: string; username?: string }) =>
+  `${action.op === 'remove' ? '−' : '+'} ${action.username ? `${action.username} ` : ''}${rightsLogLabel(action.label, t('rights.logBoard'))}`
+
+const logEntryMatches = (group: RightsLogGroup, entry: RightsLogGroup['entries'][number], query: string) => {
+  const needle = foldSearch(query.trim())
+  if (!needle) {
+    return true
+  }
+  const hay = foldSearch([group.date, entry.username, ...entry.actions.map(logLine)].join('\n'))
+  return hay.includes(needle)
+}
+
+const Highlighted = ({
+  text,
+  query,
+  style,
+  numberOfLines,
+}: {
+  text: string
+  query: string
+  style?: object
+  numberOfLines?: number
+}) => {
+  const {
+    colors,
+  } = useTheme()
+  const ranges = searchMatchRanges(text, query)
+  if (ranges.length === 0) {
+    return (
+      <Text numberOfLines={numberOfLines} style={style}>
+        {text}
+      </Text>
+    )
+  }
+  const parts: React.ReactNode[] = []
+  let from = 0
+  ranges.forEach(([start, end], key) => {
+    if (start > from) {
+      parts.push(text.slice(from, start))
+    }
+    parts.push(
+      <Text key={key} style={{ backgroundColor: withAlpha(colors.tertiary, 0.5) }}>
+        {text.slice(start, end)}
+      </Text>,
+    )
+    from = end
+  })
+  if (from < text.length) {
+    parts.push(text.slice(from))
+  }
+  return (
+    <Text numberOfLines={numberOfLines} style={style}>
+      {parts}
+    </Text>
+  )
+}
+
 const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refreshing: boolean; onRefresh: () => void }) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const [query, setQuery] = useState('')
+  const needle = query.trim()
+  const visible = needle
+    ? log
+        .map(group => ({ ...group, entries: group.entries.filter(entry => logEntryMatches(group, entry, needle)) }))
+        .filter(group => group.entries.length > 0)
+    : log
   return (
-    <ScrollView
+    <View style={{ flex: 1 }}>
+      <TextInput
+        numberOfLines={1}
+        textAlignVertical="center"
+        selectionColor={colors.primary}
+        onChangeText={setQuery}
+        value={query}
+        placeholder={t('rights.logSearch')}
+        style={{ margin: blocks.small, height: 42, backgroundColor: 'inherit', borderRadius: 0 }}
+      />
+      <ScrollView
       style={{ flex: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary, colors.secondary, colors.tertiary]} />}>
-      {log.map(group => (
+      {visible.map(group => (
         <View key={group.date || group.entries[0]?.username}>
           {group.entries.map(entry => (
             <View
@@ -334,28 +438,35 @@ const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refr
                   {!!entry.username && (
                     <UserIconComponent username={entry.username} width={blocks.medium * 4} height={blocks.medium * 5} marginRight={10} />
                   )}
-                  <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p }}>
-                    {entry.username}
-                  </Text>
+                  <Highlighted
+                    text={entry.username}
+                    query={needle}
+                    numberOfLines={1}
+                    style={{ flex: 1, fontSize: fontSizes.p }}
+                  />
                   {!!group.date && (
-                    <Text style={{ flexShrink: 0, fontSize: fontSizes.small, color: colors.faded, marginLeft: blocks.medium }}>
-                      {group.date}
-                    </Text>
+                    <Highlighted
+                      text={group.date}
+                      query={needle}
+                      style={{ flexShrink: 0, fontSize: fontSizes.small, color: colors.faded, marginLeft: blocks.medium }}
+                    />
                   )}
                 </View>
               )}
               {entry.actions.map(action => (
-                <Text
+                <Highlighted
                   key={`${action.op}-${action.username || ''}-${action.label}`}
-                  style={{ fontSize: fontSizes.p, color: action.op === 'remove' ? colors.error : colors.primary }}>
-                  {`${action.op === 'remove' ? '−' : '+'} ${action.username ? `${action.username} ` : ''}${rightsLogLabel(action.label, t('rights.logBoard'))}`}
-                </Text>
+                  text={logLine(action)}
+                  query={needle}
+                  style={{ fontSize: fontSizes.p, color: action.op === 'remove' ? colors.error : colors.primary }}
+                />
               ))}
             </View>
           ))}
         </View>
       ))}
     </ScrollView>
+    </View>
   )
 }
 

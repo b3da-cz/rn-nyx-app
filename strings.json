@@ -659,6 +659,10 @@
     "logBoard": {
       "cs": "správa nástěnky",
       "en": "manage board"
+    },
+    "logSearch": {
+      "cs": "hledat",
+      "en": "search"
     }
   },
   "stats": {
