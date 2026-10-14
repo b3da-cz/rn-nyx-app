@@ -51,6 +51,21 @@ describe('MarkdownViewComponent parser tests', () => {
       expect(blocks[3]).toEqual({ type: 'list_item', ordered: true, number: '2', indent: 0, content: 'Druhé číslované' })
     })
 
+    it('parses a table', () => {
+      const md = '| jméno | dny |\n| --- | ---: |\n| B3DA | 12 |\n| NYX | -1 |'
+      const blocks = parseMarkdownBlocks(md)
+      expect(blocks).toEqual([
+        {
+          type: 'table',
+          header: ['jméno', 'dny'],
+          rows: [
+            ['B3DA', '12'],
+            ['NYX', '-1'],
+          ],
+        },
+      ])
+    })
+
     it('parses horizontal rules and paragraphs', () => {
       const md = 'Běžný odstavec.\n\n---\n\nDalší odstavec.'
       const blocks = parseMarkdownBlocks(md)

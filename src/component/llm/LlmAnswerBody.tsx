@@ -1,17 +1,18 @@
 import React, { useContext } from 'react'
 import { View } from 'react-native'
-import { Text } from 'react-native-paper'
 import { isTextSelectionEnabled, MainContext, useTheme } from '../../lib'
 import { MarkdownViewComponent } from '../MarkdownViewComponent'
+import { SearchHighlight } from '../SearchHighlight'
 
 type Props = {
   content: string
   isRaw?: boolean
+  query?: string
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
 }
 
 // Answer text laid out like post content (plain background, side padding).
-export const LlmAnswerBody = ({ content, isRaw, onNavigateToPost }: Props) => {
+export const LlmAnswerBody = ({ content, isRaw, query, onNavigateToPost }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -22,12 +23,16 @@ export const LlmAnswerBody = ({ content, isRaw, onNavigateToPost }: Props) => {
   return (
     <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>
       {isRaw ? (
-        <Text selectable={selectable} style={{ color: colors.text, fontSize: fontSizes.p }}>
-          {content}
-        </Text>
+        <SearchHighlight
+          selectable={selectable}
+          text={content}
+          query={query}
+          style={{ color: colors.text, fontSize: fontSizes.p }}
+        />
       ) : (
         <MarkdownViewComponent
           content={content}
+          query={query}
           selectable={selectable}
           showUserAvatars={showUserAvatars}
           onNavigateToPost={onNavigateToPost}

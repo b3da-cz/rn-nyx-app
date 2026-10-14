@@ -23,7 +23,6 @@ import {
   foldSearch,
   parseDiscussionRightsPage,
   rightsLogLabel,
-  searchMatchRanges,
   RIGHTS_TABLE_COLUMNS,
   rightKeysFor,
   rightsTableCell,
@@ -31,8 +30,8 @@ import {
   t,
   Theme,
   useTheme,
-  withAlpha,
 } from '../lib'
+import { SearchHighlight } from './SearchHighlight'
 
 type Props = {
   id: number
@@ -260,7 +259,7 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
                       marginRight={10}
                     />
                   )}
-                  <Highlighted
+                  <SearchHighlight
                     text={rowLabel(item)}
                     query={listNeedle}
                     numberOfLines={1}
@@ -412,51 +411,6 @@ const logEntryMatches = (group: RightsLogGroup, entry: RightsLogGroup['entries']
   return hay.includes(needle)
 }
 
-const Highlighted = ({
-  text,
-  query,
-  style,
-  numberOfLines,
-}: {
-  text: string
-  query: string
-  style?: object
-  numberOfLines?: number
-}) => {
-  const {
-    colors,
-  } = useTheme()
-  const ranges = searchMatchRanges(text, query)
-  if (ranges.length === 0) {
-    return (
-      <Text numberOfLines={numberOfLines} style={style}>
-        {text}
-      </Text>
-    )
-  }
-  const parts: React.ReactNode[] = []
-  let from = 0
-  ranges.forEach(([start, end], key) => {
-    if (start > from) {
-      parts.push(text.slice(from, start))
-    }
-    parts.push(
-      <Text key={key} style={{ backgroundColor: withAlpha(colors.tertiary, 0.5) }}>
-        {text.slice(start, end)}
-      </Text>,
-    )
-    from = end
-  })
-  if (from < text.length) {
-    parts.push(text.slice(from))
-  }
-  return (
-    <Text numberOfLines={numberOfLines} style={style}>
-      {parts}
-    </Text>
-  )
-}
-
 const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refreshing: boolean; onRefresh: () => void }) => {
   const {
     colors,
@@ -502,14 +456,14 @@ const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refr
                   {!!entry.username && (
                     <UserIconComponent username={entry.username} width={blocks.medium * 4} height={blocks.medium * 5} marginRight={10} />
                   )}
-                  <Highlighted
+                  <SearchHighlight
                     text={entry.username}
                     query={needle}
                     numberOfLines={1}
                     style={{ flex: 1, fontSize: fontSizes.p }}
                   />
                   {!!group.date && (
-                    <Highlighted
+                    <SearchHighlight
                       text={group.date}
                       query={needle}
                       style={{ flexShrink: 0, fontSize: fontSizes.small, color: colors.faded, marginLeft: blocks.medium }}
@@ -518,7 +472,7 @@ const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refr
                 </View>
               )}
               {entry.actions.map(action => (
-                <Highlighted
+                <SearchHighlight
                   key={`${action.op}-${action.username || ''}-${action.label}`}
                   text={logLine(action)}
                   query={needle}

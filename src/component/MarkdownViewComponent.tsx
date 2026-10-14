@@ -1,16 +1,20 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useEffect, useMemo, useRef } from 'react'
 import {
   Image,
   Linking,
   Platform,
+  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
   View,
   ViewStyle,
 } from 'react-native'
+import { searchMatchRanges } from '../lib/discussionRights'
 import { isTextSelectionEnabled, MainContext } from '../lib/MainContext'
+import { promptTextFile } from '../lib/textFilePrompt'
 import { useTheme } from '../lib/Theme'
+import { SearchHighlight } from './SearchHighlight'
 
 type Props = {
   content: string
@@ -19,6 +23,9 @@ type Props = {
   showUserAvatars?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   onLinkPress?: (url: string) => void
+  query?: string
+  activeIndex?: number | null
+  onMatchLayout?: (y: number) => void
 }
 
 import {
@@ -31,6 +38,53 @@ import {
 export type { InlineToken, MarkdownBlock }
 export { parseMarkdownBlocks, tokenizeInlineMarkdown }
 
+// Same strings, in the same order, as the rendered search highlights.
+export function countMarkdownSearchHits(markdown: string, query: string, avatars: boolean): number {
+  if (!query.trim()) {
+    return 0
+  }
+  let count = 0
+  const add = (value: string) => {
+    count += searchMatchRanges(value, query).length
+  }
+  const addInlines = (raw: string) => {
+    tokenizeInlineMarkdown(raw).forEach(token => {
+      if (token.type === 'link') {
+        const uname = token.username || (token.text.startsWith('@') ? token.text.substring(1) : undefined)
+        const cleanUname = uname ? uname.replace(/[.,;:!?]+$/, '').trim().toUpperCase() : ''
+        const avatar = avatars && cleanUname.length > 0 && /^[A-Z0-9_.-]+$/.test(cleanUname)
+        add(avatar && uname ? ` ${uname}` : token.text)
+        return
+      }
+      if (token.type === 'code') {
+        add(` ${token.text} `)
+        return
+      }
+      if (token.type === 'text') {
+        add(token.content)
+        return
+      }
+      add(token.text)
+    })
+  }
+  parseMarkdownBlocks(markdown).forEach(block => {
+    if (block.type === 'hr') {
+      return
+    }
+    if (block.type === 'table') {
+      block.header.forEach(add)
+      block.rows.forEach(row => row.forEach(add))
+      return
+    }
+    if (block.type === 'code_block') {
+      add(block.content)
+      return
+    }
+    addInlines(block.content)
+  })
+  return count
+}
+
 
 export const MarkdownViewComponent: React.FC<Props> = ({
   content,
@@ -39,6 +93,9 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   showUserAvatars,
   onNavigateToPost,
   onLinkPress,
+  query = '',
+  activeIndex = null,
+  onMatchLayout,
 }) => {
   const theme = useTheme()
   const { colors, metrics } = theme
@@ -53,6 +110,10 @@ export const MarkdownViewComponent: React.FC<Props> = ({
       return
     }
     const cleanUrl = url.trim().replace(/[.,;:!?]+$/, '')
+    const api = mainContext?.nyx?.api
+    if (api && promptTextFile(cleanUrl, cleanUrl, api)) {
+      return
+    }
     const match = cleanUrl.match(/(?:https?:\/\/nyx\.cz)?\/discussion\/(\d+)(?:\/id\/(\d+))?/)
     if (match && onNavigateToPost) {
       const discussionId = match[1]
@@ -73,6 +134,36 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   const avatarHeight = Math.min(18, Math.max(14, Math.round(metrics.fontSizes.p * 1.15)))
   const avatarWidth = Math.round(avatarHeight * 0.8)
 
+  const blockPos = useRef<{ y: number; start: number; count: number; ready: boolean }[]>([])
+  const scrollToActive = () => {
+    if (activeIndex == null) {
+      return
+    }
+    const block = blockPos.current.find(
+      item => item && item.ready && activeIndex >= item.start && activeIndex < item.start + item.count,
+    )
+    if (block) {
+      onMatchLayout?.(block.y)
+    }
+  }
+  useEffect(() => {
+    scrollToActive()
+  }, [activeIndex, query, content])
+  let seenMatches = 0
+  const showText = (value: string, extraStyle?: any, key?: React.Key) => {
+    const offset = seenMatches
+    seenMatches += searchMatchRanges(value, query).length
+    return (
+      <SearchHighlight
+        key={key}
+        text={value}
+        query={query}
+        matchOffset={offset}
+        activeIndex={activeIndex}
+        style={extraStyle}
+      />
+    )
+  }
   const renderInlines = (rawText: string, extraStyle?: any) => {
     const tokens = tokenizeInlineMarkdown(rawText)
     return tokens.map((token, idx) => {
@@ -99,16 +190,13 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   resizeMethod={'scale'}
                   resizeMode={'contain'}
                 />
-                <Text
-                  style={[
-                    styles.link,
-                    { color: colors.link || colors.secondary },
-                    token.bold && styles.bold,
-                    token.italic && styles.italic,
-                    extraStyle,
-                  ]}>
-                  {` ${uname}`}
-                </Text>
+                {showText(` ${uname}`, [
+                  styles.link,
+                  { color: colors.link || colors.secondary },
+                  token.bold && styles.bold,
+                  token.italic && styles.italic,
+                  extraStyle,
+                ])}
               </Text>
             )
           }
@@ -124,51 +212,27 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 token.italic && styles.italic,
                 extraStyle,
               ]}>
-              {token.text}
+              {showText(token.text)}
             </Text>
           )
         }
         case 'bold':
-          return (
-            <Text key={idx} style={[styles.bold, extraStyle]}>
-              {token.text}
-            </Text>
-          )
+          return showText(token.text, [styles.bold, extraStyle], idx)
         case 'italic':
-          return (
-            <Text key={idx} style={[styles.italic, extraStyle]}>
-              {token.text}
-            </Text>
-          )
+          return showText(token.text, [styles.italic, extraStyle], idx)
         case 'code':
-          return (
-            <Text
-              key={idx}
-              style={[
-                styles.inlineCode,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.primary,
-                  borderColor: colors.disabled,
-                },
-                extraStyle,
-              ]}>
-              {` ${token.text} `}
-            </Text>
-          )
+          return showText(` ${token.text} `, [
+            styles.inlineCode,
+            {
+              backgroundColor: colors.background,
+              color: colors.primary,
+              borderColor: colors.disabled,
+            },
+            extraStyle,
+          ], idx)
         case 'text':
         default:
-          return (
-            <Text
-              key={idx}
-              style={[
-                token.bold && styles.bold,
-                token.italic && styles.italic,
-                extraStyle,
-              ]}>
-              {token.content}
-            </Text>
-          )
+          return showText(token.content, [token.bold && styles.bold, token.italic && styles.italic, extraStyle], idx)
       }
     })
   }
@@ -176,6 +240,8 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   return (
     <View style={[styles.container, style]}>
       {blocks.map((block, idx) => {
+        const matchStart = seenMatches
+        const inner = (() => {
         switch (block.type) {
           case 'header': {
             const fontSize =
@@ -258,12 +324,46 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                     {block.lang}
                   </Text>
                 ) : null}
-                <Text
-                  selectable={isSelectable}
-                  style={[styles.codeBlockText, { color: colors.text }]}>
-                  {block.content}
-                </Text>
+                {showText(block.content, [styles.codeBlockText, { color: colors.text }])}
               </View>
+            )
+          }
+
+          case 'table': {
+            const cols = Math.max(block.header.length, ...block.rows.map(row => row.length), 1)
+            const width = Math.max(96, Math.floor((metrics.screen.width - 24) / Math.min(cols, 3)))
+            const renderRow = (cells: string[], headerRow: boolean) => (
+              <View style={{ flexDirection: 'row' }}>
+                {Array.from({ length: cols }, (_, col) => (
+                  <View
+                    key={col}
+                    style={{
+                      width,
+                      borderWidth: StyleSheet.hairlineWidth,
+                      borderColor: colors.border,
+                      borderRadius: 0,
+                      paddingHorizontal: 8,
+                      paddingVertical: 6,
+                      backgroundColor: headerRow ? colors.row : 'transparent',
+                    }}>
+                    {showText(cells[col] || '', {
+                      color: colors.text,
+                      fontSize: metrics.fontSizes.p,
+                      fontWeight: headerRow ? 'bold' : 'normal',
+                    })}
+                  </View>
+                ))}
+              </View>
+            )
+            return (
+              <ScrollView horizontal style={{ marginBottom: 8 }} contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={{ borderLeftWidth: 3, borderLeftColor: colors.primary, borderRadius: 0 }}>
+                  {renderRow(block.header, true)}
+                  {block.rows.map((row, rowIndex) => (
+                    <View key={rowIndex}>{renderRow(row, false)}</View>
+                  ))}
+                </View>
+              </ScrollView>
             )
           }
 
@@ -291,6 +391,27 @@ export const MarkdownViewComponent: React.FC<Props> = ({
             )
           }
         }
+        })()
+        const matchCount = seenMatches - matchStart
+        blockPos.current[idx] = {
+          y: blockPos.current[idx]?.y || 0,
+          start: matchStart,
+          count: matchCount,
+          ready: !!blockPos.current[idx]?.ready,
+        }
+        return (
+          <View
+            key={idx}
+            onLayout={event => {
+              const y = event.nativeEvent.layout.y
+              blockPos.current[idx] = { y, start: matchStart, count: matchCount, ready: true }
+              if (activeIndex != null && matchCount > 0 && activeIndex >= matchStart && activeIndex < matchStart + matchCount) {
+                onMatchLayout?.(y)
+              }
+            }}>
+            {inner}
+          </View>
+        )
       })}
     </View>
   )

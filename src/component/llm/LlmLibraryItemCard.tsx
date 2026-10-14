@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Feather'
 import { formatDuration, LayoutAnimConf, LlmHistoryItem, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
+import { SearchHighlight } from '../SearchHighlight'
 import { LlmAnswerBody } from './LlmAnswerBody'
 import { formatLlmDate, formatLlmDateRange, formatPostCount, joinMeta } from './llmFormat'
 
@@ -14,9 +15,10 @@ type Props = {
   onDelete: (id: string) => void
   onUsePrompt: (prompt: string) => void
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
+  query?: string
 }
 
-export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePrompt, onNavigateToPost }) => {
+export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePrompt, onNavigateToPost, query }) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -74,16 +76,17 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
               {metaContext}
             </Text>
           ) : null}
-          <Text
+          <SearchHighlight
             numberOfLines={isExpanded ? undefined : 2}
-            style={{ color: colors.text, fontSize: fontSizes.small, marginTop: blocks.small }}>
-            {item.prompt}
-          </Text>
+            text={item.prompt}
+            query={query}
+            style={{ color: colors.text, fontSize: fontSizes.small, marginTop: blocks.small }}
+          />
         </View>
       </TouchableRipple>
       {isExpanded && (
         <>
-          <LlmAnswerBody content={item.response} isRaw={isRaw} onNavigateToPost={onNavigateToPost} />
+          <LlmAnswerBody content={item.response} isRaw={isRaw} query={query} onNavigateToPost={onNavigateToPost} />
           <View style={[Styling.groups.flexRowCentered, { paddingRight: blocks.medium }]}>
             <View style={{ flex: 1, flexDirection: 'row' }}>
               <ButtonComponent

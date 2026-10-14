@@ -34,7 +34,7 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import { AboutView, ImageModal, ProfileView, SettingsView, SupportView, ThemeView } from './view'
+import { AboutView, FileView, ImageModal, ProfileView, SettingsView, SupportView, ThemeView } from './view'
 
 type Props = {
   config: any
@@ -44,6 +44,10 @@ type Props = {
   onConfigReload: Function
   onFiltersReload: Function
 }
+
+const FileScreen = ({ route }) => (
+  <FileView path={route?.params?.path || ''} name={route?.params?.name || ''} external={!!route?.params?.external} />
+)
 
 const Gallery = ({ navigation, route }) => {
   const { images, imgIndex, onClose, onRated, onViewImage } = route.params || {}
@@ -321,6 +325,11 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         header: props => <StackHeaderComponent {...props} theme={theme} />,
       }}>
       <RootStack.Screen name={'gallery'} component={Gallery} options={{ headerShown: false }} />
+      <RootStack.Screen
+        name={'file'}
+        component={FileScreen}
+        options={({ route }) => ({ title: (route.params as { name?: string } | undefined)?.name || '' })}
+      />
       <RootStack.Screen
         name={'settings'}
         component={Settings}

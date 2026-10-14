@@ -11,6 +11,7 @@ export type MarkdownBlock =
   | { type: 'blockquote'; content: string }
   | { type: 'list_item'; ordered: boolean; number?: string; indent: number; content: string }
   | { type: 'hr' }
+  | { type: 'table'; header: string[]; rows: string[][] }
   | { type: 'paragraph'; content: string }
 
 function cleanUrlAndExtractPunct(rawUrl: string): { url: string; trailingPunct: string } {
@@ -308,6 +309,21 @@ export function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
       continue
     }
 
+    // GFM table: header row, a | --- | separator, then body rows.
+    const next = lines[i + 1]
+    if (trimmed.includes('|') && next && isTableSeparator(next)) {
+      const header = splitTableRow(trimmed)
+      const rows: string[][] = []
+      let rowIndex = i + 2
+      while (rowIndex < lines.length && lines[rowIndex].includes('|') && lines[rowIndex].trim()) {
+        rows.push(splitTableRow(lines[rowIndex]))
+        rowIndex += 1
+      }
+      blocks.push({ type: 'table', header, rows })
+      i = rowIndex - 1
+      continue
+    }
+
     // Regular paragraph
     blocks.push({
       type: 'paragraph',
@@ -324,4 +340,20 @@ export function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
   }
 
   return blocks
+}
+
+function splitTableRow(line: string): string[] {
+  let raw = line.trim()
+  if (raw.startsWith('|')) {
+    raw = raw.slice(1)
+  }
+  if (raw.endsWith('|')) {
+    raw = raw.slice(0, -1)
+  }
+  return raw.split('|').map(cell => cell.trim())
+}
+
+function isTableSeparator(line: string): boolean {
+  const cells = splitTableRow(line)
+  return cells.length > 0 && cells.every(cell => /^:?-{3,}:?$/.test(cell.replace(/\s/g, '')))
 }

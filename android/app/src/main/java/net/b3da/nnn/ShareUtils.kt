@@ -14,9 +14,13 @@ import java.io.File
 import java.io.FileOutputStream
 
 object ShareUtils {
+    private const val TEXT_OPEN_MAX_BYTES = 1_500_000L
 
     fun extractShareData(intent: Intent, context: Context): WritableMap? {
         val action = intent.action ?: return null
+        if (action == Intent.ACTION_VIEW) {
+            return extractViewData(intent, context)
+        }
         if (action != Intent.ACTION_SEND && action != Intent.ACTION_SEND_MULTIPLE) {
             return null
         }
@@ -68,7 +72,94 @@ object ShareUtils {
         return null
     }
 
-    private fun copyUriToCache(uri: Uri, context: Context, mimeType: String): WritableMap? {
+    data class CachedOpen(val path: String, val name: String, val tooBig: Boolean)
+
+    fun cacheExternalOpen(intent: Intent, context: Context): CachedOpen? {
+        val uri = intent.data ?: return null
+        val scheme = uri.scheme ?: return null
+        if (scheme != "content" && scheme != "file") {
+            return null
+        }
+        var fileName = "file.txt"
+        var fileSize = 0L
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIdx != -1) {
+                    val name = cursor.getString(nameIdx)
+                    if (!name.isNullOrEmpty()) fileName = name
+                }
+                val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIdx != -1) fileSize = cursor.getLong(sizeIdx)
+            }
+        }
+        if (fileSize > TEXT_OPEN_MAX_BYTES) {
+            return CachedOpen("", fileName, true)
+        }
+        val fileMap = copyUriToCache(uri, context, intent.type ?: "text/plain", TEXT_OPEN_MAX_BYTES) ?: return CachedOpen("", fileName, true)
+        val cachedUri = fileMap.getString("uri") ?: return CachedOpen("", fileName, true)
+        val path = if (cachedUri.startsWith("file://")) cachedUri.removePrefix("file://") else cachedUri
+        return CachedOpen(path, fileMap.getString("name") ?: fileName, false)
+    }
+
+    private fun extractViewData(intent: Intent, context: Context): WritableMap? {
+        val stagedPath = intent.getStringExtra("nnn_open_path")
+        if (intent.hasExtra("nnn_open_path") || intent.hasExtra("nnn_open_too_big")) {
+            val map = Arguments.createMap()
+            map.putString("type", "file")
+            map.putString("purpose", "open")
+            if (intent.getBooleanExtra("nnn_open_too_big", false) || stagedPath.isNullOrEmpty()) {
+                map.putBoolean("tooBig", true)
+            }
+            val file = Arguments.createMap()
+            file.putString("name", intent.getStringExtra("nnn_open_name") ?: "file.txt")
+            file.putString("uri", if (stagedPath.isNullOrEmpty()) "" else Uri.fromFile(File(stagedPath)).toString())
+            file.putString("type", "text/plain")
+            file.putDouble("size", 0.0)
+            map.putMap("file", file)
+            return map
+        }
+        val uri = intent.data ?: return null
+        val scheme = uri.scheme ?: return null
+        if (scheme != "content" && scheme != "file") {
+            return null
+        }
+        val map = Arguments.createMap()
+        map.putString("type", "file")
+        map.putString("purpose", "open")
+        var fileName = "file.txt"
+        var fileSize = 0L
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIdx != -1) {
+                    val name = cursor.getString(nameIdx)
+                    if (!name.isNullOrEmpty()) fileName = name
+                }
+                val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIdx != -1) fileSize = cursor.getLong(sizeIdx)
+            }
+        }
+        if (fileSize > TEXT_OPEN_MAX_BYTES) {
+            map.putBoolean("tooBig", true)
+            val file = Arguments.createMap()
+            file.putString("name", fileName)
+            file.putString("uri", "")
+            file.putString("type", "text/plain")
+            file.putDouble("size", fileSize.toDouble())
+            map.putMap("file", file)
+            return map
+        }
+        val fileMap = copyUriToCache(uri, context, intent.type ?: "text/plain", TEXT_OPEN_MAX_BYTES)
+        if (fileMap == null) {
+            map.putBoolean("tooBig", true)
+            return map
+        }
+        map.putMap("file", fileMap)
+        return map
+    }
+
+    private fun copyUriToCache(uri: Uri, context: Context, mimeType: String, maxBytes: Long = Long.MAX_VALUE): WritableMap? {
         try {
             val contentResolver = context.contentResolver
             var fileName = "shared_file"
@@ -101,7 +192,27 @@ object ShareUtils {
             val shareDir = File(context.cacheDir, "shared_temp").apply { if (!exists()) mkdirs() }
             val safeName = "${System.currentTimeMillis()}_${fileName.replace("[^a-zA-Z0-9._-]".toRegex(), "_")}"
             val destFile = File(shareDir, safeName)
-            contentResolver.openInputStream(uri)?.use { input -> FileOutputStream(destFile).use { input.copyTo(it) } }
+            var overflow = false
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(destFile).use { output ->
+                    val buffer = ByteArray(8192)
+                    var total = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        total += read
+                        if (total > maxBytes) {
+                            overflow = true
+                            break
+                        }
+                        output.write(buffer, 0, read)
+                    }
+                }
+            }
+            if (overflow) {
+                destFile.delete()
+                return null
+            }
             if (fileSize <= 0) fileSize = destFile.length()
             var thumbnailUri: String? = null
             if (resolvedType.startsWith("video/")) {

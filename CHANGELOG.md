@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0
+- textové soubory .md, .js, .json, .txt, .log a .csv se otevírají v aplikaci
+- u odkazu na takový soubor je volba stáhnout, nebo otevřít
+- z průzkumníka se soubor otevře přímo v prohlížeči
+- prohlížeč má zdroj a formátované zobrazení, hledání s přechodem mezi výskyty a u markdownu tabulky
+
 ## 0.24.1
 - v dialogu práv jde u uživatele nastavit počet dnů, od neomezeně po 999999
 

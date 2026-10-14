@@ -1,4 +1,5 @@
 import { DeviceEventEmitter, NativeModules, Platform } from 'react-native'
+import { navigationRef } from './navigationRef'
 
 const { ShareReceiver } = NativeModules
 
@@ -12,6 +13,8 @@ export type SharedFile = {
 
 export type SharedData = {
   type: 'text' | 'file'
+  purpose?: 'share' | 'open'
+  tooBig?: boolean
   text?: string
   file?: SharedFile
 }
@@ -74,6 +77,30 @@ export const clearInitialShare = async (): Promise<void> => {
   try {
     await ShareReceiver.clearInitialShare()
   } catch (_) {}
+}
+
+export const returnToCaller = async (): Promise<void> => {
+  if (Platform.OS !== 'android' || !ShareReceiver?.returnToCaller) {
+    return
+  }
+  try {
+    await ShareReceiver.returnToCaller()
+  } catch (_) {}
+}
+
+// External open sits on the file screen. Back should reveal the app that sent
+// the file, and drop that screen so a later resume is not stuck on it.
+export const leaveExternalFile = () => {
+  returnToCaller()
+  setTimeout(() => {
+    if (!navigationRef.isReady()) {
+      return
+    }
+    const current = navigationRef.getCurrentRoute() as { name?: string; params?: { external?: boolean } } | undefined
+    if (current?.name === 'file' && current.params?.external && navigationRef.canGoBack()) {
+      navigationRef.goBack()
+    }
+  }, 0)
 }
 
 export const subscribeShareReceived = (callback: (data: SharedData) => void): (() => void) => {

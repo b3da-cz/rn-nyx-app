@@ -47,6 +47,22 @@
             <data android:scheme="nnn" />
         </intent-filter>
         <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" />
+            <data android:mimeType="text/plain" />
+            <data android:mimeType="text/markdown" />
+            <data android:mimeType="text/x-markdown" />
+            <data android:mimeType="application/json" />
+            <data android:mimeType="text/javascript" />
+            <data android:mimeType="application/javascript" />
+            <data android:mimeType="application/x-javascript" />
+            <data android:mimeType="text/csv" />
+            <data android:mimeType="text/comma-separated-values" />
+            <data android:mimeType="application/csv" />
+            <data android:mimeType="text/x-log" />
+        </intent-filter>
+        <intent-filter>
             <action android:name="android.intent.action.SEND" />
             <category android:name="android.intent.category.DEFAULT" />
             <data android:mimeType="text/plain" />

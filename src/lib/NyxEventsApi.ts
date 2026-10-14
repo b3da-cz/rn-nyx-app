@@ -1,5 +1,6 @@
 import NyxApi from 'nyx-api'
 import type { DiscussionAccessRightResponse, EventsResponse, Response as NyxResponse } from 'nyx-api'
+import { isNyxFileHost } from './textFile'
 
 export type EventsQuery = {
   area?: number
@@ -45,6 +46,18 @@ export class NyxEventsApi extends NyxApi {
       endpoint: `discussion/rights/days_left?discussion_id=${discussionId}&username=${encodeURIComponent(username)}&days_left=${daysLeft}`,
       method: 'POST',
     })
+  }
+
+  fileRequestHeaders(url: string): Record<string, string> {
+    if (!isNyxFileHost(url)) {
+      return { Accept: '*/*' }
+    }
+    const headers = this.getHeaders('*/*') as Record<string, string>
+    return {
+      Accept: '*/*',
+      Authorization: headers.Authorization,
+      'User-Agent': headers['User-Agent'],
+    }
   }
 
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {

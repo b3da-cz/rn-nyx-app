@@ -142,6 +142,7 @@ export const LlmLibraryTab: React.FC<Props> = ({
         renderItem={({ item }) => (
           <LlmLibraryItemCard
             item={item}
+            query={search}
             onDelete={handleDeleteItem}
             onUsePrompt={onUsePrompt}
             onNavigateToPost={onNavigateToPost}

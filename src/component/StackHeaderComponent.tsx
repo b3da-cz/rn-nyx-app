@@ -13,9 +13,10 @@ type Props = {
   back?: { title?: string }
   theme: Theme
   right?: ReactNode
+  onBack?: () => void
 }
 
-export const StackHeaderComponent = ({ navigation, options, back, theme, right }: Props) => (
+export const StackHeaderComponent = ({ navigation, options, back, theme, right, onBack }: Props) => (
   <View
     style={{
       height: HEADER_HEIGHT,
@@ -25,7 +26,7 @@ export const StackHeaderComponent = ({ navigation, options, back, theme, right }
     }}>
     {back ? (
       <TouchableRipple
-        onPress={() => navigation.goBack()}
+        onPress={() => (onBack ? onBack() : navigation.goBack())}
         rippleColor={theme.colors.ripple}
         style={{
           width: HEADER_HEIGHT,

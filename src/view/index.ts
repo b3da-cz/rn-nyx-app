@@ -1,3 +1,4 @@
+export * from './FileView'
 export * from './AboutView'
 export * from './BaseDiscussionListView'
 export * from './BookmarksView'

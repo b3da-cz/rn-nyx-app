@@ -16,7 +16,7 @@ import {
   VideoTagComponent,
   DiscussionRequestComponent,
 } from '../component'
-import { eventFromPost, Nyx, TOKEN, generateUuidV4, isTextSelectionEnabled, MainContext } from '../lib'
+import { eventFromPost, Nyx, TOKEN, generateUuidV4, isTextSelectionEnabled, MainContext, promptTextFile } from '../lib'
 
 type Props = {
   post: any
@@ -92,6 +92,10 @@ export class PostComponent extends Component<Props> {
         key={link.id}
         isPressable={true}
         onPress={() => {
+          const api = (this.context as any)?.nyx?.api
+          if (api && promptTextFile(link.url, link.text, api)) {
+            return
+          }
           Linking.openURL(link.url).catch(() => {
             if (link.url.startsWith('/discussion/')) {
               const parts = link.url.split('/')

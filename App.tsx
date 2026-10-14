@@ -4,11 +4,11 @@
  */
 import React, { useState, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Linking, LogBox, Platform, UIManager, useColorScheme } from 'react-native'
+import { Linking, LogBox, Platform, ToastAndroid, UIManager, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { NetworkProvider } from 'react-native-offline'
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
+import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import { Bugfender } from '@bugfender/rn-bugfender'
@@ -26,11 +26,14 @@ import {
   normalizeBookmarkSectionFilters,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
+  navigationRef,
   normalizeTimelineVisibleDays,
+  openLocalTextFile,
   setAppLanguage,
   SharedData,
   Storage,
   subscribeShareReceived,
+  t,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -39,7 +42,7 @@ import { LoginView } from './src/view'
 // @ts-ignore
 import { gplayTestId } from './keys.json'
 
-const navigationRef = createNavigationContainerRef()
+
 
 LogBox.ignoreLogs([
   'Animated.event',
@@ -81,19 +84,45 @@ const App: () => ReactNode = () => {
 
   useEffect(() => {
     if (!isAppLoaded || !isAuthenticated) return
-    getInitialShare().then(data => {
-      if (data && (data.text || data.file)) {
+    const takeShare = (data: SharedData | null) => {
+      if (!data) {
+        return
+      }
+      if (data.purpose === 'open') {
+        if (data.tooBig) {
+          ToastAndroid.show(t('file.tooBig'), ToastAndroid.LONG)
+          return
+        }
+        if (data.file?.uri) {
+          openLocalTextFile(data.file.uri, data.file.name || 'file.txt')
+        }
+        return
+      }
+      if (data.text || data.file) {
         setSharedData(data)
         setIsShareDialogVisible(true)
       }
-    })
-    const unsub = subscribeShareReceived(data => {
-      if (data && (data.text || data.file)) {
-        setSharedData(data)
-        setIsShareDialogVisible(true)
+    }
+    let cancelled = false
+    const boot = async () => {
+      for (let attempt = 0; attempt < 8 && !cancelled; attempt += 1) {
+        const data = await getInitialShare()
+        if (cancelled) {
+          return
+        }
+        if (data) {
+          takeShare(data)
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 300))
       }
-    })
-    return unsub
+    }
+    boot()
+    const unsub = subscribeShareReceived(takeShare)
+    return () => {
+      cancelled = true
+      unsub()
+    }
   }, [isAppLoaded, isAuthenticated])
 
   const handleShareDestination = (dest: ShareDestination, data: SharedData) => {

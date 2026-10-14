@@ -13,6 +13,7 @@ import {
   friendAttendees,
   MainContext,
   MyAttendance,
+  promptTextFile,
   Styling,
   t,
   TOKEN,
@@ -344,17 +345,21 @@ const EventBody = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
-  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
+  const main = useContext(MainContext)
+  const selectable = isTextSelectionEnabled(main.config)
   if (!parsed?.contentParts?.length && images.length === 0) {
     return null
   }
-  const openLink = (url: string) => {
+  const openLink = (url: string, label?: string) => {
     const target = discussionTarget(url)
     if (target) {
       onOpenDiscussion(target.discussionId, target.postId)
       return
     }
     const absolute = url?.startsWith('/') ? `https://nyx.cz${url}` : url
+    if (main.nyx?.api && promptTextFile(absolute, label || absolute, main.nyx.api)) {
+      return
+    }
     Linking.openURL(absolute).catch(() => null)
   }
   const inline = new Set((parsed?.images || []).map(image => image.src).filter(Boolean))
@@ -396,7 +401,7 @@ const EventBody = ({
         <Text
           key={`${link.id}-${index}`}
           style={{ color: colors.link, fontSize: fontSizes.p }}
-          onPress={() => openLink(link.url)}>
+          onPress={() => openLink(link.url, link.text)}>
           {`${link.text || link.url} `}
         </Text>
       )

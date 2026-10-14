@@ -697,6 +697,28 @@
       "en": "search"
     }
   },
+  "file": {
+    "download": {
+      "cs": "Stáhnout",
+      "en": "Download"
+    },
+    "open": {
+      "cs": "Otevřít",
+      "en": "Open"
+    },
+    "saved": {
+      "cs": "Uloženo do Stažených souborů",
+      "en": "Saved to Downloads"
+    },
+    "tooBig": {
+      "cs": "Soubor je moc velký na zobrazení v aplikaci.",
+      "en": "This file is too large to open in the app."
+    },
+    "failed": {
+      "cs": "Soubor se nepodařilo načíst.",
+      "en": "Could not load the file."
+    }
+  },
   "stats": {
     "title": {
       "cs": "Statistiky",
