@@ -134,12 +134,26 @@ export function rightsFromApiBody(body: any): Partial<Record<DiscussionRightKey,
   return null
 }
 
+export const DISCUSSION_DAYS_MIN = -1
+export const DISCUSSION_DAYS_MAX = 999999
+
+export function clampDiscussionDays(value: number): number {
+  if (!Number.isFinite(value)) {
+    return DISCUSSION_DAYS_MIN
+  }
+  return Math.min(DISCUSSION_DAYS_MAX, Math.max(DISCUSSION_DAYS_MIN, Math.trunc(value)))
+}
+
 export function applyRightsResponse(row: DiscussionRightsRow, body: any): DiscussionRightsRow {
-  const next = rightsFromApiBody(body)
-  if (!next) {
+  if (!body || body.error) {
     return row
   }
-  const daysLeft = typeof body?.days_left === 'number' ? body.days_left : row.daysLeft
+  const next = rightsFromApiBody(body)
+  const hasDays = typeof body.days_left === 'number'
+  const daysLeft = hasDays ? body.days_left : row.daysLeft
+  if (!next) {
+    return hasDays && daysLeft !== row.daysLeft ? { ...row, daysLeft } : row
+  }
   return { ...row, rights: { ...row.rights, ...next }, daysLeft }
 }
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.24.1
+- v dialogu práv jde u uživatele nastavit počet dnů, od neomezeně po 999999
+
 ## 0.24.0
 - zámek otiskem prstu, výchozí vypnuto; pod ním volba, za jak dlouho znovu chtít otisk
 - zakrytí aplikace proti screenshotu a v přehledu aplikací, výchozí vypnuto

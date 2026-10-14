@@ -1,5 +1,8 @@
 import {
   applyRightsResponse,
+  clampDiscussionDays,
+  DISCUSSION_DAYS_MAX,
+  DISCUSSION_DAYS_MIN,
   isRightsManager,
   foldSearch,
   parseDiscussionRightsPage,
@@ -218,6 +221,22 @@ describe('applyRightsResponse', () => {
 
   it('leaves the row unchanged when the call failed', () => {
     expect(applyRightsResponse(row, { error: 'nope' })).toBe(row)
+  })
+
+  it('applies a days-only payload', () => {
+    const next = applyRightsResponse(row, { days_left: 4 })
+    expect(next.daysLeft).toBe(4)
+    expect(next.rights).toEqual(row.rights)
+  })
+})
+
+describe('clampDiscussionDays', () => {
+  it('keeps the value between unlimited and the field max', () => {
+    expect(clampDiscussionDays(-1)).toBe(DISCUSSION_DAYS_MIN)
+    expect(clampDiscussionDays(-8)).toBe(-1)
+    expect(clampDiscussionDays(12.9)).toBe(12)
+    expect(clampDiscussionDays(1000000)).toBe(DISCUSSION_DAYS_MAX)
+    expect(clampDiscussionDays(Number.NaN)).toBe(-1)
   })
 })
 

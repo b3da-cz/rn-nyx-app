@@ -1,5 +1,5 @@
 import NyxApi from 'nyx-api'
-import type { EventsResponse, Response as NyxResponse } from 'nyx-api'
+import type { DiscussionAccessRightResponse, EventsResponse, Response as NyxResponse } from 'nyx-api'
 
 export type EventsQuery = {
   area?: number
@@ -32,6 +32,19 @@ export class NyxEventsApi extends NyxApi {
       headers,
     })
     return res.text()
+  }
+
+  // nyx-api writes the right flags, not the day count. The site sets that with this call.
+  // -1 is unlimited. The dialog keeps the value between -1 and 999999.
+  async setDiscussionDaysLeft(
+    discussionId: string | number,
+    username: string,
+    daysLeft: number,
+  ): Promise<Partial<DiscussionAccessRightResponse>> {
+    return this.fetch({
+      endpoint: `discussion/rights/days_left?discussion_id=${discussionId}&username=${encodeURIComponent(username)}&days_left=${daysLeft}`,
+      method: 'POST',
+    })
   }
 
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {

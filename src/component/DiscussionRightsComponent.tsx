@@ -1,8 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dialog, FAB, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
+import { ButtonComponent } from './ButtonComponent'
 import { DoubleTapDeleteButton } from './DoubleTapDeleteButton'
 import { androidStackBottomInset } from './FabComponent'
 import { LoaderComponent } from './LoaderComponent'
@@ -11,6 +12,9 @@ import { UserIconComponent } from './UserIconComponent'
 import { UserRowComponent } from './UserRowComponent'
 import {
   applyRightsResponse,
+  clampDiscussionDays,
+  DISCUSSION_DAYS_MAX,
+  DISCUSSION_DAYS_MIN,
   DiscussionRightKey,
   DiscussionRightsPage,
   DiscussionRightsRow,
@@ -79,6 +83,7 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
   const [isAdding, setIsAdding] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   const [listQuery, setListQuery] = useState('')
+  const daysLock = useRef(false)
 
   const load = async () => {
     setIsFetching(true)
@@ -137,6 +142,42 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
       }))
     }
     setPendingKey(null)
+  }
+
+  const setDays = async (row: DiscussionRightsRow, daysLeft: number) => {
+    if (pendingKey || daysLock.current || !row.username || daysLeft === (row.daysLeft ?? DISCUSSION_DAYS_MIN)) {
+      return
+    }
+    const nextDays = clampDiscussionDays(daysLeft)
+    const previous = row
+    const optimistic = { ...row, daysLeft: nextDays }
+    daysLock.current = true
+    setSelected(optimistic)
+    setPage(current => ({
+      ...current,
+      rows: current.rows.map(item => (sameRow(item, row) ? optimistic : item)),
+    }))
+    setPendingKey('days')
+    try {
+      const res = await nyx?.api.setDiscussionDaysLeft(id, row.username, nextDays)
+      if (!res || res.error) {
+        setSelected(previous)
+        setPage(current => ({
+          ...current,
+          rows: current.rows.map(item => (sameRow(item, row) ? previous : item)),
+        }))
+      } else {
+        const applied = applyRightsResponse(optimistic, res)
+        setSelected(applied)
+        setPage(current => ({
+          ...current,
+          rows: current.rows.map(item => (sameRow(item, row) ? applied : item)),
+        }))
+      }
+    } finally {
+      daysLock.current = false
+      setPendingKey(null)
+    }
   }
 
   const addUser = async (username: string) => {
@@ -275,6 +316,7 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
         onDismiss={() => (pendingKey || isRemoving ? null : setSelected(null))}
         onToggle={toggle}
         onRemove={removeUser}
+        onSetDays={setDays}
       />
       <AddUserDialog
         visible={isAddOpen}
@@ -499,6 +541,7 @@ const RightsDialog = ({
   onDismiss,
   onToggle,
   onRemove,
+  onSetDays,
 }: {
   row: DiscussionRightsRow | null
   pendingKey: string | null
@@ -506,6 +549,7 @@ const RightsDialog = ({
   onDismiss: () => void
   onToggle: (row: DiscussionRightsRow, key: DiscussionRightKey) => void
   onRemove: (row: DiscussionRightsRow) => void
+  onSetDays: (row: DiscussionRightsRow, daysLeft: number) => void
 }) => {
   const theme = useTheme()
   const {
@@ -553,6 +597,14 @@ const RightsDialog = ({
                 )}
               </View>
             )}
+            {row?.kind === 'user' && (
+              <DaysRow
+                theme={theme}
+                daysLeft={row.daysLeft}
+                disabled={!!pendingKey}
+                onCommit={days => onSetDays(row, days)}
+              />
+            )}
             {row &&
               rightKeysFor(row).map(key => {
                 const on = !!row.rights[key]
@@ -592,6 +644,113 @@ const RightsDialog = ({
         </Dialog.ScrollArea>
       </Dialog>
     </Portal>
+  )
+}
+
+const parseDaysDraft = (text: string) => (/^-?\d+$/.test(text) ? clampDiscussionDays(Number(text)) : null)
+
+const DaysRow = ({
+  theme,
+  daysLeft,
+  disabled,
+  onCommit,
+}: {
+  theme: Theme
+  daysLeft: number | null
+  disabled: boolean
+  onCommit: (daysLeft: number) => void
+}) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = theme
+  const baseline = daysLeft ?? DISCUSSION_DAYS_MIN
+  const [text, setText] = useState(String(baseline))
+
+  useEffect(() => {
+    setText(String(baseline))
+  }, [baseline])
+
+  const commit = (next: number) => {
+    const clamped = clampDiscussionDays(next)
+    setText(String(clamped))
+    if (!disabled && clamped !== baseline) {
+      onCommit(clamped)
+    }
+  }
+
+  const commitDraft = () => {
+    const parsed = parseDaysDraft(text)
+    if (parsed == null) {
+      setText(String(baseline))
+      return
+    }
+    commit(parsed)
+  }
+
+  const step = (delta: number) => {
+    const current = parseDaysDraft(text) ?? baseline
+    commit(current + delta)
+  }
+
+  const stepButton = (label: string, delta: number, atBound: boolean) => (
+    <ButtonComponent
+      theme={theme}
+      label={label}
+      isDisabled={disabled || atBound}
+      color={colors.text}
+      backgroundColor="inherit"
+      borderRadius={0}
+      fontSize={fontSizes.p}
+      width={42}
+      lineHeight={42}
+      paddingHorizontal={0}
+      onPress={() => step(delta)}
+    />
+  )
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.row,
+        borderLeftWidth: blocks.small,
+        borderColor: 'transparent',
+        borderRadius: 0,
+        marginTop: blocks.small,
+        minHeight: blocks.rowDiscussion,
+        paddingHorizontal: blocks.medium,
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}>
+      <Text style={{ flex: 1, fontSize: fontSizes.p, marginRight: blocks.medium }}>{t('rights.colDays')}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
+        {stepButton('−', -1, (parseDaysDraft(text) ?? baseline) <= DISCUSSION_DAYS_MIN)}
+        <TextInput
+          keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'numeric'}
+          returnKeyType="done"
+          numberOfLines={1}
+          textAlignVertical="center"
+          selectionColor={colors.primary}
+          value={text}
+          onChangeText={value => {
+            if (value === '' || value === '-' || /^-?\d+$/.test(value)) {
+              setText(value)
+            }
+          }}
+          onBlur={commitDraft}
+          onSubmitEditing={commitDraft}
+          style={{
+            width: 84,
+            height: 42,
+            marginHorizontal: blocks.small,
+            textAlign: 'center',
+            backgroundColor: 'inherit',
+            borderRadius: 0,
+          }}
+        />
+        {stepButton('+', 1, (parseDaysDraft(text) ?? baseline) >= DISCUSSION_DAYS_MAX)}
+      </View>
+    </View>
   )
 }
 
