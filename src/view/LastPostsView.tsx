@@ -4,6 +4,7 @@ import { PostComponent, RatingFilterBarComponent } from '../component'
 import {
   MainContext,
   wait,
+  exclusiveLastPostsFilter,
   filterDiscussions,
   filterPostsByAuthor,
   galleryImagesFromPosts,
@@ -22,6 +23,7 @@ type State = {
   posts: any[]
   images: any[]
   isRatedByFriends: boolean
+  isRatedByMe: boolean
   isFetching: boolean
   minRating: number
   theme?: Theme
@@ -40,6 +42,7 @@ export class LastPostsView extends Component<Props> {
       posts: [],
       images: [],
       isRatedByFriends: false,
+      isRatedByMe: false,
       isFetching: false,
       minRating: 0,
     }
@@ -71,7 +74,11 @@ export class LastPostsView extends Component<Props> {
 
   async getLastPosts() {
     this.setState({ isFetching: true, posts: [] })
-    const res = await this.nyx?.api.getLastPosts(this.state.minRating, this.state.isRatedByFriends)
+    const res = await this.nyx?.api.getLastPosts(
+      this.state.minRating,
+      this.state.isRatedByFriends,
+      this.state.isRatedByMe,
+    )
     const filteredPosts = filterDiscussions(res?.posts || [], this.filters) // last posts have discussion_name prop
     const filteredByAuthor =
       this.blockedUsers?.length > 0 ? filterPostsByAuthor(filteredPosts, this.blockedUsers) : filteredPosts
@@ -91,10 +98,12 @@ export class LastPostsView extends Component<Props> {
     return parsedPosts
   }
 
-  async setFilter(minRating, isRatedByFriends) {
+  async setFilter(minRating, isRatedByFriends, isRatedByMe = false) {
+    const next = exclusiveLastPostsFilter(minRating, isRatedByFriends, isRatedByMe)
     this.setState({
-      isRatedByFriends: minRating > 0 ? false : isRatedByFriends,
-      minRating,
+      isRatedByFriends: next.isRatedByFriends,
+      isRatedByMe: next.isRatedByMe,
+      minRating: next.minRating,
     })
     await wait()
     this.getLastPosts()
@@ -127,7 +136,9 @@ export class LastPostsView extends Component<Props> {
     return (
       <View>
         <RatingFilterBarComponent
-          onFilter={(minRating, isRatedByFriends) => this.setFilter(minRating, isRatedByFriends)}
+          onFilter={(minRating, isRatedByFriends, isRatedByMe) =>
+            this.setFilter(minRating, isRatedByFriends, isRatedByMe)
+          }
         />
         <FlatList
           data={this.state.posts}

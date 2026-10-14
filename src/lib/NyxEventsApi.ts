@@ -1,5 +1,6 @@
 import NyxApi from 'nyx-api'
 import type { DiscussionAccessRightResponse, EventsResponse, Response as NyxResponse } from 'nyx-api'
+import { lastPostsEndpoint } from './lastPosts'
 import { isNyxFileHost } from './textFile'
 
 export type EventsQuery = {
@@ -16,6 +17,16 @@ export type EventsQuery = {
 // /api/events also honors order, epoch and search, which the list filter needs.
 // setEventAttendance comes from NyxApi.
 export class NyxEventsApi extends NyxApi {
+  async getLastPosts(minRating = 0, isRatedByFriends?: boolean, isRatedByMe?: boolean) {
+    if (!isRatedByMe) {
+      return super.getLastPosts(minRating, isRatedByFriends, isRatedByMe)
+    }
+    return this.fetch({
+      endpoint: lastPostsEndpoint(minRating, isRatedByFriends, isRatedByMe),
+      method: 'GET',
+    })
+  }
+
   async deleteMail(postId: string | number): Promise<Partial<NyxResponse>> {
     return this.fetch({
       endpoint: `mail/delete/${postId}`,

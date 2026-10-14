@@ -1,6 +1,6 @@
 # Integrace nyx-api
 
-Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **37 ze 44 metod**, tedy **84,1 %**. **7 metod (15,9 %)** se nevolá vůbec. Tři volané metody mají ještě nevyužitou větev.
+Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **37 ze 44 metod**, tedy **84,1 %**. **7 metod (15,9 %)** se nevolá vůbec. Dvě volané metody mají ještě nevyužitou větev.
 
 `logout()` není vlastní HTTP endpoint. Jen smaže token přes `deleteAuthToken` a vyvolá `onLogout`. Obojí app používá.
 
@@ -12,7 +12,7 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 | `getContext` | `GET status` | ano, profil a refresh kontextu |
 | `getBookmarks` | `GET bookmarks` a `bookmarks/all` | ano, obě větve |
 | `getHistory` | `GET bookmarks/history` | částečně, `show_read` ano, `show_booked` ne |
-| `getLastPosts` | `GET last`, `/min_rating/`, `/rated_by_friends`, `/rated_by_me` | částečně, chybí `rated_by_me` |
+| `getLastPosts` | `GET last`, `/min_rating/`, `/rated_by_friends`, query `rated_by_me` | ano, `rated_by_me` jde jako query, cesta `/rated_by_me` vrací 404 |
 | `getLastDiscussions` | `GET last/discussions` | ne |
 | `search` | `GET search`, `/unified`, `/username/{phrase}` | částečně, unified a username; holé `search?search=` ne |
 | `searchV2` | `GET search-v2` | ne |
@@ -57,7 +57,6 @@ Sedm metod, které se nevolají:
 - **Poslední diskuze.** `GET last/discussions`. Tab „poslední“ bere jen příspěvky.
 - **Historie hromadně.** Vyřadit diskuze z historie a označit je jako přečtené. Seznam historie app má, tyto dvě akce ne. Parametr `show_booked` se neposílá.
 - **Uložení nástěnky.** `saveDiscussionContent`. Čtení `content/home` je zapojené, zápis ne.
-- **Filtr posledních příspěvků „hodnoceno mnou“.** `getLastPosts(..., isRatedByMe)` a cesta `/rated_by_me`. Minimum a „hodnotili přátelé“ app používá.
 
 Mimo balíček app navíc volá `DELETE mail/delete/{postId}` a HTML stránku práv. Založení události není API metoda. Je to WebView na `https://nyx.cz/event/create`.
 
@@ -67,7 +66,7 @@ Hlasování o novém klubu v balíčku není. Post typu `discussion_request` se 
 
 1. **Odebrání práv.** Hotovo ve v0.23.3. Na dialogu detailu práv (`RightsDialog` v `DiscussionRightsComponent`) jde odebrat uživatele přes `deleteDiscussionRights`. Tlačítko ve stylu `DoubleTapDeleteButton`: první krok má text, ne jen ikonu. Druhý krok je jen checkmark. Po potvrzení se řádek smaže a dialog zavře.
 2. **Embed souboru.** Hotovo ve v0.25.1. Na konci řádku nahraného souboru v compose dialogu (`MessageBoxDialog`, seznam `uploadedFiles`, panel detailů) je přepínač a volá `setFileEmbed`. Výchozí stav je současné chování: vložit jako obrázek, ne jako odkaz na soubor. Dialog si volbu nepamatuje. Každý soubor začíná jako obrázek a před odesláním se přepíná zvlášť. Zapnutý stav je ikona obrázku, vypnutý ikona odkazu.
-3. **Filtr „hodnoceno mnou“.** Do řádku filtru posledních příspěvků (`RatingFilterBarComponent`, vedle ikony `users`) přidat ikonu uživatele. Zapnutý filtr posílá třetí argument `getLastPosts` (`/rated_by_me`).
+3. **Filtr „hodnoceno mnou“.** Hotovo. V řádku filtru posledních příspěvků (`RatingFilterBarComponent`, vedle ikony `users`) je ikona uživatele. Zapnutý filtr volá `GET last?rated_by_me=true`. Cesta `/rated_by_me` z `nyx-api` 0.5.2 vrací 404, proto ji app obchází v `NyxEventsApi`. Kombinace nejdou. Přátelé mají přednost před hodnoceno mnou a to má přednost před minimem. Klepnutí na jednu volbu ostatní vypne. Samotné minimum a přátelé dál jdou cestou, která funguje.
 4. **Zápisník.** Obrazovka nad `getNotepad` a `getNotepadEntry`: seznam a detail. Balíček umí jen čtení, zápis do té doby nepřidávat.
 5. **Hlasování o novém klubu.** U postu `discussion_request` nahradit HTML tabulku nativním zobrazením ve stylu ankety v app (tlačítka pro a proti, ne WebView). V `nyx-api` 0.5.2 na to endpoint není. Hlas posílat jako běžný příspěvek přes `postToDiscussion`, až se při implementaci ověří text, který web po `vote_for` / `vote_against` skutečně odešle. Když se ukáže samostatná cesta, použít tu.
 6. **Zbytek nechat jako TODO**, až po zápisníku:

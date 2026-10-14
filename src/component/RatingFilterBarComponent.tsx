@@ -3,12 +3,13 @@ import { LayoutAnimation, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { ButtonComponent, ButtonSquareComponent } from '../component'
-import { LayoutAnimConf, Styling, useTheme, wait } from '../lib'
+import { exclusiveLastPostsFilter, LayoutAnimConf, Styling, useTheme, wait } from '../lib'
 
 export const RatingFilterBarComponent = ({ onFilter }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [minimumRating, setMinimumRating] = useState(0)
   const [fromFriends, setFromFriends] = useState(false)
+  const [fromMe, setFromMe] = useState(false)
 
   const {
     colors,
@@ -19,16 +20,19 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
     LayoutAnimation.configureNext(LayoutAnimConf.spring)
     setIsOpen(true)
   }
-  const setFilter = async (minRating, isRatedByFriends) => {
-    setMinimumRating(minRating)
-    setFromFriends(isRatedByFriends)
-    onFilter(minRating, isRatedByFriends)
+  const setFilter = async (minRating, isRatedByFriends, isRatedByMe = false) => {
+    const next = exclusiveLastPostsFilter(minRating, isRatedByFriends, isRatedByMe)
+    setMinimumRating(next.minRating)
+    setFromFriends(next.isRatedByFriends)
+    setFromMe(next.isRatedByMe)
+    onFilter(next.minRating, next.isRatedByFriends, next.isRatedByMe)
     await wait(200)
     LayoutAnimation.configureNext(LayoutAnimConf.spring)
     setIsOpen(false)
   }
+  const ratingActive = !fromFriends && !fromMe
   const getColorForMinRating = rating => {
-    return minimumRating === rating ? colors.text : colors.disabled
+    return ratingActive && minimumRating === rating ? colors.text : colors.disabled
   }
 
   return (
@@ -70,7 +74,11 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
       onPress={() => openFilter()}>
       <View>
         {!isOpen && (
-          <Icon name={'thumbs-up'} size={16} color={fromFriends || minimumRating > 0 ? colors.accent : colors.text} />
+          <Icon
+            name={'thumbs-up'}
+            size={16}
+            color={fromFriends || fromMe || minimumRating > 0 ? colors.accent : colors.text}
+          />
         )}
         {isOpen && (
           <View style={{ flexDirection: 'row' }}>
@@ -78,7 +86,13 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               icon={'users'}
               size={fontSizes.p}
               color={fromFriends ? colors.text : colors.disabled}
-              onPress={() => setFilter(0, !fromFriends)}
+              onPress={() => setFilter(0, !fromFriends, false)}
+            />
+            <ButtonSquareComponent
+              icon={'user'}
+              size={fontSizes.p}
+              color={fromMe ? colors.text : colors.disabled}
+              onPress={() => setFilter(0, false, !fromMe)}
             />
             <ButtonComponent
               label={'0'}
@@ -86,7 +100,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={50}
-              onPress={() => setFilter(0, false)}
+              onPress={() => setFilter(0, false, false)}
             />
             <ButtonComponent
               label={'+10'}
@@ -94,7 +108,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={50}
-              onPress={() => setFilter(10, false)}
+              onPress={() => setFilter(10, false, false)}
             />
             <ButtonComponent
               label={'+25'}
@@ -102,7 +116,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={50}
-              onPress={() => setFilter(25, false)}
+              onPress={() => setFilter(25, false, false)}
             />
             <ButtonComponent
               label={'+50'}
@@ -110,7 +124,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={50}
-              onPress={() => setFilter(50, false)}
+              onPress={() => setFilter(50, false, false)}
             />
             <ButtonComponent
               label={'+100'}
@@ -118,7 +132,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={65}
-              onPress={() => setFilter(100, false)}
+              onPress={() => setFilter(100, false, false)}
             />
             <ButtonComponent
               label={'+200'}
@@ -126,7 +140,7 @@ export const RatingFilterBarComponent = ({ onFilter }) => {
               backgroundColor={'inherit'}
               fontSize={fontSizes.p}
               width={65}
-              onPress={() => setFilter(200, false)}
+              onPress={() => setFilter(200, false, false)}
             />
           </View>
         )}

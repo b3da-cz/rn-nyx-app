@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.1
+- v posledních příspěvcích je vedle přátel filtr hodnoceno mnou
+- přátelé, hodnoceno mnou a minimum jdou jen zvlášť; přátelé mají přednost, pak hodnoceno mnou, pak minimum
+
 ## 0.26.0
 - vypnuté video tagy u nahraných videí zůstanou vypnuté
 
