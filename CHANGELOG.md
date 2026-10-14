@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.4
+- odebrání v dialogu práv je červeně, druhé klepnutí má červený podklad a text s otazníkem
+- v hlavičce dialogu je vlevo od jména avatar uživatele
+
 ## 0.23.3
 - v dialogu práv jde uživatele odebrat, druhé klepnutí je jen fajfka
 

@@ -5,6 +5,7 @@ import {
   Text,
   TextStyle,
   TouchableOpacity,
+  View,
   ViewStyle,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/Feather'
@@ -28,6 +29,7 @@ type Props = {
 export const DoubleTapDeleteButton: React.FC<Props> = ({
   onDelete,
   label = '',
+  confirmLabel,
   iconSize = 14,
   style,
   textStyle,
@@ -70,7 +72,8 @@ export const DoubleTapDeleteButton: React.FC<Props> = ({
   }
 
   const dangerColor = '#DC2626'
-  const textToShow = confirming ? '' : label
+  const textToShow = confirming ? confirmLabel || '' : label
+  const spacer = confirmLabel ? (confirmLabel.length >= label.length ? confirmLabel : label) : textToShow
   const fgColor = confirming ? (flat ? dangerColor : '#FFFFFF') : iconColor || colors.text
 
   return (
@@ -92,15 +95,17 @@ export const DoubleTapDeleteButton: React.FC<Props> = ({
         size={iconSize}
         color={fgColor}
       />
-      {!!textToShow && (
-        <Text
-          style={[
-            styles.text,
-            { color: fgColor },
-            textStyle,
-          ]}>
-          {textToShow}
-        </Text>
+      {!!spacer && (
+        <View style={styles.labelBox}>
+          <Text style={[styles.text, { opacity: 0 }, textStyle]} numberOfLines={1}>
+            {spacer}
+          </Text>
+          {!!textToShow && (
+            <Text style={[styles.text, styles.labelOverlay, { color: fgColor }, textStyle]} numberOfLines={1}>
+              {textToShow}
+            </Text>
+          )}
+        </View>
       )}
     </TouchableOpacity>
   )
@@ -120,5 +125,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginLeft: 4,
     fontWeight: '600',
+  },
+  labelBox: {
+    justifyContent: 'center',
+  },
+  labelOverlay: {
+    position: 'absolute',
+    left: 0,
   },
 })

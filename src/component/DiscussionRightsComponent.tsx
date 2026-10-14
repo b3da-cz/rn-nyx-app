@@ -527,12 +527,26 @@ const RightsDialog = ({
                   paddingHorizontal: blocks.medium,
                   paddingVertical: blocks.small,
                 }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p, marginRight: blocks.medium }}>
-                  {rowLabel(row)}
-                </Text>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: blocks.medium }}>
+                  {row.kind === 'user' && !!row.username && (
+                    <UserIconComponent
+                      username={row.username}
+                      width={blocks.medium * 4}
+                      height={blocks.medium * 5}
+                      marginRight={10}
+                    />
+                  )}
+                  <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p }}>
+                    {rowLabel(row)}
+                  </Text>
+                </View>
                 {row.kind === 'user' && !!row.username && (
                   <DoubleTapDeleteButton
                     label={t('rights.removeUser')}
+                    confirmLabel={`${t('rights.removeUser')}?`}
+                    iconColor="#DC2626"
+                    iconSize={fontSizes.p}
+                    textStyle={{ fontSize: fontSizes.p, fontWeight: 'normal' }}
                     onDelete={() => onRemove(row)}
                     disabled={!!pendingKey || removing}
                   />
