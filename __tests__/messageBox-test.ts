@@ -10,6 +10,8 @@ import {
   uniqueVideoTags,
   isUploadVideoTagEnabled,
   uploadSizeKb,
+  uploadSizeLabel,
+  uploadSizeMb,
   videoTagFromUpload,
 } from '../src/lib/compose'
 
@@ -34,6 +36,12 @@ describe('upload size', () => {
     expect(isUploadTooLarge(null)).toBe(false)
     expect(uploadSizeKb(UPLOAD_MAX_BYTES)).toBe(10240)
     expect(uploadSizeKb(1536 * 1024)).toBe(1536)
+    expect(uploadSizeMb(UPLOAD_MAX_BYTES)).toBe('10.000')
+    expect(uploadSizeMb(1536 * 1024)).toBe('1.500')
+    expect(uploadSizeLabel(512 * 1024)).toBe('512 kB')
+    expect(uploadSizeLabel(1024 * 1024 - 1)).toMatch(/kB$/)
+    expect(uploadSizeLabel(1024 * 1024)).toBe('1.000 MB')
+    expect(uploadSizeLabel(12151 * 1024)).toBe('11.866 MB')
   })
 })
 

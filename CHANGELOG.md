@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.22.8
+- příliš velký soubor hlásí in-app notifikace; pod 1 MB v kB, od 1 MB v MB na 3 desetinná místa
+- počet nahraných souborů je nad ikonou souboru
+- načtení novější stránky v klubu skočí na poslední příspěvek té stránky
+
 ## 0.22.7
 - v obecném nastavení je přepínač video tagu u nahraných videí, výchozí je zapnuto
 - příloha od 10 MB se nenahraje a ukáže se chyba s velikostí v kB

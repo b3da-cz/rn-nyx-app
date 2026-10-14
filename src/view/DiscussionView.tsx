@@ -19,6 +19,7 @@ import {
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
+  newerPageScrollIndex,
   formatDate,
   getDistinctPosts,
   toGalleryImages,
@@ -336,11 +337,21 @@ export class DiscussionView extends Component<Props> {
     const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const posts = this._posts.length ? this._posts : this.state.posts
     const topPostId = posts.length > 0 && posts[0].id
+    if (!topPostId) {
+      return
+    }
+    const beforeIds = posts.map(post => post.id)
     const queryString = `${discussionId}?order=newer_than&from_id=${topPostId}`
     const addedLen = await this.fetchDiscussion(queryString)
-    if (addedLen > 0 && addedLen !== posts.length) {
-      this.scrollToPost(addedLen)
+    if (!(addedLen > 0)) {
+      return
     }
+    const nextPosts = this._posts.length ? this._posts : this.state.posts
+    const index = newerPageScrollIndex(nextPosts, beforeIds)
+    if (index == null) {
+      return
+    }
+    this.scrollToIndexAt(index)
   }
 
   async loadDiscussionBottom() {
@@ -543,6 +554,15 @@ export class DiscussionView extends Component<Props> {
       }
       index++
     }
+  }
+
+  scrollToIndexAt(index, animated = false) {
+    if (index == null || index < 0 || !this.refScroll) {
+      return
+    }
+    setTimeout(() => {
+      this.refScroll?.scrollToIndex({ index, viewPosition: 0, animated })
+    }, 20)
   }
 
   scrollToPost(postIndex, animated = false) {

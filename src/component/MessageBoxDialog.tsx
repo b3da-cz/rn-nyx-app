@@ -9,7 +9,6 @@ import {
   Dimensions,
   StyleSheet,
   Modal,
-  Alert,
 } from 'react-native'
 import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
@@ -19,7 +18,7 @@ import {
   MainContext,
   isUploadVideoTagEnabled,
   isUploadTooLarge,
-  uploadSizeKb,
+  uploadSizeLabel,
   createIssue,
   LayoutAnimConf,
   JPEG_QUALITY_DEFAULT,
@@ -35,6 +34,7 @@ import {
   Storage,
   asFileUri,
   keyboardLift,
+  showNotificationBanner,
 } from '../lib'
 
 type Props = {
@@ -311,7 +311,13 @@ export class MessageBoxDialog extends Component<Props> {
     if (!isUploadTooLarge(size)) {
       return false
     }
-    Alert.alert(t('error'), `${t('profile.fileTooLarge')}`.replace('%s', `${uploadSizeKb(size as number)}`))
+    showNotificationBanner({
+      title: t('error'),
+      body: `${t('profile.fileTooLarge')}`.replace('%s', uploadSizeLabel(size as number)),
+      tintColor: '#d81919',
+      textColor: '#FFFFFF',
+      icon: 'alert-circle',
+    })
     return true
   }
 
@@ -773,18 +779,21 @@ export class MessageBoxDialog extends Component<Props> {
                   {isUploading ? (
                     <ActivityIndicator size="large" color={colors.primary} style={{ marginRight: 12 }} />
                   ) : (
-                    <View>
-                      {uploadedFiles.length > 0 && (
-                        <Badge visible={true} style={{ position: 'absolute' }}>
-                          {uploadedFiles.length}
-                        </Badge>
-                      )}
+                    <View style={{ position: 'relative' }}>
                       <IconButton
                         icon={'file'}
                         style={{ margin: 0 }}
                         onPress={() => this.appendFile()}
                         rippleColor={colors.ripple}
                       />
+                      {uploadedFiles.length > 0 && (
+                        <Badge
+                          visible={true}
+                          style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, elevation: 3 }}
+                        >
+                          {uploadedFiles.length}
+                        </Badge>
+                      )}
                     </View>
                   )}
                 </View>

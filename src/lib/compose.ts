@@ -26,6 +26,16 @@ export const isUploadTooLarge = (size?: number | null) =>
 
 export const uploadSizeKb = (size: number) => Math.round(size / 1024)
 
+export const uploadSizeMb = (size: number) => (size / (1024 * 1024)).toFixed(3)
+
+// Under 1 MB the notice shows kilobytes. From 1 MB upward it shows megabytes only.
+export const uploadSizeLabel = (size: number) => {
+  if (size >= 1024 * 1024) {
+    return `${uploadSizeMb(size)} MB`
+  }
+  return `${uploadSizeKb(size)} kB`
+}
+
 export const isVideoUpload = (file?: { mimetype?: string; type?: string; filename?: string; name?: string } | null) => {
   if (!file) {
     return false

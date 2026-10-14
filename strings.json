@@ -351,8 +351,8 @@
       "en": "Video tag for uploaded videos"
     },
     "fileTooLarge": {
-      "cs": "Soubor je příliš velký (%s kB). Server přijme nejvýše 10 MB.",
-      "en": "The file is too large (%s kB). The server accepts at most 10 MB."
+      "cs": "Soubor je příliš velký (%s). Server přijme nejvýše 10 MB.",
+      "en": "The file is too large (%s). The server accepts at most 10 MB."
     },
     "imageDownload": {
       "cs": "Stahování obrázků",
