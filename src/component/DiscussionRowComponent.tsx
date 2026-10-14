@@ -34,7 +34,7 @@ export const DiscussionRowComponent = ({ discussion, isAccented, onPress, onLong
       }}
       onPress={() => (typeof onPress === 'function' ? onPress(id) : null)}
       onLongPress={() => (typeof onLongPress === 'function' ? onLongPress(id) : null)}>
-      <View style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion }]}>
+      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: blocks.rowDiscussion }]}>
         <Text
           numberOfLines={1}
           style={[

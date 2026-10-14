@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.22.9
+- řádky diskuzí, přátel a hlavičky sekcí se při velkém systémovém fontu neořezávají
+- výška příspěvku počítá systémové písmo přes SP, ne lineárně
+- čísla v odznacích se se systémovým fontem nezvětšují
+
 ## 0.22.8
 - příliš velký soubor hlásí in-app notifikace; pod 1 MB v kB, od 1 MB v MB na 3 desetinná místa
 - počet nahraných souborů je nad ikonou souboru

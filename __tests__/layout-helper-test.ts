@@ -36,7 +36,7 @@ describe('LayoutHelper getBlockSizes', () => {
 
     expect(rnTextSize.flatHeights).toHaveBeenCalledWith(
       expect.objectContaining({
-        allowFontScaling: false,
+        allowFontScaling: true,
         fontSize: expect.any(Number),
       }),
     )

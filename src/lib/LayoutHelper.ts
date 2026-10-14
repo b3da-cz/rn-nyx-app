@@ -256,7 +256,11 @@ export const getBlockSizes = async (
 ) => {
   try {
     themeBaseFontSize = themeBaseFontSize > 15 ? themeBaseFontSize : themeBaseFontSize * 1.075
-    const effectiveFontSize = themeBaseFontSize * fontScale
+    // Measure at the app font size and let rn-text-size apply system SP scaling
+    // (allowFontScaling). Premultiplying PixelRatio.getFontScale() and measuring
+    // in DIP is linear, but Android scales large fonts less than that, so long
+    // posts were reserved taller than they render once the system font is maxed.
+    const effectiveFontSize = themeBaseFontSize
     const fontSpecs: TSFontSpecs = {
       fontFamily: undefined,
       fontSize: effectiveFontSize,
@@ -275,7 +279,7 @@ export const getBlockSizes = async (
       const textHeights = await rnTextSize.flatHeights({
         text: [post.parsed.clearText],
         width: screenWidth,
-        allowFontScaling: false,
+        allowFontScaling: true,
         ...fontSpecs,
       })
       const textHeight = textHeights.reduce((a, b) => a + b)
@@ -285,8 +289,8 @@ export const getBlockSizes = async (
           ? await rnTextSize.flatHeights({
               text: post.parsed.codeBlocks.map(c => c.raw),
               width: 99999,
-              fontSize: 11 * fontScale,
-              allowFontScaling: false,
+              fontSize: 11,
+              allowFontScaling: true,
             })
           : []
       const codeBlocksHeight =
@@ -308,7 +312,7 @@ export const getBlockSizes = async (
               text: [post.content_raw?.data?.question, post.content_raw?.data?.instructions, '\nrespondents\nvotes'],
               width: Dimensions.get('window').width - 40,
               fontSize: effectiveFontSize,
-              allowFontScaling: false,
+              allowFontScaling: true,
             })
           : []
       const pollHeight =
@@ -323,8 +327,8 @@ export const getBlockSizes = async (
           ? await rnTextSize.flatHeights({
               text: [post.content_raw?.data?.summary, '\n\naction\nlocation/price'],
               width: Dimensions.get('window').width - 22,
-              fontSize: 16 * fontScale,
-              allowFontScaling: false,
+              fontSize: 16,
+              allowFontScaling: true,
             })
           : []
       const adHeight = adTextHeights.length > 0 ? adTextHeights.reduce((a, b) => a + b) + 15 * fontScale : 0
@@ -337,14 +341,14 @@ export const getBlockSizes = async (
           text: [eventData.full_name || ' ', eventData.category_path || ' ', eventData.location || ' '],
           width: Math.max(80, fullWidth - (hasThumb ? 84 : 0)),
           fontSize: effectiveFontSize,
-          allowFontScaling: false,
+          allowFontScaling: true,
         })
         const summaryHeights = eventData.summary
           ? await rnTextSize.flatHeights({
               text: [eventData.summary],
               width: fullWidth,
-              fontSize: Math.max(11 * fontScale, effectiveFontSize * 0.8),
-              allowFontScaling: false,
+              fontSize: Math.max(11, effectiveFontSize * 0.8),
+              allowFontScaling: true,
             })
           : [0]
         const head = Math.max(
@@ -362,8 +366,8 @@ export const getBlockSizes = async (
           ? await rnTextSize.flatHeights({
               text: [post.parsed.clearText],
               width: Dimensions.get('window').width + 100,
-              fontSize: 10 * fontScale,
-              allowFontScaling: false,
+              fontSize: 10,
+              allowFontScaling: true,
             })
           : []
       const discussionRequestHeight =
@@ -372,7 +376,7 @@ export const getBlockSizes = async (
           : 0
       // each video renders a square WebView plus a "copy link" row below it;
       // reserve the row height too or the row gets clipped by the fixed post height
-      const videoCopyRowHeight = 16 + (2 * effectiveFontSize) / 5 + 6
+      const videoCopyRowHeight = 16 + (2 * themeBaseFontSize * fontScale) / 5 + 6
       const videoHeight =
         post.parsed?.videos?.length > 0 ? post.parsed.videos.length * (screenWidth + videoCopyRowHeight) : 0
       const height =

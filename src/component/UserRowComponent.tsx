@@ -54,7 +54,11 @@ export const UserRowComponent = ({
         marginTop,
       }}
       onPress={() => (typeof onPress === 'function' ? onPress() : null)}>
-      <View style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion - 2 * blocks.medium }]}>
+      <View
+        style={[
+          Styling.groups.flexRowSpbCentered,
+          { minHeight: blocks.rowDiscussion - 2 * blocks.medium },
+        ]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {withIcon && (
             <UserIconComponent
@@ -64,12 +68,16 @@ export const UserRowComponent = ({
               marginRight={10}
             />
           )}
-          <Text style={{ fontSize: fontSizes.p }}>{user.username}</Text>
+          <Text numberOfLines={1} style={{ fontSize: fontSizes.p }}>
+            {user.username}
+          </Text>
         </View>
         {(extra || (extraText && extraText.length > 0)) && (
           <View style={Styling.groups.flexRowCentered}>
             {extraText && extraText.length > 0 && (
-              <Text style={{ fontSize: fontSizes.p, marginRight: extra ? blocks.small : 0 }}>{extraText}</Text>
+              <Text numberOfLines={1} style={{ fontSize: fontSizes.p, marginRight: extra ? blocks.small : 0 }}>
+                {extraText}
+              </Text>
             )}
             {extra}
           </View>

@@ -16,11 +16,14 @@ export const NotificationIconComponent = ({ color, isMail = false }) => {
               <Badge
                 visible={true}
                 size={15}
+                allowFontScaling={false}
                 style={{
                   position: 'absolute',
                   top: -10,
                   right: -10,
                   backgroundColor: isMail ? colors.secondary : colors.primary,
+                  fontSize: 9,
+                  lineHeight: 15,
                 }}>
                 {unreads}
               </Badge>

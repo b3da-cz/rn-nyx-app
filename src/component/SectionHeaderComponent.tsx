@@ -49,19 +49,20 @@ export const SectionHeaderComponent = ({
         width: '100%',
         backgroundColor: backgroundColor || colors.tertiary,
         marginBottom: blocks.small,
-        height: blocks.rowDiscussion,
+        minHeight: blocks.rowDiscussion,
       }}>
-      <View style={[Styling.groups.flexRowSpbCentered, { height: blocks.rowDiscussion }]}>
+      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: blocks.rowDiscussion, alignItems: 'stretch' }]}>
         <TouchableRipple
           disabled={!isPressable}
           rippleColor={colors.ripple}
-          style={{ flex: 1, height: blocks.rowDiscussion }}
+          style={{ flex: 1 }}
           onPress={pressHeader}>
           <View
             style={[
               Styling.groups.flexRowSpbCentered,
               {
-                height: blocks.rowDiscussion,
+                flex: 1,
+                minHeight: blocks.rowDiscussion,
                 paddingLeft: blocks.medium,
                 paddingRight: hasIconAction ? 0 : blocks.medium,
               },
@@ -76,7 +77,7 @@ export const SectionHeaderComponent = ({
           <TouchableRipple
             rippleColor={colors.ripple}
             style={{
-              height: blocks.rowDiscussion,
+              minHeight: blocks.rowDiscussion,
               paddingLeft: iconPressExtendLeft,
               paddingRight: blocks.medium,
               justifyContent: 'center',

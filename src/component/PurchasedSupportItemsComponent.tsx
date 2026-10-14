@@ -69,6 +69,7 @@ export const PurchasedSupportItemsComponent: React.FC<Props> = ({ navigation, th
                   <Badge
                     visible={true}
                     size={14}
+                    allowFontScaling={false}
                     style={{
                       position: 'absolute',
                       top: -3,

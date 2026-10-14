@@ -789,7 +789,16 @@ export class MessageBoxDialog extends Component<Props> {
                       {uploadedFiles.length > 0 && (
                         <Badge
                           visible={true}
-                          style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, elevation: 3 }}
+                          allowFontScaling={false}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            zIndex: 2,
+                            elevation: 3,
+                            fontSize: 11,
+                            lineHeight: 20,
+                          }}
                         >
                           {uploadedFiles.length}
                         </Badge>
