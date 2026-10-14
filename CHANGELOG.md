@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.26.0
+- vypnuté video tagy u nahraných videí zůstanou vypnuté
+
 ## 0.25.1
 - u nahraného souboru v dialogu zprávy jde přepnout vložení jako obrázek, nebo jako odkaz na soubor
 - každý soubor začíná jako obrázek a přepíná se zvlášť
