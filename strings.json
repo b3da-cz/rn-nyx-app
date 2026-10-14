@@ -656,6 +656,10 @@
       "cs": "Přidat uživatele",
       "en": "Add user"
     },
+    "removeUser": {
+      "cs": "Odebrat",
+      "en": "Remove"
+    },
     "logBoard": {
       "cs": "správa nástěnky",
       "en": "manage board"

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.23.3
+- v dialogu práv jde uživatele odebrat, druhé klepnutí je jen fajfka
+
 ## 0.23.2
 - ve FAB jsou práva nad statistikami
 - hledání v právech je v hlavičce nad jmény, ve výpisu změn pod záložkami

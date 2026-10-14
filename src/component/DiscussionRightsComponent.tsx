@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dialog, FAB, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
+import { DoubleTapDeleteButton } from './DoubleTapDeleteButton'
 import { androidStackBottomInset } from './FabComponent'
 import { LoaderComponent } from './LoaderComponent'
 import { LlmSegmentedRow } from './llm'
@@ -76,6 +77,7 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
   const [listQuery, setListQuery] = useState('')
 
   const load = async () => {
@@ -148,6 +150,24 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
       return
     }
     setIsAddOpen(false)
+    load()
+  }
+
+  const removeUser = async (row: DiscussionRightsRow) => {
+    if (isRemoving || pendingKey || !row.username) {
+      return
+    }
+    setIsRemoving(true)
+    const res = await nyx?.api.deleteDiscussionRights(id, row.username)
+    setIsRemoving(false)
+    if (!res || res.error) {
+      return
+    }
+    setSelected(null)
+    setPage(current => ({
+      ...current,
+      rows: current.rows.filter(item => !sameRow(item, row)),
+    }))
     load()
   }
 
@@ -251,8 +271,10 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
       <RightsDialog
         row={selected}
         pendingKey={pendingKey}
-        onDismiss={() => pendingKey || setSelected(null)}
+        removing={isRemoving}
+        onDismiss={() => (pendingKey || isRemoving ? null : setSelected(null))}
         onToggle={toggle}
+        onRemove={removeUser}
       />
       <AddUserDialog
         visible={isAddOpen}
@@ -473,13 +495,17 @@ const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refr
 const RightsDialog = ({
   row,
   pendingKey,
+  removing,
   onDismiss,
   onToggle,
+  onRemove,
 }: {
   row: DiscussionRightsRow | null
   pendingKey: string | null
+  removing: boolean
   onDismiss: () => void
   onToggle: (row: DiscussionRightsRow, key: DiscussionRightKey) => void
+  onRemove: (row: DiscussionRightsRow) => void
 }) => {
   const theme = useTheme()
   const {
@@ -492,10 +518,25 @@ const RightsDialog = ({
         <Dialog.ScrollArea style={{ paddingHorizontal: 5, borderRadius: 0 }}>
           <ScrollView style={{ marginVertical: 5 }}>
             {!!row && (
-              <View style={{ minHeight: fontSizes.h1, justifyContent: 'center', paddingHorizontal: blocks.medium, paddingVertical: blocks.small }}>
-                <Text numberOfLines={1} style={{ fontSize: fontSizes.p }}>
+              <View
+                style={{
+                  minHeight: fontSizes.h1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingHorizontal: blocks.medium,
+                  paddingVertical: blocks.small,
+                }}>
+                <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p, marginRight: blocks.medium }}>
                   {rowLabel(row)}
                 </Text>
+                {row.kind === 'user' && !!row.username && (
+                  <DoubleTapDeleteButton
+                    label={t('rights.removeUser')}
+                    onDelete={() => onRemove(row)}
+                    disabled={!!pendingKey || removing}
+                  />
+                )}
               </View>
             )}
             {row &&
