@@ -5,6 +5,7 @@ import {
   UPLOAD_MAX_BYTES,
   isResizableImageUpload,
   isUploadTooLarge,
+  isFileEmbedded,
   isVideoUpload,
   jpegUploadName,
   uniqueVideoTags,
@@ -72,6 +73,15 @@ describe('uploaded video', () => {
     ])
     expect(kept.map(tag => tag.raw)).toEqual(['message', 'other'])
     expect(dropped.map(tag => tag.raw)).toEqual(['same-file', 'attachment'])
+  })
+})
+
+describe('uploaded file embed', () => {
+  it('starts as an image unless the file was switched to a link', () => {
+    expect(isFileEmbedded(undefined)).toBe(true)
+    expect(isFileEmbedded({})).toBe(true)
+    expect(isFileEmbedded({ image_embed: true })).toBe(true)
+    expect(isFileEmbedded({ image_embed: false })).toBe(false)
   })
 })
 

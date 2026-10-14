@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.1
+- u nahraného souboru v dialogu zprávy jde přepnout vložení jako obrázek, nebo jako odkaz na soubor
+- každý soubor začíná jako obrázek a přepíná se zvlášť
+
 ## 0.25.0
 - textové soubory .md, .js, .json, .txt, .log a .csv se otevírají v aplikaci
 - u odkazu na takový soubor je volba stáhnout, nebo otevřít

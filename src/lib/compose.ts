@@ -36,6 +36,9 @@ export const uploadSizeLabel = (size: number) => {
   return `${uploadSizeKb(size)} kB`
 }
 
+// Missing flag means the server default: show the upload as an image, not a file link.
+export const isFileEmbedded = (file?: { image_embed?: boolean } | null) => file?.image_embed !== false
+
 export const isVideoUpload = (file?: { mimetype?: string; type?: string; filename?: string; name?: string } | null) => {
   if (!file) {
     return false

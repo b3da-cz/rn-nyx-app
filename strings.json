@@ -567,6 +567,16 @@
     "cs": "Přiložit soubor",
     "en": "Append file"
   },
+  "fileEmbed": {
+    "image": {
+      "cs": "Vložit jako obrázek",
+      "en": "Embed as image"
+    },
+    "link": {
+      "cs": "Odkaz na soubor",
+      "en": "File link"
+    }
+  },
   "jpegSize": {
     "cs": "Velikost jpg",
     "en": "Jpg size"

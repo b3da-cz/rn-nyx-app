@@ -1,6 +1,6 @@
 # Integrace nyx-api
 
-Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **35 ze 44 metod**, tedy **79,5 %**. **9 metod (20,5 %)** se nevolá vůbec. Tři volané metody mají ještě nevyužitou větev.
+Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **37 ze 44 metod**, tedy **84,1 %**. **7 metod (15,9 %)** se nevolá vůbec. Tři volané metody mají ještě nevyužitou větev.
 
 `logout()` není vlastní HTTP endpoint. Jen smaže token přes `deleteAuthToken` a vyvolá `onLogout`. Obojí app používá.
 
@@ -29,14 +29,14 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 | `voteInPoll` / `voteInHeaderPoll` | `POST …/poll/…/vote` | ano |
 | `addDiscussionRights` | `POST discussion/rights/add` | ano |
 | `setDiscussionRight` | `POST discussion/rights` | ano |
-| `deleteDiscussionRights` | `DELETE discussion/rights` | ne |
+| `deleteDiscussionRights` | `DELETE discussion/rights` | ano, odebrání uživatele v dialogu práv |
 | `saveDiscussionContent` | `POST discussion/{id}/content/{contentId}/save` | ne |
 | `getMail` | `GET mail` | ano, seznam, konverzace, starší zprávy |
 | `sendPrivateMessage` | `POST mail/send` | ano |
 | `sendTypingNotification` | `POST mail/typing_notification/{user}` | ano |
 | `getWaitingFiles` | `GET mail/waiting_files` a `discussion/{id}/waiting_files` | ano |
 | `uploadFile` / `deleteFile` | `PUT file/upload`, `DELETE file/delete/{id}` | ano, pošta i diskuze |
-| `setFileEmbed` | `POST file/embed/{id}/{bool}` | ne |
+| `setFileEmbed` | `POST file/embed/{id}/{bool}` | ano, přepínač na řádku nahraného souboru |
 | `getReminders` | `GET bookmarks/reminders` a `mail/reminders` | ano, obě |
 | `getNotifications` | `GET notifications` | ano |
 | `subscribeForFCM` | `POST register_for_notifications/…` | ano |
@@ -50,15 +50,13 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 
 ## Co v app ještě není
 
-Devět metod, které se nevolají:
+Sedm metod, které se nevolají:
 
 - **Zápisník.** `getNotepad` a `getNotepadEntry` umí jen číst seznam a detail. Balíček nemá zápis ani úpravu.
 - **Fulltext příspěvků.** `searchV2` (`user`, `text`, `order` `newest` / `newer_than` / `older_than` / `oldest`, `from_id`). Vyhledávání v app je unified (diskuze, inzeráty, události, uživatelé) a našeptávání username. Větev `GET search?search=` se také nevolá.
 - **Poslední diskuze.** `GET last/discussions`. Tab „poslední“ bere jen příspěvky.
 - **Historie hromadně.** Vyřadit diskuze z historie a označit je jako přečtené. Seznam historie app má, tyto dvě akce ne. Parametr `show_booked` se neposílá.
-- **Odebrání práva.** Přidat uživatele a přepnout právo jde. `deleteDiscussionRights` ne. Seznam práv není v balíčku. App ho bere jako HTML z `/discussion/{id}/rights`.
 - **Uložení nástěnky.** `saveDiscussionContent`. Čtení `content/home` je zapojené, zápis ne.
-- **Embed souboru.** `setFileEmbed` přepíná vložení souboru do příspěvku.
 - **Filtr posledních příspěvků „hodnoceno mnou“.** `getLastPosts(..., isRatedByMe)` a cesta `/rated_by_me`. Minimum a „hodnotili přátelé“ app používá.
 
 Mimo balíček app navíc volá `DELETE mail/delete/{postId}` a HTML stránku práv. Založení události není API metoda. Je to WebView na `https://nyx.cz/event/create`.
@@ -67,8 +65,8 @@ Hlasování o novém klubu v balíčku není. Post typu `discussion_request` se 
 
 ## Plán integrace
 
-1. **Odebrání práv.** Na dialogu detailu práv (`RightsDialog` v `DiscussionRightsComponent`) přidat odebrání uživatele přes `deleteDiscussionRights`. Tlačítko ve stylu `DoubleTapDeleteButton`: první krok má text, ne jen ikonu. Druhý krok nechat jen checkmark. Po potvrzení smazat řádek a zavřít dialog.
-2. **Embed souboru.** Na konec řádku nahraného souboru v compose dialogu (`MessageBoxDialog`, seznam `uploadedFiles`) přidat přepínač a volat `setFileEmbed`. Výchozí stav je současné chování: vložit jako obrázek, ne jako odkaz na soubor. Dialog si volbu nepamatuje. Každý soubor začíná jako obrázek a před odesláním se přepíná zvlášť.
+1. **Odebrání práv.** Hotovo ve v0.23.3. Na dialogu detailu práv (`RightsDialog` v `DiscussionRightsComponent`) jde odebrat uživatele přes `deleteDiscussionRights`. Tlačítko ve stylu `DoubleTapDeleteButton`: první krok má text, ne jen ikonu. Druhý krok je jen checkmark. Po potvrzení se řádek smaže a dialog zavře.
+2. **Embed souboru.** Hotovo ve v0.25.1. Na konci řádku nahraného souboru v compose dialogu (`MessageBoxDialog`, seznam `uploadedFiles`, panel detailů) je přepínač a volá `setFileEmbed`. Výchozí stav je současné chování: vložit jako obrázek, ne jako odkaz na soubor. Dialog si volbu nepamatuje. Každý soubor začíná jako obrázek a před odesláním se přepíná zvlášť. Zapnutý stav je ikona obrázku, vypnutý ikona odkazu.
 3. **Filtr „hodnoceno mnou“.** Do řádku filtru posledních příspěvků (`RatingFilterBarComponent`, vedle ikony `users`) přidat ikonu uživatele. Zapnutý filtr posílá třetí argument `getLastPosts` (`/rated_by_me`).
 4. **Zápisník.** Obrazovka nad `getNotepad` a `getNotepadEntry`: seznam a detail. Balíček umí jen čtení, zápis do té doby nepřidávat.
 5. **Hlasování o novém klubu.** U postu `discussion_request` nahradit HTML tabulku nativním zobrazením ve stylu ankety v app (tlačítka pro a proti, ne WebView). V `nyx-api` 0.5.2 na to endpoint není. Hlas posílat jako běžný příspěvek přes `postToDiscussion`, až se při implementaci ověří text, který web po `vote_for` / `vote_against` skutečně odešle. Když se ukáže samostatná cesta, použít tu.

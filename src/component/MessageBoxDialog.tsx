@@ -18,6 +18,7 @@ import ImageResizer from '@bam.tech/react-native-image-resizer'
 import {
   MainContext,
   isUploadVideoTagEnabled,
+  isFileEmbedded,
   isUploadTooLarge,
   uploadSizeLabel,
   createIssue,
@@ -54,6 +55,7 @@ type State = {
   isDialogVisible: boolean
   isFetching: boolean
   isUploading: boolean
+  embeddingFileId: number | null
   isMenuVisible: boolean
   isQualityMenuVisible: boolean
   issueTitle: string
@@ -90,6 +92,7 @@ export class MessageBoxDialog extends Component<Props> {
       isDialogVisible: false,
       isFetching: false,
       isUploading: false,
+      embeddingFileId: null,
       isMenuVisible: false,
       isQualityMenuVisible: false,
       issueTitle: '',
@@ -458,6 +461,30 @@ export class MessageBoxDialog extends Component<Props> {
     }
   }
 
+  async toggleFileEmbed(file) {
+    if (!file?.id || this.state.embeddingFileId || this.state.isUploading) {
+      return
+    }
+    const next = !isFileEmbedded(file)
+    this.setState({ embeddingFileId: file.id })
+    try {
+      const res = await this.props.nyx.api.setFileEmbed(file.id, next)
+      if (!res || res.error) {
+        console.warn('[MessageBoxDialog] setFileEmbed', res)
+        return
+      }
+      this.setState(prev => ({
+        uploadedFiles: (prev.uploadedFiles || []).map(item =>
+          item.id === file.id ? { ...item, image_embed: next } : item,
+        ),
+      }))
+    } catch (e) {
+      console.warn('[MessageBoxDialog] setFileEmbed', e)
+    } finally {
+      this.setState({ embeddingFileId: null })
+    }
+  }
+
   async deleteFile(fileId) {
     const res = await confirm(t('confirm'), `${t('delete.attachment')}?`)
     if (!res) {
@@ -528,6 +555,7 @@ export class MessageBoxDialog extends Component<Props> {
       isMenuVisible,
       isQualityMenuVisible,
       isUploading,
+      embeddingFileId,
       issueTitle,
       message,
       searchPhrase,
@@ -744,31 +772,51 @@ export class MessageBoxDialog extends Component<Props> {
                     ))}
                   </Menu>
                 </View>
-                <View>
-                  {uploadedFiles.map(f => (
-                    <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Image
-                        style={{
-                          width: 25,
-                          height: 25,
-                          marginRight: blocks.medium,
-                        }}
-                        resizeMode={'cover'}
-                        source={{ uri: `https://nyx.cz${f.thumb_url}` }}
-                      />
-                      <ButtonComponent
-                        icon={'trash-2'}
-                        label={`${f.filename}  [${(f.size / 1024).toFixed(2)}kb]`}
-                        textAlign={'left'}
-                        backgroundColor={'transparent'}
-                        fontSize={12}
-                        lineHeight={22}
-                        paddingHorizontal={0}
-                        onPress={() => (isUploading ? null : this.deleteFile(f.id))}
-                        color={isUploading ? colors.disabled : colors.text}
-                      />
-                    </View>
-                  ))}
+                <View style={{ flex: 1, minWidth: 0, marginLeft: blocks.medium }}>
+                  {uploadedFiles.map(f => {
+                    const embedded = isFileEmbedded(f)
+                    const embedBusy = embeddingFileId === f.id
+                    return (
+                      <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Image
+                          style={{
+                            width: 25,
+                            height: 25,
+                            marginRight: blocks.medium,
+                          }}
+                          resizeMode={'cover'}
+                          source={{ uri: `https://nyx.cz${f.thumb_url}` }}
+                        />
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <ButtonComponent
+                            icon={'trash-2'}
+                            label={`${f.filename}  [${(f.size / 1024).toFixed(2)}kb]`}
+                            textAlign={'left'}
+                            backgroundColor={'transparent'}
+                            fontSize={12}
+                            lineHeight={22}
+                            paddingHorizontal={0}
+                            onPress={() => (isUploading ? null : this.deleteFile(f.id))}
+                            color={isUploading ? colors.disabled : colors.text}
+                          />
+                        </View>
+                        {embedBusy ? (
+                          <ActivityIndicator size="small" color={colors.primary} style={{ width: 28 }} />
+                        ) : (
+                          <IconButton
+                            icon={embedded ? 'image' : 'link'}
+                            size={18}
+                            style={{ margin: 0, width: 28, height: 28 }}
+                            color={isUploading ? colors.disabled : embedded ? colors.primary : colors.text}
+                            disabled={isUploading}
+                            accessibilityLabel={embedded ? t('fileEmbed.image') : t('fileEmbed.link')}
+                            onPress={() => this.toggleFileEmbed(f)}
+                            rippleColor={colors.ripple}
+                          />
+                        )}
+                      </View>
+                    )
+                  })}
                 </View>
               </View>
             )}
