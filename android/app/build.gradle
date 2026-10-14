@@ -74,6 +74,7 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    implementation("androidx.biometric:biometric:1.1.0")
 
     // Animated GIF / WebP support in posts.
     // Version must match RN's fresco (node_modules/react-native/gradle/libs.versions.toml).

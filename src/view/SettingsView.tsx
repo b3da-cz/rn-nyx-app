@@ -26,6 +26,10 @@ import {
   initFCM,
   unregisterFCM,
   Nyx,
+  authenticateFingerprint,
+  FINGERPRINT_LOCK_MINUTES,
+  hasFingerprintSensor,
+  normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
   setAppLanguage,
@@ -57,6 +61,10 @@ type State = {
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
   isUploadVideoTagEnabled: boolean
+  isFingerprintLockEnabled: boolean
+  fingerprintLockMinutes: number
+  isAppCoverEnabled: boolean
+  hasFingerprint: boolean
   imageDownloadMaxKb: number | null
   initialRouteName: string
   isLlmEnabled: boolean
@@ -88,6 +96,7 @@ export class SettingsView extends Component<Props> {
     this.nyx = this.context.nyx
     this.setTheme()
     this.loadCachedModels()
+    hasFingerprintSensor().then(hasFingerprint => this.setState({ hasFingerprint }))
     this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => {
       this.refreshTimelineDays()
       this.loadCachedModels()
@@ -149,6 +158,10 @@ export class SettingsView extends Component<Props> {
       isTextSelectionEnabled: config.isTextSelectionEnabled === undefined ? true : !!config.isTextSelectionEnabled,
       isUploadVideoTagEnabled:
         config.isUploadVideoTagEnabled === undefined ? true : !!config.isUploadVideoTagEnabled,
+      isFingerprintLockEnabled: !!config?.isFingerprintLockEnabled,
+      fingerprintLockMinutes: normalizeFingerprintLockMinutes(config?.fingerprintLockMinutes),
+      isAppCoverEnabled: !!config?.isAppCoverEnabled,
+      hasFingerprint: false,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
@@ -241,6 +254,26 @@ export class SettingsView extends Component<Props> {
   async onSelectLanguage(lang: string) {
     setAppLanguage(lang)
     await this.setOption('language', lang)
+  }
+
+  fingerprintAfterLabel(minutes?: number) {
+    const value = normalizeFingerprintLockMinutes(minutes)
+    if (value <= 0) {
+      return t('profile.fingerprintImmediately')
+    }
+    return `${value} min`
+  }
+
+  async onFingerprintLock(enabled: boolean) {
+    if (!enabled) {
+      await this.setOption('isFingerprintLockEnabled', false)
+      return
+    }
+    const ok = await authenticateFingerprint(t('profile.fingerprintPrompt'), t('cancel'))
+    if (!ok) {
+      return
+    }
+    await this.setOption('isFingerprintLockEnabled', true)
   }
 
   imageDownloadLabel(maxKb?: number | null) {
@@ -358,6 +391,40 @@ export class SettingsView extends Component<Props> {
               options={this.languageOptions()}
             />
           </View>
+          {(this.state.hasFingerprint || this.state.isFingerprintLockEnabled) && (
+            <FormRowToggleComponent
+              label={t('profile.fingerprintLock')}
+              value={!!this.state.isFingerprintLockEnabled}
+              onChange={val => this.onFingerprintLock(val)}
+            />
+          )}
+          {!!this.state.isFingerprintLockEnabled && (
+            <View
+              style={{
+                paddingVertical: theme.metrics.blocks.medium,
+                paddingHorizontal: theme.metrics.blocks.medium,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+              <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+                {t('profile.fingerprintAfter')}
+              </Text>
+              <FormRowSelectComponent
+                value={this.fingerprintAfterLabel(this.state.fingerprintLockMinutes)}
+                onSelect={val => this.setOption('fingerprintLockMinutes', normalizeFingerprintLockMinutes(val))}
+                options={FINGERPRINT_LOCK_MINUTES.map(minutes => ({
+                  value: `${minutes}`,
+                  label: this.fingerprintAfterLabel(minutes),
+                }))}
+              />
+            </View>
+          )}
+          <FormRowToggleComponent
+            label={t('profile.appCover')}
+            value={!!this.state.isAppCoverEnabled}
+            onChange={val => this.setOption('isAppCoverEnabled', val)}
+          />
           <FormRowToggleComponent
             label={t('profile.tabsOnBottom')}
             value={!!this.state.isBottomTabs}

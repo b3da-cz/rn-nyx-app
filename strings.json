@@ -306,6 +306,34 @@
       "cs": "English",
       "en": "English"
     },
+    "fingerprintLock": {
+      "cs": "Zámek otiskem prstu",
+      "en": "Fingerprint lock"
+    },
+    "fingerprintAfter": {
+      "cs": "Znovu chtít otisk",
+      "en": "Ask for fingerprint after"
+    },
+    "fingerprintImmediately": {
+      "cs": "Ihned",
+      "en": "Immediately"
+    },
+    "fingerprintPrompt": {
+      "cs": "Odemknout otiskem prstu",
+      "en": "Unlock with fingerprint"
+    },
+    "fingerprintUnlock": {
+      "cs": "Odemknout",
+      "en": "Unlock"
+    },
+    "fingerprintFailed": {
+      "cs": "Otisk se nepovedl",
+      "en": "Fingerprint was not recognized"
+    },
+    "appCover": {
+      "cs": "Zakrytí aplikace",
+      "en": "Cover the app"
+    },
     "tabsOnBottom": {
       "cs": "Navigační taby dole",
       "en": "Tabs on bottom"

@@ -12,7 +12,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
 import { Bugfender } from '@bugfender/rn-bugfender'
-import { confirm, LoaderComponent, NestedBackHandler, RatingPromptComponent, ShareTargetDialog, ShareDestination } from './src/component'
+import { AppGuard, confirm, LoaderComponent, NestedBackHandler, RatingPromptComponent, ShareTargetDialog, ShareDestination } from './src/component'
 import {
   createTheme,
   defaultThemeOptions,
@@ -24,6 +24,7 @@ import {
   MainContextConfig,
   Nyx,
   normalizeBookmarkSectionFilters,
+  normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
   setAppLanguage,
@@ -213,6 +214,9 @@ const App: () => ReactNode = () => {
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,
       isTextSelectionEnabled: conf.isTextSelectionEnabled === undefined ? true : !!conf.isTextSelectionEnabled,
+      isFingerprintLockEnabled: !!conf.isFingerprintLockEnabled,
+      fingerprintLockMinutes: normalizeFingerprintLockMinutes(conf.fingerprintLockMinutes),
+      isAppCoverEnabled: !!conf.isAppCoverEnabled,
       isUnreadToggleEnabled: conf.isUnreadToggleEnabled === undefined ? true : !!conf.isUnreadToggleEnabled,
       isBookmarkSectionReadFilterEnabled:
         conf.isBookmarkSectionReadFilterEnabled === undefined ? true : !!conf.isBookmarkSectionReadFilterEnabled,
@@ -346,6 +350,13 @@ const App: () => ReactNode = () => {
               onLogin={() => onLogin()}
             />
           )}
+          <AppGuard
+            ready={config.isLoaded}
+            enabled={!!config.isFingerprintLockEnabled}
+            minutes={config.fingerprintLockMinutes}
+            cover={!!config.isAppCoverEnabled}
+            theme={theme}
+          />
         </PaperProvider>
         </NetworkProvider>
       </SafeAreaView>

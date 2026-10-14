@@ -1,3 +1,4 @@
+export * from './AppGuard'
 export * from './AdvertisementComponent'
 export * from './BookmarkCategoriesDialog'
 export * from './ButtonComponent'

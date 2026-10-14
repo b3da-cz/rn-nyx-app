@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.24.0
+- zámek otiskem prstu, výchozí vypnuto; pod ním volba, za jak dlouho znovu chtít otisk
+- zakrytí aplikace proti screenshotu a v přehledu aplikací, výchozí vypnuto
+
 ## 0.23.4
 - odebrání v dialogu práv je červeně, druhé klepnutí má červený podklad a text s otazníkem
 - v hlavičce dialogu je vlevo od jména avatar uživatele

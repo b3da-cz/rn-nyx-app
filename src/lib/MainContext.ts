@@ -24,6 +24,9 @@ export type MainContextConfig = {
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
   isUploadVideoTagEnabled: boolean
+  isFingerprintLockEnabled: boolean
+  fingerprintLockMinutes: number
+  isAppCoverEnabled: boolean
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
@@ -70,6 +73,9 @@ export const initialConfig: MainContextConfig = {
   isSwipeablePostHeader: true,
   isTextSelectionEnabled: true,
   isUploadVideoTagEnabled: true,
+  isFingerprintLockEnabled: false,
+  fingerprintLockMinutes: 0,
+  isAppCoverEnabled: false,
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,

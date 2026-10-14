@@ -34,6 +34,7 @@ class MainActivity : ReactActivity() {
 
   override fun onResume() {
     super.onResume()
+    applySecure(this, AppGuardModule.secure)
     try {
       val field = ReactActivity::class.java.getDeclaredField("mBackPressedCallback")
       field.isAccessible = true

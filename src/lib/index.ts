@@ -1,3 +1,5 @@
+export * from './appGuard'
+export * from './fingerprintLock'
 export * from './FCM'
 export * from './Filtering'
 export * from './bookmarkSections'
