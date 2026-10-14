@@ -32,6 +32,11 @@ export type DiscussionRightsPage = {
   canEdit: boolean
 }
 
+// Nyx records an edit-board change as "změna práv". Show it as board management.
+export function rightsLogLabel(label: string, boardLabel: string): string {
+  return label.replace(/zm[eě]na pr[aá]v/gi, boardLabel)
+}
+
 const USER_RIGHTS: DiscussionRightKey[] = ['read', 'write', 'delete', 'edit', 'edit_rights']
 const REGISTERED_RIGHTS: DiscussionRightKey[] = ['read', 'write', 'delete', 'edit']
 

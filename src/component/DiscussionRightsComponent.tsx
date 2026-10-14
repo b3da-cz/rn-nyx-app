@@ -1,9 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native'
-import { Dialog, Portal, Text, TouchableRipple } from 'react-native-paper'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Dialog, FAB, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
+import { androidStackBottomInset } from './FabComponent'
+import { LoaderComponent } from './LoaderComponent'
 import { LlmSegmentedRow } from './llm'
 import { UserIconComponent } from './UserIconComponent'
+import { UserRowComponent } from './UserRowComponent'
 import {
   applyRightsResponse,
   DiscussionRightKey,
@@ -12,11 +16,13 @@ import {
   isRightsManager,
   MainContext,
   parseDiscussionRightsPage,
+  rightsLogLabel,
   RIGHTS_TABLE_COLUMNS,
   rightKeysFor,
   rightsTableCell,
   RightsLogGroup,
   t,
+  Theme,
   useTheme,
 } from '../lib'
 
@@ -52,8 +58,9 @@ const daysLabel = (daysLeft: number | null) => {
 }
 
 export const DiscussionRightsComponent = ({ id }: Props) => {
-  const nyx = useContext(MainContext).nyx
+  const { nyx, config } = useContext(MainContext)
   const theme = useTheme()
+  const insets = useSafeAreaInsets()
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -64,6 +71,8 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
   const [tab, setTab] = useState<'list' | 'log'>('list')
   const [selected, setSelected] = useState<DiscussionRightsRow | null>(null)
   const [pendingKey, setPendingKey] = useState<string | null>(null)
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
 
   const load = async () => {
     setIsFetching(true)
@@ -122,6 +131,20 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
       }))
     }
     setPendingKey(null)
+  }
+
+  const addUser = async (username: string) => {
+    if (isAdding) {
+      return
+    }
+    setIsAdding(true)
+    const res = await nyx?.api.addDiscussionRights(id, username)
+    setIsAdding(false)
+    if (!res || res.error) {
+      return
+    }
+    setIsAddOpen(false)
+    load()
   }
 
   const list = (
@@ -219,6 +242,26 @@ export const DiscussionRightsComponent = ({ id }: Props) => {
         onDismiss={() => pendingKey || setSelected(null)}
         onToggle={toggle}
       />
+      <AddUserDialog
+        visible={isAddOpen}
+        pending={isAdding}
+        theme={theme}
+        onDismiss={() => !isAdding && setIsAddOpen(false)}
+        onPick={addUser}
+      />
+      <Portal>
+        <FAB
+          icon="plus"
+          visible={tab === 'list' && page.canEdit && !isAddOpen}
+          style={{
+            position: 'absolute',
+            right: 16,
+            bottom: (config?.isBottomTabs ? 45 : 0) + Math.max(insets.bottom, androidStackBottomInset),
+            backgroundColor: colors.primary,
+          }}
+          onPress={() => setIsAddOpen(true)}
+        />
+      </Portal>
     </View>
   )
 }
@@ -305,7 +348,7 @@ const RightsLog = ({ log, refreshing, onRefresh }: { log: RightsLogGroup[]; refr
                 <Text
                   key={`${action.op}-${action.username || ''}-${action.label}`}
                   style={{ fontSize: fontSizes.p, color: action.op === 'remove' ? colors.error : colors.primary }}>
-                  {`${action.op === 'remove' ? '−' : '+'} ${action.username ? `${action.username} ` : ''}${action.label}`}
+                  {`${action.op === 'remove' ? '−' : '+'} ${action.username ? `${action.username} ` : ''}${rightsLogLabel(action.label, t('rights.logBoard'))}`}
                 </Text>
               ))}
             </View>
@@ -379,6 +422,90 @@ const RightsDialog = ({
                   </TouchableRipple>
                 )
               })}
+          </ScrollView>
+        </Dialog.ScrollArea>
+      </Dialog>
+    </Portal>
+  )
+}
+
+const AddUserDialog = ({
+  visible,
+  pending,
+  theme,
+  onDismiss,
+  onPick,
+}: {
+  visible: boolean
+  pending: boolean
+  theme: Theme
+  onDismiss: () => void
+  onPick: (username: string) => void
+}) => {
+  const nyx = useContext(MainContext).nyx
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = theme
+  const [phrase, setPhrase] = useState('')
+  const [users, setUsers] = useState<{ username: string }[]>([])
+  const [isFetching, setIsFetching] = useState(false)
+
+  useEffect(() => {
+    if (!visible) {
+      setPhrase('')
+      setUsers([])
+      setIsFetching(false)
+    }
+  }, [visible])
+
+  const searchUsername = async (value: string) => {
+    setPhrase(value)
+    if (!value) {
+      setUsers([])
+      setIsFetching(false)
+      return
+    }
+    setIsFetching(true)
+    const res = await nyx?.api.search(value, false, true)
+    if (res?.exact) {
+      setUsers([...(res.exact || []), ...(res.friends || []), ...(res.others || [])])
+    } else if (!value) {
+      setUsers([])
+    }
+    setIsFetching(false)
+  }
+
+  return (
+    <Portal>
+      <Dialog visible={visible} onDismiss={onDismiss} style={{ borderRadius: 0, backgroundColor: colors.background }}>
+        <View style={{ minHeight: fontSizes.h1, justifyContent: 'center', paddingHorizontal: blocks.medium, paddingVertical: blocks.small }}>
+          <Text numberOfLines={1} style={{ fontSize: fontSizes.p }}>
+            {t('rights.addUser')}
+          </Text>
+        </View>
+        <Dialog.ScrollArea style={{ paddingHorizontal: 5, borderRadius: 0 }}>
+          <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="always" style={{ marginVertical: 5, maxHeight: 360 }}>
+            <TextInput
+              numberOfLines={1}
+              textAlignVertical="center"
+              selectionColor={colors.primary}
+              onChangeText={searchUsername}
+              value={phrase}
+              placeholder={t('username')}
+              style={{ marginBottom: 3, height: 42, backgroundColor: 'inherit', borderRadius: 0 }}
+            />
+            {isFetching && <LoaderComponent theme={theme} height={48} />}
+            {users.map(user => (
+              <UserRowComponent
+                key={user.username}
+                user={user}
+                theme={theme}
+                isPressable={!pending}
+                onPress={() => onPick(user.username)}
+              />
+            ))}
+            {pending && <ActivityIndicator style={{ margin: blocks.medium }} color={colors.primary} />}
           </ScrollView>
         </Dialog.ScrollArea>
       </Dialog>

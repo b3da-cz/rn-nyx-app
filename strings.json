@@ -651,6 +651,14 @@
     "loadError": {
       "cs": "Práva se nepodařilo načíst.",
       "en": "Could not load rights."
+    },
+    "addUser": {
+      "cs": "Přidat uživatele",
+      "en": "Add user"
+    },
+    "logBoard": {
+      "cs": "správa nástěnky",
+      "en": "manage board"
     }
   },
   "stats": {

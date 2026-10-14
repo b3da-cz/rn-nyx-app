@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.1
+- do práv diskuze lze přidat uživatele
+- změna nástěnky se ve výpisu změn ukáže jako správa nástěnky
+
 ## 0.23.0
 - práva diskuze z rozbaleného menu v diskuzi
 - tabulka práv, úpravy v dialogu a výpis změn s datem u jména

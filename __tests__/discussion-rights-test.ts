@@ -3,6 +3,7 @@ import {
   isRightsManager,
   parseDiscussionRightsPage,
   rightKeysFor,
+  rightsLogLabel,
   rightsTableCell,
 } from '../src/lib/discussionRights'
 
@@ -215,5 +216,13 @@ describe('applyRightsResponse', () => {
 
   it('leaves the row unchanged when the call failed', () => {
     expect(applyRightsResponse(row, { error: 'nope' })).toBe(row)
+  })
+})
+
+describe('rightsLogLabel', () => {
+  it('shows an edit-board change as board management', () => {
+    expect(rightsLogLabel('změna práv', 'správa nástěnky')).toBe('správa nástěnky')
+    expect(rightsLogLabel('zmena prav', 'správa nástěnky')).toBe('správa nástěnky')
+    expect(rightsLogLabel('právo zápisu', 'správa nástěnky')).toBe('právo zápisu')
   })
 })
