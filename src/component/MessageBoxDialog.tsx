@@ -7,6 +7,7 @@ import {
   LayoutAnimation,
   Keyboard,
   Dimensions,
+  PixelRatio,
   StyleSheet,
   Modal,
 } from 'react-native'
@@ -543,6 +544,9 @@ export class MessageBoxDialog extends Component<Props> {
       metrics: { blocks, fontSizes },
     } = this.context.theme
     const windowHeight = Dimensions.get('window').height
+    const detailScale = PixelRatio.getFontScale() || 1
+    const detailSize = fontSizes.p * detailScale
+    const detailLine = Math.ceil(detailSize * 1.35)
     const isAnyMenuVisible = isMenuVisible || isQualityMenuVisible
     // Just enough to keep the icon row above the keys. 72 left a gap of post text.
     const actionRowShift = keyboardVisible ? 42 : 0
@@ -683,7 +687,9 @@ export class MessageBoxDialog extends Component<Props> {
                 }}
               >
                 <View style={{ alignItems: 'center' }}>
-                  <Text>{t('jpegSize')}</Text>
+                  <Text allowFontScaling={false} style={{ fontSize: detailSize, lineHeight: detailLine }}>
+                    {t('jpegSize')}
+                  </Text>
                   <Menu
                     visible={isMenuVisible}
                     statusBarHeight={-150}
@@ -694,6 +700,9 @@ export class MessageBoxDialog extends Component<Props> {
                           isUploading ? null : this.setState({ isMenuVisible: true, isQualityMenuVisible: false })
                         }
                         uppercase={false}
+                        allowFontScaling={false}
+                        contentStyle={{ minHeight: detailLine + 8 }}
+                        labelStyle={{ fontSize: detailSize, lineHeight: detailLine }}
                         color={isUploading ? colors.disabled : colors.text}
                       >
                         {`${selectedSize}${selectedSize !== 'Original' ? 'px' : ''}`}
@@ -708,7 +717,9 @@ export class MessageBoxDialog extends Component<Props> {
                       ),
                     )}
                   </Menu>
-                  <Text>{t('jpegQuality')}</Text>
+                  <Text allowFontScaling={false} style={{ fontSize: detailSize, lineHeight: detailLine }}>
+                    {t('jpegQuality')}
+                  </Text>
                   <Menu
                     visible={isQualityMenuVisible}
                     statusBarHeight={-150}
@@ -719,6 +730,9 @@ export class MessageBoxDialog extends Component<Props> {
                           isUploading ? null : this.setState({ isQualityMenuVisible: true, isMenuVisible: false })
                         }
                         uppercase={false}
+                        allowFontScaling={false}
+                        contentStyle={{ minHeight: detailLine + 8 }}
+                        labelStyle={{ fontSize: detailSize, lineHeight: detailLine }}
                         color={isUploading ? colors.disabled : colors.text}
                       >
                         {`${selectedQuality}%`}

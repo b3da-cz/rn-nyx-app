@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.22.10
+- změna systémového fontu nespouští znovu aktivitu
+- karta rozbalené navigace se dá scrollovat, když se položky nevejdou
+- hlavičky sekcí a volba velikosti jpeg se při velkém fontu neořezávají
+
 ## 0.22.9
 - řádky diskuzí, přátel a hlavičky sekcí se při velkém systémovém fontu neořezávají
 - výška příspěvku počítá systémové písmo přes SP, ne lineárně

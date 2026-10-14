@@ -190,7 +190,6 @@ export const ExpandableTabBar = (props: Props) => {
           <Pressable
             style={[styles.pressArea, isBottom ? styles.alignBottom : styles.alignTop]}
             onPress={close}>
-            <GestureDetector gesture={cardGesture}>
               <Animated.View
                 onLayout={e => setCardHeight(e.nativeEvent.layout.height)}
                 style={[
@@ -199,20 +198,23 @@ export const ExpandableTabBar = (props: Props) => {
                   { backgroundColor: cardBackground, opacity: cardOpacity },
                   { transform: [{ translateY: cardTranslateY }] },
                 ]}>
-                <Pressable
-                  onPress={() => {}}
+                <View
+                  onStartShouldSetResponder={() => true}
                   style={[
                     styles.cardInner,
                     isBottom ? styles.cardInnerBottom : styles.cardInnerTop,
                     { backgroundColor: cardBackground },
                   ]}>
                   {isBottom && (
-                    <View style={styles.handleArea}>
-                      <View style={styles.grabber} />
-                    </View>
+                    <GestureDetector gesture={cardGesture}>
+                      <View style={styles.handleArea}>
+                        <View style={styles.grabber} />
+                      </View>
+                    </GestureDetector>
                   )}
                   <ScrollView
                     bounces={false}
+                    nestedScrollEnabled
                     scrollEnabled={isScrollable}
                     onContentSizeChange={(_w, h) => setContentHeight(h)}
                     style={styles.cardScroll}
@@ -248,13 +250,14 @@ export const ExpandableTabBar = (props: Props) => {
                     })}
                   </ScrollView>
                   {!isBottom && (
-                    <View style={styles.handleArea}>
-                      <View style={styles.grabber} />
-                    </View>
+                    <GestureDetector gesture={cardGesture}>
+                      <View style={styles.handleArea}>
+                        <View style={styles.grabber} />
+                      </View>
+                    </GestureDetector>
                   )}
-                </Pressable>
+                </View>
               </Animated.View>
-            </GestureDetector>
           </Pressable>
         </View>
       </Portal>

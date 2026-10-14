@@ -1,5 +1,5 @@
 import React from 'react'
-import { Text, View } from 'react-native'
+import { PixelRatio, Text, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -32,6 +32,12 @@ export const SectionHeaderComponent = ({
     metrics: { blocks, fontSizes },
   } = useTheme()
   const color = iconColor || colors.text
+  // Bake the system scale into the size. A fixed row measures shorter than the
+  // scaled glyphs, so the title was clipped even with minHeight.
+  const fontScale = PixelRatio.getFontScale() || 1
+  const titleSize = fontSizes.p * fontScale
+  const titleLine = Math.ceil(titleSize * 1.35)
+  const rowHeight = Math.max(blocks.rowDiscussion, titleLine + blocks.medium)
   const communityIcon = icon as React.ComponentProps<typeof MaterialCommunityIcons>['name']
   const iconNode =
     icon && icon.length > 0 ? (
@@ -49,9 +55,9 @@ export const SectionHeaderComponent = ({
         width: '100%',
         backgroundColor: backgroundColor || colors.tertiary,
         marginBottom: blocks.small,
-        minHeight: blocks.rowDiscussion,
+        minHeight: rowHeight,
       }}>
-      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: blocks.rowDiscussion, alignItems: 'stretch' }]}>
+      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: rowHeight, alignItems: 'stretch' }]}>
         <TouchableRipple
           disabled={!isPressable}
           rippleColor={colors.ripple}
@@ -62,12 +68,15 @@ export const SectionHeaderComponent = ({
               Styling.groups.flexRowSpbCentered,
               {
                 flex: 1,
-                minHeight: blocks.rowDiscussion,
+                minHeight: rowHeight,
                 paddingLeft: blocks.medium,
                 paddingRight: hasIconAction ? 0 : blocks.medium,
               },
             ]}>
-            <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p, color: colors.text }}>
+            <Text
+              numberOfLines={1}
+              allowFontScaling={false}
+              style={{ flex: 1, fontSize: titleSize, lineHeight: titleLine, color: colors.text }}>
               {title}
             </Text>
             {!hasIconAction && iconNode}
@@ -77,7 +86,7 @@ export const SectionHeaderComponent = ({
           <TouchableRipple
             rippleColor={colors.ripple}
             style={{
-              minHeight: blocks.rowDiscussion,
+              minHeight: rowHeight,
               paddingLeft: iconPressExtendLeft,
               paddingRight: blocks.medium,
               justifyContent: 'center',
