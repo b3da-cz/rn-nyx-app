@@ -16,11 +16,18 @@ if (bugfenderKey) {
   Bugfender.init({ appKey: bugfenderKey, overrideConsoleMethods: false })
 }
 
+// setJSExceptionHandler patches console.error to call this handler, and Bugfender.error prints
+// via console.error, so without the guard any error recurses until the stack overflows.
+let handlingException = false
 const exceptionhandler = (error, isFatal) => {
-  if (isFatal) {
-    Bugfender.error('ERROR_FATAL', error.stack)
-  } else {
-    Bugfender.error('ERROR', error.stack)
+  if (handlingException) {
+    return
+  }
+  handlingException = true
+  try {
+    Bugfender.error(isFatal ? 'ERROR_FATAL' : 'ERROR', error?.stack ?? String(error))
+  } finally {
+    handlingException = false
   }
 }
 setJSExceptionHandler(exceptionhandler, true)
