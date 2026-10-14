@@ -11,7 +11,7 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native'
-import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider } from 'react-native-paper'
+import { Badge, Button, Dialog, FAB, Text, TextInput, IconButton, Menu, Divider, Portal } from 'react-native-paper'
 import { Bugfender } from '@bugfender/rn-bugfender'
 import { ButtonComponent, confirm, SafeBottom, UserRowComponent } from '../component'
 import ImageResizer from '@bam.tech/react-native-image-resizer'
@@ -919,22 +919,24 @@ export class MessageBoxDialog extends Component<Props> {
             navigationBarTranslucent
             onRequestClose={() => this.dismissDialog()}
           >
-            <View
-              ref={r => {
-                this.overlayRef = r
-              }}
-              pointerEvents="box-none"
-              style={StyleSheet.absoluteFill}
-              onLayout={() => {
-              this.syncKeyboardInset()
-              if (!this.openedFocus) {
-                this.openedFocus = true
-                this.refMsgBox?.focus()
-              }
-            }}
-            >
-              {dialog}
-            </View>
+            <Portal.Host>
+              <View
+                ref={r => {
+                  this.overlayRef = r
+                }}
+                pointerEvents="box-none"
+                style={StyleSheet.absoluteFill}
+                onLayout={() => {
+                  this.syncKeyboardInset()
+                  if (!this.openedFocus) {
+                    this.openedFocus = true
+                    this.refMsgBox?.focus()
+                  }
+                }}
+              >
+                {dialog}
+              </View>
+            </Portal.Host>
           </Modal>
         )}
         <SafeBottom>

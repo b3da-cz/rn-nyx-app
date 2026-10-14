@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.22.11
+- menu velikosti a kvality jpeg je nad dialogem zprávy
+
 ## 0.22.10
 - změna systémového fontu nespouští znovu aktivitu
 - karta rozbalené navigace se dá scrollovat, když se položky nevejdou
