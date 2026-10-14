@@ -5,6 +5,7 @@ import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
   DiscussionFilterBarComponent,
+  DiscussionRightsComponent,
   DiscussionStatsComponent,
   EventDetailComponent,
   FabComponent,
@@ -50,6 +51,7 @@ type Props = {
   showHeader?: boolean
   showReplies?: boolean
   showStats?: boolean
+  showRights?: boolean
   jumpToLastSeen?: boolean
   lastSeenPostId?: number
   sharedText?: string
@@ -178,6 +180,8 @@ export class DiscussionView extends Component<Props> {
     } else if (this.props.showBoard) {
       this.setBoardVisible(true)
       this.fetchDiscussionBoard()
+    } else if (this.props.showRights) {
+      this.fetchDiscussionTitle()
     } else if (this.props.showStats) {
       this.fetchDiscussionBoard()
     } else {
@@ -492,6 +496,17 @@ export class DiscussionView extends Component<Props> {
         this.fetchLock = false
       }
     }
+  }
+
+  async fetchDiscussionTitle() {
+    const res = await this.nyx?.api.getDiscussion(this.props.id)
+    const discussion = res?.discussion_common?.discussion
+    if (!discussion?.name_static) {
+      return
+    }
+    const title = `${discussion.name_static}${discussion.name_dynamic ? ' ' + discussion.name_dynamic : ''}`
+    this.setState({ title })
+    this.onDiscussionFetched(title)
   }
 
   async fetchDiscussionBoard() {
@@ -862,6 +877,10 @@ export class DiscussionView extends Component<Props> {
     this.props.navigation.push('discussion', { discussionId: this.props.id, showStats: true })
   }
 
+  showRights() {
+    this.props.navigation.push('discussion', { discussionId: this.props.id, showRights: true })
+  }
+
   async fetchReplies(discussionId, postId) {
     this.setState({ isFetching: true })
     const res = await this.nyx?.api.getDiscussion(`${discussionId}/id/${postId}/replies`) // todo replies endpoint for proper type check
@@ -883,6 +902,8 @@ export class DiscussionView extends Component<Props> {
         ? `${t('header')} - ${title}`
         : this.props.showStats
         ? `${t('stats.title')} - ${title}`
+        : this.props.showRights
+        ? `${t('rights.title')} - ${title}`
         : title,
       uploadedFiles,
     })
@@ -920,6 +941,12 @@ export class DiscussionView extends Component<Props> {
       label: `${t('show')} ${t('stats.title')}`,
       onPress: () => this.showStats(),
     })
+    actions.push({
+      key: 'rights',
+      icon: 'account-key',
+      label: `${t('show')} ${t('rights.title')}`,
+      onPress: () => this.showRights(),
+    })
     if (hasBoard) {
       actions.push({
         key: 'board',
@@ -942,6 +969,9 @@ export class DiscussionView extends Component<Props> {
   render() {
     if (this.props.showStats) {
       return <DiscussionStatsComponent id={this.props.id} />
+    }
+    if (this.props.showRights) {
+      return <DiscussionRightsComponent id={this.props.id} />
     }
     const { theme } = this.state
     if (!theme) {

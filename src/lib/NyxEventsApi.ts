@@ -22,6 +22,18 @@ export class NyxEventsApi extends NyxApi {
     })
   }
 
+  // Swagger and nyx-api expose set/add/delete for discussion rights, not the list or the
+  // change log. The website renders both in /discussion/{id}/rights. The same bearer
+  // token loads that HTML. #discussion-log is present only for someone who can see it.
+  async getDiscussionRightsPage(discussionId: string | number): Promise<string> {
+    const headers = { ...(this.getHeaders('text/html') as Record<string, string>), Accept: 'text/html' }
+    const res = await fetch(`https://nyx.cz/discussion/${discussionId}/rights`, {
+      method: 'GET',
+      headers,
+    })
+    return res.text()
+  }
+
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {
     const queryParts: string[] = []
     if (params?.area !== undefined) queryParts.push(`area=${params.area}`)

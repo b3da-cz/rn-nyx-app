@@ -575,6 +575,84 @@
     "cs": "Kopírovat odkaz",
     "en": "Copy link"
   },
+  "rights": {
+    "title": {
+      "cs": "Práva",
+      "en": "Rights"
+    },
+    "list": {
+      "cs": "Práva",
+      "en": "Rights"
+    },
+    "log": {
+      "cs": "Výpis změn",
+      "en": "Change log"
+    },
+    "registered": {
+      "cs": "přihlášení uživatelé",
+      "en": "signed-in users"
+    },
+    "anonymous": {
+      "cs": "nepřihlášení",
+      "en": "signed-out"
+    },
+    "read": {
+      "cs": "může číst",
+      "en": "can read"
+    },
+    "write": {
+      "cs": "může psát",
+      "en": "can write"
+    },
+    "delete": {
+      "cs": "může mazat",
+      "en": "can delete"
+    },
+    "edit": {
+      "cs": "úprava nástěnky",
+      "en": "edit board"
+    },
+    "edit_rights": {
+      "cs": "správa uživatelských práv",
+      "en": "manage user rights"
+    },
+    "public": {
+      "cs": "veřejný přístup",
+      "en": "public access"
+    },
+    "daysForever": {
+      "cs": "∞",
+      "en": "∞"
+    },
+    "colDays": {
+      "cs": "dny",
+      "en": "days"
+    },
+    "colRead": {
+      "cs": "číst",
+      "en": "read"
+    },
+    "colWrite": {
+      "cs": "psát",
+      "en": "write"
+    },
+    "colDelete": {
+      "cs": "mazat",
+      "en": "delete"
+    },
+    "colEdit": {
+      "cs": "nástěnka",
+      "en": "board"
+    },
+    "colRights": {
+      "cs": "práva",
+      "en": "rights"
+    },
+    "loadError": {
+      "cs": "Práva se nepodařilo načíst.",
+      "en": "Could not load rights."
+    }
+  },
   "stats": {
     "title": {
       "cs": "Statistiky",

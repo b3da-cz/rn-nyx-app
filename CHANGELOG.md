@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.0
+- práva diskuze z rozbaleného menu v diskuzi
+- tabulka práv, úpravy v dialogu a výpis změn s datem u jména
+
 ## 0.22.11
 - menu velikosti a kvality jpeg je nad dialogem zprávy
 
