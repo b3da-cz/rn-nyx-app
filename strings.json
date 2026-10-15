@@ -249,6 +249,26 @@
     "public": {
       "cs": "Veřejný",
       "en": "Public"
+    },
+    "created": {
+      "cs": "Vytvořeno",
+      "en": "Created"
+    },
+    "updated": {
+      "cs": "Poslední změna",
+      "en": "Last change"
+    },
+    "copy": {
+      "cs": "Kopírovat obsah",
+      "en": "Copy content"
+    },
+    "sharePlain": {
+      "cs": "Sdílení, standardní",
+      "en": "Share, standard"
+    },
+    "shareReader": {
+      "cs": "Sdílení, čtečka",
+      "en": "Share, reader"
     }
   },
   "profile": {

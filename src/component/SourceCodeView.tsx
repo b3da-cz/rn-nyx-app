@@ -16,6 +16,7 @@ type Props = {
   lang: SourceLang
   query: string
   activeIndex?: number | null
+  selectable?: boolean
 }
 
 const tokenColor = (kind: SourceToken, colors: { text: string; primary: string; secondary: string; tertiary: string; faded: string; error: string; accent: string }) => {
@@ -27,7 +28,7 @@ const tokenColor = (kind: SourceToken, colors: { text: string; primary: string; 
   return colors.text
 }
 
-export const SourceCodeView = ({ text, lang, query, activeIndex = null }: Props) => {
+export const SourceCodeView = ({ text, lang, query, activeIndex = null, selectable = false }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes, screen },
@@ -147,6 +148,7 @@ export const SourceCodeView = ({ text, lang, query, activeIndex = null }: Props)
                   <View style={{ flex: 1, overflow: 'hidden' }}>
                     <Animated.View style={{ width: codeWidth, transform: [{ translateX: shift }] }}>
                   <Text
+                    selectable={selectable}
                     numberOfLines={1}
                     style={{
                       fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',

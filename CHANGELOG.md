@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.1
+- detail záznamu ukazuje vytvořeno i poslední změnu
+- text jde označit; markdown, js, json, csv a log se zobrazí jako soubor, včetně raw
+- pod FAB úpravy je kopie obsahu a odkazy na standardní zobrazení a čtečku
+
 ## 0.27.0
 - v profilu je zápisník: seznam, detail a nový záznam
 - nový záznam a úprava jdou přes web, čtení je v aplikaci

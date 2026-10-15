@@ -10,12 +10,14 @@ import { SourceCodeView } from '../component/SourceCodeView'
 import { MainContext, readCachedText, searchMatchRanges, sourceLangFor, t, textFileExtOf, useTheme } from '../lib'
 
 type Props = {
-  path: string
+  path?: string
   name: string
   external?: boolean
+  source?: string
+  inline?: boolean
 }
 
-export const FileView = ({ path, name }: Props) => {
+export const FileView = ({ path = '', name, source, inline = false }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -36,10 +38,16 @@ export const FileView = ({ path, name }: Props) => {
     let alive = true
     setText(null)
     setFailed(false)
+    if (source != null) {
+      setText(source)
+      return () => {
+        alive = false
+      }
+    }
     readCachedText(path)
-      .then(body => {
+      .then(next => {
         if (alive) {
-          setText(body)
+          setText(next)
         }
       })
       .catch(() => {
@@ -50,7 +58,7 @@ export const FileView = ({ path, name }: Props) => {
     return () => {
       alive = false
     }
-  }, [path])
+  }, [path, source])
 
   const rawMatches = useMemo(() => searchMatchRanges(text || '', query), [text, query])
   const parsedTotal = useMemo(
@@ -108,6 +116,7 @@ export const FileView = ({ path, name }: Props) => {
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: blocks.small, paddingTop: blocks.small }}>
         <MarkdownViewComponent
           content={text}
+          alwaysSelectable={inline}
           query={query}
           activeIndex={parsedTotal ? Math.min(activeParsed, parsedTotal - 1) : 0}
           onMatchLayout={y => scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: false })}
@@ -116,6 +125,7 @@ export const FileView = ({ path, name }: Props) => {
     ) : (
       <SourceCodeView
         text={text}
+        selectable={inline}
         lang={sourceLangFor(ext, true)}
         query={query}
         activeIndex={rawMatches.length ? Math.min(activeParsed, rawMatches.length - 1) : 0}
@@ -140,7 +150,7 @@ export const FileView = ({ path, name }: Props) => {
   )
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: inline ? 'transparent' : colors.background }}>
       <LlmSegmentedRow
         value={mode}
         onChange={setMode}

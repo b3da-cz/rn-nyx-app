@@ -186,6 +186,56 @@ export const notepadSelected = (res?: any): NotepadDetail | null => {
   return null
 }
 
+// The website copies a.btn.plain or a.btn.reader. Those sit next to /notepad/{id}/edit.
+export const notepadPlainUrl = (entryId: number | string) => `https://nyx.cz/notepad/${entryId}`
+
+export const notepadReaderUrl = (entryId: number | string) => `https://nyx.cz/notepad/${entryId}/reader`
+
+export type NotepadCodeKind = 'md' | 'js' | 'json' | 'csv' | 'log'
+
+const markdownSomewhere = (text: string) =>
+  /(^|\n)\s{0,3}#{1,6}\s+\S|(^|\n)\s*```|(^|\n)\s*[-*+]\s+\S|(^|\n)\s*\d+\.\s+\S|\[[^\]]+\]\([^)]+\)|\*\*[^*\n]+\*\*/.test(
+    text,
+  )
+
+// Whole note wins for json, js, csv and log. Markdown matches even a part of the text,
+// including a fenced block, so the file viewer can show that part formatted.
+export const notepadCodeKind = (text?: string | null): NotepadCodeKind | null => {
+  const body = `${text || ''}`
+  const trimmed = body.trim()
+  if (!trimmed) {
+    return null
+  }
+  if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length > 1) {
+    try {
+      JSON.parse(trimmed)
+      return 'json'
+    } catch {
+      // not a whole json document
+    }
+  }
+  const lines = trimmed.split(/\r?\n/).filter(line => line.trim())
+  const jsHints = (trimmed.match(/\b(function|const|let|class|import|export|return)\b|=>/g) || []).length
+  const codeLines = lines.filter(line => /[{};]|=>|\b(function|const|let|var|class|import|export)\b/.test(line)).length
+  if (jsHints >= 2 && lines.length > 0 && codeLines / lines.length >= 0.5 && /[{}]/.test(trimmed)) {
+    return 'js'
+  }
+  const logLines = lines.filter(line =>
+    /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}|^\s*(ERROR|FATAL|WARN|WARNING|INFO|DEBUG|TRACE)\b/.test(line),
+  ).length
+  if (lines.length >= 2 && logLines / lines.length >= 0.5) {
+    return 'log'
+  }
+  const commas = lines.map(line => (line.match(/,/g) || []).length)
+  if (lines.length >= 3 && commas[0] >= 1 && commas.every(count => count === commas[0]) && !markdownSomewhere(trimmed)) {
+    return 'csv'
+  }
+  if (markdownSomewhere(body)) {
+    return 'md'
+  }
+  return null
+}
+
 export const notepadBody = (entry?: { content?: string; content_raw?: string } | null) => {
   const raw = entry?.content_raw
   if (typeof raw === 'string' && raw.trim()) {

@@ -2,7 +2,10 @@ import {
   isNotepadEditorUrl,
   NOTEPAD_CREATE_URL,
   notepadBody,
+  notepadCodeKind,
   notepadEditUrl,
+  notepadPlainUrl,
+  notepadReaderUrl,
   notepadEntries,
   notepadEntriesFromHtml,
   notepadEntriesFromWebMessage,
@@ -54,6 +57,20 @@ describe('notepad', () => {
   it('shows the raw note and falls back to stripped html', () => {
     expect(notepadBody({ content_raw: '  text  ', content: '<p>html</p>' })).toBe('  text  ')
     expect(notepadBody({ content: '<p>Ahoj<br>světe</p>' })).toBe('Ahoj\nsvěte')
+  })
+
+  it('builds the plain and reader share links', () => {
+    expect(notepadPlainUrl(99845)).toBe('https://nyx.cz/notepad/99845')
+    expect(notepadReaderUrl(99845)).toBe('https://nyx.cz/notepad/99845/reader')
+  })
+
+  it('picks a file view when the note is code or only partly markdown', () => {
+    expect(notepadCodeKind('obycejny text')).toBeNull()
+    expect(notepadCodeKind('{"a":1}')).toBe('json')
+    expect(notepadCodeKind('uvod\n\n# Nadpis\n- bod')).toBe('md')
+    expect(notepadCodeKind('text\n\n```json\n{"a":1}\n```')).toBe('md')
+    expect(notepadCodeKind('const a = 1\nfunction b() {\n  return a\n}')).toBe('js')
+    expect(notepadCodeKind('a,b\n1,2\n3,4')).toBe('csv')
   })
 
   it('opens create and edit only on the notepad pages', () => {

@@ -19,6 +19,7 @@ import { SearchHighlight } from './SearchHighlight'
 type Props = {
   content: string
   selectable?: boolean
+  alwaysSelectable?: boolean
   style?: StyleProp<ViewStyle>
   showUserAvatars?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
@@ -89,6 +90,7 @@ export function countMarkdownSearchHits(markdown: string, query: string, avatars
 export const MarkdownViewComponent: React.FC<Props> = ({
   content,
   selectable = true,
+  alwaysSelectable = false,
   style,
   showUserAvatars,
   onNavigateToPost,
@@ -126,8 +128,9 @@ export const MarkdownViewComponent: React.FC<Props> = ({
     })
   }
 
-  const isSelectable =
-    Platform.OS === 'ios'
+  const isSelectable = alwaysSelectable
+    ? true
+    : Platform.OS === 'ios'
       ? selectable && isTextSelectionEnabled(mainContext?.config)
       : !isAvatarsEnabled && selectable && isTextSelectionEnabled(mainContext?.config)
 
