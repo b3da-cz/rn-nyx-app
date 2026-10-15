@@ -27,6 +27,37 @@ export class NyxEventsApi extends NyxApi {
     })
   }
 
+  // NyxApi.getNotepad goes through Http.fetch, which drops the body when JSON
+  // parsing fails or the payload has `error`. The list needs the raw document.
+  async getNotepadPayload(): Promise<any> {
+    const headers = this.getHeaders() as Record<string, string>
+    const res = await fetch('https://nyx.cz/api/notepad', { method: 'GET', headers })
+    const text = (await res.text()).replace(/^\uFEFF/, '').trim()
+    if (text.startsWith('{') || text.startsWith('[')) {
+      try {
+        const json = JSON.parse(text)
+        if (json?.context) {
+          this.updateContext(json.context)
+        }
+        return json
+      } catch {
+        return { error: `HTTP ${res.status}`, _html: text }
+      }
+    }
+    return { error: text ? `HTTP ${res.status}` : `HTTP ${res.status}`, _html: text }
+  }
+
+  notepadPageHeaders(): Record<string, string> {
+    return { ...(this.getHeaders('text/html') as Record<string, string>), Accept: 'text/html' }
+  }
+
+  // GET /api/notepad is documented with entries, but a signed-in website list can
+  // still be the only place the rows show up. The bearer token loads that HTML.
+  async getNotepadPage(): Promise<string> {
+    const res = await fetch('https://nyx.cz/notepad', { method: 'GET', headers: this.notepadPageHeaders() })
+    return res.text()
+  }
+
   async deleteMail(postId: string | number): Promise<Partial<NyxResponse>> {
     return this.fetch({
       endpoint: `mail/delete/${postId}`,

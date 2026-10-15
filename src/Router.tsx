@@ -17,6 +17,7 @@ import {
   rgbToHex,
   showNotificationBanner,
   subscribeFCM,
+  NOTEPAD_CREATE_URL,
   t,
   Theme,
   wait,
@@ -34,7 +35,18 @@ import {
   RemindersStackContainer,
   SearchStackContainer,
 } from './routes'
-import { AboutView, FileView, ImageModal, ProfileView, SettingsView, SupportView, ThemeView } from './view'
+import {
+  AboutView,
+  FileView,
+  ImageModal,
+  NotepadEditView,
+  NotepadEntryView,
+  NotepadView,
+  ProfileView,
+  SettingsView,
+  SupportView,
+  ThemeView,
+} from './view'
 
 type Props = {
   config: any
@@ -329,6 +341,24 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         name={'file'}
         component={FileScreen}
         options={({ route }) => ({ title: (route.params as { name?: string } | undefined)?.name || '' })}
+      />
+      <RootStack.Screen name={'notepad'} component={NotepadView} options={{ title: t('notepad.title') }} />
+      <RootStack.Screen
+        name={'notepadEntry'}
+        component={NotepadEntryView}
+        options={({ route }) => ({ title: (route.params as { title?: string } | undefined)?.title || t('notepad.title') })}
+      />
+      <RootStack.Screen
+        name={'notepadEdit'}
+        component={NotepadEditView}
+        options={({ route }) => ({
+          title:
+            (route.params as { url?: string } | undefined)?.url === NOTEPAD_CREATE_URL
+              ? t('notepad.create')
+              : t('notepad.edit'),
+          gestureEnabled: false,
+          fullScreenGestureEnabled: false,
+        })}
       />
       <RootStack.Screen
         name={'settings'}

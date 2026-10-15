@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.0
+- v profilu je zápisník: seznam, detail a nový záznam
+- nový záznam a úprava jdou přes web, čtení je v aplikaci
+
 ## 0.26.1
 - v posledních příspěvcích je vedle přátel filtr hodnoceno mnou
 - přátelé, hodnoceno mnou a minimum jdou jen zvlášť; přátelé mají přednost, pak hodnoceno mnou, pak minimum

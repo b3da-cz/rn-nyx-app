@@ -233,6 +233,24 @@
       "en": "In topics"
     }
   },
+  "notepad": {
+    "title": {
+      "cs": "Zápisník",
+      "en": "Notepad"
+    },
+    "create": {
+      "cs": "Nový záznam",
+      "en": "New note"
+    },
+    "edit": {
+      "cs": "Upravit",
+      "en": "Edit"
+    },
+    "public": {
+      "cs": "Veřejný",
+      "en": "Public"
+    }
+  },
   "profile": {
     "about": {
       "cs": "O aplikaci",

@@ -1,6 +1,6 @@
 # Integrace nyx-api
 
-Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **37 ze 44 metod**, tedy **84,1 %**. **7 metod (15,9 %)** se nevolá vůbec. Dvě volané metody mají ještě nevyužitou větev.
+Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **39 ze 44 metod**, tedy **88,6 %**. **5 metod (11,4 %)** se nevolá vůbec. Dvě volané metody mají ještě nevyužitou větev.
 
 `logout()` není vlastní HTTP endpoint. Jen smaže token přes `deleteAuthToken` a vyvolá `onLogout`. Obojí app používá.
 
@@ -41,8 +41,8 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 | `getNotifications` | `GET notifications` | ano |
 | `subscribeForFCM` | `POST register_for_notifications/…` | ano |
 | `unregisterFromFCM` | `POST deregister_notifications/{token}/{app}/{fcm}` | volá se, ale jen s jedním argumentem, `appIdentifier` chybí |
-| `getNotepad` | `GET notepad` | ne |
-| `getNotepadEntry` | `GET notepad/{id}` | ne |
+| `getNotepad` | `GET notepad` | ano, seznam zápisníku |
+| `getNotepadEntry` | `GET notepad/{id}` | ano, detail záznamu |
 | `removeBookmarksFromHistory` | `POST bookmarks/history/remove_from_history` | ne |
 | `markBookmarksHistoryAsRead` | `POST bookmarks/history/mark_as_read` | ne |
 | `getEvents` | `GET events` | ano, navíc `order`, `epoch`, `search` přes `NyxEventsApi` |
@@ -50,9 +50,8 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 
 ## Co v app ještě není
 
-Sedm metod, které se nevolají:
+Pět metod, které se nevolají:
 
-- **Zápisník.** `getNotepad` a `getNotepadEntry` umí jen číst seznam a detail. Balíček nemá zápis ani úpravu.
 - **Fulltext příspěvků.** `searchV2` (`user`, `text`, `order` `newest` / `newer_than` / `older_than` / `oldest`, `from_id`). Vyhledávání v app je unified (diskuze, inzeráty, události, uživatelé) a našeptávání username. Větev `GET search?search=` se také nevolá.
 - **Poslední diskuze.** `GET last/discussions`. Tab „poslední“ bere jen příspěvky.
 - **Historie hromadně.** Vyřadit diskuze z historie a označit je jako přečtené. Seznam historie app má, tyto dvě akce ne. Parametr `show_booked` se neposílá.
@@ -67,7 +66,7 @@ Hlasování o novém klubu v balíčku není. Post typu `discussion_request` se 
 1. **Odebrání práv.** Hotovo ve v0.23.3. Na dialogu detailu práv (`RightsDialog` v `DiscussionRightsComponent`) jde odebrat uživatele přes `deleteDiscussionRights`. Tlačítko ve stylu `DoubleTapDeleteButton`: první krok má text, ne jen ikonu. Druhý krok je jen checkmark. Po potvrzení se řádek smaže a dialog zavře.
 2. **Embed souboru.** Hotovo ve v0.25.1. Na konci řádku nahraného souboru v compose dialogu (`MessageBoxDialog`, seznam `uploadedFiles`, panel detailů) je přepínač a volá `setFileEmbed`. Výchozí stav je současné chování: vložit jako obrázek, ne jako odkaz na soubor. Dialog si volbu nepamatuje. Každý soubor začíná jako obrázek a před odesláním se přepíná zvlášť. Zapnutý stav je ikona obrázku, vypnutý ikona odkazu.
 3. **Filtr „hodnoceno mnou“.** Hotovo. V řádku filtru posledních příspěvků (`RatingFilterBarComponent`, vedle ikony `users`) je ikona uživatele. Zapnutý filtr volá `GET last?rated_by_me=true`. Cesta `/rated_by_me` z `nyx-api` 0.5.2 vrací 404, proto ji app obchází v `NyxEventsApi`. Kombinace nejdou. Přátelé mají přednost před hodnoceno mnou a to má přednost před minimem. Klepnutí na jednu volbu ostatní vypne. Samotné minimum a přátelé dál jdou cestou, která funguje.
-4. **Zápisník.** Obrazovka nad `getNotepad` a `getNotepadEntry`: seznam a detail. Balíček umí jen čtení, zápis do té doby nepřidávat.
+4. **Zápisník.** Hotovo. Ikona v řadě akcí profilu. Seznam je `getNotepad`, detail `getNotepadEntry`. Swagger ani `nyx-api` 0.5.2 nemají zápis, proto nový záznam a úprava otevírají web `https://nyx.cz/notepad/create` a `https://nyx.cz/notepad/{id}/edit`.
 5. **Hlasování o novém klubu.** U postu `discussion_request` nahradit HTML tabulku nativním zobrazením ve stylu ankety v app (tlačítka pro a proti, ne WebView). V `nyx-api` 0.5.2 na to endpoint není. Hlas posílat jako běžný příspěvek přes `postToDiscussion`, až se při implementaci ověří text, který web po `vote_for` / `vote_against` skutečně odešle. Když se ukáže samostatná cesta, použít tu.
 6. **Zbytek nechat jako TODO**, až po zápisníku:
    - fulltext `searchV2` a nevyužitá větev `GET search?search=`

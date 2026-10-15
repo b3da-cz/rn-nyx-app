@@ -33,6 +33,11 @@ export const ProfileActionsComponent: React.FC<Props> = ({
     })
   }
   actions.push({
+    route: 'notepad',
+    icon: 'notebook-outline',
+    title: t('notepad.title'),
+  })
+  actions.push({
     route: 'about',
     icon: 'github',
     title: t('profile.about') || 'O aplikaci',
