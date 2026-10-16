@@ -147,7 +147,7 @@ export const discussionRequestBlockHeight = (request: DiscussionRequestView, tex
   const sections = request.discussionId ? 3 : 4
   const labels = sections * 22 * fontScale
   const gaps = sections * 10 * fontScale
-  const actions = (request.canVote ? 126 : 28) * fontScale
+  const actions = (request.canVote ? 74 : 28) * fontScale
   const linkRows = request.discussionId ? 0 : request.links.length * 24 * fontScale
   return textHeight + labels + gaps + actions + linkRows + 8 * fontScale
 }

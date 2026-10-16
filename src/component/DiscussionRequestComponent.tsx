@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react'
 import { View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
 import { discussionRequestFromPost, isTextSelectionEnabled, MainContext, t, useTheme } from '../lib'
 import type { DiscussionRequestLink, DiscussionRequestView } from '../lib'
 
@@ -71,18 +72,21 @@ export const DiscussionRequestComponent = ({ request, onVote, onOpenDiscussion }
         </Text>
       )}
       {view.canVote ? (
-        <>
+        <View style={{ flexDirection: 'row' }}>
           <VoteButton
+            icon="thumbs-up"
             label={`${t('discussionRequest.for')}   ${view.votesFor}`}
             disabled={busy}
             onPress={() => vote(false)}
           />
+          <View style={{ width: blocks.small }} />
           <VoteButton
+            icon="thumbs-down"
             label={`${t('discussionRequest.against')}   ${view.votesAgainst}`}
             disabled={busy}
             onPress={() => vote(true)}
           />
-        </>
+        </View>
       ) : (
         <Text selectable={selectable} style={{ color: colors.text, fontSize: fontSizes.p, marginTop: blocks.small }}>
           {`${view.votesFor} ${t('discussionRequest.for').toLowerCase()}    ${view.votesAgainst} ${t('discussionRequest.against').toLowerCase()}`}
@@ -92,7 +96,17 @@ export const DiscussionRequestComponent = ({ request, onVote, onOpenDiscussion }
   )
 }
 
-const VoteButton = ({ label, disabled, onPress }: { label: string; disabled: boolean; onPress: () => void }) => {
+const VoteButton = ({
+  icon,
+  label,
+  disabled,
+  onPress,
+}: {
+  icon: string
+  label: string
+  disabled: boolean
+  onPress: () => void
+}) => {
   const {
     colors,
     metrics: { blocks, fontSizes, line },
@@ -104,12 +118,17 @@ const VoteButton = ({ label, disabled, onPress }: { label: string; disabled: boo
       rippleColor={colors.ripple}
       onPress={onPress}
       style={{
+        flex: 1,
         marginTop: blocks.medium,
         padding: blocks.large,
         borderWidth: line,
+        borderRadius: 0,
         borderColor: color,
       }}>
-      <Text style={{ fontSize: fontSizes.h3, color, textAlign: 'center' }}>{label}</Text>
+      <Text style={{ fontSize: fontSizes.h3, color, textAlign: 'center' }}>
+        <Icon name={icon} size={fontSizes.h3} color={color} />
+        {`  ${label}`}
+      </Text>
     </TouchableRipple>
   )
 }

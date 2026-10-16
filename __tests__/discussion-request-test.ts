@@ -89,9 +89,9 @@ describe('discussion request', () => {
       content_raw: { type: 'discussion_request', data: { name_static: 'A', can_vote: true } },
     })!
     const closed = { ...open, canVote: false, discussionId: 3 }
-    expect(discussionRequestBlockHeight(open, 100, 1)).toBe(100 + 4 * 22 + 4 * 10 + 126 + 8)
+    expect(discussionRequestBlockHeight(open, 100, 1)).toBe(100 + 4 * 22 + 4 * 10 + 74 + 8)
     expect(discussionRequestBlockHeight({ ...open, links: [{ id: 1, name: 'A' }, { id: 2, name: 'B' }] }, 100, 1)).toBe(
-      100 + 4 * 22 + 4 * 10 + 126 + 2 * 24 + 8,
+      100 + 4 * 22 + 4 * 10 + 74 + 2 * 24 + 8,
     )
     expect(discussionRequestBlockHeight(closed, 40, 2)).toBe(40 + 3 * 22 * 2 + 3 * 10 * 2 + 28 * 2 + 8 * 2)
   })

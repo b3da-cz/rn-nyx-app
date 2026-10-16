@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.1
+- hlas pro a hlas proti jsou vedle sebe
+- u tlačítek je ikona palce, rohy zůstávají hranaté
+
 ## 0.28.0
 - žádost o nový klub má hlas pro a hlas proti
 - tlačítka jsou přes celou šířku, bez zaoblení, jako hod kostkou
