@@ -159,7 +159,13 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
           { key: 'raw', label: t('llm.viewRaw') },
         ]}
       />
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: blocks.small, marginBottom: blocks.small }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginHorizontal: inline ? 0 : blocks.small,
+          marginBottom: blocks.small,
+        }}>
         <TextInput
           numberOfLines={1}
           textAlignVertical="center"

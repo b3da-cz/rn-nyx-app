@@ -13,10 +13,11 @@ type Props = {
   back?: { title?: string }
   theme: Theme
   right?: ReactNode
+  rightMaxWidth?: number | string
   onBack?: () => void
 }
 
-export const StackHeaderComponent = ({ navigation, options, back, theme, right, onBack }: Props) => (
+export const StackHeaderComponent = ({ navigation, options, back, theme, right, rightMaxWidth, onBack }: Props) => (
   <View
     style={{
       height: HEADER_HEIGHT,
@@ -49,6 +50,8 @@ export const StackHeaderComponent = ({ navigation, options, back, theme, right, 
       }}>
       {options.title}
     </Text>
-    {!!right && <View style={{ marginRight: 4 }}>{right}</View>}
+    {!!right && (
+      <View style={{ marginRight: 8, flexShrink: 1, maxWidth: rightMaxWidth, justifyContent: 'center' }}>{right}</View>
+    )}
   </View>
 )

@@ -1,9 +1,9 @@
-import React, { useCallback, useContext, useState } from 'react'
-import { Platform, ScrollView, ToastAndroid, View } from 'react-native'
+import React, { useCallback, useContext, useLayoutEffect, useState } from 'react'
+import { Platform, ScrollView, Text as NativeText, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { ActivityIndicator, Text } from 'react-native-paper'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
-import { androidStackBottomInset, FabComponent } from '../component'
+import { androidStackBottomInset, FabComponent, StackHeaderComponent } from '../component'
 import {
   formatDate,
   MainContext,
@@ -50,7 +50,6 @@ export const NotepadEntryView = ({ navigation, route }) => {
       const res = await nyx.api.getNotepadEntry(entryId)
       const selected = notepadSelected(res)
       setEntry(selected)
-      navigation.setOptions({ title: selected?.title || t('notepad.title') })
     } finally {
       setIsFetching(false)
     }
@@ -62,63 +61,76 @@ export const NotepadEntryView = ({ navigation, route }) => {
     }, [load]),
   )
 
-  if (!theme?.colors) {
-    return null
-  }
-
   const body = notepadBody(entry)
   const codeKind = notepadCodeKind(body)
   const created = stamp(entry?.inserted_at)
   const updated = stamp(entry?.updated_at)
-  const meta = [
-    created ? `${t('notepad.created')} ${created}` : '',
-    updated ? `${t('notepad.updated')} ${updated}` : '',
-    entry?.public ? t('notepad.public') : '',
-  ].filter(Boolean)
+
+  useLayoutEffect(() => {
+    if (!theme?.colors) {
+      return
+    }
+    const lines = [
+      created ? `${t('notepad.created')} ${created}` : '',
+      updated ? `${t('notepad.updated')} ${updated}` : '',
+      entry?.public ? t('notepad.public') : '',
+    ].filter(Boolean)
+    navigation.setOptions({
+      title: entry?.title || t('notepad.title'),
+      header: (props: any) => (
+        <StackHeaderComponent
+          {...props}
+          theme={theme}
+          rightMaxWidth="68%"
+          right={
+            lines.length ? (
+              <View>
+                {lines.map(line => (
+                  <NativeText
+                    key={line}
+                    numberOfLines={1}
+                    style={{
+                      color: theme.colors.disabled,
+                      fontSize: theme.metrics.fontSizes.small,
+                      lineHeight: Math.round(theme.metrics.fontSizes.small * 1.3),
+                      textAlign: 'right',
+                    }}>
+                    {line}
+                  </NativeText>
+                ))}
+              </View>
+            ) : undefined
+          }
+        />
+      ),
+    })
+  }, [navigation, theme, entry, created, updated])
+
+  if (!theme?.colors) {
+    return null
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {isFetching && !entry && <ActivityIndicator color={theme.colors.primary} style={{ margin: 24 }} />}
       {!!entry && (
-        <>
-          <View
-            style={{
-              backgroundColor: theme.colors.card,
-              borderLeftWidth: 3,
-              borderLeftColor: theme.colors.primary,
-              paddingLeft: theme.metrics.blocks.small,
-              paddingRight: theme.metrics.blocks.medium,
-              paddingVertical: theme.metrics.blocks.small,
-              minHeight: theme.metrics.blocks.rowDiscussion,
-              justifyContent: 'center',
-            }}>
-            <Text style={{ color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>{entry.title}</Text>
-            {meta.map(line => (
-              <Text
-                key={line}
-                style={{ color: theme.colors.disabled, fontSize: theme.metrics.fontSizes.small, marginTop: 2 }}>
-                {line}
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: theme.colors.surface,
+            paddingHorizontal: codeKind ? 0 : theme.metrics.blocks.medium,
+            paddingTop: codeKind ? 0 : theme.metrics.blocks.medium,
+          }}>
+          {codeKind ? (
+            <FileView inline source={body} name={`note.${codeKind}`} />
+          ) : (
+            <ScrollView contentContainerStyle={{ paddingBottom: 88 }}>
+              <Text selectable style={{ color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                {body}
               </Text>
-            ))}
-          </View>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: theme.colors.surface,
-              margin: 4,
-              padding: codeKind ? 0 : 4,
-            }}>
-            {codeKind ? (
-              <FileView inline source={body} name={`note.${codeKind}`} />
-            ) : (
-              <ScrollView contentContainerStyle={{ paddingBottom: 88 }}>
-                <Text selectable style={{ color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
-                  {body}
-                </Text>
-              </ScrollView>
-            )}
-          </View>
-        </>
+            </ScrollView>
+          )}
+        </View>
       )}
       {!isFetching && !entry && (
         <Text style={{ color: theme.colors.disabled, margin: theme.metrics.blocks.medium }}>{t('empty')}</Text>

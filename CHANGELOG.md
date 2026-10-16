@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.2
+- v detailu záznamu jsou vytvořeno a poslední změna vpravo v hlavičce
+- druhý pruh s názvem a časy je pryč
+- záložky, hledání a obsah jdou přes celou šířku
+
 ## 0.27.1
 - detail záznamu ukazuje vytvořeno i poslední změnu
 - text jde označit; markdown, js, json, csv a log se zobrazí jako soubor, včetně raw
