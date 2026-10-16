@@ -39,6 +39,7 @@ import {
   FetchProgressState,
   preparePosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
   t,
   Theme,
@@ -1027,7 +1028,9 @@ export class DiscussionView extends Component<Props> {
     const listData = this.state.isHeaderVisible ? this.state.header : this.state.posts
     const listEmpty = !listData?.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, listEmpty ? 'enter' : 'more')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <BookmarkCategoriesDialog
@@ -1070,7 +1073,11 @@ export class DiscussionView extends Component<Props> {
         )}
         {loadActive && !listEmpty && (
           <View style={{ marginTop: 50 }}>
-            <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />
+            <FetchProgressComponent
+              progress={this.state.fetchProgress}
+              fill={false}
+              detailed={progressMode === 'detailed'}
+            />
           </View>
         )}
         <FlatList
@@ -1084,7 +1091,7 @@ export class DiscussionView extends Component<Props> {
           onEndReachedThreshold={0.01}
           refreshControl={
             <RefreshControl
-              refreshing={this.state.isFetching && !loadActive}
+              refreshing={this.state.isFetching && !showProgress}
               onRefresh={() => this.loadDiscussionTop()}
               colors={[theme.colors.primary, theme.colors.secondary, theme.colors.tertiary]}
             />
@@ -1099,7 +1106,13 @@ export class DiscussionView extends Component<Props> {
             paddingBottom: Math.max(this.props.bottomInset || 0, androidStackBottomInset) + 16,
           }}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent
+                progress={this.state.fetchProgress}
+                fill
+                detailed={progressMode === 'detailed'}
+              />
+            ) : null
           }
           ListHeaderComponent={
             this.state.eventDetail &&
@@ -1117,7 +1130,7 @@ export class DiscussionView extends Component<Props> {
             ) : null
           }
           ListFooterComponent={() =>
-            this.state.isFetching && !listEmpty && !loadActive ? (
+            this.state.isFetching && !listEmpty && !showProgress ? (
               <ActivityIndicator size="large" color={theme.colors.primary} />
             ) : null
           }

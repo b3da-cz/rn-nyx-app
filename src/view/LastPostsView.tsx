@@ -16,6 +16,7 @@ import {
   Theme,
   preparePosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
   t,
 } from '../lib'
@@ -153,7 +154,9 @@ export class LastPostsView extends Component<Props> {
   render() {
     const listEmpty = !this.state.posts.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}>
         <RatingFilterBarComponent
@@ -161,17 +164,25 @@ export class LastPostsView extends Component<Props> {
             this.setFilter(minRating, isRatedByFriends, isRatedByMe)
           }
         />
-        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        {loadActive && !listEmpty && (
+          <FetchProgressComponent
+            progress={this.state.fetchProgress}
+            fill={false}
+            detailed={progressMode === 'detailed'}
+          />
+        )}
         <FlatList
           data={this.state.posts}
           extraData={this.state}
           keyExtractor={item => `${item.uuid}`}
-          refreshing={this.state.isFetching && !loadActive}
+          refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getLastPosts()}
           style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
+            ) : null
           }
           renderItem={({ item }) => (
             <PostComponent

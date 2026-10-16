@@ -12,6 +12,7 @@ import {
 type Props = {
   progress?: FetchProgressState | null
   fill?: boolean
+  detailed?: boolean
 }
 
 const stepKind = (id: string) => {
@@ -27,7 +28,7 @@ const stepLabel = (id: string, label?: string) => {
   return t(`load.${kind}`) || kind
 }
 
-export const FetchProgressComponent = ({ progress, fill = true }: Props) => {
+export const FetchProgressComponent = ({ progress, fill = true, detailed = true }: Props) => {
   const theme = useTheme()
   const steps = progress?.steps || []
   const { done, total, ratio } = fetchProgressRatio(progress)
@@ -59,7 +60,7 @@ export const FetchProgressComponent = ({ progress, fill = true }: Props) => {
             padding={blocks.medium}
             emphasize
           />
-          {steps.map(step => {
+          {detailed && steps.map(step => {
             const fraction = step.total > 0 ? `${Math.min(step.done, step.total)}/${step.total}` : ''
             const bar = step.total > 0 ? Math.min(Math.max(step.done, 0), step.total) / step.total : 0
             return (

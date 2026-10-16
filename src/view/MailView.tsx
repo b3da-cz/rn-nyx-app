@@ -9,6 +9,7 @@ import {
   FetchProgressState,
   preparePosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
@@ -334,7 +335,9 @@ export class MailView extends Component<Props> {
     }
     const listEmpty = !this.state.messages.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         {this.state.conversations && this.state.conversations.length > 0 && (
@@ -352,20 +355,28 @@ export class MailView extends Component<Props> {
             }))}
           />
         )}
-        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        {loadActive && !listEmpty && (
+          <FetchProgressComponent
+            progress={this.state.fetchProgress}
+            fill={false}
+            detailed={progressMode === 'detailed'}
+          />
+        )}
         <FlatList
           style={{ flex: 1 }}
           ref={r => (this.refScroll = r)}
           data={this.state.messages}
           extraData={this.state}
           keyExtractor={item => `${item.id}`}
-          refreshing={this.state.isFetching && !loadActive}
+          refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getLatestMessages()}
           onEndReached={() => this.getOlderMessages()}
           onEndReachedThreshold={0.01}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
+            ) : null
           }
           renderItem={({ item }) => this.renderMessage(item)}
         />

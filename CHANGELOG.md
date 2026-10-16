@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.30.1
+- v obecném nastavení jde zapnout průběh načítání
+- při otevření a při donačtení v klubu jde zvolit vypnuto, celkový, nebo detailní
+- výchozí je zapnuto, při otevření detailní a v klubu celkový
+
 ## 0.30.0
 - při načítání klubu, příspěvků, pošty, upomínek, hledání a oznámení je nahoře průběh prefetchu
 - řádky přibývají podle kroku: request, mezipaměť, velikost souboru, rozměry a výška příspěvků

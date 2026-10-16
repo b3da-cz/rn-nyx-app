@@ -29,6 +29,7 @@ import {
   authenticateFingerprint,
   FINGERPRINT_LOCK_MINUTES,
   hasFingerprintSensor,
+  normalizeFetchProgressMode,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
@@ -66,6 +67,9 @@ type State = {
   isAppCoverEnabled: boolean
   hasFingerprint: boolean
   imageDownloadMaxKb: number | null
+  isFetchProgressEnabled: boolean
+  fetchProgressEnter: string
+  fetchProgressMore: string
   initialRouteName: string
   isLlmEnabled: boolean
   isLlmUserAvatarsEnabled: boolean
@@ -163,6 +167,9 @@ export class SettingsView extends Component<Props> {
       isAppCoverEnabled: !!config?.isAppCoverEnabled,
       hasFingerprint: false,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
+      isFetchProgressEnabled: config?.isFetchProgressEnabled !== false,
+      fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, 'detailed'),
+      fetchProgressMore: normalizeFetchProgressMode(config?.fetchProgressMore, 'overall'),
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
       isLlmUserAvatarsEnabled:
@@ -285,6 +292,24 @@ export class SettingsView extends Component<Props> {
     }
     const size = maxKb >= 1024 ? '1 MB' : `${maxKb} kB`
     return `${t('profile.imageDownloadMax')}`.replace('%s', size)
+  }
+
+  fetchProgressLabel(mode?: string) {
+    if (mode === 'off') {
+      return t('profile.fetchProgressOff')
+    }
+    if (mode === 'overall') {
+      return t('profile.fetchProgressOverall')
+    }
+    return t('profile.fetchProgressDetailed')
+  }
+
+  fetchProgressOptions() {
+    return [
+      { value: 'off', label: t('profile.fetchProgressOff') },
+      { value: 'overall', label: t('profile.fetchProgressOverall') },
+      { value: 'detailed', label: t('profile.fetchProgressDetailed') },
+    ]
   }
 
   imageDownloadOptions() {
@@ -509,6 +534,49 @@ export class SettingsView extends Component<Props> {
               options={this.imageDownloadOptions()}
             />
           </View>
+          <FormRowToggleComponent
+            label={t('profile.fetchProgress')}
+            value={this.state.isFetchProgressEnabled !== false}
+            onChange={val => this.setOption('isFetchProgressEnabled', val)}
+          />
+          {this.state.isFetchProgressEnabled !== false && (
+            <View>
+              <View
+                style={{
+                  paddingVertical: theme.metrics.blocks.medium,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+                  {t('profile.fetchProgressEnter')}
+                </Text>
+                <FormRowSelectComponent
+                  value={this.fetchProgressLabel(this.state.fetchProgressEnter)}
+                  onSelect={val => this.setOption('fetchProgressEnter', normalizeFetchProgressMode(val, 'detailed'))}
+                  options={this.fetchProgressOptions()}
+                />
+              </View>
+              <View
+                style={{
+                  paddingVertical: theme.metrics.blocks.medium,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+                  {t('profile.fetchProgressMore')}
+                </Text>
+                <FormRowSelectComponent
+                  value={this.fetchProgressLabel(this.state.fetchProgressMore)}
+                  onSelect={val => this.setOption('fetchProgressMore', normalizeFetchProgressMode(val, 'overall'))}
+                  options={this.fetchProgressOptions()}
+                />
+              </View>
+            </View>
+          )}
           <SectionHeaderComponent title={t('profile.sections')} backgroundColor={theme.colors.surface} />
           <FormRowToggleComponent
             label={t('bookmarks')}

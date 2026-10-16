@@ -15,6 +15,7 @@ import {
   toGalleryImages,
   preparePosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
 } from '../lib'
 
@@ -186,22 +187,32 @@ export class RemindersView extends Component<Props> {
     const { theme } = this.state
     const listEmpty = !this.state.bookmarks.length && !this.state.mail.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: theme?.colors?.background }}>
-        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        {loadActive && !listEmpty && (
+          <FetchProgressComponent
+            progress={this.state.fetchProgress}
+            fill={false}
+            detailed={progressMode === 'detailed'}
+          />
+        )}
         <SectionList
           sections={this.state.sectionedReminders}
           extraData={this.state}
           stickySectionHeadersEnabled={true}
           initialNumToRender={20}
           keyExtractor={item => item.id}
-          refreshing={this.state.isFetching && !loadActive}
+          refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getReminders()}
           style={{ flex: 1 }}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
+            ) : null
           }
           renderSectionHeader={({ section: { title } }) => <SectionHeaderComponent title={title} />}
           renderItem={({ item }) => (

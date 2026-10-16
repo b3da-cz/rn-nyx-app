@@ -3,6 +3,7 @@ import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
 import { TIMELINE_VISIBLE_DAYS_DEFAULT } from './eventTimeline'
+import { FETCH_PROGRESS_ENTER_DEFAULT, FETCH_PROGRESS_MORE_DEFAULT } from './fetchProgress'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
 
@@ -30,6 +31,9 @@ export type MainContextConfig = {
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
+  isFetchProgressEnabled: boolean
+  fetchProgressEnter: 'off' | 'overall' | 'detailed'
+  fetchProgressMore: 'off' | 'overall' | 'detailed'
   initialRouteName: string
   shownCategories: string[]
   bookmarkSectionFilters: Record<string, BookmarkSectionReadFilter>
@@ -79,6 +83,9 @@ export const initialConfig: MainContextConfig = {
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
+  isFetchProgressEnabled: true,
+  fetchProgressEnter: FETCH_PROGRESS_ENTER_DEFAULT,
+  fetchProgressMore: FETCH_PROGRESS_MORE_DEFAULT,
   initialRouteName: 'historyStack',
   shownCategories: [],
   bookmarkSectionFilters: {},

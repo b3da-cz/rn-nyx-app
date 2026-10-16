@@ -2,6 +2,7 @@ import {
   emptyFetchProgress,
   fetchProgressRatio,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   settleWithin,
   shortenFetchDetail,
 } from '../src/lib/fetchProgress'
@@ -33,6 +34,17 @@ describe('fetch progress', () => {
     expect(shortenFetchDetail('https://nyx.cz/files/abc/original.jpg')).toBe('nyx.cz/original.jpg')
     expect(shortenFetchDetail('not a url')).toBe('not a url')
     expect(shortenFetchDetail('')).toBeUndefined()
+  })
+
+  it('defaults to detailed on open and overall while loading more', () => {
+    expect(resolveFetchProgressMode(undefined, 'enter')).toBe('detailed')
+    expect(resolveFetchProgressMode({}, 'more')).toBe('overall')
+    expect(resolveFetchProgressMode({ isFetchProgressEnabled: false, fetchProgressEnter: 'detailed' }, 'enter')).toBe(
+      'off',
+    )
+    expect(resolveFetchProgressMode({ fetchProgressEnter: 'off', fetchProgressMore: 'detailed' }, 'enter')).toBe('off')
+    expect(resolveFetchProgressMode({ fetchProgressMore: 'detailed' }, 'more')).toBe('detailed')
+    expect(resolveFetchProgressMode({ fetchProgressEnter: 'nope' }, 'enter')).toBe('detailed')
   })
 
   it('settles with the fallback when the work never finishes', async () => {

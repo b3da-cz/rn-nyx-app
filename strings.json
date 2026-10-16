@@ -504,6 +504,30 @@
       "cs": "Stahování obrázků",
       "en": "Image download"
     },
+    "fetchProgress": {
+      "cs": "Průběh načítání",
+      "en": "Load progress"
+    },
+    "fetchProgressEnter": {
+      "cs": "Při otevření",
+      "en": "On open"
+    },
+    "fetchProgressMore": {
+      "cs": "Při donačtení v klubu",
+      "en": "Loading more in a topic"
+    },
+    "fetchProgressOff": {
+      "cs": "Vypnuto",
+      "en": "Off"
+    },
+    "fetchProgressOverall": {
+      "cs": "Celkový",
+      "en": "Overall"
+    },
+    "fetchProgressDetailed": {
+      "cs": "Detailní",
+      "en": "Detailed"
+    },
     "imageDownloadOff": {
       "cs": "Nestahovat",
       "en": "Don't download"

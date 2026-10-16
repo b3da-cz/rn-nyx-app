@@ -1,3 +1,30 @@
+export type FetchProgressMode = 'off' | 'overall' | 'detailed'
+export type FetchProgressWhere = 'enter' | 'more'
+
+export const FETCH_PROGRESS_ENTER_DEFAULT: FetchProgressMode = 'detailed'
+export const FETCH_PROGRESS_MORE_DEFAULT: FetchProgressMode = 'overall'
+
+export const normalizeFetchProgressMode = (
+  value: unknown,
+  fallback: FetchProgressMode,
+): FetchProgressMode => (value === 'off' || value === 'overall' || value === 'detailed' ? value : fallback)
+
+export const resolveFetchProgressMode = (
+  config?: {
+    isFetchProgressEnabled?: boolean
+    fetchProgressEnter?: unknown
+    fetchProgressMore?: unknown
+  } | null,
+  where: FetchProgressWhere = 'enter',
+): FetchProgressMode => {
+  if (config?.isFetchProgressEnabled === false) {
+    return 'off'
+  }
+  const fallback = where === 'more' ? FETCH_PROGRESS_MORE_DEFAULT : FETCH_PROGRESS_ENTER_DEFAULT
+  const raw = where === 'more' ? config?.fetchProgressMore : config?.fetchProgressEnter
+  return normalizeFetchProgressMode(raw, fallback)
+}
+
 export type FetchProgressEvent = {
   id: string
   label?: string

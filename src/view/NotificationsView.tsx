@@ -13,6 +13,7 @@ import {
   prepareNotifications,
   notificationPosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
@@ -201,21 +202,31 @@ export class NotificationsView extends Component<Props> {
     }
     const listEmpty = !this.state.posts.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}>
-        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        {loadActive && !listEmpty && (
+          <FetchProgressComponent
+            progress={this.state.fetchProgress}
+            fill={false}
+            detailed={progressMode === 'detailed'}
+          />
+        )}
         <FlatList
           style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}
           ref={r => (this.refScroll = r)}
           data={this.state.posts}
           extraData={this.state}
           keyExtractor={item => `${item.data.id}`}
-          refreshing={this.state.isFetching && !loadActive}
+          refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getNotifications()}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
+            ) : null
           }
           renderItem={({ item }) => this.renderItem(item, this.state.theme!)}
         />

@@ -24,6 +24,7 @@ import {
   mergeSearchPosts,
   preparePosts,
   reduceFetchProgress,
+  resolveFetchProgressMode,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
@@ -195,7 +196,9 @@ export class SearchView extends Component<Props> {
     }
     const listEmpty = !this.state.sectionedSearchResults.some(section => section.data?.length)
     const loadSteps = this.state.fetchProgress?.steps || []
-    const loadActive = this.state.isFetching && loadSteps.length > 0
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const showProgress = progressMode !== 'off' && this.state.isFetching
+    const loadActive = showProgress && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <SearchFieldComponent
@@ -204,18 +207,26 @@ export class SearchView extends Component<Props> {
           value={`${this.state.searchPhrase}`}
         />
         <SearchKindSwitch kind={this.state.kind} theme={theme} onChange={kind => this.setKind(kind)} />
-        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        {loadActive && !listEmpty && (
+          <FetchProgressComponent
+            progress={this.state.fetchProgress}
+            fill={false}
+            detailed={progressMode === 'detailed'}
+          />
+        )}
         <SectionList
           sections={this.state.sectionedSearchResults}
           stickySectionHeadersEnabled={this.state.kind === 'all'}
           initialNumToRender={30}
           keyExtractor={item => `${item.id || item.username}`}
           style={{ flex: 1, marginTop: theme.metrics.blocks.small }}
-          refreshing={this.state.isFetching && !loadActive}
+          refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.search(this.state.searchPhrase, this.state.kind)}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
-            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+            showProgress ? (
+              <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
+            ) : null
           }
           onEndReached={() => this.loadOlderPosts()}
           onEndReachedThreshold={0.4}
