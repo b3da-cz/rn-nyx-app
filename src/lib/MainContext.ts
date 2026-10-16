@@ -34,6 +34,7 @@ export type MainContextConfig = {
   isFetchProgressEnabled: boolean
   fetchProgressEnter: 'off' | 'overall' | 'detailed'
   fetchProgressMore: 'off' | 'overall' | 'detailed'
+  settingsSectionsOpen: Record<string, boolean>
   initialRouteName: string
   shownCategories: string[]
   bookmarkSectionFilters: Record<string, BookmarkSectionReadFilter>
@@ -86,6 +87,7 @@ export const initialConfig: MainContextConfig = {
   isFetchProgressEnabled: true,
   fetchProgressEnter: FETCH_PROGRESS_ENTER_DEFAULT,
   fetchProgressMore: FETCH_PROGRESS_MORE_DEFAULT,
+  settingsSectionsOpen: {},
   initialRouteName: 'historyStack',
   shownCategories: [],
   bookmarkSectionFilters: {},

@@ -14,7 +14,6 @@ export const SupportView: React.FC<Props> = () => {
   const {
     colors,
     metrics: { blocks, fontSizes },
-    roundness,
   } = theme
   const [purchasingSku, setPurchasingSku] = useState<string | null>(null)
   const [productPrices, setProductPrices] = useState<Record<string, string>>({})
@@ -120,7 +119,7 @@ export const SupportView: React.FC<Props> = () => {
                   style={{
                     paddingHorizontal: blocks.medium,
                     height: 32,
-                    borderRadius: roundness,
+                    borderRadius: 0,
                     backgroundColor: colors.primary,
                     alignItems: 'center',
                     justifyContent: 'center',

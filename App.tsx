@@ -256,6 +256,8 @@ const App: () => ReactNode = () => {
       isFetchProgressEnabled: conf.isFetchProgressEnabled !== false,
       fetchProgressEnter: normalizeFetchProgressMode(conf.fetchProgressEnter, 'detailed'),
       fetchProgressMore: normalizeFetchProgressMode(conf.fetchProgressMore, 'overall'),
+      settingsSectionsOpen:
+        conf.settingsSectionsOpen && typeof conf.settingsSectionsOpen === 'object' ? conf.settingsSectionsOpen : {},
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,
       shownCategories: conf.shownCategories || [],
       bookmarkSectionFilters: normalizeBookmarkSectionFilters(conf.bookmarkSectionFilters),

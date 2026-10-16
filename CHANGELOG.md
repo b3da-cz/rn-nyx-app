@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.30.2
+- řádky průběhu jsou hranaté karty stejné výšky a popisky jsou bílé
+- u celkového načítání je název a procenta tučně
+- ceny na podpoře vývoje mají hranaté rohy
+- nastavení je v sekcích na kartách
+- hlavička sekce jde sbalit, zavřená má plus a stav si aplikace pamatuje
+
 ## 0.30.1
 - v obecném nastavení jde zapnout průběh načítání
 - při otevření a při donačtení v klubu jde zvolit vypnuto, celkový, nebo detailní

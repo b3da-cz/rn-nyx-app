@@ -368,6 +368,22 @@
       "cs": "Obecné",
       "en": "General"
     },
+    "security": {
+      "cs": "Zabezpečení",
+      "en": "Security"
+    },
+    "navigation": {
+      "cs": "Navigace",
+      "en": "Navigation"
+    },
+    "reading": {
+      "cs": "Čtení",
+      "en": "Reading"
+    },
+    "media": {
+      "cs": "Média",
+      "en": "Media"
+    },
     "fcm": {
       "subscribe": {
         "title": {

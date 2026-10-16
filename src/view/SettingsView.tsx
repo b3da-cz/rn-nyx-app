@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
-import { Text } from 'react-native-paper'
+import { ActivityIndicator, LayoutAnimation, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
+import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
   androidStackBottomInset,
@@ -11,7 +11,6 @@ import {
   FormRowToggleComponent,
   LlmModelPickerDialog,
   LlmSystemPromptDialog,
-  SectionHeaderComponent,
 } from '../component'
 import {
   fetchOpenRouterModels,
@@ -35,7 +34,87 @@ import {
   normalizeTimelineVisibleDays,
   setAppLanguage,
   timelineVisibleDayOptions,
+  useTheme,
 } from '../lib'
+
+const SettingsSection = ({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
+  return (
+    <View style={{ marginBottom: blocks.medium }}>
+      <TouchableRipple
+        rippleColor={colors.ripple}
+        onPress={onToggle}
+        style={{
+          backgroundColor: colors.tertiary,
+          borderRadius: 0,
+          marginBottom: open ? blocks.small : 0,
+          minHeight: blocks.rowDiscussion,
+          justifyContent: 'center',
+          paddingHorizontal: blocks.medium,
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: blocks.rowDiscussion }}>
+          <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: fontSizes.p, fontWeight: '700' }}>
+            {title}
+          </Text>
+          {!open && <Icon name="plus" size={fontSizes.p} color={colors.text} />}
+        </View>
+      </TouchableRipple>
+      {open ? children : null}
+    </View>
+  )
+}
+
+const SettingsSelectRow = ({
+  label,
+  value,
+  options,
+  onSelect,
+  rowHeight,
+}: {
+  label: string
+  value?: string
+  options: Array<{ value: string; label?: string; disabled?: boolean }>
+  onSelect: Function
+  rowHeight: number
+}) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: 0,
+        marginBottom: blocks.small,
+        height: rowHeight,
+        paddingHorizontal: blocks.medium,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+      <Text
+        numberOfLines={2}
+        style={{ flex: 1, color: colors.text, fontSize: fontSizes.p, paddingRight: blocks.medium }}>
+        {label}
+      </Text>
+      <FormRowSelectComponent value={value} options={options} onSelect={onSelect} />
+    </View>
+  )
+}
 
 type Props = {
   config: any
@@ -70,6 +149,7 @@ type State = {
   isFetchProgressEnabled: boolean
   fetchProgressEnter: string
   fetchProgressMore: string
+  settingsSectionsOpen: Record<string, boolean>
   initialRouteName: string
   isLlmEnabled: boolean
   isLlmUserAvatarsEnabled: boolean
@@ -170,6 +250,10 @@ export class SettingsView extends Component<Props> {
       isFetchProgressEnabled: config?.isFetchProgressEnabled !== false,
       fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, 'detailed'),
       fetchProgressMore: normalizeFetchProgressMode(config?.fetchProgressMore, 'overall'),
+      settingsSectionsOpen:
+        config?.settingsSectionsOpen && typeof config.settingsSectionsOpen === 'object'
+          ? config.settingsSectionsOpen
+          : {},
       initialRouteName: config?.initialRouteName || 'historyStack',
       isLlmEnabled: !!config?.isLlmEnabled,
       isLlmUserAvatarsEnabled:
@@ -214,6 +298,17 @@ export class SettingsView extends Component<Props> {
     await this.setOption('selectedLlmModel', model.id)
     await this.setOption('selectedLlmModelName', model.name)
     this.setState({ isModelPickerVisible: false })
+  }
+
+  settingsSectionOpen(id: string) {
+    return this.state.settingsSectionsOpen?.[id] !== false
+  }
+
+  toggleSettingsSection(id: string) {
+    const current = this.state.settingsSectionsOpen || {}
+    const next = { ...current, [id]: current[id] === false }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    this.setOption('settingsSectionsOpen', next)
   }
 
   async setOption(name, val) {
@@ -366,76 +461,53 @@ export class SettingsView extends Component<Props> {
     if (!theme) {
       return null
     }
+    const rowHeight = Math.max(48, Math.round(theme.metrics.blocks.rowDiscussion + theme.metrics.blocks.large))
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView
           style={{ backgroundColor: theme.colors.background }}
           contentContainerStyle={{ paddingBottom: 150 + androidStackBottomInset }}>
-          <SectionHeaderComponent title={t('profile.general')} backgroundColor={theme.colors.surface} />
-          {/*<ButtonComponent*/}
-          {/*  label={t('profile.fcm.subscribe.title')}*/}
-          {/*  icon={'mail'}*/}
-          {/*  textAlign={'left'}*/}
-          {/*  color={theme.colors.accent}*/}
-          {/*  fontSize={theme.metrics.fontSizes.p}*/}
-          {/*  marginBottom={theme.metrics.blocks.medium}*/}
-          {/*  onPress={() => this.subscribeFCM()}*/}
-          {/*/>*/}
-          {/*<ButtonComponent*/}
-          {/*  label={t('profile.fcm.unsubscribe.title')}*/}
-          {/*  icon={'trash-2'}*/}
-          {/*  textAlign={'left'}*/}
-          {/*  color={theme.colors.accent}*/}
-          {/*  fontSize={theme.metrics.fontSizes.p}*/}
-          {/*  marginBottom={theme.metrics.blocks.medium}*/}
-          {/*  onPress={() => this.unsubscribeFCM()}*/}
-          {/*/>*/}
-          <ButtonComponent
-            label={t('profile.logout')}
-            icon={'lock'}
-            textAlign={'left'}
-            color={theme.colors.accent}
-            fontSize={theme.metrics.fontSizes.p}
-            marginBottom={theme.metrics.blocks.medium}
-            onPress={() => this.logout()}
-          />
-          <View
-            style={{
-              paddingVertical: theme.metrics.blocks.medium,
-              paddingHorizontal: theme.metrics.blocks.medium,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-              {t('profile.language')}
-            </Text>
-            <FormRowSelectComponent
+          <SettingsSection
+            title={t('profile.general')}
+            open={this.settingsSectionOpen('general')}
+            onToggle={() => this.toggleSettingsSection('general')}>
+            <ButtonComponent
+              label={t('profile.logout')}
+              icon={'lock'}
+              textAlign={'left'}
+              color={theme.colors.accent}
+              backgroundColor={theme.colors.surface}
+              borderRadius={0}
+              fontSize={theme.metrics.fontSizes.p}
+              lineHeight={rowHeight}
+              marginBottom={theme.metrics.blocks.small}
+              onPress={() => this.logout()}
+            />
+            <SettingsSelectRow
+              rowHeight={rowHeight}
+              label={t('profile.language')}
               value={this.languageLabel(this.state.language)}
               onSelect={val => this.onSelectLanguage(val)}
               options={this.languageOptions()}
             />
-          </View>
-          {(this.state.hasFingerprint || this.state.isFingerprintLockEnabled) && (
-            <FormRowToggleComponent
-              label={t('profile.fingerprintLock')}
-              value={!!this.state.isFingerprintLockEnabled}
-              onChange={val => this.onFingerprintLock(val)}
-            />
-          )}
-          {!!this.state.isFingerprintLockEnabled && (
-            <View
-              style={{
-                paddingVertical: theme.metrics.blocks.medium,
-                paddingHorizontal: theme.metrics.blocks.medium,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
-              <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-                {t('profile.fingerprintAfter')}
-              </Text>
-              <FormRowSelectComponent
+          </SettingsSection>
+          <SettingsSection
+            title={t('profile.security')}
+            open={this.settingsSectionOpen('security')}
+            onToggle={() => this.toggleSettingsSection('security')}>
+            {(this.state.hasFingerprint || this.state.isFingerprintLockEnabled) && (
+              <FormRowToggleComponent
+                card
+              rowHeight={rowHeight}
+                label={t('profile.fingerprintLock')}
+                value={!!this.state.isFingerprintLockEnabled}
+                onChange={val => this.onFingerprintLock(val)}
+              />
+            )}
+            {!!this.state.isFingerprintLockEnabled && (
+              <SettingsSelectRow
+                rowHeight={rowHeight}
+                label={t('profile.fingerprintAfter')}
                 value={this.fingerprintAfterLabel(this.state.fingerprintLockMinutes)}
                 onSelect={val => this.setOption('fingerprintLockMinutes', normalizeFingerprintLockMinutes(val))}
                 options={FINGERPRINT_LOCK_MINUTES.map(minutes => ({
@@ -443,186 +515,209 @@ export class SettingsView extends Component<Props> {
                   label: this.fingerprintAfterLabel(minutes),
                 }))}
               />
-            </View>
-          )}
-          <FormRowToggleComponent
-            label={t('profile.appCover')}
-            value={!!this.state.isAppCoverEnabled}
-            onChange={val => this.setOption('isAppCoverEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.tabsOnBottom')}
-            value={!!this.state.isBottomTabs}
-            onChange={val => this.setOption('isBottomTabs', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.navbarExpand')}
-            value={!!this.state.isNavbarExpandEnabled}
-            onChange={val => this.setOption('isNavbarExpandEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.navGestures')}
-            value={!!this.state.isNavGesturesEnabled}
-            onChange={val => this.setOption('isNavGesturesEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.isUnreadToggleEnabled')}
-            value={!!this.state.isUnreadToggleEnabled}
-            onChange={val => this.setOption('isUnreadToggleEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.bookmarkSectionReadFilter')}
-            value={this.state.isBookmarkSectionReadFilterEnabled !== false}
-            onChange={val => this.setOption('isBookmarkSectionReadFilterEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.isSwipeablePostHeader')}
-            value={!!this.state.isSwipeablePostHeader}
-            onChange={val => this.setOption('isSwipeablePostHeader', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.isTextSelectionEnabled')}
-            value={this.state.isTextSelectionEnabled !== false}
-            onChange={val => this.setOption('isTextSelectionEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('profile.uploadVideoTag')}
-            value={this.state.isUploadVideoTagEnabled !== false}
-            onChange={val => this.setOption('isUploadVideoTagEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('events.friendBadges')}
-            value={this.state.isEventFriendBadgesEnabled !== false}
-            onChange={val => this.setOption('isEventFriendBadgesEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('events.selfIcon')}
-            value={this.state.isEventSelfIconEnabled !== false}
-            onChange={val => this.setOption('isEventSelfIconEnabled', val)}
-          />
-          <View
-            style={{
-              paddingVertical: theme.metrics.blocks.medium,
-              paddingHorizontal: theme.metrics.blocks.medium,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-              {t('events.timelineDays')}
-            </Text>
-            <FormRowSelectComponent
-              value={`${normalizeTimelineVisibleDays(this.state.eventTimelineVisibleDays)}`}
-              onSelect={val => this.setOption('eventTimelineVisibleDays', normalizeTimelineVisibleDays(val))}
-              options={timelineVisibleDayOptions()}
+            )}
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.appCover')}
+              value={!!this.state.isAppCoverEnabled}
+              onChange={val => this.setOption('isAppCoverEnabled', val)}
             />
-          </View>
-          <View
-            style={{
-              paddingVertical: theme.metrics.blocks.medium,
-              paddingHorizontal: theme.metrics.blocks.medium,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-              {t('profile.imageDownload')}
-            </Text>
-            <FormRowSelectComponent
+          </SettingsSection>
+          <SettingsSection
+            title={t('profile.navigation')}
+            open={this.settingsSectionOpen('navigation')}
+            onToggle={() => this.toggleSettingsSection('navigation')}>
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.tabsOnBottom')}
+              value={!!this.state.isBottomTabs}
+              onChange={val => this.setOption('isBottomTabs', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.navbarExpand')}
+              value={!!this.state.isNavbarExpandEnabled}
+              onChange={val => this.setOption('isNavbarExpandEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.navGestures')}
+              value={!!this.state.isNavGesturesEnabled}
+              onChange={val => this.setOption('isNavGesturesEnabled', val)}
+            />
+          </SettingsSection>
+          <SettingsSection
+            title={t('profile.reading')}
+            open={this.settingsSectionOpen('reading')}
+            onToggle={() => this.toggleSettingsSection('reading')}>
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.isUnreadToggleEnabled')}
+              value={!!this.state.isUnreadToggleEnabled}
+              onChange={val => this.setOption('isUnreadToggleEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.bookmarkSectionReadFilter')}
+              value={this.state.isBookmarkSectionReadFilterEnabled !== false}
+              onChange={val => this.setOption('isBookmarkSectionReadFilterEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.isSwipeablePostHeader')}
+              value={!!this.state.isSwipeablePostHeader}
+              onChange={val => this.setOption('isSwipeablePostHeader', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.isTextSelectionEnabled')}
+              value={this.state.isTextSelectionEnabled !== false}
+              onChange={val => this.setOption('isTextSelectionEnabled', val)}
+            />
+          </SettingsSection>
+          <SettingsSection
+            title={t('profile.media')}
+            open={this.settingsSectionOpen('media')}
+            onToggle={() => this.toggleSettingsSection('media')}>
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.uploadVideoTag')}
+              value={this.state.isUploadVideoTagEnabled !== false}
+              onChange={val => this.setOption('isUploadVideoTagEnabled', val)}
+            />
+            <SettingsSelectRow
+              rowHeight={rowHeight}
+              label={t('profile.imageDownload')}
               value={this.imageDownloadLabel(this.state.imageDownloadMaxKb)}
               onSelect={val => this.setOption('imageDownloadMaxKb', normalizeImageDownloadMaxKb(val))}
               options={this.imageDownloadOptions()}
             />
-          </View>
-          <FormRowToggleComponent
-            label={t('profile.fetchProgress')}
-            value={this.state.isFetchProgressEnabled !== false}
-            onChange={val => this.setOption('isFetchProgressEnabled', val)}
-          />
-          {this.state.isFetchProgressEnabled !== false && (
-            <View>
-              <View
-                style={{
-                  paddingVertical: theme.metrics.blocks.medium,
-                  paddingHorizontal: theme.metrics.blocks.medium,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}>
-                <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-                  {t('profile.fetchProgressEnter')}
-                </Text>
-                <FormRowSelectComponent
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.fetchProgress')}
+              value={this.state.isFetchProgressEnabled !== false}
+              onChange={val => this.setOption('isFetchProgressEnabled', val)}
+            />
+            {this.state.isFetchProgressEnabled !== false && (
+              <View>
+                <SettingsSelectRow
+                  rowHeight={rowHeight}
+                  label={t('profile.fetchProgressEnter')}
                   value={this.fetchProgressLabel(this.state.fetchProgressEnter)}
                   onSelect={val => this.setOption('fetchProgressEnter', normalizeFetchProgressMode(val, 'detailed'))}
                   options={this.fetchProgressOptions()}
                 />
-              </View>
-              <View
-                style={{
-                  paddingVertical: theme.metrics.blocks.medium,
-                  paddingHorizontal: theme.metrics.blocks.medium,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}>
-                <Text style={{ fontSize: theme.metrics.fontSizes.p, flex: 1, paddingRight: theme.metrics.blocks.medium }}>
-                  {t('profile.fetchProgressMore')}
-                </Text>
-                <FormRowSelectComponent
+                <SettingsSelectRow
+                  rowHeight={rowHeight}
+                  label={t('profile.fetchProgressMore')}
                   value={this.fetchProgressLabel(this.state.fetchProgressMore)}
                   onSelect={val => this.setOption('fetchProgressMore', normalizeFetchProgressMode(val, 'overall'))}
                   options={this.fetchProgressOptions()}
                 />
               </View>
-            </View>
-          )}
-          <SectionHeaderComponent title={t('profile.sections')} backgroundColor={theme.colors.surface} />
-          <FormRowToggleComponent
-            label={t('bookmarks')}
-            value={!!this.state.isBookmarksEnabled}
-            onChange={val => this.setOption('isBookmarksEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('history')}
-            value={!!this.state.isHistoryEnabled}
-            onChange={val => this.setOption('isHistoryEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('search.title')}
-            value={!!this.state.isSearchEnabled}
-            onChange={val => this.setOption('isSearchEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('last')}
-            value={!!this.state.isLastEnabled}
-            onChange={val => this.setOption('isLastEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('reminders.title')}
-            value={!!this.state.isRemindersEnabled}
-            onChange={val => this.setOption('isRemindersEnabled', val)}
-          />
-          <FormRowToggleComponent
-            label={t('events.title')}
-            value={this.state.isEventsEnabled !== false}
-            onChange={val => this.setOption('isEventsEnabled', val)}
-          />
-          <SectionHeaderComponent title={t('profile.initialView')} backgroundColor={theme.colors.surface} />
-          <FormRowSelectComponent
-            value={t(`${this.state.initialRouteName}`.replace('Stack', ''))}
-            onSelect={route => this.setOption('initialRouteName', route)}
-            options={[
-              { value: 'historyStack', label: t('history'), disabled: !this.state.isHistoryEnabled },
-              { value: 'bookmarksStack', label: t('bookmarks'), disabled: !this.state.isBookmarksEnabled },
-              { value: 'mailStack', label: t('mail') },
-            ]}
-          />
-          <SectionHeaderComponent
+            )}
+          </SettingsSection>
+          <SettingsSection
+            title={t('events.title')}
+            open={this.settingsSectionOpen('events')}
+            onToggle={() => this.toggleSettingsSection('events')}>
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('events.friendBadges')}
+              value={this.state.isEventFriendBadgesEnabled !== false}
+              onChange={val => this.setOption('isEventFriendBadgesEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('events.selfIcon')}
+              value={this.state.isEventSelfIconEnabled !== false}
+              onChange={val => this.setOption('isEventSelfIconEnabled', val)}
+            />
+            <SettingsSelectRow
+              rowHeight={rowHeight}
+              label={t('events.timelineDays')}
+              value={`${normalizeTimelineVisibleDays(this.state.eventTimelineVisibleDays)}`}
+              onSelect={val => this.setOption('eventTimelineVisibleDays', normalizeTimelineVisibleDays(val))}
+              options={timelineVisibleDayOptions()}
+            />
+          </SettingsSection>
+          <SettingsSection
+            title={t('profile.sections')}
+            open={this.settingsSectionOpen('sections')}
+            onToggle={() => this.toggleSettingsSection('sections')}>
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('bookmarks')}
+              value={!!this.state.isBookmarksEnabled}
+              onChange={val => this.setOption('isBookmarksEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('history')}
+              value={!!this.state.isHistoryEnabled}
+              onChange={val => this.setOption('isHistoryEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('search.title')}
+              value={!!this.state.isSearchEnabled}
+              onChange={val => this.setOption('isSearchEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('last')}
+              value={!!this.state.isLastEnabled}
+              onChange={val => this.setOption('isLastEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('reminders.title')}
+              value={!!this.state.isRemindersEnabled}
+              onChange={val => this.setOption('isRemindersEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('events.title')}
+              value={this.state.isEventsEnabled !== false}
+              onChange={val => this.setOption('isEventsEnabled', val)}
+            />
+            <SettingsSelectRow
+              rowHeight={rowHeight}
+              label={t('profile.initialView')}
+              value={t(`${this.state.initialRouteName}`.replace('Stack', ''))}
+              onSelect={route => this.setOption('initialRouteName', route)}
+              options={[
+                { value: 'historyStack', label: t('history'), disabled: !this.state.isHistoryEnabled },
+                { value: 'bookmarksStack', label: t('bookmarks'), disabled: !this.state.isBookmarksEnabled },
+                { value: 'mailStack', label: t('mail') },
+              ]}
+            />
+          </SettingsSection>
+          <SettingsSection
             title={t('profile.llm.title') || 'LLM Asistent'}
-            backgroundColor={theme.colors.surface}
-          />
+            open={this.settingsSectionOpen('llm')}
+            onToggle={() => this.toggleSettingsSection('llm')}>
           <FormRowToggleComponent
+            card
+              rowHeight={rowHeight}
             label={t('profile.llm.enable') || 'Povolit LLM podporu'}
             value={!!this.state.isLlmEnabled}
             onChange={val => this.setOption('isLlmEnabled', val)}
@@ -630,6 +725,8 @@ export class SettingsView extends Component<Props> {
           {this.state.isLlmEnabled && (
             <View>
               <FormRowToggleComponent
+                card
+              rowHeight={rowHeight}
                 label={t('profile.llm.showUserAvatars') || 'Zobrazovat avatary uživatelů'}
                 value={this.state.isLlmUserAvatarsEnabled !== undefined ? !!this.state.isLlmUserAvatarsEnabled : true}
                 onChange={val => this.setOption('isLlmUserAvatarsEnabled', val)}
@@ -639,10 +736,12 @@ export class SettingsView extends Component<Props> {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingVertical: 6,
+                  height: rowHeight,
+                  overflow: 'hidden',
+                  backgroundColor: theme.colors.surface,
+                  borderRadius: 0,
+                  marginBottom: theme.metrics.blocks.small,
                   paddingHorizontal: theme.metrics.blocks.medium,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.colors.disabled,
                 }}>
                 <TextInput
                   value={this.state.openRouterApiKey}
@@ -669,7 +768,7 @@ export class SettingsView extends Component<Props> {
                   style={{
                     paddingHorizontal: 12,
                     paddingVertical: 8,
-                    borderRadius: 4,
+                    borderRadius: 0,
                     marginLeft: 8,
                   }}>
                   {this.state.isFetchingModels ? (
@@ -693,10 +792,12 @@ export class SettingsView extends Component<Props> {
               {this.state.llmError ? (
                 <View
                   style={{
+                    height: rowHeight,
+                    overflow: 'hidden',
                     backgroundColor: theme.colors.surface,
-                    padding: theme.metrics.blocks.medium,
-                    borderBottomWidth: 1,
-                    borderBottomColor: theme.colors.disabled,
+                    borderRadius: 0,
+                    marginBottom: theme.metrics.blocks.small,
+                    paddingHorizontal: theme.metrics.blocks.medium,
                     flexDirection: 'row',
                     alignItems: 'center',
                   }}>
@@ -732,10 +833,12 @@ export class SettingsView extends Component<Props> {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingVertical: theme.metrics.blocks.medium,
+                  height: rowHeight,
+                  overflow: 'hidden',
+                  backgroundColor: theme.colors.surface,
+                  borderRadius: 0,
+                  marginBottom: theme.metrics.blocks.small,
                   paddingHorizontal: theme.metrics.blocks.medium,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.colors.disabled,
                 }}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text
@@ -769,10 +872,12 @@ export class SettingsView extends Component<Props> {
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingVertical: theme.metrics.blocks.medium,
+                  height: rowHeight,
+                  overflow: 'hidden',
+                  backgroundColor: theme.colors.surface,
+                  borderRadius: 0,
+                  marginBottom: theme.metrics.blocks.small,
                   paddingHorizontal: theme.metrics.blocks.medium,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.colors.disabled,
                 }}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text
@@ -798,6 +903,7 @@ export class SettingsView extends Component<Props> {
               </TouchableOpacity>
             </View>
           )}
+          </SettingsSection>
         </ScrollView>
         <LlmModelPickerDialog
           isVisible={!!this.state.isModelPickerVisible}

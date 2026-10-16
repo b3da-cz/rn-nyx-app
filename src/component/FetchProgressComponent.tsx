@@ -49,15 +49,16 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
         <View>
           <ProgressRow
             label={t('load.overall')}
-            trailing={total > 0 ? `${done}/${total} · ${pct} %` : ''}
+            count={total > 0 ? `${done}/${total}` : ''}
+            percent={total > 0 ? `${pct} %` : ''}
             progress={ratio}
             color={colors.primary}
             textColor={colors.text}
             detailColor={colors.faded}
-            borderColor={colors.border}
             fontSize={fontSizes.p}
             detailSize={fontSizes.small}
             padding={blocks.medium}
+            gap={blocks.small}
             emphasize
           />
           {detailed && steps.map(step => {
@@ -67,16 +68,16 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
               <ProgressRow
                 key={step.id}
                 label={stepLabel(step.id, step.label)}
-                trailing={fraction}
-                detail={shortenFetchDetail(step.detail)}
+                count={fraction}
                 progress={bar}
+                detail={shortenFetchDetail(step.detail)}
                 color={colors.primary}
                 textColor={colors.text}
                 detailColor={colors.faded}
-                borderColor={colors.border}
                 fontSize={fontSizes.p}
                 detailSize={fontSizes.small}
                 padding={blocks.medium}
+                gap={blocks.small}
               />
             )
           })}
@@ -93,57 +94,65 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
 
 type RowProps = {
   label: string
-  trailing: string
+  count?: string
+  percent?: string
   detail?: string
   progress: number
   color?: string
   textColor?: string
   detailColor?: string
-  borderColor?: string
   fontSize: number
   detailSize: number
   padding: number
+  gap: number
   emphasize?: boolean
 }
 
 const ProgressRow = ({
   label,
-  trailing,
+  count,
+  percent,
   detail,
   progress,
   color,
   textColor,
   detailColor,
-  borderColor,
   fontSize,
   detailSize,
   padding,
+  gap,
   emphasize,
-}: RowProps) => (
-  <View
-    style={{
-      paddingHorizontal: padding,
-      paddingTop: padding,
-      paddingBottom: emphasize ? padding : padding / 2,
-      borderBottomWidth: 1,
-      borderBottomColor: borderColor,
-      borderLeftWidth: emphasize ? 3 : 0,
-      borderLeftColor: color,
-    }}
-  >
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Text numberOfLines={1} style={{ flex: 1, color: textColor, fontSize, fontWeight: emphasize ? '700' : '400' }}>
-        {label}
-      </Text>
-      {trailing ? (
-        <Text style={{ color: detailColor, fontSize: detailSize, marginLeft: padding }}>{trailing}</Text>
-      ) : null}
+}: RowProps) => {
+  const { colors } = useTheme()
+  return (
+    <View style={{ backgroundColor: colors.surface, borderRadius: 0, marginBottom: gap, overflow: 'hidden' }}>
+      <View
+        style={{
+          height: Math.ceil(fontSize * 1.35) + Math.ceil(detailSize * 1.35) + padding,
+          paddingHorizontal: padding,
+          justifyContent: 'center',
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text
+            numberOfLines={1}
+            style={{ flex: 1, color: textColor, fontSize, fontWeight: emphasize ? '700' : '400' }}
+          >
+            {label}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: padding }}>
+            {count ? (
+              <Text style={{ color: textColor, fontSize: detailSize, fontWeight: '400' }}>{count}</Text>
+            ) : null}
+            {percent ? (
+              <Text style={{ color: textColor, fontSize: detailSize, fontWeight: '700' }}>{`  ${percent}`}</Text>
+            ) : null}
+          </View>
+        </View>
+        <Text numberOfLines={1} style={{ color: detailColor, fontSize: detailSize, marginTop: 2, height: Math.ceil(detailSize * 1.35) }}>
+          {detail || ' '}
+        </Text>
+      </View>
+      <ProgressBar progress={progress} color={color} style={{ height: 4, borderRadius: 0 }} />
     </View>
-    {detail ? (
-      <Text numberOfLines={1} style={{ color: detailColor, fontSize: detailSize, marginTop: 2 }}>
-        {detail}
-      </Text>
-    ) : null}
-    <ProgressBar progress={progress} color={color} style={{ height: emphasize ? 4 : 3, marginTop: 6 }} />
-  </View>
-)
+  )
+}

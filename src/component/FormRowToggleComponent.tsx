@@ -7,8 +7,10 @@ type Props = {
   label: string
   value: boolean
   onChange: Function
+  card?: boolean
+  rowHeight?: number
 }
-export const FormRowToggleComponent = ({ label, value, onChange }: Props) => {
+export const FormRowToggleComponent = ({ label, value, onChange, card, rowHeight }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -16,13 +18,17 @@ export const FormRowToggleComponent = ({ label, value, onChange }: Props) => {
   return (
     <View
       style={{
-        paddingVertical: blocks.medium,
+        height: card && rowHeight ? rowHeight : undefined,
+        paddingVertical: card ? (rowHeight ? 0 : blocks.medium + blocks.small) : blocks.medium,
         paddingHorizontal: blocks.medium,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        backgroundColor: card ? colors.surface : undefined,
+        borderRadius: 0,
+        marginBottom: card ? blocks.small : 0,
       }}>
-      <Text style={{ fontSize: fontSizes.p }} onPress={() => onChange(!value)}>
+      <Text style={{ flex: 1, fontSize: fontSizes.p, color: colors.text, paddingRight: blocks.medium }} onPress={() => onChange(!value)}>
         {label}
       </Text>
       <Switch
