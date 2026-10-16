@@ -9,6 +9,7 @@ import {
   notepadEntries,
   notepadEntriesFromHtml,
   notepadEntriesFromWebMessage,
+  notepadSections,
   notepadSelected,
   sortedNotepadEntries,
 } from '../src/lib/notepad'
@@ -32,6 +33,44 @@ describe('notepad', () => {
       id: 7,
       title: 'ze skupiny',
     })
+    expect(notepadEntries({ entries: [{ id: 1, title: 'verejna', public: true }] })[0]?.public).toBe(true)
+    expect(notepadEntries({ entries: [{ id: 2, title: 'soukroma', public: 0 }] })[0]?.public).toBe(false)
+    expect(
+      notepadEntries({
+        entries: [
+          {
+            category: { id: -1, category_name: 'nezařazené poznámky' },
+            entries: [
+              { id: 3, title: 'aaa', public: true, updated_at: '2026-10-16T09:54:12' },
+              { id: 4, title: 'bbb', public: false, updated_at: '2026-10-15T11:57:46' },
+            ],
+          },
+        ],
+      }).map(entry => [entry.id, entry.public, entry.updated_at]),
+    ).toEqual([
+      [3, true, '2026-10-16T09:54:12'],
+      [4, false, '2026-10-15T11:57:46'],
+    ])
+    expect(
+      notepadSections({
+        entries: [
+          {
+            category: { id: -1, category_name: 'nezařazené poznámky' },
+            entries: [{ id: 1, title: 'volná', updated_at: '2026-10-16T00:00:00' }],
+          },
+          {
+            category: { id: 5, category_name: 'Práce' },
+            entries: [
+              { id: 8, title: 'starší', updated_at: '2026-01-01T00:00:00' },
+              { id: 9, title: 'novější', updated_at: '2026-03-01T00:00:00' },
+            ],
+          },
+        ],
+      }).map(section => [section.title, section.uncategorized, section.entries.map(entry => entry.id)]),
+    ).toEqual([
+      ['Práce', false, [9, 8]],
+      ['nezařazené poznámky', true, [1]],
+    ])
   })
 
   it('reads the website list when the api payload has no entries', () => {
@@ -45,6 +84,14 @@ describe('notepad', () => {
     expect(notepadEntriesFromHtml(html).map(entry => [entry.id, entry.title])).toEqual([
       [99845, 'Nákup'],
       [12, 'Druhá'],
+    ])
+    const marked = `
+      <div class=notepad-entry data-entry-id=1><span class=icon-lock></span><a href=/notepad/1>Soukromá</a></div>
+      <div class="notepad-entry public" data-entry-id="2"><a href="/notepad/2">Veřejná</a></div>
+    `
+    expect(notepadEntriesFromHtml(marked).map(entry => [entry.id, entry.public])).toEqual([
+      [1, false],
+      [2, true],
     ])
     expect(notepadEntries({ data: { entries: [{ id: 3, title: 'obalené' }] } })[0]?.title).toBe('obalené')
     expect(

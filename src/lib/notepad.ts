@@ -14,6 +14,15 @@ export type NotepadListEntry = {
   updated_at?: string
 }
 
+export type NotepadSection = {
+  id: number
+  title: string
+  uncategorized: boolean
+  entries: NotepadListEntry[]
+}
+
+export const NOTEPAD_UNCATEGORIZED_ID = -1
+
 export type NotepadDetail = NotepadListEntry & {
   content?: string
   content_raw?: string
@@ -32,51 +41,148 @@ const asNotepadEntry = (value: any): NotepadListEntry | null => {
     id: Number(id),
     category_id: value.category_id,
     title: value.title || value.name || '',
-    public: value.public,
+    public: notepadIsPublic(value.public),
     inserted_at: value.inserted_at,
     updated_at: value.updated_at,
   }
 }
 
-const collectEntries = (bucket: any, into: Map<number, NotepadListEntry>) => {
-  const list = Array.isArray(bucket) ? bucket : bucket && typeof bucket === 'object' ? Object.values(bucket) : []
-  list.forEach(item => {
-    const entry = asNotepadEntry(item)
-    if (!entry || into.has(entry.id)) {
-      return
-    }
-    into.set(entry.id, entry)
-  })
+// API sends a boolean. HTML and the cookie list use a lock icon or a public class.
+export const notepadIsPublic = (value: unknown): boolean | undefined => {
+  if (value === true || value === 1 || value === '1' || value === 'true') {
+    return true
+  }
+  if (value === false || value === 0 || value === '0' || value === 'false') {
+    return false
+  }
+  return undefined
 }
 
-// Swagger says { entries: [...] }. The live list has also come back empty for that key,
-// so accept a bare array, a map, and category groups before giving up.
-export const notepadEntries = (res?: any): NotepadListEntry[] => {
-  if (!res) {
-    return []
+const notepadVisibility = (slice: string): boolean | undefined => {
+  if (/icon-lock|data-public=(?:"0"|'0'|0\b)|class=(?:"[^"]*\bprivate\b[^"]*"|'[^']*\bprivate\b[^']*'|\bprivate\b)/i.test(slice)) {
+    return false
   }
-  const into = new Map<number, NotepadListEntry>()
-  collectEntries(Array.isArray(res) ? res : null, into)
-  collectEntries(res.entries, into)
-  collectEntries(res.notepad_entries, into)
-  collectEntries(res.notes, into)
-  collectEntries(res.items, into)
-  collectEntries(res.data?.entries, into)
-  collectEntries(res.notepad?.entries, into)
-  collectEntries(res.result?.entries, into)
-  const selected = asNotepadEntry(res.selected_entry)
-  if (selected && !into.has(selected.id)) {
-    into.set(selected.id, selected)
+  if (
+    /data-public=(?:"1"|'1'|1\b|true)|class=(?:"[^"]*\bpublic\b[^"]*"|'[^']*\bpublic\b[^']*'|\bpublic\b)|data-value=(?:"(?:plain|reader)"|'(?:plain|reader)'|(?:plain|reader)\b)/i.test(
+      slice,
+    )
+  ) {
+    return true
   }
-  if (Array.isArray(res.categories)) {
-    res.categories.forEach((category: any) => {
-      collectEntries(category?.entries, into)
-      collectEntries(category?.notes, into)
-      collectEntries(category?.items, into)
-    })
-  }
-  return [...into.values()]
+  return undefined
 }
+
+const categoryLabel = (category: any) =>
+  `${category?.category_name || category?.name || category?.title || ''}`.trim()
+
+const categoryId = (category: any): number | null => {
+  const raw = category?.id ?? category?.category_id
+  if (raw == null || raw === '' || Number.isNaN(Number(raw))) {
+    return null
+  }
+  return Number(raw)
+}
+
+// The site uses category id -1 and the name "nezařazené poznámky" for notes without a category.
+export const notepadIsUncategorized = (id?: number | null, name?: string) =>
+  id == null || id < 0 || /neza[rř]azen/i.test(name || '')
+
+// Swagger says { entries: [...] }. The live list is
+// entries: [{ category: { id, category_name }, entries: [NotepadEntryMinimal] }].
+// Named categories stay in payload order. The uncategorized section is last.
+export const notepadSections = (res?: any): NotepadSection[] => {
+  const order: NotepadSection[] = []
+  const byKey = new Map<number, NotepadSection>()
+
+  const bucket = (id: number | null, name: string) => {
+    const uncategorized = notepadIsUncategorized(id, name)
+    const key = uncategorized ? NOTEPAD_UNCATEGORIZED_ID : (id as number)
+    let section = byKey.get(key)
+    if (!section) {
+      section = { id: key, title: name, uncategorized, entries: [] }
+      byKey.set(key, section)
+      order.push(section)
+    } else if (name && !section.title) {
+      section.title = name
+    }
+    return section
+  }
+
+  const addEntry = (entry: NotepadListEntry, section: NotepadSection) => {
+    if (section.entries.some(item => item.id === entry.id)) {
+      return
+    }
+    section.entries.push(
+      entry.category_id == null && !section.uncategorized ? { ...entry, category_id: section.id } : entry,
+    )
+  }
+
+  const visit = (item: any) => {
+    if (!item || typeof item !== 'object') {
+      return
+    }
+    const nested = [item.entries, item.notes, item.items].find(Array.isArray) as any[] | undefined
+    if (nested && (item.category || item.category_name || (item.name && !item.title))) {
+      const source = item.category || item
+      const section = bucket(categoryId(source), categoryLabel(source) || categoryLabel(item))
+      nested.forEach(child => {
+        const entry = asNotepadEntry(child)
+        if (entry) {
+          addEntry(entry, section)
+        }
+      })
+      return
+    }
+    const entry = asNotepadEntry(item)
+    if (entry) {
+      addEntry(entry, bucket(entry.category_id ?? null, ''))
+      return
+    }
+    nested?.forEach(visit)
+  }
+
+  const walk = (value: any) => {
+    const list = Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : []
+    list.forEach(visit)
+  }
+
+  if (res) {
+    if (Array.isArray(res)) {
+      walk(res)
+    } else {
+      walk(res.entries)
+      walk(res.notepad_entries)
+      walk(res.notes)
+      walk(res.items)
+      walk(res.data?.entries)
+      walk(res.notepad?.entries)
+      walk(res.result?.entries)
+      walk(res.categories)
+      const selected = asNotepadEntry(res.selected_entry)
+      if (selected && !order.some(section => section.entries.some(entry => entry.id === selected.id))) {
+        addEntry(selected, bucket(selected.category_id ?? null, ''))
+      }
+    }
+  }
+
+  const named = order.filter(section => !section.uncategorized)
+  const uncategorized = order
+    .filter(section => section.uncategorized)
+    .reduce<NotepadSection | null>((acc, section) => {
+      if (!acc) {
+        return { ...section, id: NOTEPAD_UNCATEGORIZED_ID, entries: [...section.entries] }
+      }
+      section.entries.forEach(entry => addEntry(entry, acc))
+      if (!acc.title && section.title) {
+        acc.title = section.title
+      }
+      return acc
+    }, null)
+  const sections = [...named, ...(uncategorized?.entries.length ? [uncategorized] : [])]
+  return sections.map(section => ({ ...section, entries: sortedNotepadEntries(section.entries) }))
+}
+
+export const notepadEntries = (res?: any): NotepadListEntry[] => notepadSections(res).flatMap(section => section.entries)
 
 const decodeHtml = (value: string) =>
   value
@@ -109,7 +215,15 @@ export const NOTEPAD_LIST_EXTRACT_SCRIPT = `(function () {
         var heading = el.querySelector('h1,h2,h3')
         title = heading ? (heading.textContent || '') : ''
       }
-      entries.push({ id: Number(id), title: title.replace(/\\s+/g, ' ').trim() })
+      var cls = ' ' + (el.className || '') + ' '
+      var pub = el.getAttribute('data-public')
+      var locked = !!el.querySelector('.icon-lock')
+      var isPrivate = locked || pub === '0' || pub === 'false' || /(^|\\s)private(\\s|$)/.test(cls)
+      var isPublic = pub === '1' || pub === 'true' || /(^|\\s)public(\\s|$)/.test(cls)
+      var row = { id: Number(id), title: title.replace(/\\s+/g, ' ').trim() }
+      if (isPrivate) row.public = false
+      else if (isPublic) row.public = true
+      entries.push(row)
     }
     var guest = !!(document.body && /\\bguest\\b/.test(document.body.className || ''))
     if (window.ReactNativeWebView) {
@@ -134,9 +248,12 @@ export const notepadEntriesFromHtml = (html?: string | null): NotepadListEntry[]
     if (!id || into.has(id)) {
       continue
     }
-    const slice = html.slice(match.index, match.index + 900)
+    const tagStart = html.lastIndexOf('<', match.index)
+    const nextEntry = html.slice(match.index + 12).search(/data-entry-id=/)
+    const sliceEnd = nextEntry >= 0 ? match.index + 12 + nextEntry : match.index + 900
+    const slice = html.slice(tagStart >= 0 ? tagStart : match.index, sliceEnd)
     const heading = slice.match(/<h[1-3][^>]*>([^<]+)</i)?.[1]
-    into.set(id, { id, title: heading ? decodeHtml(heading) : '' })
+    into.set(id, { id, title: heading ? decodeHtml(heading) : '', public: notepadVisibility(slice) })
   }
   const linkRe = /href=(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>([^<]*)</g
   while ((match = linkRe.exec(html))) {
@@ -147,9 +264,14 @@ export const notepadEntriesFromHtml = (html?: string | null): NotepadListEntry[]
     }
     const id = Number(idMatch[1])
     const title = decodeHtml(match[4] || '')
-    const current = into.get(id) || { id, title: '' }
+    const tagStart = html.lastIndexOf('<', match.index)
+    const windowSlice = html.slice(tagStart >= 0 ? tagStart : match.index, match.index + 240)
+    const current = into.get(id) || { id, title: '', public: notepadVisibility(windowSlice) }
     if (!current.title && title) {
       current.title = title
+    }
+    if (current.public == null) {
+      current.public = notepadVisibility(windowSlice)
     }
     into.set(id, current)
   }

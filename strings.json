@@ -250,6 +250,10 @@
       "cs": "Veřejný",
       "en": "Public"
     },
+    "uncategorized": {
+      "cs": "Nezařazené poznámky",
+      "en": "Uncategorized notes"
+    },
     "created": {
       "cs": "Vytvořeno",
       "en": "Created"

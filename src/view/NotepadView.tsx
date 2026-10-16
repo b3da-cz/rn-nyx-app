@@ -1,6 +1,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { FlatList, RefreshControl, View } from 'react-native'
+import { RefreshControl, SectionList, View } from 'react-native'
 import { FAB, Portal, Text, TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
 import { WebView } from 'react-native-webview'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { androidStackBottomInset, SafeBottom, SectionHeaderComponent } from '../component'
@@ -12,13 +13,12 @@ import {
   NOTEPAD_CREATE_URL,
   NOTEPAD_LIST_EXTRACT_SCRIPT,
   NOTEPAD_LIST_URL,
-  notepadEntries,
   notepadEntriesFromHtml,
   notepadEntriesFromWebMessage,
-  sortedNotepadEntries,
+  notepadSections,
   t,
 } from '../lib'
-import type { NotepadListEntry } from '../lib'
+import type { NotepadListEntry, NotepadSection } from '../lib'
 
 type NotepadSource = '' | 'api' | 'html' | 'cookies'
 
@@ -33,7 +33,10 @@ const when = (entry: NotepadListEntry) => {
   if (value.length < 11) {
     return ''
   }
-  return formatDate(value)
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return formatDate(value).replace('  T', '  ')
+  }
+  return value
 }
 
 export const NotepadView = ({ navigation }) => {
@@ -42,7 +45,7 @@ export const NotepadView = ({ navigation }) => {
   const theme = context.theme
   const showDeveloperUi = isAppDeveloper(nyx?.username || nyx?.api.getAuth()?.username)
   const isFocused = useIsFocused()
-  const [entries, setEntries] = useState<NotepadListEntry[]>([])
+  const [sections, setSections] = useState<NotepadSection[]>([])
   const [isFetching, setIsFetching] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [source, setSource] = useState<NotepadSource>('')
@@ -51,9 +54,10 @@ export const NotepadView = ({ navigation }) => {
   const apiError = useRef('')
   const webDone = useRef(false)
 
-  const applyEntries = useCallback((next: NotepadListEntry[], error = '', from: NotepadSource = '') => {
-    setEntries(sortedNotepadEntries(next))
-    setLoadError(next.length ? '' : error)
+  const applySections = useCallback((next: NotepadSection[], error = '', from: NotepadSource = '') => {
+    const count = next.reduce((sum, section) => sum + section.entries.length, 0)
+    setSections(next)
+    setLoadError(count ? '' : error)
     setSource(from)
     setIsFetching(false)
     setUseWebList(false)
@@ -70,15 +74,15 @@ export const NotepadView = ({ navigation }) => {
       const next = notepadEntriesFromWebMessage(raw)
       if (next.length) {
         webDone.current = true
-        applyEntries(next, '', 'cookies')
+        applySections(notepadSections({ entries: next }), '', 'cookies')
         return
       }
       if (data.done && !webDone.current) {
         webDone.current = true
-        applyEntries([], apiError.current, 'cookies')
+        applySections([], apiError.current, 'cookies')
       }
     },
-    [applyEntries],
+    [applySections],
   )
 
   const load = useCallback(async () => {
@@ -93,23 +97,24 @@ export const NotepadView = ({ navigation }) => {
     apiError.current = ''
     try {
       const res = await nyx.api.getNotepadPayload()
-      let next = notepadEntries(res)
-      let from: NotepadSource = next.length ? 'api' : ''
-      if (!next.length && typeof res?._html === 'string') {
-        next = notepadEntriesFromHtml(res._html)
-        if (next.length) {
+      const count = (list: NotepadSection[]) => list.reduce((sum, section) => sum + section.entries.length, 0)
+      let next = notepadSections(res)
+      let from: NotepadSource = count(next) ? 'api' : ''
+      if (!count(next) && typeof res?._html === 'string') {
+        next = notepadSections({ entries: notepadEntriesFromHtml(res._html) })
+        if (count(next)) {
           from = 'html'
         }
       }
-      if (!next.length) {
+      if (!count(next)) {
         const html = await nyx.api.getNotepadPage()
-        next = notepadEntriesFromHtml(html)
-        if (next.length) {
+        next = notepadSections({ entries: notepadEntriesFromHtml(html) })
+        if (count(next)) {
           from = 'html'
         }
       }
-      if (next.length) {
-        applyEntries(next, '', from)
+      if (count(next)) {
+        applySections(next, '', from)
         return
       }
       console.warn(
@@ -122,9 +127,9 @@ export const NotepadView = ({ navigation }) => {
       setWebHeaders(nyx.api.notepadPageHeaders())
       setUseWebList(true)
     } catch (e: any) {
-      applyEntries([], e?.message || t('error'), 'api')
+      applySections([], e?.message || t('error'), 'api')
     }
-  }, [applyEntries, nyx])
+  }, [applySections, nyx])
 
   useFocusEffect(
     useCallback(() => {
@@ -139,11 +144,11 @@ export const NotepadView = ({ navigation }) => {
     const timer = setTimeout(() => {
       if (!webDone.current) {
         webDone.current = true
-        applyEntries([], apiError.current, 'cookies')
+        applySections([], apiError.current, 'cookies')
       }
     }, 8000)
     return () => clearTimeout(timer)
-  }, [applyEntries, useWebList])
+  }, [applySections, useWebList])
 
   if (!theme?.colors) {
     return null
@@ -151,10 +156,15 @@ export const NotepadView = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <FlatList
+      <SectionList
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 88 }}
-        data={entries}
+        sections={sections.map(section => ({
+          id: section.id,
+          title: section.title || t('notepad.uncategorized'),
+          data: section.entries,
+        }))}
+        stickySectionHeadersEnabled
         keyExtractor={item => `${item.id}`}
         refreshing={isFetching}
         refreshControl={
@@ -165,7 +175,11 @@ export const NotepadView = ({ navigation }) => {
             <SectionHeaderComponent title={loadError || t('empty')} backgroundColor={theme.colors.surface} />
           )
         }
-        renderItem={({ item }) => (
+        renderSectionHeader={({ section }) => <SectionHeaderComponent title={section.title} />}
+        renderItem={({ item }) => {
+          const isPublic = item.public === true
+          const isPrivate = item.public === false
+          return (
           <TouchableRipple
             rippleColor={theme.colors.ripple}
             onPress={() => navigation.push('notepadEntry', { entryId: item.id })}
@@ -176,6 +190,7 @@ export const NotepadView = ({ navigation }) => {
               marginBottom: theme.metrics.blocks.small,
               borderColor: theme.colors.row,
               borderLeftWidth: 3,
+              borderLeftColor: isPublic ? theme.colors.primary : theme.colors.row,
             }}>
             <View style={[Styling.groups.flexRowSpbCentered, { minHeight: theme.metrics.blocks.rowDiscussion }]}>
               <Text
@@ -185,17 +200,29 @@ export const NotepadView = ({ navigation }) => {
                   marginRight: theme.metrics.blocks.small,
                   fontSize: theme.metrics.fontSizes.p - 1,
                   color: theme.colors.text,
+                  opacity: isPrivate ? 0.9 : 1,
                 }}>
                 {item.title || `#${item.id}`}
               </Text>
-              {!!when(item) && (
-                <Text numberOfLines={1} style={{ color: theme.colors.disabled, fontSize: theme.metrics.fontSizes.small }}>
-                  {when(item)}
-                </Text>
-              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {!!when(item) && (
+                  <Text numberOfLines={1} style={{ color: theme.colors.disabled, fontSize: theme.metrics.fontSizes.small }}>
+                    {when(item)}
+                  </Text>
+                )}
+                {isPrivate && (
+                  <Icon
+                    name="lock"
+                    size={theme.metrics.fontSizes.p}
+                    color={theme.colors.text}
+                    style={{ marginLeft: theme.metrics.blocks.small, opacity: 0.9 }}
+                  />
+                )}
+              </View>
             </View>
           </TouchableRipple>
-        )}
+          )
+        }}
       />
       <SafeBottom min={androidStackBottomInset}>
         {insetBottom => (

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.27.3
+- seznam poznámek bere kategorie z API a ukazuje je jako sekce
+- nezařazené poznámky jsou až pod ostatními kategoriemi
+- veřejná poznámka má vlevo primary border, soukromá zámek a název na 90 %
+- v řádku je datum poslední změny
+
 ## 0.27.2
 - v detailu záznamu jsou vytvořeno a poslední změna vpravo v hlavičce
 - druhý pruh s názvem a časy je pryč
