@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
-import { Searchbar } from 'react-native-paper'
-import { DiscussionRowComponent, SectionHeaderComponent, UserRowComponent } from '../component'
+import { DiscussionRowComponent, SearchFieldComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { MainContext, LayoutAnimConf, Nyx, t, Theme, filterDiscussions } from '../lib'
 
 type Props = {
@@ -98,7 +97,7 @@ export class SearchView extends Component<Props> {
     }
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
-        <Searchbar
+        <SearchFieldComponent
           placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
           value={`${this.state.searchPhrase}`}

@@ -1,8 +1,8 @@
 import React from 'react'
-import { TextInput, View } from 'react-native'
-import { IconButton } from 'react-native-paper'
+import { View } from 'react-native'
 import { t, useTheme } from '../../lib'
 import { FormRowSelectComponent } from '../FormRowSelectComponent'
+import { SearchFieldComponent } from '../SearchFieldComponent'
 import { LlmFormRow } from './LlmFormRow'
 import { LlmSegmentedRow } from './LlmSegmentedRow'
 
@@ -29,8 +29,7 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
   hasActiveDiscussion,
 }) => {
   const {
-    colors,
-    metrics: { blocks, fontSizes },
+    metrics: { blocks },
   } = useTheme()
 
   const sortOptions: { value: SortOrder; label: string }[] = [
@@ -42,28 +41,12 @@ export const LlmLibraryFilterBar: React.FC<Props> = ({
 
   return (
     <View>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginHorizontal: blocks.medium,
-          marginBottom: blocks.small,
-          height: 42,
-        }}>
-        <TextInput
-          numberOfLines={1}
-          textAlignVertical={'center'}
-          selectionColor={colors.primary}
-          value={search}
-          onChangeText={onSearchChange}
-          placeholder={t('llm.searchHistoryPlaceholder')}
-          placeholderTextColor={colors.faded}
-          style={{ flex: 1, height: 42, color: colors.text, fontSize: fontSizes.p }}
-        />
-        {!!search && (
-          <IconButton icon={'close'} size={18} color={colors.faded} onPress={() => onSearchChange('')} />
-        )}
-      </View>
+      <SearchFieldComponent
+        value={search}
+        onChangeText={onSearchChange}
+        placeholder={t('llm.searchHistoryPlaceholder')}
+        style={{ marginBottom: blocks.small }}
+      />
       {hasActiveDiscussion && (
         <LlmSegmentedRow
           value={scope}

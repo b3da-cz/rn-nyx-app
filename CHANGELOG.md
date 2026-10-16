@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.5
+- hledání má společné pole: vlevo lupa, vpravo křížek, když je v něm text
+- stejné pole je u seznamu poznámek, prohlížeče souborů, knihovny asistenta a vyhledávání
+
 ## 0.27.4
 - u veřejné poznámky ve FAB není odkaz na čtečku
 - sdílení se jmenuje Share - standard a Share - reader

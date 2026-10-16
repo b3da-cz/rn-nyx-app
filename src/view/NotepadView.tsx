@@ -1,10 +1,10 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { RefreshControl, SectionList, TextInput, View } from 'react-native'
+import { RefreshControl, SectionList, View } from 'react-native'
 import { FAB, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { WebView } from 'react-native-webview'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
-import { androidStackBottomInset, SafeBottom, SectionHeaderComponent } from '../component'
+import { androidStackBottomInset, SafeBottom, SearchFieldComponent, SectionHeaderComponent } from '../component'
 import {
   foldSearch,
   formatDate,
@@ -168,37 +168,7 @@ export const NotepadView = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          borderBottomWidth: 2,
-          borderBottomColor: query ? theme.colors.primary : 'transparent',
-          paddingHorizontal: theme.metrics.blocks.medium,
-        }}>
-        <Icon name="search" size={theme.metrics.fontSizes.p} color={query ? theme.colors.primary : theme.colors.disabled} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('notepad.search')}
-          placeholderTextColor={theme.colors.disabled}
-          selectionColor={theme.colors.primary}
-          autoCorrect={false}
-          autoCapitalize="none"
-          style={{
-            flex: 1,
-            height: 42,
-            color: theme.colors.text,
-            paddingHorizontal: theme.metrics.blocks.small,
-            fontSize: theme.metrics.fontSizes.p,
-          }}
-        />
-        {query.length > 0 && (
-          <TouchableRipple onPress={() => setQuery('')} rippleColor={theme.colors.ripple} style={{ padding: 4 }}>
-            <Icon name="x" size={theme.metrics.fontSizes.p} color={theme.colors.disabled} />
-          </TouchableRipple>
-        )}
-      </View>
+      <SearchFieldComponent value={query} onChangeText={setQuery} placeholder={t('notepad.search')} />
       <SectionList
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 88 }}

@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Platform, ScrollView, View } from 'react-native'
-import { Text, TextInput, TouchableRipple } from 'react-native-paper'
+import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
+import { SearchFieldComponent } from '../component'
 import { LlmSegmentedRow } from '../component/llm'
 import { LoaderComponent } from '../component/LoaderComponent'
 import { countMarkdownSearchHits, MarkdownViewComponent } from '../component/MarkdownViewComponent'
@@ -159,35 +160,23 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
           { key: 'raw', label: t('llm.viewRaw') },
         ]}
       />
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginHorizontal: inline ? 0 : blocks.small,
-          marginBottom: blocks.small,
-        }}>
-        <TextInput
-          numberOfLines={1}
-          textAlignVertical="center"
-          selectionColor={colors.primary}
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('rights.logSearch')}
-          style={{
-            flex: 1,
-            height: 42,
-            backgroundColor: 'inherit',
-            borderRadius: 0,
-          }}
-        />
-        {!!query && (
-          <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginHorizontal: blocks.small }}>
-            {total ? `${shown + 1}/${total}` : '0/0'}
-          </Text>
-        )}
-        {!!query && chevron('chevron-up', -1, shown <= 0 || total === 0)}
-        {!!query && chevron('chevron-down', 1, total === 0 || shown >= total - 1)}
-      </View>
+      <SearchFieldComponent
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t('rights.logSearch')}
+        style={{ marginBottom: blocks.small }}
+        right={
+          !!query && (
+            <>
+              <Text style={{ color: colors.faded, fontSize: fontSizes.small, marginHorizontal: blocks.small }}>
+                {total ? `${shown + 1}/${total}` : '0/0'}
+              </Text>
+              {chevron('chevron-up', -1, shown <= 0 || total === 0)}
+              {chevron('chevron-down', 1, total === 0 || shown >= total - 1)}
+            </>
+          )
+        }
+      />
       <View style={{ flex: 1 }}>{body}</View>
     </View>
   )
