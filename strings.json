@@ -233,6 +233,40 @@
       "en": "In topics"
     }
   },
+  "discussionRequest": {
+    "name": {
+      "cs": "Název",
+      "en": "Name"
+    },
+    "category": {
+      "cs": "Kategorie",
+      "en": "Category"
+    },
+    "summary": {
+      "cs": "Popis",
+      "en": "Description"
+    },
+    "similar": {
+      "cs": "Možná podobné",
+      "en": "Possibly similar"
+    },
+    "vote": {
+      "cs": "Hlasovat",
+      "en": "Vote"
+    },
+    "for": {
+      "cs": "Hlas pro",
+      "en": "For"
+    },
+    "against": {
+      "cs": "Hlas proti",
+      "en": "Against"
+    },
+    "cancelled": {
+      "cs": "Zrušeno",
+      "en": "Cancelled"
+    }
+  },
   "notepad": {
     "title": {
       "cs": "Zápisník",

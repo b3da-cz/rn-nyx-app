@@ -59,7 +59,7 @@ Pět metod, které se nevolají:
 
 Mimo balíček app navíc volá `DELETE mail/delete/{postId}` a HTML stránku práv. Založení události není API metoda. Je to WebView na `https://nyx.cz/event/create`.
 
-Hlasování o novém klubu v balíčku není. Post typu `discussion_request` se dnes vykreslí jako HTML tabulka ve WebView (`DiscussionRequestComponent`). Parser v `parseDiscussionRequest` řádky s `vote_for` / `vote_against` z HTML vyřízne a kliky ve WebView spolkne.
+Hlasování o novém klubu v `nyx-api` 0.5.2 není. App ho volá z `NyxEventsApi.voteDiscussionRequest`: `POST discussion/{discussionId}/discussion_create_request/{postId}/vote_for` nebo `vote_against`. Odpověď je aktualizovaný příspěvek.
 
 ## Plán integrace
 
@@ -67,7 +67,7 @@ Hlasování o novém klubu v balíčku není. Post typu `discussion_request` se 
 2. **Embed souboru.** Hotovo ve v0.25.1. Na konci řádku nahraného souboru v compose dialogu (`MessageBoxDialog`, seznam `uploadedFiles`, panel detailů) je přepínač a volá `setFileEmbed`. Výchozí stav je současné chování: vložit jako obrázek, ne jako odkaz na soubor. Dialog si volbu nepamatuje. Každý soubor začíná jako obrázek a před odesláním se přepíná zvlášť. Zapnutý stav je ikona obrázku, vypnutý ikona odkazu.
 3. **Filtr „hodnoceno mnou“.** Hotovo. V řádku filtru posledních příspěvků (`RatingFilterBarComponent`, vedle ikony `users`) je ikona uživatele. Zapnutý filtr volá `GET last?rated_by_me=true`. Cesta `/rated_by_me` z `nyx-api` 0.5.2 vrací 404, proto ji app obchází v `NyxEventsApi`. Kombinace nejdou. Přátelé mají přednost před hodnoceno mnou a to má přednost před minimem. Klepnutí na jednu volbu ostatní vypne. Samotné minimum a přátelé dál jdou cestou, která funguje.
 4. **Zápisník.** Hotovo. Ikona v řadě akcí profilu. Seznam je `getNotepad`, detail `getNotepadEntry`. Swagger ani `nyx-api` 0.5.2 nemají zápis, proto nový záznam a úprava otevírají web `https://nyx.cz/notepad/create` a `https://nyx.cz/notepad/{id}/edit`.
-5. **Hlasování o novém klubu.** U postu `discussion_request` nahradit HTML tabulku nativním zobrazením ve stylu ankety v app (tlačítka pro a proti, ne WebView). V `nyx-api` 0.5.2 na to endpoint není. Hlas posílat jako běžný příspěvek přes `postToDiscussion`, až se při implementaci ověří text, který web po `vote_for` / `vote_against` skutečně odešle. Když se ukáže samostatná cesta, použít tu.
+5. **Hlasování o novém klubu.** Hotovo. Post `discussion_request` je nativní blok (`DiscussionRequestComponent`): název, kategorie, popis, podobné kluby a tlačítka Hlas pro / Hlas proti. WebView tabulka je pryč. Hlas jde přes `NyxEventsApi.voteDiscussionRequest`, ne přes `postToDiscussion`. Cesta je stejná jako na webu a ve Fyx: `POST discussion/{id}/discussion_create_request/{postId}/vote_for|vote_against`. Tlačítka zmizí, když `can_vote` je false, žádost je zrušená, nebo už má `discussion_id`. Počet hlasů je `computed_values.voters_positive_total` a `voters_negative_total`.
 6. **Zbytek nechat jako TODO**, až po zápisníku:
    - fulltext `searchV2` a nevyužitá větev `GET search?search=`
    - poslední diskuze `getLastDiscussions`

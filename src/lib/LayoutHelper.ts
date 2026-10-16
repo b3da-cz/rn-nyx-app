@@ -15,6 +15,7 @@ import {
   shouldShowCachedImage,
   shouldSkipImageDownload,
 } from './imageDownload'
+import { discussionRequestBlockHeight, discussionRequestFromPost } from './discussionRequest'
 
 const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
   return new Promise(async resolve => {
@@ -282,7 +283,27 @@ export const getBlockSizes = async (
         allowFontScaling: true,
         ...fontSpecs,
       })
-      const textHeight = textHeights.reduce((a, b) => a + b)
+      const request = post.content_raw?.type === 'discussion_request' ? discussionRequestFromPost(post) : null
+      let textHeight = textHeights.reduce((a, b) => a + b)
+      let discussionRequestMeasured = 0
+      if (request) {
+        textHeight = 0
+        const lines = [request.name, request.category, request.summary]
+        if (!request.discussionId) {
+          lines.push(request.links.length ? ' ' : request.similar || '-')
+        }
+        const measured = await rnTextSize.flatHeights({
+          text: lines,
+          width: Dimensions.get('window').width - 40,
+          fontSize: effectiveFontSize,
+          allowFontScaling: true,
+        })
+        discussionRequestMeasured = discussionRequestBlockHeight(
+          request,
+          measured.reduce((a, b) => a + b, 0),
+          fontScale,
+        )
+      }
       const imagesHeight = computeImagesHeight(post, screenWidth)
       const codeHeights =
         post.parsed.codeBlocks?.length > 0
@@ -361,19 +382,7 @@ export const getBlockSizes = async (
           (eventData.going_people > 0 ? 36 * fontScale : 8) +
           28 * fontScale
       }
-      const discussionRequestTextHeights =
-        post.content_raw?.type === 'discussion_request'
-          ? await rnTextSize.flatHeights({
-              text: [post.parsed.clearText],
-              width: Dimensions.get('window').width + 100,
-              fontSize: 10,
-              allowFontScaling: true,
-            })
-          : []
-      const discussionRequestHeight =
-        discussionRequestTextHeights.length > 0
-          ? discussionRequestTextHeights.reduce((a, b) => a + b) + 15 * fontScale
-          : 0
+      const discussionRequestHeight = discussionRequestMeasured
       // each video renders a square WebView plus a "copy link" row below it;
       // reserve the row height too or the row gets clipped by the fixed post height
       const videoCopyRowHeight = 16 + (2 * themeBaseFontSize * fontScale) / 5 + 6

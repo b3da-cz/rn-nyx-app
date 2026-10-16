@@ -1,56 +1,164 @@
-import React, { useRef } from 'react'
-import { Text, View } from 'react-native'
-import { WebView } from 'react-native-webview'
-import { useTheme } from '../lib'
+import React, { useContext, useState } from 'react'
+import { View } from 'react-native'
+import { Text, TouchableRipple } from 'react-native-paper'
+import { discussionRequestFromPost, isTextSelectionEnabled, MainContext, t, useTheme } from '../lib'
+import type { DiscussionRequestLink, DiscussionRequestView } from '../lib'
 
 type Props = {
-  html: string
-  height: number
-  fontSize?: number
+  request: DiscussionRequestView
+  onVote: (against: boolean) => Promise<any>
+  onOpenDiscussion?: (discussionId: number) => void
 }
-export const DiscussionRequestComponent = ({ html, height, fontSize = 12 }: Props) => {
-  const refWebView = useRef<any>(null)
+
+export const DiscussionRequestComponent = ({ request, onVote, onOpenDiscussion }: Props) => {
+  const [shown, setShown] = useState<DiscussionRequestView | null>(null)
+  const [seen, setSeen] = useState(request)
+  const [busy, setBusy] = useState(false)
+  if (
+    request.canVote !== seen.canVote ||
+    request.votesFor !== seen.votesFor ||
+    request.votesAgainst !== seen.votesAgainst ||
+    request.discussionId !== seen.discussionId ||
+    request.cancelled !== seen.cancelled
+  ) {
+    setSeen(request)
+    setShown(null)
+  }
   const {
-    colors: { background, text },
-    metrics: { blocks, screen },
+    colors,
+    metrics: { blocks, fontSizes },
+  } = useTheme()
+  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
+  const view = shown || request
+  const vote = async (against: boolean) => {
+    if (busy) {
+      return
+    }
+    setBusy(true)
+    try {
+      const updated = await onVote(against)
+      const next = updated && !updated.error ? discussionRequestFromPost(updated) : null
+      if (next) {
+        setShown(next)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+  const open = (id: number) => {
+    if (onOpenDiscussion) {
+      onOpenDiscussion(id)
+    }
+  }
+  return (
+    <View style={{ paddingHorizontal: blocks.medium, paddingBottom: blocks.medium }}>
+      <Field label={t('discussionRequest.name')} value={view.name} selectable={selectable} onPress={view.discussionId ? () => open(view.discussionId as number) : undefined} />
+      <Field label={t('discussionRequest.category')} value={view.category} selectable={selectable} />
+      <Field label={t('discussionRequest.summary')} value={view.summary} selectable={selectable} />
+      {!view.discussionId && (
+        <Field label={t('discussionRequest.similar')} value={view.links.length ? '' : view.similar || '-'} selectable={selectable}>
+          {view.links.map(link => (
+            <LinkLine key={link.id} link={link} onPress={() => open(link.id)} />
+          ))}
+        </Field>
+      )}
+      <Text style={{ fontSize: fontSizes.p, fontWeight: 'bold', color: colors.text, marginTop: blocks.medium }}>
+        {t('discussionRequest.vote')}
+      </Text>
+      {view.cancelled && (
+        <Text selectable={selectable} style={{ color: colors.disabled, fontSize: fontSizes.p, marginTop: blocks.small }}>
+          {t('discussionRequest.cancelled')}
+        </Text>
+      )}
+      {view.canVote ? (
+        <>
+          <VoteButton
+            label={`${t('discussionRequest.for')}   ${view.votesFor}`}
+            disabled={busy}
+            onPress={() => vote(false)}
+          />
+          <VoteButton
+            label={`${t('discussionRequest.against')}   ${view.votesAgainst}`}
+            disabled={busy}
+            onPress={() => vote(true)}
+          />
+        </>
+      ) : (
+        <Text selectable={selectable} style={{ color: colors.text, fontSize: fontSizes.p, marginTop: blocks.small }}>
+          {`${view.votesFor} ${t('discussionRequest.for').toLowerCase()}    ${view.votesAgainst} ${t('discussionRequest.against').toLowerCase()}`}
+        </Text>
+      )}
+    </View>
+  )
+}
+
+const VoteButton = ({ label, disabled, onPress }: { label: string; disabled: boolean; onPress: () => void }) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes, line },
+  } = useTheme()
+  const color = disabled ? colors.disabled : colors.accent
+  return (
+    <TouchableRipple
+      disabled={disabled}
+      rippleColor={colors.ripple}
+      onPress={onPress}
+      style={{
+        marginTop: blocks.medium,
+        padding: blocks.large,
+        borderWidth: line,
+        borderColor: color,
+      }}>
+      <Text style={{ fontSize: fontSizes.h3, color, textAlign: 'center' }}>{label}</Text>
+    </TouchableRipple>
+  )
+}
+
+const Field = ({
+  label,
+  value,
+  selectable,
+  onPress,
+  children,
+}: {
+  label: string
+  value: string
+  selectable: boolean
+  onPress?: () => void
+  children?: React.ReactNode
+}) => {
+  const {
+    colors,
+    metrics: { blocks, fontSizes },
   } = useTheme()
   return (
-    <Text>
-      <View style={{ flex: 1 }}>
-        <WebView
-          ref={refWebView}
+    <View style={{ marginTop: blocks.medium }}>
+      <Text style={{ fontSize: fontSizes.p, fontWeight: 'bold', color: colors.text }}>{label}</Text>
+      {!!value && (
+        <Text
+          selectable={onPress ? false : selectable}
+          onPress={onPress}
           style={{
-            height,
-            width: screen.width - blocks.large,
-            backgroundColor: 'transparent',
-            marginVertical: blocks.medium,
-          }}
-          source={{
-            html: `
-              <html lang="en">
-                <body style="margin: 0 !important; padding: 0 !important; background-color: ${background}">
-                  <style>
-                    * { font-size: ${fontSize}px; color: ${text}; text-decoration: none; }
-                    td { padding: 3px; }
-                  </style>
-                  ${html}
-                  <script>
-                    document.addEventListener('click', ev => {
-                      ev.stopPropagation()
-                      ev.preventDefault()
-                    })
-                  </script>
-                </body>
-              </html>`,
-          }}
-          scalesPageToFit={false}
-          incognito={true}
-          showsVerticalScrollIndicator={false}
-          // onShouldStartLoadWithRequest={event => {
-          //   return false
-          // }}
-        />
-      </View>
+            fontSize: fontSizes.p,
+            color: onPress ? colors.primary : colors.text,
+            marginTop: 3,
+          }}>
+          {value}
+        </Text>
+      )}
+      {children}
+    </View>
+  )
+}
+
+const LinkLine = ({ link, onPress }: { link: DiscussionRequestLink; onPress: () => void }) => {
+  const {
+    colors,
+    metrics: { fontSizes },
+  } = useTheme()
+  return (
+    <Text onPress={onPress} style={{ fontSize: fontSizes.p, color: colors.primary, marginTop: 3 }}>
+      {link.name}
     </Text>
   )
 }

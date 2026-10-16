@@ -327,7 +327,7 @@ export class Parser {
   }
 
   parseDiscussionRequest() {
-    // html parser doesn't handle this as valid html, even if it renders.. TODO: voting buttons
+    // The native request view reads content_raw. This HTML stays for search text, without the vote row.
     this.discussionRequest = this.contentRaw?.replace(
       "<tr><td>akce<td><button type=button name=vote_for><span class='icon-entypo icon-up-bold'></span> hlas pro</button><button type=button name=vote_against><span class='icon-entypo icon-down-bold'></span> hlas proti</button></tr>",
       '',

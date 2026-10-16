@@ -16,7 +16,16 @@ import {
   VideoTagComponent,
   DiscussionRequestComponent,
 } from '../component'
-import { eventFromPost, Nyx, TOKEN, generateUuidV4, isTextSelectionEnabled, MainContext, promptTextFile } from '../lib'
+import {
+  discussionRequestFromPost,
+  eventFromPost,
+  Nyx,
+  TOKEN,
+  generateUuidV4,
+  isTextSelectionEnabled,
+  MainContext,
+  promptTextFile,
+} from '../lib'
 
 type Props = {
   post: any
@@ -257,11 +266,29 @@ export class PostComponent extends Component<Props> {
   }
 
   renderDiscussionRequest() {
-    const { post } = this.props
-    const key = generateUuidV4()
+    const request = discussionRequestFromPost(this.props.post)
+    if (!request) {
+      return null
+    }
     return (
-      <DiscussionRequestComponent key={key} html={post.parsed.discussionRequest} height={post.parsed.height - 60} />
+      <DiscussionRequestComponent
+        request={request}
+        onVote={against => this.voteDiscussionRequest(against)}
+        onOpenDiscussion={id => this.props.onDiscussionDetailShow(id)}
+      />
     )
+  }
+
+  async voteDiscussionRequest(against: boolean) {
+    const res = await this.props.nyx.api.voteDiscussionRequest(
+      this.props.post.discussion_id,
+      this.props.post.id,
+      against,
+    )
+    if (res && !res.error && typeof this.props.onPollVote === 'function') {
+      this.props.onPollVote(res)
+    }
+    return res
   }
 
   renderEvent() {

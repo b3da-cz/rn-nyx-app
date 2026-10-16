@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.0
+- žádost o nový klub má hlas pro a hlas proti
+- tlačítka jsou přes celou šířku, bez zaoblení, jako hod kostkou
+
 ## 0.27.6
 - veřejná poznámka má v seznamu ikonu glóbu
 - datum a ikona zámku nebo glóbu jsou ve sloupcích pod sebou

@@ -102,6 +102,17 @@ export class NyxEventsApi extends NyxApi {
     }
   }
 
+  // nyx-api 0.5.2 has no method for a club-creation vote. The site and Fyx post
+  // discussion/{discussionId}/discussion_create_request/{postId}/vote_for|vote_against.
+  // The body is the updated post.
+  async voteDiscussionRequest(discussionId: string | number, postId: string | number, against = false) {
+    const side = against ? 'vote_against' : 'vote_for'
+    return this.fetch({
+      endpoint: `discussion/${discussionId}/discussion_create_request/${postId}/${side}`,
+      method: 'POST',
+    })
+  }
+
   async getEvents(params?: EventsQuery): Promise<Partial<EventsResponse>> {
     const queryParts: string[] = []
     if (params?.area !== undefined) queryParts.push(`area=${params.area}`)
