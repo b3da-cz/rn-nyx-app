@@ -219,19 +219,32 @@ export const NotepadView = ({ navigation }) => {
                 {item.title || `#${item.id}`}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {!!when(item) && (
-                  <Text numberOfLines={1} style={{ color: theme.colors.disabled, fontSize: theme.metrics.fontSizes.small }}>
-                    {when(item)}
-                  </Text>
-                )}
-                {isPrivate && (
-                  <Icon
-                    name="lock"
-                    size={theme.metrics.fontSizes.p}
-                    color={theme.colors.text}
-                    style={{ marginLeft: theme.metrics.blocks.small, opacity: 0.9 }}
-                  />
-                )}
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    width: theme.metrics.fontSizes.small * 13,
+                    textAlign: 'right',
+                    color: theme.colors.disabled,
+                    fontSize: theme.metrics.fontSizes.small,
+                    fontVariant: ['tabular-nums'],
+                  }}>
+                  {when(item)}
+                </Text>
+                <View
+                  style={{
+                    width: theme.metrics.fontSizes.p,
+                    marginLeft: theme.metrics.blocks.small,
+                    alignItems: 'center',
+                  }}>
+                  {(isPublic || isPrivate) && (
+                    <Icon
+                      name={isPublic ? 'globe' : 'lock'}
+                      size={theme.metrics.fontSizes.p}
+                      color={theme.colors.text}
+                      style={{ opacity: 0.9 }}
+                    />
+                  )}
+                </View>
               </View>
             </View>
           </TouchableRipple>

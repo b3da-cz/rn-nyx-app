@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.6
+- veřejná poznámka má v seznamu ikonu glóbu
+- datum a ikona zámku nebo glóbu jsou ve sloupcích pod sebou
+
 ## 0.27.5
 - hledání má společné pole: vlevo lupa, vpravo křížek, když je v něm text
 - stejné pole je u seznamu poznámek, prohlížeče souborů, knihovny asistenta a vyhledávání
