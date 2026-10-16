@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.4
+- u veřejné poznámky ve FAB není odkaz na čtečku
+- sdílení se jmenuje Share - standard a Share - reader
+- nad seznamem je hledání, které hned filtruje názvy a skryje prázdné kategorie
+
 ## 0.27.3
 - seznam poznámek bere kategorie z API a ukazuje je jako sekce
 - nezařazené poznámky jsou až pod ostatními kategoriemi

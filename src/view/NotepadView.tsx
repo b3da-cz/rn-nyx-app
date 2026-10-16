@@ -1,11 +1,12 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { RefreshControl, SectionList, View } from 'react-native'
+import { RefreshControl, SectionList, TextInput, View } from 'react-native'
 import { FAB, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { WebView } from 'react-native-webview'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { androidStackBottomInset, SafeBottom, SectionHeaderComponent } from '../component'
 import {
+  foldSearch,
   formatDate,
   isAppDeveloper,
   MainContext,
@@ -46,6 +47,7 @@ export const NotepadView = ({ navigation }) => {
   const showDeveloperUi = isAppDeveloper(nyx?.username || nyx?.api.getAuth()?.username)
   const isFocused = useIsFocused()
   const [sections, setSections] = useState<NotepadSection[]>([])
+  const [query, setQuery] = useState('')
   const [isFetching, setIsFetching] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [source, setSource] = useState<NotepadSource>('')
@@ -154,16 +156,58 @@ export const NotepadView = ({ navigation }) => {
     return null
   }
 
+  const needle = foldSearch(query.trim())
+  const visible = needle
+    ? sections
+        .map(section => ({
+          ...section,
+          entries: section.entries.filter(entry => foldSearch(entry.title || `#${entry.id}`).includes(needle)),
+        }))
+        .filter(section => section.entries.length > 0)
+    : sections
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          borderBottomWidth: 2,
+          borderBottomColor: query ? theme.colors.primary : 'transparent',
+          paddingHorizontal: theme.metrics.blocks.medium,
+        }}>
+        <Icon name="search" size={theme.metrics.fontSizes.p} color={query ? theme.colors.primary : theme.colors.disabled} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder={t('notepad.search')}
+          placeholderTextColor={theme.colors.disabled}
+          selectionColor={theme.colors.primary}
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={{
+            flex: 1,
+            height: 42,
+            color: theme.colors.text,
+            paddingHorizontal: theme.metrics.blocks.small,
+            fontSize: theme.metrics.fontSizes.p,
+          }}
+        />
+        {query.length > 0 && (
+          <TouchableRipple onPress={() => setQuery('')} rippleColor={theme.colors.ripple} style={{ padding: 4 }}>
+            <Icon name="x" size={theme.metrics.fontSizes.p} color={theme.colors.disabled} />
+          </TouchableRipple>
+        )}
+      </View>
       <SectionList
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 88 }}
-        sections={sections.map(section => ({
+        sections={visible.map(section => ({
           id: section.id,
           title: section.title || t('notepad.uncategorized'),
           data: section.entries,
         }))}
+        keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
         keyExtractor={item => `${item.id}`}
         refreshing={isFetching}

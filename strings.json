@@ -254,6 +254,10 @@
       "cs": "Nezařazené poznámky",
       "en": "Uncategorized notes"
     },
+    "search": {
+      "cs": "Hledat",
+      "en": "Search"
+    },
     "created": {
       "cs": "Vytvořeno",
       "en": "Created"
@@ -267,12 +271,12 @@
       "en": "Copy content"
     },
     "sharePlain": {
-      "cs": "Sdílení, standardní",
-      "en": "Share, standard"
+      "cs": "Sdílení - standardní",
+      "en": "Share - standard"
     },
     "shareReader": {
-      "cs": "Sdílení, čtečka",
-      "en": "Share, reader"
+      "cs": "Sdílení - čtečka",
+      "en": "Share - reader"
     }
   },
   "profile": {

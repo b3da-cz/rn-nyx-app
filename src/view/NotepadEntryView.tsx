@@ -161,12 +161,16 @@ export const NotepadEntryView = ({ navigation, route }) => {
                   style: { backgroundColor: theme.colors.primary },
                   onPress: () => copyText(notepadPlainUrl(entry.id)),
                 },
-                {
-                  icon: 'book-open-variant',
-                  label: t('notepad.shareReader'),
-                  style: { backgroundColor: theme.colors.primary },
-                  onPress: () => copyText(notepadReaderUrl(entry.id)),
-                },
+                ...(entry.public === true
+                  ? []
+                  : [
+                      {
+                        icon: 'book-open-variant',
+                        label: t('notepad.shareReader'),
+                        style: { backgroundColor: theme.colors.primary },
+                        onPress: () => copyText(notepadReaderUrl(entry.id)),
+                      },
+                    ]),
               ]
             : []
         }
