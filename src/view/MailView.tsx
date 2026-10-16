@@ -335,7 +335,7 @@ export class MailView extends Component<Props> {
     }
     const listEmpty = !this.state.messages.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'lists')
     const showProgress = progressMode !== 'off' && this.state.isFetching
     const loadActive = showProgress && loadSteps.length > 0
     return (

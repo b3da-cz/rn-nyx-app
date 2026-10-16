@@ -187,7 +187,7 @@ export class RemindersView extends Component<Props> {
     const { theme } = this.state
     const listEmpty = !this.state.bookmarks.length && !this.state.mail.length
     const loadSteps = this.state.fetchProgress?.steps || []
-    const progressMode = resolveFetchProgressMode(this.context?.config, 'enter')
+    const progressMode = resolveFetchProgressMode(this.context?.config, 'lists')
     const showProgress = progressMode !== 'off' && this.state.isFetching
     const loadActive = showProgress && loadSteps.length > 0
     return (

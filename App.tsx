@@ -25,6 +25,7 @@ import {
   Nyx,
   normalizeBookmarkSectionFilters,
   normalizeFetchProgressMode,
+  resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   navigationRef,
@@ -253,9 +254,11 @@ const App: () => ReactNode = () => {
       isBookmarkSectionReadFilterEnabled:
         conf.isBookmarkSectionReadFilterEnabled === undefined ? true : !!conf.isBookmarkSectionReadFilterEnabled,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(conf.imageDownloadMaxKb),
-      isFetchProgressEnabled: conf.isFetchProgressEnabled !== false,
+      isFetchProgressEnabled: resolveFetchProgressGlobal(conf) !== 'off',
+      fetchProgress: resolveFetchProgressGlobal(conf),
       fetchProgressEnter: normalizeFetchProgressMode(conf.fetchProgressEnter, 'detailed'),
       fetchProgressMore: normalizeFetchProgressMode(conf.fetchProgressMore, 'overall'),
+      fetchProgressLists: normalizeFetchProgressMode(conf.fetchProgressLists, 'detailed'),
       settingsSectionsOpen:
         conf.settingsSectionsOpen && typeof conf.settingsSectionsOpen === 'object' ? conf.settingsSectionsOpen : {},
       initialRouteName: conf.initialRouteName === undefined ? 'historyStack' : conf.initialRouteName,

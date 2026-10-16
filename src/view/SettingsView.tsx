@@ -29,6 +29,7 @@ import {
   FINGERPRINT_LOCK_MINUTES,
   hasFingerprintSensor,
   normalizeFetchProgressMode,
+  resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
@@ -147,8 +148,10 @@ type State = {
   hasFingerprint: boolean
   imageDownloadMaxKb: number | null
   isFetchProgressEnabled: boolean
+  fetchProgress: string
   fetchProgressEnter: string
   fetchProgressMore: string
+  fetchProgressLists: string
   settingsSectionsOpen: Record<string, boolean>
   initialRouteName: string
   isLlmEnabled: boolean
@@ -247,9 +250,11 @@ export class SettingsView extends Component<Props> {
       isAppCoverEnabled: !!config?.isAppCoverEnabled,
       hasFingerprint: false,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
-      isFetchProgressEnabled: config?.isFetchProgressEnabled !== false,
+      isFetchProgressEnabled: resolveFetchProgressGlobal(config) !== 'off',
+      fetchProgress: resolveFetchProgressGlobal(config),
       fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, 'detailed'),
       fetchProgressMore: normalizeFetchProgressMode(config?.fetchProgressMore, 'overall'),
+      fetchProgressLists: normalizeFetchProgressMode(config?.fetchProgressLists, 'detailed'),
       settingsSectionsOpen:
         config?.settingsSectionsOpen && typeof config.settingsSectionsOpen === 'object'
           ? config.settingsSectionsOpen
@@ -405,6 +410,23 @@ export class SettingsView extends Component<Props> {
       { value: 'overall', label: t('profile.fetchProgressOverall') },
       { value: 'detailed', label: t('profile.fetchProgressDetailed') },
     ]
+  }
+
+  fetchProgressGlobalOptions() {
+    return [
+      { value: 'detailed', label: t('profile.fetchProgressDetailed') },
+      { value: 'off', label: t('profile.fetchProgressNone') },
+    ]
+  }
+
+  async setFetchProgress(mode: string) {
+    const next = mode === 'off' ? 'off' : 'detailed'
+    const conf = await Storage.getConfig()
+    conf.fetchProgress = next
+    conf.isFetchProgressEnabled = next !== 'off'
+    this.setState({ fetchProgress: next, isFetchProgressEnabled: next !== 'off' })
+    await Storage.setConfig(conf)
+    this.props.onConfigChange()
   }
 
   imageDownloadOptions() {
@@ -601,14 +623,18 @@ export class SettingsView extends Component<Props> {
               onSelect={val => this.setOption('imageDownloadMaxKb', normalizeImageDownloadMaxKb(val))}
               options={this.imageDownloadOptions()}
             />
-            <FormRowToggleComponent
-              card
+            <SettingsSelectRow
               rowHeight={rowHeight}
               label={t('profile.fetchProgress')}
-              value={this.state.isFetchProgressEnabled !== false}
-              onChange={val => this.setOption('isFetchProgressEnabled', val)}
+              value={
+                this.state.fetchProgress === 'off'
+                  ? t('profile.fetchProgressNone')
+                  : t('profile.fetchProgressDetailed')
+              }
+              onSelect={val => this.setFetchProgress(val)}
+              options={this.fetchProgressGlobalOptions()}
             />
-            {this.state.isFetchProgressEnabled !== false && (
+            {this.state.fetchProgress !== 'off' && (
               <View>
                 <SettingsSelectRow
                   rowHeight={rowHeight}
@@ -622,6 +648,13 @@ export class SettingsView extends Component<Props> {
                   label={t('profile.fetchProgressMore')}
                   value={this.fetchProgressLabel(this.state.fetchProgressMore)}
                   onSelect={val => this.setOption('fetchProgressMore', normalizeFetchProgressMode(val, 'overall'))}
+                  options={this.fetchProgressOptions()}
+                />
+                <SettingsSelectRow
+                  rowHeight={rowHeight}
+                  label={t('profile.fetchProgressLists')}
+                  value={this.fetchProgressLabel(this.state.fetchProgressLists)}
+                  onSelect={val => this.setOption('fetchProgressLists', normalizeFetchProgressMode(val, 'detailed'))}
                   options={this.fetchProgressOptions()}
                 />
               </View>

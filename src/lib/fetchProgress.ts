@@ -1,27 +1,60 @@
 export type FetchProgressMode = 'off' | 'overall' | 'detailed'
-export type FetchProgressWhere = 'enter' | 'more'
+export type FetchProgressGlobal = 'off' | 'detailed'
+export type FetchProgressWhere = 'enter' | 'more' | 'lists'
 
 export const FETCH_PROGRESS_ENTER_DEFAULT: FetchProgressMode = 'detailed'
 export const FETCH_PROGRESS_MORE_DEFAULT: FetchProgressMode = 'overall'
+export const FETCH_PROGRESS_LISTS_DEFAULT: FetchProgressMode = 'detailed'
+export const FETCH_PROGRESS_GLOBAL_DEFAULT: FetchProgressGlobal = 'detailed'
 
 export const normalizeFetchProgressMode = (
   value: unknown,
   fallback: FetchProgressMode,
 ): FetchProgressMode => (value === 'off' || value === 'overall' || value === 'detailed' ? value : fallback)
 
-export const resolveFetchProgressMode = (
-  config?: {
-    isFetchProgressEnabled?: boolean
-    fetchProgressEnter?: unknown
-    fetchProgressMore?: unknown
-  } | null,
-  where: FetchProgressWhere = 'enter',
-): FetchProgressMode => {
+export const normalizeFetchProgressGlobal = (
+  value: unknown,
+  fallback: FetchProgressGlobal = FETCH_PROGRESS_GLOBAL_DEFAULT,
+): FetchProgressGlobal => (value === 'off' || value === 'detailed' ? value : fallback)
+
+export const resolveFetchProgressGlobal = (config?: {
+  isFetchProgressEnabled?: boolean
+  fetchProgress?: unknown
+} | null): FetchProgressGlobal => {
+  if (config?.fetchProgress === 'off' || config?.fetchProgress === 'detailed') {
+    return config.fetchProgress
+  }
   if (config?.isFetchProgressEnabled === false) {
     return 'off'
   }
-  const fallback = where === 'more' ? FETCH_PROGRESS_MORE_DEFAULT : FETCH_PROGRESS_ENTER_DEFAULT
-  const raw = where === 'more' ? config?.fetchProgressMore : config?.fetchProgressEnter
+  return FETCH_PROGRESS_GLOBAL_DEFAULT
+}
+
+export const resolveFetchProgressMode = (
+  config?: {
+    isFetchProgressEnabled?: boolean
+    fetchProgress?: unknown
+    fetchProgressEnter?: unknown
+    fetchProgressMore?: unknown
+    fetchProgressLists?: unknown
+  } | null,
+  where: FetchProgressWhere = 'enter',
+): FetchProgressMode => {
+  if (resolveFetchProgressGlobal(config) === 'off') {
+    return 'off'
+  }
+  const fallback =
+    where === 'more'
+      ? FETCH_PROGRESS_MORE_DEFAULT
+      : where === 'lists'
+        ? FETCH_PROGRESS_LISTS_DEFAULT
+        : FETCH_PROGRESS_ENTER_DEFAULT
+  const raw =
+    where === 'more'
+      ? config?.fetchProgressMore
+      : where === 'lists'
+        ? config?.fetchProgressLists
+        : config?.fetchProgressEnter
   return normalizeFetchProgressMode(raw, fallback)
 }
 

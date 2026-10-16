@@ -1,12 +1,27 @@
 import { PixelRatio } from 'react-native'
 import rnTextSize from 'react-native-text-size'
-import { getBlockSizes } from '../src/lib/LayoutHelper'
+import { assignPostOffsets, getBlockSizes, postsNeedingLayout } from '../src/lib/LayoutHelper'
 
 jest.mock('react-native-text-size', () => ({
   flatHeights: jest.fn(async ({ text, fontSize }) => text.map((t: string) => (t ? t.length * (fontSize || 15) : 0))),
 }))
 
 describe('LayoutHelper getBlockSizes', () => {
+  it('keeps posts that already have a height out of the next layout pass', () => {
+    const posts = [{ id: 1, parsed: { height: 80 } }, { id: 2, parsed: { height: null } }, { id: 3 }]
+    expect(postsNeedingLayout(posts).map(post => post.id)).toEqual([2, 3])
+  })
+
+  it('recomputes offsets from existing heights', () => {
+    const posts = [
+      { parsed: { height: 120 } },
+      { parsed: { height: 80 } },
+      { parsed: {} },
+    ]
+    assignPostOffsets(posts)
+    expect(posts.map(post => post.parsed.offset)).toEqual([120, 200, 200])
+  })
+
   beforeEach(() => {
     jest.clearAllMocks()
   })

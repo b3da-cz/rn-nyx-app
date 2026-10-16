@@ -532,6 +532,14 @@
       "cs": "Při donačtení v klubu",
       "en": "Loading more in a topic"
     },
+    "fetchProgressLists": {
+      "cs": "Oznámení, upomínky, poslední, pošta a hledání",
+      "en": "Notifications, reminders, latest, mail and search"
+    },
+    "fetchProgressNone": {
+      "cs": "Nic",
+      "en": "None"
+    },
     "fetchProgressOff": {
       "cs": "Vypnuto",
       "en": "Off"

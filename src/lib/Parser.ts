@@ -2,7 +2,7 @@ import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
 import { FetchProgressEvent } from './fetchProgress'
-import { applyImageDownloadPolicy, getBlockSizes } from './LayoutHelper'
+import { applyImageDownloadPolicy, assignPostOffsets, getBlockSizes, postsNeedingLayout } from './LayoutHelper'
 import { uniqueVideoTags } from './compose'
 import { generateUuidV4, getDistinctPosts } from './Util'
 
@@ -480,8 +480,12 @@ export const preparePosts = async (
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {
-    const parsedPostsWImageSizes = await applyImageDownloadPolicy(parsedPosts, imageDownloadMaxKb, onProgress)
-    return await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize, undefined, onProgress)
+    const pending = postsNeedingLayout(parsedPosts)
+    if (pending.length) {
+      await applyImageDownloadPolicy(pending, imageDownloadMaxKb, onProgress)
+      await getBlockSizes(pending, themeBaseFontSize, undefined, onProgress)
+    }
+    return assignPostOffsets(parsedPosts)
   }
   return parsedPosts
 }

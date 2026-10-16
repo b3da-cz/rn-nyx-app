@@ -39,11 +39,17 @@ describe('fetch progress', () => {
   it('defaults to detailed on open and overall while loading more', () => {
     expect(resolveFetchProgressMode(undefined, 'enter')).toBe('detailed')
     expect(resolveFetchProgressMode({}, 'more')).toBe('overall')
+    expect(resolveFetchProgressMode({}, 'lists')).toBe('detailed')
     expect(resolveFetchProgressMode({ isFetchProgressEnabled: false, fetchProgressEnter: 'detailed' }, 'enter')).toBe(
       'off',
     )
+    expect(resolveFetchProgressMode({ fetchProgress: 'off', fetchProgressEnter: 'detailed' }, 'enter')).toBe('off')
+    expect(resolveFetchProgressMode({ fetchProgress: 'detailed', isFetchProgressEnabled: false }, 'lists')).toBe(
+      'detailed',
+    )
     expect(resolveFetchProgressMode({ fetchProgressEnter: 'off', fetchProgressMore: 'detailed' }, 'enter')).toBe('off')
     expect(resolveFetchProgressMode({ fetchProgressMore: 'detailed' }, 'more')).toBe('detailed')
+    expect(resolveFetchProgressMode({ fetchProgressLists: 'overall' }, 'lists')).toBe('overall')
     expect(resolveFetchProgressMode({ fetchProgressEnter: 'nope' }, 'enter')).toBe('detailed')
   })
 

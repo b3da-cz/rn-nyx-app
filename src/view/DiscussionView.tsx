@@ -482,9 +482,10 @@ export class DiscussionView extends Component<Props> {
       }
       let header = res?.discussion_common?.discussion_specific_data?.header
       if (header && header.length > 0) {
+        const previousHeader = this._pendingDiscussion?.header || this.state.header || []
         header = await preparePosts(
           header,
-          [],
+          previousHeader,
           true,
           themeBaseFontSize,
           this.imageDownloadMaxKb(),

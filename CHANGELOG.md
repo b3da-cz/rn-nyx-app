@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.3
+- donačtení klubu přepočítá jen nové příspěvky, ne celý zobrazený seznam
+- průběh načítání je detailní, nebo nic (obyčejný spinner)
+- při otevření a při donačtení v klubu mají vlastní volbu
+- oznámení, upomínky, poslední, pošta a hledání mají společnou volbu
+
 ## 0.30.2
 - řádky průběhu jsou hranaté karty stejné výšky a popisky jsou bílé
 - u celkového načítání je název a procenta tučně

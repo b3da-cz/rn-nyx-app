@@ -312,6 +312,20 @@ export const applyImageDownloadPolicy = async (
   }
 }
 
+export const postsNeedingLayout = (posts: any[] = []) => posts.filter(post => !(post?.parsed?.height > 0))
+
+export const assignPostOffsets = (posts: any[] = []) => {
+  let sum = 0
+  for (const post of posts) {
+    const height = post?.parsed?.height > 0 ? post.parsed.height : 0
+    sum += height
+    if (post?.parsed) {
+      post.parsed.offset = sum
+    }
+  }
+  return posts
+}
+
 export const getBlockSizes = async (
   posts: any[],
   themeBaseFontSize: number,

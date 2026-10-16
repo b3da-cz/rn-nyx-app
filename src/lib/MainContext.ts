@@ -3,7 +3,12 @@ import type { Theme } from './Theme'
 import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
 import { TIMELINE_VISIBLE_DAYS_DEFAULT } from './eventTimeline'
-import { FETCH_PROGRESS_ENTER_DEFAULT, FETCH_PROGRESS_MORE_DEFAULT } from './fetchProgress'
+import {
+  FETCH_PROGRESS_ENTER_DEFAULT,
+  FETCH_PROGRESS_GLOBAL_DEFAULT,
+  FETCH_PROGRESS_LISTS_DEFAULT,
+  FETCH_PROGRESS_MORE_DEFAULT,
+} from './fetchProgress'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
 
@@ -32,8 +37,10 @@ export type MainContextConfig = {
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
   isFetchProgressEnabled: boolean
+  fetchProgress: 'off' | 'detailed'
   fetchProgressEnter: 'off' | 'overall' | 'detailed'
   fetchProgressMore: 'off' | 'overall' | 'detailed'
+  fetchProgressLists: 'off' | 'overall' | 'detailed'
   settingsSectionsOpen: Record<string, boolean>
   initialRouteName: string
   shownCategories: string[]
@@ -85,8 +92,10 @@ export const initialConfig: MainContextConfig = {
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
   isFetchProgressEnabled: true,
+  fetchProgress: FETCH_PROGRESS_GLOBAL_DEFAULT,
   fetchProgressEnter: FETCH_PROGRESS_ENTER_DEFAULT,
   fetchProgressMore: FETCH_PROGRESS_MORE_DEFAULT,
+  fetchProgressLists: FETCH_PROGRESS_LISTS_DEFAULT,
   settingsSectionsOpen: {},
   initialRouteName: 'historyStack',
   shownCategories: [],
