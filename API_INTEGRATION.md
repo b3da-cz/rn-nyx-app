@@ -1,6 +1,6 @@
 # Integrace nyx-api
 
-Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **39 ze 44 metod**, tedy **88,6 %**. **5 metod (11,4 %)** se nevolá vůbec. Dvě volané metody mají ještě nevyužitou větev.
+Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxApi.ts`). App volá **40 ze 44 metod**, tedy **90,9 %**. **4 metody** se nevolají vůbec: `getLastDiscussions`, `removeBookmarksFromHistory`, `markBookmarksHistoryAsRead`, `saveDiscussionContent`. `getHistory` pořád neposílá `show_booked`.
 
 `logout()` není vlastní HTTP endpoint. Jen smaže token přes `deleteAuthToken` a vyvolá `onLogout`. Obojí app používá.
 
@@ -14,8 +14,8 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 | `getHistory` | `GET bookmarks/history` | částečně, `show_read` ano, `show_booked` ne |
 | `getLastPosts` | `GET last`, `/min_rating/`, `/rated_by_friends`, query `rated_by_me` | ano, `rated_by_me` jde jako query, cesta `/rated_by_me` vrací 404 |
 | `getLastDiscussions` | `GET last/discussions` | ne |
-| `search` | `GET search`, `/unified`, `/username/{phrase}` | částečně, unified a username; holé `search?search=` ne |
-| `searchV2` | `GET search-v2` | ne |
+| `search` | `GET search`, `/unified`, `/username/{phrase}` | ano, unified, username i holé `search?search=` |
+| `searchV2` | `GET search-v2` | ano, fulltext příspěvků |
 | `getDiscussion` | `GET discussion/{id}` | ano, včetně stránkování a replies v path |
 | `getDiscussionBoard` | `GET discussion/{id}/content/home` | ano, nástěnka |
 | `getDiscussionStats` | `GET discussion/{id}/stats` | ano |
@@ -40,7 +40,7 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 | `getReminders` | `GET bookmarks/reminders` a `mail/reminders` | ano, obě |
 | `getNotifications` | `GET notifications` | ano |
 | `subscribeForFCM` | `POST register_for_notifications/…` | ano |
-| `unregisterFromFCM` | `POST deregister_notifications/{token}/{app}/{fcm}` | volá se, ale jen s jedním argumentem, `appIdentifier` chybí |
+| `unregisterFromFCM` | `POST deregister_notifications/{token}/{app}/{fcm}` | ano, `appIdentifier` je `Nnn`, stejně jako u přihlášení |
 | `getNotepad` | `GET notepad` | ano, seznam zápisníku |
 | `getNotepadEntry` | `GET notepad/{id}` | ano, detail záznamu |
 | `removeBookmarksFromHistory` | `POST bookmarks/history/remove_from_history` | ne |
@@ -50,9 +50,8 @@ Srovnání appu s `nyx-api` **0.5.2** (`NyxApi` v `node_modules/nyx-api/src/NyxA
 
 ## Co v app ještě není
 
-Pět metod, které se nevolají:
+Čtyři metody, které se nevolají:
 
-- **Fulltext příspěvků.** `searchV2` (`user`, `text`, `order` `newest` / `newer_than` / `older_than` / `oldest`, `from_id`). Vyhledávání v app je unified (diskuze, inzeráty, události, uživatelé) a našeptávání username. Větev `GET search?search=` se také nevolá.
 - **Poslední diskuze.** `GET last/discussions`. Tab „poslední“ bere jen příspěvky.
 - **Historie hromadně.** Vyřadit diskuze z historie a označit je jako přečtené. Seznam historie app má, tyto dvě akce ne. Parametr `show_booked` se neposílá.
 - **Uložení nástěnky.** `saveDiscussionContent`. Čtení `content/home` je zapojené, zápis ne.
@@ -69,8 +68,8 @@ Hlasování o novém klubu v `nyx-api` 0.5.2 není. App ho volá z `NyxEventsApi
 4. **Zápisník.** Hotovo. Ikona v řadě akcí profilu. Seznam je `getNotepad`, detail `getNotepadEntry`. Swagger ani `nyx-api` 0.5.2 nemají zápis, proto nový záznam a úprava otevírají web `https://nyx.cz/notepad/create` a `https://nyx.cz/notepad/{id}/edit`.
 5. **Hlasování o novém klubu.** Hotovo. Post `discussion_request` je nativní blok (`DiscussionRequestComponent`): název, kategorie, popis, podobné kluby a tlačítka Hlas pro / Hlas proti. WebView tabulka je pryč. Hlas jde přes `NyxEventsApi.voteDiscussionRequest`, ne přes `postToDiscussion`. Cesta je stejná jako na webu a ve Fyx: `POST discussion/{id}/discussion_create_request/{postId}/vote_for|vote_against`. Tlačítka zmizí, když `can_vote` je false, žádost je zrušená, nebo už má `discussion_id`. Počet hlasů je `computed_values.voters_positive_total` a `voters_negative_total`.
 6. **Zbytek nechat jako TODO**, až po zápisníku:
-   - fulltext `searchV2` a nevyužitá větev `GET search?search=`
    - poslední diskuze `getLastDiscussions`
    - historie: `removeBookmarksFromHistory`, `markBookmarksHistoryAsRead`, parametr `show_booked`
    - uložení nástěnky `saveDiscussionContent`
-   - `unregisterFromFCM` doplnit o `appIdentifier` (teď se volá jen s tokenem)
+
+Hledání má přepínač: vše, kluby, inzeráty, události, uživatelé a příspěvky. Příspěvky jdou přes `searchV2` a první stránka navíc přes `GET search?search=`. Další stránka je `older_than`. Odhlášení z FCM posílá `appIdentifier` `Nnn`.

@@ -20,6 +20,8 @@ type Props = {
   sharedText?: string
   sharedFile?: any
   sharedAt?: number
+  composeUsername?: string
+  composeAt?: number
 }
 type State = {
   activeRecipient: string
@@ -43,6 +45,7 @@ export class MailView extends Component<Props> {
   _lastHandledSharedText?: string
   _lastHandledSharedFile?: any
   _lastHandledSharedAt?: number
+  _lastComposeAt?: number
   constructor(props) {
     super(props)
     this.state = {
@@ -63,6 +66,7 @@ export class MailView extends Component<Props> {
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
       this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
       this.handleSharedContent()
+      this.handleComposeRequest()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
@@ -76,10 +80,30 @@ export class MailView extends Component<Props> {
     this.setTheme()
     setTimeout(() => this.getLatestMessages(), 100)
     this.handleSharedContent()
+    this.handleComposeRequest()
   }
 
   componentDidUpdate(prevProps: Props) {
     this.handleSharedContent()
+    this.handleComposeRequest()
+  }
+
+  handleComposeRequest() {
+    const { composeUsername, composeAt } = this.props
+    if (!composeUsername || !composeAt || composeAt === this._lastComposeAt) {
+      return
+    }
+    this._lastComposeAt = composeAt
+    this.setState({ activeRecipient: composeUsername }, () => {
+      const tryOpen = (attempt = 0) => {
+        if (this.refMsgBoxDialog) {
+          this.refMsgBoxDialog.showDialog()
+        } else if (attempt < 10) {
+          setTimeout(() => tryOpen(attempt + 1), 200)
+        }
+      }
+      setTimeout(() => tryOpen(), 300)
+    })
   }
 
   handleSharedContent(overrideParams?: { sharedText?: string; sharedFile?: any; sharedAt?: number }) {

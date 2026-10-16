@@ -1,6 +1,9 @@
 import messaging from '@react-native-firebase/messaging'
 import { Nyx, Storage } from '../lib'
 
+// Same app id subscribeForFCM already sends. unregisterFromFCM requires it as the second argument.
+export const FCM_APP_ID = 'Nnn'
+
 export const initFCM = async (nyx: Nyx, config: any, isAuthenticated: boolean, isForced?: boolean) => {
   if (!isAuthenticated) {
     return
@@ -9,7 +12,7 @@ export const initFCM = async (nyx: Nyx, config: any, isAuthenticated: boolean, i
     if (!config.isFCMSubscribed || isForced) {
       await messaging().requestPermission() // POST_NOTIFICATIONS runtime prompt on Android 13+
       const fcmToken = await messaging().getToken()
-      const subFCMRes = await nyx.api.subscribeForFCM(fcmToken, 'Nnn')
+      const subFCMRes = await nyx.api.subscribeForFCM(fcmToken, FCM_APP_ID)
       config.fcmToken = fcmToken
       config.isFCMSubscribed = !subFCMRes.error
       await Storage.setConfig(config)
@@ -25,7 +28,7 @@ export const unregisterFCM = async (nyx, config, isAuthenticated) => {
   }
   try {
     const fcmToken = await messaging().getToken()
-    const unsubFCMRes = await nyx.api.unregisterFromFCM(fcmToken)
+    const unsubFCMRes = await nyx.api.unregisterFromFCM(fcmToken, FCM_APP_ID)
     config.isFCMSubscribed = false
     await Storage.setConfig(config)
     return unsubFCMRes

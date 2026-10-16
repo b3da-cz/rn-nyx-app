@@ -3,7 +3,7 @@ import { MailView } from '../view'
 
 export const Mail = ({ navigation, route }) => {
   const viewRef = useRef<MailView>(null)
-  const { sharedText, sharedFile, sharedAt } = route?.params || {}
+  const { sharedText, sharedFile, sharedAt, composeUsername, composeAt } = route?.params || {}
   return (
     <MailView
       ref={viewRef}
@@ -11,6 +11,8 @@ export const Mail = ({ navigation, route }) => {
       sharedText={sharedText}
       sharedFile={sharedFile}
       sharedAt={sharedAt}
+      composeUsername={composeUsername}
+      composeAt={composeAt}
       onImages={(images, imgIndex) =>
         navigation.navigate('gallery', {
           images,

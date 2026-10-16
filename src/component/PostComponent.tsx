@@ -15,6 +15,7 @@ import {
   VideoYoutubeComponent,
   VideoTagComponent,
   DiscussionRequestComponent,
+  SearchHighlight,
 } from '../component'
 import {
   discussionRequestFromPost,
@@ -25,6 +26,7 @@ import {
   isTextSelectionEnabled,
   MainContext,
   promptTextFile,
+  searchMatchRanges,
 } from '../lib'
 
 type Props = {
@@ -34,6 +36,9 @@ type Props = {
   isUnread?: boolean
   isHeaderInteractive?: boolean
   isHeaderPressable?: boolean
+  headerSwipeable?: boolean
+  onBodyPress?: Function
+  searchQuery?: string
   mailMode?: boolean
   onHeaderPress?: Function
   onHeaderSwipe?: Function
@@ -182,10 +187,20 @@ export class PostComponent extends Component<Props> {
       return
     }
     const key = generateUuidV4()
+    const shown = `${text.startsWith(': ') ? text.substring(2) : text}${text.endsWith('\n') ? '' : ' '}`
+    const query = this.props.searchQuery
+    if (isItalic && query && searchMatchRanges(shown, query).length > 0) {
+      const { colors, metrics } = this.context.theme
+      return (
+        <Text key={key} onPress={() => (typeof this.props.onBodyPress === 'function' ? this.props.onBodyPress() : null)}>
+          <SearchHighlight text={shown} query={query} style={{ color: colors.text, fontSize: metrics.fontSizes.p }} />
+        </Text>
+      )
+    }
     return (
-      <TextComponent key={key} isBold={isBold} isItalic={isItalic}>{`${
-        text.startsWith(': ') ? text.substring(2) : text
-      }${text.endsWith('\n') ? '' : ' '}`}</TextComponent>
+      <TextComponent key={key} isBold={isBold} isItalic={isItalic} onPlainPress={this.props.onBodyPress}>
+        {shown}
+      </TextComponent>
     )
   }
 
@@ -362,14 +377,14 @@ export class PostComponent extends Component<Props> {
           // borderWidth: post?.parsed?.height > 0 && post?.parsed?.height !== 300 ? 1 : 0,
         }}
       >
-        {isSwipeablePostHeader || !this.props.isHeaderInteractive ? (
+        {isSwipeablePostHeader || this.props.headerSwipeable || !this.props.isHeaderInteractive ? (
           <PostHeaderSwipeableComponent
             post={post}
             nyx={this.props.nyx}
             theme={this.context.theme}
             isReply={!!this.props.isReply}
             isUnread={!!this.props.isUnread}
-            isInteractive={!!this.props.isHeaderInteractive}
+            isInteractive={!!this.props.isHeaderInteractive || !!this.props.headerSwipeable}
             isPressable={!!this.props.isHeaderPressable}
             mailMode={!!this.props.mailMode}
             onPress={(discussionId, postId) =>

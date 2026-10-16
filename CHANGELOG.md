@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.0
+- hledání přepíná vše, kluby, inzeráty, události, uživatele a příspěvky
+- nadpisy sekcí jsou jen u vše, ostatní druhy jsou obyčejný seznam
+- příspěvky jsou celé; text otevře diskuzi, odkazy a obrázky fungují
+- hledaná fráze v příspěvku má podklad jako jinde, ne kurzívu z API
+- klepnutí na uživatele otevře poštu s předvyplněným jménem
+- odhlášení z notifikací posílá identifikátor aplikace
+
 ## 0.28.1
 - hlas pro a hlas proti jsou vedle sebe
 - u tlačítek je ikona palce, rohy zůstávají hranaté

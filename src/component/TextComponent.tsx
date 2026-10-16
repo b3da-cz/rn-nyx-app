@@ -9,8 +9,9 @@ type Props = {
   isPressable?: boolean
   isReply?: boolean
   onPress?: Function
+  onPlainPress?: Function
 }
-export const TextComponent = ({ children, isBold, isItalic, isPressable, isReply, onPress }: Props) => {
+export const TextComponent = ({ children, isBold, isItalic, isPressable, isReply, onPress, onPlainPress }: Props) => {
   const {
     colors,
     metrics: { fontSizes },
@@ -24,7 +25,13 @@ export const TextComponent = ({ children, isBold, isItalic, isPressable, isReply
         fontWeight: isBold ? 'bold' : 'normal',
         fontStyle: isItalic ? 'italic' : 'normal',
       }}
-      onPress={() => (isPressable && typeof onPress === 'function' ? onPress() : null)}>
+      onPress={
+        isPressable && typeof onPress === 'function'
+          ? () => onPress()
+          : typeof onPlainPress === 'function'
+            ? () => onPlainPress()
+            : undefined
+      }>
       {children}
     </Text>
   )
