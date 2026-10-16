@@ -193,7 +193,12 @@ export class PostComponent extends Component<Props> {
       const { colors, metrics } = this.context.theme
       return (
         <Text key={key} onPress={() => (typeof this.props.onBodyPress === 'function' ? this.props.onBodyPress() : null)}>
-          <SearchHighlight text={shown} query={query} style={{ color: colors.text, fontSize: metrics.fontSizes.p }} />
+          <SearchHighlight
+            text={shown}
+            query={query}
+            emphasized
+            style={{ color: colors.text, fontSize: metrics.fontSizes.p, fontStyle: 'italic' }}
+          />
         </Text>
       )
     }

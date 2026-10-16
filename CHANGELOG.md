@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.29.1
+- hledaná fráze v příspěvku má sytější podklad jako vybraná shoda a zůstává kurzívou
+
 ## 0.29.0
 - hledání přepíná vše, kluby, inzeráty, události, uživatele a příspěvky
 - nadpisy sekcí jsou jen u vše, ostatní druhy jsou obyčejný seznam

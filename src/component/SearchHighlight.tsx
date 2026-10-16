@@ -10,6 +10,7 @@ type Props = {
   selectable?: boolean
   matchOffset?: number
   activeIndex?: number | null
+  emphasized?: boolean
   onActiveLayout?: (y: number) => void
 }
 
@@ -21,6 +22,7 @@ export const SearchHighlight = ({
   selectable,
   matchOffset = 0,
   activeIndex = null,
+  emphasized = false,
   onActiveLayout,
 }: Props) => {
   const { colors } = useTheme()
@@ -47,7 +49,7 @@ export const SearchHighlight = ({
             ? event => onActiveLayout(event.nativeEvent.layout.y)
             : undefined
         }
-        style={{ backgroundColor: withAlpha(active ? colors.primary : colors.tertiary, 0.75) }}>
+        style={{ backgroundColor: withAlpha(active || emphasized ? colors.primary : colors.tertiary, 0.75) }}>
         {text.slice(start, end)}
       </Text>,
     )
