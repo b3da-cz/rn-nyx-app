@@ -2,16 +2,21 @@ import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { PostComponent, RatingDetailComponent } from '../component'
+import { FetchProgressComponent, PostComponent, RatingDetailComponent } from '../component'
 import {
   MainContext,
   Nyx,
   Theme,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   prepareNotifications,
   notificationPosts,
+  reduceFetchProgress,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
+  t,
 } from '../lib'
 
 type Props = {
@@ -22,6 +27,7 @@ type State = {
   unreadCount: number
   posts: any[]
   isFetching: boolean
+  fetchProgress: FetchProgressState
   theme?: Theme
 }
 export class NotificationsView extends Component<Props> {
@@ -38,6 +44,7 @@ export class NotificationsView extends Component<Props> {
       unreadCount: 0,
       posts: [],
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
     }
   }
 
@@ -69,13 +76,20 @@ export class NotificationsView extends Component<Props> {
     this.setState({ theme: this.context.theme })
   }
 
+  trackLoad = (event: FetchProgressEvent) => {
+    this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+  }
+
   async getNotifications() {
-    this.setState({ isFetching: true })
+    const request = { id: 'request', label: t('notifications'), done: 0, total: 1 }
+    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
     const res = await this.nyx?.api.getNotifications()
+    this.trackLoad({ ...request, done: 1 })
     const parsedNotifications = await prepareNotifications(
       res?.notifications || [],
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      this.trackLoad,
     )
     this.setState({
       unreadCount: res?.context?.user?.notifications_unread,
@@ -185,17 +199,27 @@ export class NotificationsView extends Component<Props> {
     if (!this.state.theme) {
       return null
     }
+    const listEmpty = !this.state.posts.length
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
-      <FlatList
-        style={{ backgroundColor: this.state.theme.colors.background }}
-        ref={r => (this.refScroll = r)}
-        data={this.state.posts}
-        extraData={this.state}
-        keyExtractor={item => `${item.data.id}`}
-        refreshing={this.state.isFetching}
-        onRefresh={() => this.getNotifications()}
-        renderItem={({ item }) => this.renderItem(item, this.state.theme!)}
-      />
+      <View style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}>
+        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
+        <FlatList
+          style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}
+          ref={r => (this.refScroll = r)}
+          data={this.state.posts}
+          extraData={this.state}
+          keyExtractor={item => `${item.data.id}`}
+          refreshing={this.state.isFetching && !loadActive}
+          onRefresh={() => this.getNotifications()}
+          contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
+          renderItem={({ item }) => this.renderItem(item, this.state.theme!)}
+        />
+      </View>
     )
   }
 }

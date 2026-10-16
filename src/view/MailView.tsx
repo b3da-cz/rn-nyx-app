@@ -1,14 +1,19 @@
 import React, { Component } from 'react'
 import { FlatList, LayoutAnimation, View } from 'react-native'
-import { FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
+import { FetchProgressComponent, FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
 import {
   MainContext,
   LayoutAnimConf,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   preparePosts,
+  reduceFetchProgress,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
   Theme,
+  t,
   wait,
   Nyx,
 } from '../lib'
@@ -30,6 +35,7 @@ type State = {
   isSubmenuVisible: boolean
   isMsgBtnVisible: boolean
   isFetching: boolean
+  fetchProgress: FetchProgressState
   theme?: Theme
 }
 export class MailView extends Component<Props> {
@@ -55,7 +61,22 @@ export class MailView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBtnVisible: false,
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
     }
+  }
+
+  trackLoad = (event: FetchProgressEvent) => {
+    this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+  }
+
+  beginMailLoad = (extra: Partial<State> = {}) => {
+    const request = { id: 'request', label: t('mail'), done: 0, total: 1 }
+    this.setState({
+      isFetching: true,
+      fetchProgress: reduceFetchProgress(emptyFetchProgress(), request),
+      ...extra,
+    })
+    return request
   }
 
   componentDidMount() {
@@ -155,18 +176,19 @@ export class MailView extends Component<Props> {
 
   async getLatestMessages() {
     const isFocused = this.props.navigation.isFocused()
-    this.setState({
-      isFetching: true,
+    const request = this.beginMailLoad({
       isSubmenuVisible: isFocused,
       isMsgBtnVisible: isFocused,
     })
     const res = await this.nyx?.api.getMail()
+    this.trackLoad({ ...request, done: 1 })
     const parsedMessages = await preparePosts(
       res?.posts || [],
       [],
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      this.trackLoad,
     )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
@@ -177,18 +199,20 @@ export class MailView extends Component<Props> {
   }
 
   async getOlderMessages() {
-    this.setState({ isFetching: true })
+    const request = this.beginMailLoad()
     const { activeRecipient, messages } = this.state
     const queryString = `?${activeRecipient === 'all' ? '' : `user=${activeRecipient}&`}order=older_than&from_id=${
       messages[messages.length - 1].id
     }`
     const res = await this.nyx?.api.getMail(queryString)
+    this.trackLoad({ ...request, done: 1 })
     const parsedMessages = await preparePosts(
       res?.posts || [],
       messages,
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      this.trackLoad,
     )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
@@ -199,15 +223,17 @@ export class MailView extends Component<Props> {
   }
 
   async onConversationSelected(username) {
-    this.setState({ isFetching: true, messages: [] })
+    const request = this.beginMailLoad({ messages: [] })
     const queryString = username === 'all' ? '' : `?user=${username}`
     const res = await this.nyx?.api.getMail(queryString)
+    this.trackLoad({ ...request, done: 1 })
     const parsedMessages = await preparePosts(
       res?.posts || [],
       [],
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      this.trackLoad,
     )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
@@ -306,8 +332,11 @@ export class MailView extends Component<Props> {
     if (!theme) {
       return null
     }
+    const listEmpty = !this.state.messages.length
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
-      <View style={{ backgroundColor: theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         {this.state.conversations && this.state.conversations.length > 0 && (
           <FormRowSelectComponent
             hasAll={true}
@@ -323,16 +352,21 @@ export class MailView extends Component<Props> {
             }))}
           />
         )}
+        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
         <FlatList
-          style={{ height: '100%' }}
+          style={{ flex: 1 }}
           ref={r => (this.refScroll = r)}
           data={this.state.messages}
           extraData={this.state}
           keyExtractor={item => `${item.id}`}
-          refreshing={this.state.isFetching}
+          refreshing={this.state.isFetching && !loadActive}
           onRefresh={() => this.getLatestMessages()}
           onEndReached={() => this.getOlderMessages()}
           onEndReachedThreshold={0.01}
+          contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
           renderItem={({ item }) => this.renderMessage(item)}
         />
         <MessageBoxDialog

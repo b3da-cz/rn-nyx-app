@@ -1,16 +1,20 @@
 import React, { Component } from 'react'
 import { LayoutAnimation, SectionList, View } from 'react-native'
-import { PostComponent, SectionHeaderComponent } from '../component'
+import { FetchProgressComponent, PostComponent, SectionHeaderComponent } from '../component'
 import {
   MainContext,
   Nyx,
   t,
   Theme,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   filterDiscussions,
   filterPostsByContent,
   galleryImagesFromPosts,
   toGalleryImages,
   preparePosts,
+  reduceFetchProgress,
   revealImageInPosts,
 } from '../lib'
 
@@ -23,6 +27,7 @@ type State = {
   mail: any[]
   images: any[]
   isFetching: boolean
+  fetchProgress: FetchProgressState
   theme?: Theme
 }
 export class RemindersView extends Component<Props> {
@@ -42,6 +47,7 @@ export class RemindersView extends Component<Props> {
       mail: [],
       images: [],
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
       theme: undefined,
     }
   }
@@ -75,10 +81,25 @@ export class RemindersView extends Component<Props> {
     this.setState({ theme: this.context.theme })
   }
 
+  trackLoad = (event: FetchProgressEvent) => {
+    this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+  }
+
+  trackScoped = (scope: string, scopeLabel: string) => (event: FetchProgressEvent) => {
+    this.trackLoad({
+      ...event,
+      id: `${scope}:${event.id}`,
+      label: event.label || `${t(`load.${event.id}`)} · ${scopeLabel}`,
+    })
+  }
+
   async getReminders() {
-    this.setState({ isFetching: true })
-    const bookmarks = await this.fetchReminders('bookmarks')
-    const mail = await this.fetchReminders('mail')
+    const request = { id: 'request', label: t('reminders.title'), done: 0, total: 2 }
+    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+    const bookmarks = await this.fetchReminders('bookmarks', this.trackScoped('bookmarks', t('reminders.inDiscussions')))
+    this.trackLoad({ ...request, done: 1 })
+    const mail = await this.fetchReminders('mail', this.trackScoped('mail', t('reminders.inMail')))
+    this.trackLoad({ ...request, done: 2 })
     const sectionedReminders = [
       { title: t('reminders.inMail'), data: mail.reminders },
       { title: t('reminders.inDiscussions'), data: bookmarks.reminders },
@@ -93,7 +114,7 @@ export class RemindersView extends Component<Props> {
     })
   }
 
-  async fetchReminders(type) {
+  async fetchReminders(type, onProgress?: (event: FetchProgressEvent) => void) {
     const res = await this.nyx?.api.getReminders(type)
     // const newPosts = getDistinctPosts(res.posts, this.state[type])
     const filteredPosts = filterPostsByContent(filterDiscussions(res?.posts || [], this.filters), this.filters)
@@ -103,6 +124,7 @@ export class RemindersView extends Component<Props> {
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      onProgress,
     )
     const images = galleryImagesFromPosts(parsedPosts)
     return {
@@ -162,16 +184,25 @@ export class RemindersView extends Component<Props> {
 
   render() {
     const { theme } = this.state
+    const listEmpty = !this.state.bookmarks.length && !this.state.mail.length
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
-      <View style={{ backgroundColor: theme?.colors?.background }}>
+      <View style={{ flex: 1, backgroundColor: theme?.colors?.background }}>
+        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
         <SectionList
           sections={this.state.sectionedReminders}
           extraData={this.state}
           stickySectionHeadersEnabled={true}
           initialNumToRender={20}
           keyExtractor={item => item.id}
-          refreshing={this.state.isFetching}
+          refreshing={this.state.isFetching && !loadActive}
           onRefresh={() => this.getReminders()}
+          style={{ flex: 1 }}
+          contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
           renderSectionHeader={({ section: { title } }) => <SectionHeaderComponent title={title} />}
           renderItem={({ item }) => (
             <PostComponent

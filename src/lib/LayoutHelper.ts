@@ -16,32 +16,14 @@ import {
   shouldSkipImageDownload,
 } from './imageDownload'
 import { discussionRequestBlockHeight, discussionRequestFromPost } from './discussionRequest'
+import { FetchProgressEvent, settleWithin } from './fetchProgress'
 
-const getImageSizes = async (images: any[], isFullImgSize?: boolean) => {
-  return new Promise(async resolve => {
-    try {
-      const nextImages: any[] = []
-      for (const img of images) {
-        if (img.skipDownload && !img.revealed && !img.cached) {
-          nextImages.push(img)
-          continue
-        }
-        if (img.width > 0 && img.height > 0 && !isPlaceholderImageSize(img)) {
-          nextImages.push(img)
-          continue
-        }
-        const { width, height } = await getImageSize(isFullImgSize || img.cached ? img.src : img.thumb || img.src)
-        nextImages.push({
-          ...img,
-          width,
-          height,
-        })
-      }
-      resolve(nextImages)
-    } catch (e) {
-      resolve(images.map(img => ({ width: 100, height: 100, ...img })))
-    }
-  })
+const IMAGE_CACHE_QUERY_TIMEOUT_MS = 4000
+
+const emitProgress = (onProgress: ((event: FetchProgressEvent) => void) | undefined, event: FetchProgressEvent) => {
+  if (typeof onProgress === 'function') {
+    onProgress(event)
+  }
 }
 
 export const queryCachedImageUrls = async (urls: string[] = []): Promise<Set<string>> => {
@@ -57,7 +39,7 @@ export const queryCachedImageUrls = async (urls: string[] = []): Promise<Set<str
     return cached
   }
   try {
-    const result = await Image.queryCache(missing)
+    const result = await settleWithin(Promise.resolve(Image.queryCache(missing)), IMAGE_CACHE_QUERY_TIMEOUT_MS, null)
     if (result && typeof result === 'object') {
       for (const url of missing) {
         if (result[url]) {
@@ -109,22 +91,54 @@ const getImageSize = async (url: string): Promise<{ width: number; height: numbe
   })
 }
 
-export const fetchImageSizes = async (posts: any[], isFullImgSize?: boolean, onProgress?: Function) => {
+const imageMeasureUrl = (img: any, isFullImgSize?: boolean) =>
+  isFullImgSize || img.cached ? img.src : img.thumb || img.src
+
+const imageNeedsMeasure = (img: any) => {
+  if (img.skipDownload && !img.revealed && !img.cached) {
+    return false
+  }
+  return !(img.width > 0 && img.height > 0) || isPlaceholderImageSize(img)
+}
+
+export const fetchImageSizes = async (
+  posts: any[],
+  isFullImgSize?: boolean,
+  onProgress?: (event: FetchProgressEvent) => void,
+) => {
   try {
-    let i = 0
+    const jobs: { post: any; index: number; url: string }[] = []
     for (const post of posts) {
-      if (post.parsed.images?.length > 0 && post.content_raw?.type !== 'advertisement') {
-        const needsSizes = post.parsed.images.some(
-          img =>
-            (img.revealed || img.cached || !img.skipDownload) &&
-            (!img.width || !img.height || isPlaceholderImageSize(img)),
-        )
-        if (needsSizes) {
-          post.parsed.images = await getImageSizes(post.parsed.images, isFullImgSize)
-        }
+      if (!(post.parsed?.images?.length > 0) || post.content_raw?.type === 'advertisement') {
+        continue
       }
-      i++
-      typeof onProgress === 'function' ? onProgress({ length: posts.length, done: i }) : null // + ~4s in debug :( .. what about Promise.allSettled() ?
+      post.parsed.images.forEach((img, index) => {
+        if (!imageNeedsMeasure(img)) {
+          return
+        }
+        const url = imageMeasureUrl(img, isFullImgSize)
+        if (!url) {
+          return
+        }
+        jobs.push({ post, index, url })
+      })
+    }
+    if (jobs.length) {
+      emitProgress(onProgress, { id: 'sizes', done: 0, total: jobs.length })
+    }
+    let done = 0
+    for (const job of jobs) {
+      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url })
+      try {
+        const { width, height } = await getImageSize(job.url)
+        const images = job.post.parsed.images.slice()
+        images[job.index] = { ...images[job.index], width, height }
+        job.post.parsed.images = images
+      } catch (e) {
+        console.warn(e)
+      }
+      done += 1
+      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url })
     }
   } catch (e) {
     console.warn(e) // TODO: remove
@@ -197,10 +211,24 @@ const markCachedImage = (img: any) => {
   return next
 }
 
-export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | null) => {
+const imageNeedsByteLength = (img: any, cached: Set<string>, maxKb?: number | null) => {
+  if (!img?.src || img.revealed || img.src.includes('youtu')) {
+    return false
+  }
+  if (shouldShowCachedImage(cached.has(img.src), maxKb) || isImageDownloadOff(maxKb)) {
+    return false
+  }
+  return true
+}
+
+export const applyImageDownloadPolicy = async (
+  posts: any[],
+  maxKb?: number | null,
+  onProgress?: (event: FetchProgressEvent) => void,
+) => {
   try {
     if (isImageDownloadUnlimited(maxKb)) {
-      return fetchImageSizes(posts, false)
+      return fetchImageSizes(posts, false, onProgress)
     }
     const srcs: string[] = []
     for (const post of posts) {
@@ -210,7 +238,28 @@ export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | nu
         }
       }
     }
+    if (srcs.length) {
+      emitProgress(onProgress, { id: 'cache', done: 0, total: srcs.length })
+    }
     const cached = srcs.length ? await queryCachedImageUrls(srcs) : new Set<string>()
+    if (srcs.length) {
+      emitProgress(onProgress, { id: 'cache', done: srcs.length, total: srcs.length })
+    }
+    const byteTargets: any[] = []
+    for (const post of posts) {
+      if (!post.parsed?.images?.length || post.content_raw?.type === 'advertisement') {
+        continue
+      }
+      for (const img of post.parsed.images) {
+        if (imageNeedsByteLength(img, cached, maxKb)) {
+          byteTargets.push(img)
+        }
+      }
+    }
+    if (byteTargets.length) {
+      emitProgress(onProgress, { id: 'bytes', done: 0, total: byteTargets.length })
+    }
+    let byteDone = 0
     for (const post of posts) {
       if (!post.parsed?.images?.length || post.content_raw?.type === 'advertisement') {
         continue
@@ -229,7 +278,20 @@ export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | nu
           nextImages.push(applyImagePlaceholder({ ...img }))
           continue
         }
+        emitProgress(onProgress, {
+          id: 'bytes',
+          done: byteDone,
+          total: byteTargets.length,
+          detail: img.src,
+        })
         const bytes = await fetchImageByteLength(img.src)
+        byteDone += 1
+        emitProgress(onProgress, {
+          id: 'bytes',
+          done: byteDone,
+          total: byteTargets.length,
+          detail: img.src,
+        })
         if (shouldSkipImageDownload(bytes, maxKb)) {
           nextImages.push(applyImagePlaceholder({ ...img, byteLength: bytes }))
         } else {
@@ -242,7 +304,7 @@ export const applyImageDownloadPolicy = async (posts: any[], maxKb?: number | nu
         layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
       }
     }
-    return fetchImageSizes(posts, false)
+    return fetchImageSizes(posts, false, onProgress)
   } catch (e) {
     console.warn(e)
     Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)
@@ -254,6 +316,7 @@ export const getBlockSizes = async (
   posts: any[],
   themeBaseFontSize: number,
   fontScale: number = PixelRatio.getFontScale() || 1,
+  onProgress?: (event: FetchProgressEvent) => void,
 ) => {
   try {
     themeBaseFontSize = themeBaseFontSize > 15 ? themeBaseFontSize : themeBaseFontSize * 1.075
@@ -276,6 +339,9 @@ export const getBlockSizes = async (
     const screenWidth = layoutScreenWidth(themeBaseFontSize)
     const minPostHeight = Math.round(75 * fontScale)
     let index = 0
+    if (posts.length) {
+      emitProgress(onProgress, { id: 'layout', done: 0, total: posts.length })
+    }
     for (const post of posts) {
       const textHeights = await rnTextSize.flatHeights({
         text: [post.parsed.clearText],
@@ -408,6 +474,7 @@ export const getBlockSizes = async (
         .reduce((a, b) => a + b)
 
       index++
+      emitProgress(onProgress, { id: 'layout', done: index, total: posts.length })
     }
   } catch (e) {
     console.warn(e) // TODO: remove

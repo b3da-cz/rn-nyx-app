@@ -1,10 +1,13 @@
 import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
-import { PostComponent, RatingFilterBarComponent } from '../component'
+import { FetchProgressComponent, PostComponent, RatingFilterBarComponent } from '../component'
 import {
   MainContext,
   wait,
   exclusiveLastPostsFilter,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   filterDiscussions,
   filterPostsByAuthor,
   galleryImagesFromPosts,
@@ -12,7 +15,9 @@ import {
   Nyx,
   Theme,
   preparePosts,
+  reduceFetchProgress,
   revealImageInPosts,
+  t,
 } from '../lib'
 
 type Props = {
@@ -25,6 +30,7 @@ type State = {
   isRatedByFriends: boolean
   isRatedByMe: boolean
   isFetching: boolean
+  fetchProgress: FetchProgressState
   minRating: number
   theme?: Theme
 }
@@ -44,6 +50,7 @@ export class LastPostsView extends Component<Props> {
       isRatedByFriends: false,
       isRatedByMe: false,
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
       minRating: 0,
     }
   }
@@ -72,13 +79,23 @@ export class LastPostsView extends Component<Props> {
     this.setState({ theme: this.context.theme })
   }
 
+  trackLoad = (event: FetchProgressEvent) => {
+    this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+  }
+
   async getLastPosts() {
-    this.setState({ isFetching: true, posts: [] })
+    const request = { id: 'request', label: t('last'), done: 0, total: 1 }
+    this.setState({
+      isFetching: true,
+      posts: [],
+      fetchProgress: reduceFetchProgress(emptyFetchProgress(), request),
+    })
     const res = await this.nyx?.api.getLastPosts(
       this.state.minRating,
       this.state.isRatedByFriends,
       this.state.isRatedByMe,
     )
+    this.trackLoad({ ...request, done: 1 })
     const filteredPosts = filterDiscussions(res?.posts || [], this.filters) // last posts have discussion_name prop
     const filteredByAuthor =
       this.blockedUsers?.length > 0 ? filterPostsByAuthor(filteredPosts, this.blockedUsers) : filteredPosts
@@ -88,6 +105,7 @@ export class LastPostsView extends Component<Props> {
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
+      this.trackLoad,
     )
     const images = galleryImagesFromPosts(parsedPosts)
     this.setState({
@@ -133,23 +151,28 @@ export class LastPostsView extends Component<Props> {
   }
 
   render() {
+    const listEmpty = !this.state.posts.length
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
-      <View>
+      <View style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}>
         <RatingFilterBarComponent
           onFilter={(minRating, isRatedByFriends, isRatedByMe) =>
             this.setFilter(minRating, isRatedByFriends, isRatedByMe)
           }
         />
+        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
         <FlatList
           data={this.state.posts}
           extraData={this.state}
           keyExtractor={item => `${item.uuid}`}
-          refreshing={this.state.isFetching}
+          refreshing={this.state.isFetching && !loadActive}
           onRefresh={() => this.getLastPosts()}
-          style={{
-            height: '100%',
-            backgroundColor: this.state.theme?.colors?.background,
-          }}
+          style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}
+          contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
           renderItem={({ item }) => (
             <PostComponent
               key={item.id}

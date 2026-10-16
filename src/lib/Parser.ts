@@ -1,6 +1,7 @@
 import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
+import { FetchProgressEvent } from './fetchProgress'
 import { applyImageDownloadPolicy, getBlockSizes } from './LayoutHelper'
 import { uniqueVideoTags } from './compose'
 import { generateUuidV4, getDistinctPosts } from './Util'
@@ -438,13 +439,14 @@ export const prepareNotifications = async (
   notifications: any[] = [],
   themeBaseFontSize?,
   imageDownloadMaxKb?: number | null,
+  onProgress?: (event: FetchProgressEvent) => void,
 ) => {
   const parsed = parseNotificationsContent(notifications)
   const posts = notificationPosts(parsed)
   if (posts.length) {
-    await applyImageDownloadPolicy(posts, imageDownloadMaxKb)
+    await applyImageDownloadPolicy(posts, imageDownloadMaxKb, onProgress)
     if (themeBaseFontSize) {
-      await getBlockSizes(posts, themeBaseFontSize)
+      await getBlockSizes(posts, themeBaseFontSize, undefined, onProgress)
     }
   }
   return parsed
@@ -473,12 +475,13 @@ export const preparePosts = async (
   calculateSizes = false,
   themeBaseFontSize?,
   imageDownloadMaxKb?: number | null,
+  onProgress?: (event: FetchProgressEvent) => void,
 ) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (calculateSizes) {
-    const parsedPostsWImageSizes = await applyImageDownloadPolicy(parsedPosts, imageDownloadMaxKb)
-    return await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize)
+    const parsedPostsWImageSizes = await applyImageDownloadPolicy(parsedPosts, imageDownloadMaxKb, onProgress)
+    return await getBlockSizes(parsedPostsWImageSizes, themeBaseFontSize, undefined, onProgress)
   }
   return parsedPosts
 }

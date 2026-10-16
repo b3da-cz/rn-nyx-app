@@ -23,6 +23,44 @@
     "cs": "Příspěvky",
     "en": "Posts"
   },
+  "load": {
+    "overall": {
+      "cs": "Načítání",
+      "en": "Loading"
+    },
+    "discussion": {
+      "cs": "Klub",
+      "en": "Topic"
+    },
+    "request": {
+      "cs": "Příspěvky",
+      "en": "Posts"
+    },
+    "cache": {
+      "cs": "Mezipaměť obrázků",
+      "en": "Image cache"
+    },
+    "bytes": {
+      "cs": "Velikost souboru",
+      "en": "File size"
+    },
+    "sizes": {
+      "cs": "Rozměry obrázku",
+      "en": "Image size"
+    },
+    "layout": {
+      "cs": "Výška příspěvků",
+      "en": "Post layout"
+    },
+    "header": {
+      "cs": "Hlavička",
+      "en": "Header"
+    },
+    "board": {
+      "cs": "Nástěnka",
+      "en": "Board"
+    }
+  },
   "users": {
     "cs": "Uživatelé",
     "en": "Users"

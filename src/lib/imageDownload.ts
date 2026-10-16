@@ -175,36 +175,71 @@ export const formatImageSizeKb = (byteLength?: number | null): ImageSizeLabel | 
 
 const byteLengthByUrl = new Map<string, number | null>()
 
-export const fetchImageByteLength = async (url?: string): Promise<number | null> => {
+export const IMAGE_BYTE_FETCH_TIMEOUT_MS = 8000
+
+const headerValue = (res: { headers?: { get?: (name: string) => string | null } } | null, name: string) =>
+  res?.headers?.get?.(name) ?? null
+
+const fetchWithin = async (
+  url: string,
+  init: RequestInit,
+  ms: number,
+): Promise<{ headers?: { get?: (name: string) => string | null } } | null> => {
+  if (!(ms > 0)) {
+    return null
+  }
+  const controller = new AbortController()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const abortTimer = new Promise<null>(resolve => {
+    timer = setTimeout(() => {
+      controller.abort()
+      resolve(null)
+    }, ms)
+  })
+  try {
+    const res = await Promise.race([
+      fetch(url, { ...init, signal: controller.signal }).catch(() => null),
+      abortTimer,
+    ])
+    return res
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
+export const fetchImageByteLength = async (
+  url?: string,
+  timeoutMs = IMAGE_BYTE_FETCH_TIMEOUT_MS,
+): Promise<number | null> => {
   if (!url) {
     return null
   }
   if (byteLengthByUrl.has(url)) {
     return byteLengthByUrl.get(url) ?? null
   }
-  try {
-    const head = await fetch(url, { method: 'HEAD' })
-    const fromHead = Number(head.headers.get('content-length'))
-    if (Number.isFinite(fromHead) && fromHead > 0) {
-      byteLengthByUrl.set(url, fromHead)
-      return fromHead
-    }
-  } catch (e) {}
-  try {
-    const res = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' } })
-    const range = res.headers.get('content-range')
-    const match = range && /\/(\d+)\s*$/.exec(range)
-    if (match) {
-      const bytes = Number(match[1])
-      byteLengthByUrl.set(url, bytes)
-      return bytes
-    }
-    const fromGet = Number(res.headers.get('content-length'))
-    if (Number.isFinite(fromGet) && fromGet > 1) {
-      byteLengthByUrl.set(url, fromGet)
-      return fromGet
-    }
-  } catch (e) {}
+  const deadline = Date.now() + timeoutMs
+  const remaining = () => deadline - Date.now()
+  const head = await fetchWithin(url, { method: 'HEAD' }, remaining())
+  const fromHead = Number(headerValue(head, 'content-length'))
+  if (Number.isFinite(fromHead) && fromHead > 0) {
+    byteLengthByUrl.set(url, fromHead)
+    return fromHead
+  }
+  const res = await fetchWithin(url, { method: 'GET', headers: { Range: 'bytes=0-0' } }, remaining())
+  const range = headerValue(res, 'content-range')
+  const match = range && /\/(\d+)\s*$/.exec(range)
+  if (match) {
+    const bytes = Number(match[1])
+    byteLengthByUrl.set(url, bytes)
+    return bytes
+  }
+  const fromGet = Number(headerValue(res, 'content-length'))
+  if (Number.isFinite(fromGet) && fromGet > 1) {
+    byteLengthByUrl.set(url, fromGet)
+    return fromGet
+  }
   byteLengthByUrl.set(url, null)
   return null
 }

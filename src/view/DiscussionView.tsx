@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native'
-import { ProgressBar } from 'react-native-paper'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
@@ -9,6 +8,7 @@ import {
   DiscussionStatsComponent,
   EventDetailComponent,
   FabComponent,
+  FetchProgressComponent,
   MessageBoxDialog,
   PostComponent,
   androidStackBottomInset,
@@ -34,7 +34,11 @@ import {
   MainContext,
   Nyx,
   parsePostsContent,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   preparePosts,
+  reduceFetchProgress,
   revealImageInPosts,
   t,
   Theme,
@@ -85,6 +89,7 @@ type State = {
   isSubmenuVisible: boolean
   isMsgBoxVisible: boolean
   isFetching: boolean
+  fetchProgress: FetchProgressState
   isListing: boolean
   isAttendanceSaving: boolean
   listEpoch: number
@@ -143,6 +148,7 @@ export class DiscussionView extends Component<Props> {
       isSubmenuVisible: false,
       isMsgBoxVisible: false,
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
       isListing: false,
       isAttendanceSaving: false,
       isScreenFocused: true,
@@ -185,14 +191,16 @@ export class DiscussionView extends Component<Props> {
     } else if (this.props.showStats) {
       this.fetchDiscussionBoard()
     } else {
-      this.loadInitialDiscussion().then(async () => {
-        if (this.props.showHeader) {
-          this.setHeaderVisible(true)
-        }
-        if (this.props.jumpToLastSeen && !this._skipJumpToLastSeen) {
-          this.jumpToLastSeen()
-        }
-      })
+      this.loadInitialDiscussion()
+        .then(async () => {
+          if (this.props.showHeader) {
+            this.setHeaderVisible(true)
+          }
+          if (this.props.jumpToLastSeen && !this._skipJumpToLastSeen) {
+            this.jumpToLastSeen()
+          }
+        })
+        .catch(e => console.warn(e))
     }
     this.handleSharedContent()
   }
@@ -204,7 +212,7 @@ export class DiscussionView extends Component<Props> {
           ? Number(this.props.lastSeenPostId)
           : undefined
       this._lastSeenPostId = this._sessionInitialLastSeenPostId
-      this.setState({ discussionId: this.props.id, posts: [], isFetching: true }, () => {
+      this.setState({ discussionId: this.props.id, posts: [], isFetching: true, fetchProgress: emptyFetchProgress() }, () => {
         this.reloadDiscussionLatest(true)
       })
     }
@@ -277,7 +285,7 @@ export class DiscussionView extends Component<Props> {
     const discussionId = this.props.id
     this.fetchLock = true
     this._pendingDiscussion = null
-    this.setState({ isFetching: true, lastSeenPostId: knownLastSeenPostId })
+    this.setState({ isFetching: true, lastSeenPostId: knownLastSeenPostId, fetchProgress: emptyFetchProgress() })
     try {
       let lastSeenPostId = knownLastSeenPostId ?? this._lastSeenPostId
       if (!lastSeenPostId) {
@@ -391,14 +399,29 @@ export class DiscussionView extends Component<Props> {
     this.scrollToPost(unreadIndex + 1, false)
   }
 
+  trackLoad = (event: FetchProgressEvent) => {
+    this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+  }
+
+  trackScoped = (scope: string, scopeLabel: string) => (event: FetchProgressEvent) => {
+    this.trackLoad({
+      ...event,
+      id: `${scope}:${event.id}`,
+      label: event.label || `${t(`load.${event.id}`)} · ${scopeLabel}`,
+    })
+  }
+
   async fetchDiscussion(idOrQueryString, clearPosts = false, opts: { holdLock?: boolean; deferUi?: boolean } = {}) {
     const { filterText, filterRating, filterUser } = this.state
+    const request = { id: 'request', label: t('load.discussion'), done: 0, total: 1 }
     if (!opts.holdLock) {
       if (this.fetchLock) {
         return 0
       }
       this.fetchLock = true
-      this.setState({ isFetching: true })
+      this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+    } else {
+      this.trackLoad(request)
     }
     try {
       if (filterUser?.length) {
@@ -411,6 +434,7 @@ export class DiscussionView extends Component<Props> {
         idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
       }
       const res = await this.nyx?.api.getDiscussion(idOrQueryString)
+      this.trackLoad({ ...request, done: 1 })
       if (!res?.posts?.length) {
         const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
@@ -444,6 +468,7 @@ export class DiscussionView extends Component<Props> {
         true,
         themeBaseFontSize,
         this.imageDownloadMaxKb(),
+        this.trackLoad,
       )
       applyUnreadFlags(nextPosts, this._sessionInitialLastSeenPostId)
       const title = `${res?.discussion_common?.discussion.name_static}${
@@ -456,7 +481,14 @@ export class DiscussionView extends Component<Props> {
       }
       let header = res?.discussion_common?.discussion_specific_data?.header
       if (header && header.length > 0) {
-        header = await preparePosts(header, [], true, themeBaseFontSize, this.imageDownloadMaxKb())
+        header = await preparePosts(
+          header,
+          [],
+          true,
+          themeBaseFontSize,
+          this.imageDownloadMaxKb(),
+          this.trackScoped('header', t('load.header')),
+        )
       }
       this._posts = nextPosts
       this._lastSeenPostId =
@@ -491,6 +523,12 @@ export class DiscussionView extends Component<Props> {
         this.onDiscussionFetched(title, uploadedFiles)
       }
       return res?.posts?.length || 0
+    } catch (e) {
+      console.warn(e)
+      if (!opts.holdLock) {
+        this.setState({ isFetching: false })
+      }
+      throw e
     } finally {
       if (!opts.holdLock) {
         this.fetchLock = false
@@ -510,14 +548,18 @@ export class DiscussionView extends Component<Props> {
   }
 
   async fetchDiscussionBoard() {
-    this.setState({ isFetching: true })
+    const request = { id: 'request', label: t('load.board'), done: 0, total: 1 }
+    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+    try {
     const res = await this.nyx?.api.getDiscussionBoard(this.props.id)
+    this.trackLoad({ ...request, done: 1 })
     if (!res || res?.error || !res.items || !res.discussion_common) {
       console.warn(res)
+      this.setState({ isFetching: false })
       return
     }
     const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-    const board = await preparePosts(res.items, [], true, themeBaseFontSize, this.imageDownloadMaxKb())
+    const board = await preparePosts(res.items, [], true, themeBaseFontSize, this.imageDownloadMaxKb(), this.trackLoad)
     const title = `${res.discussion_common.discussion.name_static}${
       res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
     }`
@@ -533,6 +575,10 @@ export class DiscussionView extends Component<Props> {
       isListing: this.state.isListing || isListingDiscussion(title, res.items),
     })
     this.onDiscussionFetched(title)
+    } catch (e) {
+      console.warn(e)
+      this.setState({ isFetching: false })
+    }
   }
 
   getAdvertisementOP(ad, images) {
@@ -850,7 +896,7 @@ export class DiscussionView extends Component<Props> {
       this.setState({ isCategoryPickerVisible: true })
       return
     }
-    this.setState({ isBooked: newIsBooked, isFetching: true })
+    this.setState({ isBooked: newIsBooked, isFetching: true, fetchProgress: emptyFetchProgress() })
     await this.nyx?.api.bookmarkDiscussion(this.props.id, newIsBooked, categoryId)
     this.setState({ isFetching: false, isCategoryPickerVisible: false })
   }
@@ -882,7 +928,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   async fetchReplies(discussionId, postId) {
-    this.setState({ isFetching: true })
+    this.setState({ isFetching: true, fetchProgress: emptyFetchProgress() })
     const res = await this.nyx?.api.getDiscussion(`${discussionId}/id/${postId}/replies`) // todo replies endpoint for proper type check
     const replies = getDistinctPosts(Array.isArray(res) ? res : [], [])
     const posts = parsePostsContent(replies)
@@ -978,15 +1024,12 @@ export class DiscussionView extends Component<Props> {
       return null
     }
     const isListing = this.state.isListing || isListingDiscussion(this.state.title, this.state.posts)
+    const listData = this.state.isHeaderVisible ? this.state.header : this.state.posts
+    const listEmpty = !listData?.length
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        {this.state.imgPrefetchProgress?.length > 0 && (
-          <ProgressBar
-            progress={this.state.imgPrefetchProgress.done / (this.state.imgPrefetchProgress.length / 100) / 100}
-            color={theme.colors.primary}
-            style={{ height: 3 }}
-          />
-        )}
         <BookmarkCategoriesDialog
           isVisible={this.state.isCategoryPickerVisible}
           categories={this.state.bookmarkCategories || []}
@@ -1025,30 +1068,39 @@ export class DiscussionView extends Component<Props> {
             onImage={img => this.showImages(img, this.state.advertisementOP.images)}
           />
         )}
+        {loadActive && !listEmpty && (
+          <View style={{ marginTop: 50 }}>
+            <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />
+          </View>
+        )}
         <FlatList
           key={this.state.listEpoch || 'discussion'}
           ref={r => (this.refScroll = r)}
-          data={this.state.isHeaderVisible ? this.state.header : this.state.posts}
+          data={listData}
           extraData={this.state}
-          initialScrollIndex={this.state.initialScrollIndex}
+          initialScrollIndex={listEmpty ? undefined : this.state.initialScrollIndex}
           keyExtractor={item => `${item.uuid}`}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
           refreshControl={
             <RefreshControl
-              refreshing={this.state.isFetching}
+              refreshing={this.state.isFetching && !loadActive}
               onRefresh={() => this.loadDiscussionTop()}
               colors={[theme.colors.primary, theme.colors.secondary, theme.colors.tertiary]}
             />
           }
           style={{
             flex: 1,
-            marginTop: 50,
+            marginTop: loadActive && !listEmpty ? 0 : 50,
             backgroundColor: theme.colors.background,
           }}
           contentContainerStyle={{
+            flexGrow: listEmpty ? 1 : undefined,
             paddingBottom: Math.max(this.props.bottomInset || 0, androidStackBottomInset) + 16,
           }}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
           ListHeaderComponent={
             this.state.eventDetail &&
             !this.props.showReplies &&
@@ -1065,7 +1117,7 @@ export class DiscussionView extends Component<Props> {
             ) : null
           }
           ListFooterComponent={() =>
-            this.state.isFetching && this.state.posts.length > 0 ? (
+            this.state.isFetching && !listEmpty && !loadActive ? (
               <ActivityIndicator size="large" color={theme.colors.primary} />
             ) : null
           }

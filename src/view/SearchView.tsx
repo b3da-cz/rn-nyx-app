@@ -4,6 +4,7 @@ import { Menu, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
   DiscussionRowComponent,
+  FetchProgressComponent,
   PostComponent,
   SearchFieldComponent,
   SectionHeaderComponent,
@@ -16,9 +17,13 @@ import {
   t,
   Theme,
   SEARCH_KINDS,
+  emptyFetchProgress,
+  FetchProgressEvent,
+  FetchProgressState,
   loadSearch,
   mergeSearchPosts,
   preparePosts,
+  reduceFetchProgress,
   revealImageInPosts,
   galleryImagesFromPosts,
   toGalleryImages,
@@ -37,6 +42,7 @@ type State = {
   posts: any[]
   postsEnd: boolean
   isFetching: boolean
+  fetchProgress: FetchProgressState
   theme?: Theme
 }
 const kindLabel = (kind: SearchKind) => {
@@ -63,6 +69,7 @@ export class SearchView extends Component<Props> {
       posts: [],
       postsEnd: false,
       isFetching: false,
+      fetchProgress: emptyFetchProgress(),
       theme: undefined,
     }
   }
@@ -96,11 +103,15 @@ export class SearchView extends Component<Props> {
       return
     }
     const seq = ++this.searchSeq
-    this.setState({ isFetching: true })
+    const request = { id: 'request', label: t('search.title'), done: 0, total: 1 }
+    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
     let sections: SearchSection[] = []
     let posts: any[] = []
     try {
       sections = await loadSearch(this.nyx.api, searchPhrase, kind, this.filters, this.blockedUsers, fromId)
+      if (seq === this.searchSeq) {
+        this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, { ...request, done: 1 }) }))
+      }
       if (seq !== this.searchSeq) {
         return
       }
@@ -113,6 +124,12 @@ export class SearchView extends Component<Props> {
           true,
           this.context?.theme?.metrics?.fontSizes?.p,
           this.context?.config?.imageDownloadMaxKb,
+          event => {
+            if (seq !== this.searchSeq) {
+              return
+            }
+            this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
+          },
         )
       }
     } catch (e) {
@@ -176,22 +193,30 @@ export class SearchView extends Component<Props> {
     if (!theme) {
       return null
     }
+    const listEmpty = !this.state.sectionedSearchResults.some(section => section.data?.length)
+    const loadSteps = this.state.fetchProgress?.steps || []
+    const loadActive = this.state.isFetching && loadSteps.length > 0
     return (
-      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <SearchFieldComponent
           placeholder={`${t('search.do')} ..`}
           onChangeText={searchPhrase => this.setSearchPhrase(searchPhrase)}
           value={`${this.state.searchPhrase}`}
         />
         <SearchKindSwitch kind={this.state.kind} theme={theme} onChange={kind => this.setKind(kind)} />
+        {loadActive && !listEmpty && <FetchProgressComponent progress={this.state.fetchProgress} fill={false} />}
         <SectionList
           sections={this.state.sectionedSearchResults}
           stickySectionHeadersEnabled={this.state.kind === 'all'}
           initialNumToRender={30}
           keyExtractor={item => `${item.id || item.username}`}
-          style={{ marginTop: theme.metrics.blocks.small }}
-          refreshing={this.state.isFetching}
+          style={{ flex: 1, marginTop: theme.metrics.blocks.small }}
+          refreshing={this.state.isFetching && !loadActive}
           onRefresh={() => this.search(this.state.searchPhrase, this.state.kind)}
+          contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
+          ListEmptyComponent={
+            this.state.isFetching ? <FetchProgressComponent progress={this.state.fetchProgress} fill /> : null
+          }
           onEndReached={() => this.loadOlderPosts()}
           onEndReachedThreshold={0.4}
           renderSectionHeader={({ section }) =>

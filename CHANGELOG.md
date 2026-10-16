@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.0
+- při načítání klubu, příspěvků, pošty, upomínek, hledání a oznámení je nahoře průběh prefetchu
+- řádky přibývají podle kroku: request, mezipaměť, velikost souboru, rozměry a výška příspěvků
+- nahoře je celkový průběh, pod řádky spinner ve zbylém místě
+- měření velikosti souboru se po 8 s vzdá, aby jeden request nezastavil načtení
+
 ## 0.29.1
 - hledaná fráze v příspěvku má sytější podklad jako vybraná shoda a zůstává kurzívou
 

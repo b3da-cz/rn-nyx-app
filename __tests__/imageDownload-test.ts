@@ -1,6 +1,7 @@
 import {
   IMAGE_DOWNLOAD_OFF,
   IMAGE_DOWNLOAD_UNLIMITED,
+  fetchImageByteLength,
   applyImagePlaceholder,
   applyRevealedImageLayoutAtWidth,
   applyRevealedImageToPosts,
@@ -83,6 +84,41 @@ describe('imageDownload', () => {
     expect(img.cached).toBe(false)
     expect(img.width / img.height).toBe(3 / 2)
     expect(isPlaceholderImageSize(img)).toBe(true)
+  })
+})
+
+describe('fetchImageByteLength', () => {
+  const originalFetch = global.fetch
+
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  it('reads the size from a head response', async () => {
+    global.fetch = jest.fn(async () => ({
+      headers: { get: (name: string) => (name === 'content-length' ? '4096' : null) },
+    })) as any
+    await expect(fetchImageByteLength('https://nyx.cz/files/ok-size.jpg', 1000)).resolves.toBe(4096)
+  })
+
+  it('gives up on a hanging request and still measures the next file', async () => {
+    global.fetch = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('slow')) {
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            const error = new Error('aborted')
+            error.name = 'AbortError'
+            reject(error)
+          })
+        })
+      }
+      return Promise.resolve({
+        headers: { get: (name: string) => (name === 'content-length' ? '100' : null) },
+      })
+    }) as any
+    await expect(fetchImageByteLength('https://nyx.cz/files/slow.jpg', 30)).resolves.toBeNull()
+    await expect(fetchImageByteLength('https://nyx.cz/files/fast.jpg', 1000)).resolves.toBe(100)
   })
 })
 
