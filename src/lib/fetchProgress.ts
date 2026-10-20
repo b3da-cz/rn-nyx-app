@@ -2,9 +2,9 @@ export type FetchProgressMode = 'off' | 'overall' | 'detailed'
 export type FetchProgressGlobal = 'off' | 'detailed'
 export type FetchProgressWhere = 'enter' | 'more' | 'lists'
 
-export const FETCH_PROGRESS_ENTER_DEFAULT: FetchProgressMode = 'detailed'
+export const FETCH_PROGRESS_ENTER_DEFAULT: FetchProgressMode = 'overall'
 export const FETCH_PROGRESS_MORE_DEFAULT: FetchProgressMode = 'overall'
-export const FETCH_PROGRESS_LISTS_DEFAULT: FetchProgressMode = 'detailed'
+export const FETCH_PROGRESS_LISTS_DEFAULT: FetchProgressMode = 'overall'
 export const FETCH_PROGRESS_GLOBAL_DEFAULT: FetchProgressGlobal = 'detailed'
 
 export const normalizeFetchProgressMode = (

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.4
+- na konci klubu se po prázdné stránce starších příspěvků ukáže začátek klubu
+- nová instalace má všude celkový průběh načítání
+
 ## 0.30.3
 - donačtení klubu přepočítá jen nové příspěvky, ne celý zobrazený seznam
 - průběh načítání je detailní, nebo nic (obyčejný spinner)

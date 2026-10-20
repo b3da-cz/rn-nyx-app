@@ -36,21 +36,21 @@ describe('fetch progress', () => {
     expect(shortenFetchDetail('')).toBeUndefined()
   })
 
-  it('defaults to detailed on open and overall while loading more', () => {
-    expect(resolveFetchProgressMode(undefined, 'enter')).toBe('detailed')
+  it('defaults to overall everywhere on a fresh install', () => {
+    expect(resolveFetchProgressMode(undefined, 'enter')).toBe('overall')
     expect(resolveFetchProgressMode({}, 'more')).toBe('overall')
-    expect(resolveFetchProgressMode({}, 'lists')).toBe('detailed')
+    expect(resolveFetchProgressMode({}, 'lists')).toBe('overall')
     expect(resolveFetchProgressMode({ isFetchProgressEnabled: false, fetchProgressEnter: 'detailed' }, 'enter')).toBe(
       'off',
     )
     expect(resolveFetchProgressMode({ fetchProgress: 'off', fetchProgressEnter: 'detailed' }, 'enter')).toBe('off')
     expect(resolveFetchProgressMode({ fetchProgress: 'detailed', isFetchProgressEnabled: false }, 'lists')).toBe(
-      'detailed',
+      'overall',
     )
     expect(resolveFetchProgressMode({ fetchProgressEnter: 'off', fetchProgressMore: 'detailed' }, 'enter')).toBe('off')
     expect(resolveFetchProgressMode({ fetchProgressMore: 'detailed' }, 'more')).toBe('detailed')
     expect(resolveFetchProgressMode({ fetchProgressLists: 'overall' }, 'lists')).toBe('overall')
-    expect(resolveFetchProgressMode({ fetchProgressEnter: 'nope' }, 'enter')).toBe('detailed')
+    expect(resolveFetchProgressMode({ fetchProgressEnter: 'nope' }, 'enter')).toBe('overall')
   })
 
   it('settles with the fallback when the work never finishes', async () => {

@@ -17,10 +17,15 @@ import {
   applyRevealedImageLayout,
   applyRevealedImageToPosts,
   applyUnreadFlags,
+  assignPostOffsets,
+  CLUB_START_POST_ID,
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
+  initialOlderEndState,
   newerPageScrollIndex,
+  noteOlderPage,
+  OLDER_END_FETCH_LIMIT,
   formatDate,
   getDistinctPosts,
   toGalleryImages,
@@ -115,6 +120,9 @@ export class DiscussionView extends Component<Props> {
   _sessionInitialLastSeenPostId?: number
   _pendingDiscussion: any = null
   _skipJumpToLastSeen = false
+  _olderEnd = initialOlderEndState()
+  _clubStartPost: any = null
+  _listGeneration = 0
   _revealQueue: Promise<void> = Promise.resolve()
   refScroll: any
   refMsgBoxDialog: any
@@ -213,6 +221,10 @@ export class DiscussionView extends Component<Props> {
           ? Number(this.props.lastSeenPostId)
           : undefined
       this._lastSeenPostId = this._sessionInitialLastSeenPostId
+      this._posts = []
+      this._olderEnd = initialOlderEndState()
+      this._clubStartPost = null
+      this._listGeneration += 1
       this.setState({ discussionId: this.props.id, posts: [], isFetching: true, fetchProgress: emptyFetchProgress() }, () => {
         this.reloadDiscussionLatest(true)
       })
@@ -368,14 +380,69 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadDiscussionBottom() {
-    const posts = this._posts.length ? this._posts : this.state.posts
-    if (posts.length < 20 || this.state.isHeaderVisible) {
+    if (
+      this._olderEnd.reached ||
+      this._olderEnd.attempts >= OLDER_END_FETCH_LIMIT ||
+      this.fetchLock ||
+      this.state.isHeaderVisible ||
+      this.state.isBoardVisible
+    ) {
+      return
+    }
+    const posts = (this._posts.length ? this._posts : this.state.posts).filter(post => !post?.isClubStart)
+    if (posts.length < 20) {
       return // prevent reloading of new discussion, todo variable min len
     }
-    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const bottomPostId = posts.length > 0 && posts[posts.length - 1].id
+    if (!bottomPostId) {
+      return
+    }
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const queryString = `${discussionId}?order=older_than&from_id=${bottomPostId}`
-    await this.fetchDiscussion(queryString)
+    const generation = this._listGeneration
+    let added = -1
+    try {
+      added = await this.fetchDiscussion(queryString)
+    } catch (e) {
+      return
+    }
+    if (generation !== this._listGeneration) {
+      return
+    }
+    const next = noteOlderPage(this._olderEnd, added)
+    this._olderEnd = { attempts: next.attempts, reached: next.reached }
+    if (next.showStart) {
+      await this.showClubStart(generation)
+    }
+  }
+
+  async showClubStart(generation = this._listGeneration) {
+    if (generation !== this._listGeneration || this._posts.some(post => post?.isClubStart)) {
+      return
+    }
+    const marker = {
+      id: CLUB_START_POST_ID,
+      uuid: 'club-start',
+      isClubStart: true,
+      username: '',
+      content: t('discussionStart'),
+      post_type: 'text',
+      new: false,
+    }
+    const fontSize = this.state.theme?.metrics?.fontSizes?.p || this.context?.theme?.metrics?.fontSizes?.p || 15
+    const prepared = await preparePosts([marker], [], true, fontSize, this.imageDownloadMaxKb())
+    if (generation !== this._listGeneration || this._posts.some(post => post?.isClubStart)) {
+      return
+    }
+    const start = prepared?.[0]
+    if (!start?.parsed) {
+      return
+    }
+    this._clubStartPost = start
+    const base = (this._posts.length ? this._posts : this.state.posts).filter(post => !post?.isClubStart)
+    const posts = assignPostOffsets([...base, start])
+    this._posts = posts
+    this.setState({ posts })
   }
 
   async jumpToPost(discussionId, postId) {
@@ -415,9 +482,14 @@ export class DiscussionView extends Component<Props> {
   async fetchDiscussion(idOrQueryString, clearPosts = false, opts: { holdLock?: boolean; deferUi?: boolean } = {}) {
     const { filterText, filterRating, filterUser } = this.state
     const request = { id: 'request', label: t('load.discussion'), done: 0, total: 1 }
+    if (clearPosts) {
+      this._olderEnd = initialOlderEndState()
+      this._clubStartPost = null
+      this._listGeneration += 1
+    }
     if (!opts.holdLock) {
       if (this.fetchLock) {
-        return 0
+        return -1
       }
       this.fetchLock = true
       this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
@@ -441,7 +513,7 @@ export class DiscussionView extends Component<Props> {
         if (!opts.holdLock) {
           this.setState(eventDetail ? { isFetching: false, eventDetail } : { isFetching: false })
         }
-        return 0
+        return res && !res.error ? 0 : -1
       }
       const advertisementOP = this.getAdvertisementOP(
         res?.discussion_common?.advertisement_specific_data?.advertisement,
@@ -465,7 +537,7 @@ export class DiscussionView extends Component<Props> {
       const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
       const nextPosts = await preparePosts(
         filteredPosts,
-        clearPosts ? [] : this._posts,
+        clearPosts ? [] : this._posts.filter(post => !post?.isClubStart),
         true,
         themeBaseFontSize,
         this.imageDownloadMaxKb(),
@@ -478,7 +550,7 @@ export class DiscussionView extends Component<Props> {
       if (!isDiscussionPermitted(title, this.filters)) {
         alert('Blocked content')
         this.props.navigation.goBack()
-        return 0
+        return -1
       }
       let header = res?.discussion_common?.discussion_specific_data?.header
       if (header && header.length > 0) {
@@ -492,7 +564,11 @@ export class DiscussionView extends Component<Props> {
           this.trackScoped('header', t('load.header')),
         )
       }
-      this._posts = nextPosts
+      const postsForList =
+        !clearPosts && this._olderEnd.reached && this._clubStartPost
+          ? assignPostOffsets([...nextPosts.filter(post => !post?.isClubStart), this._clubStartPost])
+          : nextPosts
+      this._posts = postsForList
       this._lastSeenPostId =
         this._sessionInitialLastSeenPostId ??
         this.props.lastSeenPostId ??
@@ -503,14 +579,14 @@ export class DiscussionView extends Component<Props> {
       const eventDetail = this.eventDetailFromResponse(
         toEventDetail(res?.discussion_common) ?? this._pendingDiscussion?.eventDetail ?? this.state.eventDetail,
       )
-      const images = galleryImagesFromPosts(nextPosts)
+      const images = galleryImagesFromPosts(postsForList)
       const nextState = {
         title,
         images,
         isBooked,
         header,
         lastSeenPostId: this._lastSeenPostId,
-        posts: nextPosts,
+        posts: postsForList,
         advertisementOP: advertisementOP || this.state.advertisementOP,
         eventDetail,
         isFetching: opts.holdLock ? true : false,
@@ -1150,9 +1226,9 @@ export class DiscussionView extends Component<Props> {
               key={item.id}
               post={item}
               nyx={this.nyx!}
-              isHeaderInteractive={true}
+              isHeaderInteractive={!item.isClubStart}
               isReply={false}
-              isUnread={item.new}
+              isUnread={!!item.new && !item.isClubStart}
               onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
               onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}

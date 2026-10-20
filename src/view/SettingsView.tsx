@@ -28,6 +28,9 @@ import {
   authenticateFingerprint,
   FINGERPRINT_LOCK_MINUTES,
   hasFingerprintSensor,
+  FETCH_PROGRESS_ENTER_DEFAULT,
+  FETCH_PROGRESS_LISTS_DEFAULT,
+  FETCH_PROGRESS_MORE_DEFAULT,
   normalizeFetchProgressMode,
   resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
@@ -252,9 +255,9 @@ export class SettingsView extends Component<Props> {
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
       isFetchProgressEnabled: resolveFetchProgressGlobal(config) !== 'off',
       fetchProgress: resolveFetchProgressGlobal(config),
-      fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, 'detailed'),
-      fetchProgressMore: normalizeFetchProgressMode(config?.fetchProgressMore, 'overall'),
-      fetchProgressLists: normalizeFetchProgressMode(config?.fetchProgressLists, 'detailed'),
+      fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, FETCH_PROGRESS_ENTER_DEFAULT),
+      fetchProgressMore: normalizeFetchProgressMode(config?.fetchProgressMore, FETCH_PROGRESS_MORE_DEFAULT),
+      fetchProgressLists: normalizeFetchProgressMode(config?.fetchProgressLists, FETCH_PROGRESS_LISTS_DEFAULT),
       settingsSectionsOpen:
         config?.settingsSectionsOpen && typeof config.settingsSectionsOpen === 'object'
           ? config.settingsSectionsOpen
@@ -640,21 +643,27 @@ export class SettingsView extends Component<Props> {
                   rowHeight={rowHeight}
                   label={t('profile.fetchProgressEnter')}
                   value={this.fetchProgressLabel(this.state.fetchProgressEnter)}
-                  onSelect={val => this.setOption('fetchProgressEnter', normalizeFetchProgressMode(val, 'detailed'))}
+                  onSelect={val =>
+                    this.setOption('fetchProgressEnter', normalizeFetchProgressMode(val, FETCH_PROGRESS_ENTER_DEFAULT))
+                  }
                   options={this.fetchProgressOptions()}
                 />
                 <SettingsSelectRow
                   rowHeight={rowHeight}
                   label={t('profile.fetchProgressMore')}
                   value={this.fetchProgressLabel(this.state.fetchProgressMore)}
-                  onSelect={val => this.setOption('fetchProgressMore', normalizeFetchProgressMode(val, 'overall'))}
+                  onSelect={val =>
+                    this.setOption('fetchProgressMore', normalizeFetchProgressMode(val, FETCH_PROGRESS_MORE_DEFAULT))
+                  }
                   options={this.fetchProgressOptions()}
                 />
                 <SettingsSelectRow
                   rowHeight={rowHeight}
                   label={t('profile.fetchProgressLists')}
                   value={this.fetchProgressLabel(this.state.fetchProgressLists)}
-                  onSelect={val => this.setOption('fetchProgressLists', normalizeFetchProgressMode(val, 'detailed'))}
+                  onSelect={val =>
+                    this.setOption('fetchProgressLists', normalizeFetchProgressMode(val, FETCH_PROGRESS_LISTS_DEFAULT))
+                  }
                   options={this.fetchProgressOptions()}
                 />
               </View>
