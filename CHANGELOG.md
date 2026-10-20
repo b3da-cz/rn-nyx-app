@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.1
+- cache se už nesmaže, když se klub, historie a záložky zapisují najednou
+- historie a záložky se ukážou hned a ukládají se odděleně od klubů
+- klub se načte, i když se zrovna zapisuje seznam
+- poškozené čtení cache nezablokuje další ukládání
+
 ## 0.31.0
 - cache klubů ukládá příspěvky, rozměry a velikosti obrázků a výšku textu
 - v nastavení jde cache zapnout a zvolit počet posledních klubů, výchozí je 30

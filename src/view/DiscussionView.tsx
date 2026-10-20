@@ -23,12 +23,12 @@ import {
   discussionQueryParts,
   findCachedDiscussion,
   forgetCachedPost,
-  normalizeDiscussionCache,
   normalizeDiscussionCacheLimit,
   putCachedDiscussion,
-  Storage,
+  readDiscussionCache,
   syncCachedPage,
   touchCachedDiscussion,
+  updateDiscussionCache,
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
@@ -133,7 +133,6 @@ export class DiscussionView extends Component<Props> {
   _olderEnd = initialOlderEndState()
   _clubStartPost: any = null
   _listGeneration = 0
-  _discussionCache: any = null
   _olderMiss = false
   _revealQueue: Promise<void> = Promise.resolve()
   refScroll: any
@@ -194,7 +193,6 @@ export class DiscussionView extends Component<Props> {
       }
       this.revealLoadedPlaceholders()
       this._olderMiss = false
-      this._discussionCache = null
       this.handleSharedContent()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
@@ -297,52 +295,27 @@ export class DiscussionView extends Component<Props> {
     return this.context?.config?.isDiscussionCacheEnabled !== false
   }
 
-  async discussionCacheStore() {
-    if (!this._discussionCache) {
-      this._discussionCache = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    }
-    return this._discussionCache
-  }
-
-  async persistDiscussionCache(store) {
-    this._discussionCache = store
-    await Storage.setDiscussionCache(store)
-  }
-
-  async rememberDiscussion(discussionId) {
-    if (!this.discussionCacheOn() || !discussionId) {
-      return null
-    }
-    const store = await this.discussionCacheStore()
-    if (!findCachedDiscussion(store, discussionId)) {
-      return null
-    }
-    const limit = normalizeDiscussionCacheLimit(this.context?.config?.discussionCacheLimit)
-    const next = touchCachedDiscussion(store, discussionId, limit)
-    await this.persistDiscussionCache(next)
-    return findCachedDiscussion(next, discussionId) || null
-  }
-
   async saveDiscussionPage(discussionId, pageKey, res, posts, header?) {
     if (!this.discussionCacheOn() || !discussionId) {
       return
     }
     const limit = normalizeDiscussionCacheLimit(this.context?.config?.discussionCacheLimit)
-    let store = touchCachedDiscussion(await this.discussionCacheStore(), discussionId, limit)
-    let entry = findCachedDiscussion(store, discussionId)
-    if (!entry) {
-      return
-    }
-    entry = syncCachedPage(entry, pageKey, posts || [])
-    if (header?.length) {
-      entry = syncCachedPage(entry, 'header', header)
-    }
-    if (res?.discussion_common) {
-      entry = { ...entry, common: res.discussion_common }
-    }
-    store = putCachedDiscussion(store, entry)
-    store = { ...store, discussions: store.discussions.slice(0, limit) }
-    await this.persistDiscussionCache(store)
+    await updateDiscussionCache(current => {
+      let next = touchCachedDiscussion(current, discussionId, limit)
+      let entry = findCachedDiscussion(next, discussionId)
+      if (!entry) {
+        return current
+      }
+      entry = syncCachedPage(entry, pageKey, posts || [])
+      if (header?.length) {
+        entry = syncCachedPage(entry, 'header', header)
+      }
+      if (res?.discussion_common) {
+        entry = { ...entry, common: res.discussion_common }
+      }
+      next = putCachedDiscussion(next, entry)
+      return { ...next, discussions: next.discussions.slice(0, limit) }
+    })
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -585,12 +558,17 @@ export class DiscussionView extends Component<Props> {
       }
       const queryParts = discussionQueryParts(String(idOrQueryString))
       const cacheOn = this.discussionCacheOn()
-      let cacheEntry = cacheOn ? await this.rememberDiscussion(queryParts.discussionId) : null
+      const cacheEntryPromise = cacheOn
+        ? readDiscussionCache()
+            .then(store => findCachedDiscussion(store, queryParts.discussionId) || null)
+            .catch(() => null)
+        : Promise.resolve(null)
       let fromCache = false
       let res
       try {
         res = await this.nyx?.api.getDiscussion(idOrQueryString)
       } catch (e) {
+        const cacheEntry = await cacheEntryPromise
         const cached = cacheEntry ? cachedPageResponse(cacheEntry, queryParts.pageKey) : null
         if (!cached) {
           throw e
@@ -598,6 +576,7 @@ export class DiscussionView extends Component<Props> {
         res = cached
         fromCache = true
       }
+      const cacheEntry = await cacheEntryPromise
       if (!fromCache && res && !res.error) {
         this._olderMiss = false
       }
@@ -614,7 +593,7 @@ export class DiscussionView extends Component<Props> {
       this.trackLoad({ ...request, done: 1 })
       if (!res?.posts?.length) {
         if (!fromCache && res && !res.error) {
-          await this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, [])
+          this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, []).catch(e => console.warn(e))
         }
         const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
@@ -673,11 +652,6 @@ export class DiscussionView extends Component<Props> {
           cacheEntry,
         )
       }
-      if (!fromCache) {
-        const pageIds = new Set((filteredPosts || []).map(post => String(post.id)))
-        const pagePosts = nextPosts.filter(post => pageIds.has(String(post.id)))
-        await this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, pagePosts, header)
-      }
       const postsForList =
         !clearPosts && this._olderEnd.reached && this._clubStartPost
           ? assignPostOffsets([...nextPosts.filter(post => !post?.isClubStart), this._clubStartPost])
@@ -713,6 +687,13 @@ export class DiscussionView extends Component<Props> {
       if (!opts.deferUi) {
         this.setState(nextState)
         this.onDiscussionFetched(title, uploadedFiles)
+      }
+      if (!fromCache) {
+        const pageIds = new Set((filteredPosts || []).map(post => String(post.id)))
+        const pagePosts = nextPosts.filter(post => pageIds.has(String(post.id)))
+        this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, pagePosts, header).catch(e =>
+          console.warn(e),
+        )
       }
       return res?.posts?.length || 0
     } catch (e) {
@@ -936,12 +917,13 @@ export class DiscussionView extends Component<Props> {
     this._posts = posts
     this.setState({ posts })
     const discussionId = this.state.discussionId || this.props.id
-    const entry = this._discussionCache && findCachedDiscussion(this._discussionCache, discussionId)
-    if (entry) {
-      this.persistDiscussionCache(putCachedDiscussion(this._discussionCache, forgetCachedPost(entry, postId))).catch(e =>
-        console.warn(e),
-      )
-    }
+    updateDiscussionCache(store => {
+      const entry = findCachedDiscussion(store, discussionId)
+      if (!entry) {
+        return store
+      }
+      return putCachedDiscussion(store, forgetCachedPost(entry, postId))
+    }).catch(e => console.warn(e))
   }
 
   showMsgBox() {

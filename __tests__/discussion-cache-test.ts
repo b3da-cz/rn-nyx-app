@@ -3,6 +3,7 @@ import {
   cachedPageResponse,
   discussionCacheReport,
   discussionQueryParts,
+  createDiscussionCacheQueue,
   emptyDiscussionCache,
   forgetCachedDiscussion,
   rememberBookmarkList,
@@ -85,6 +86,38 @@ describe('discussion cache', () => {
     expect(report.historyCount).toBe(1)
     expect(report.bookmarkCount).toBe(2)
     expect(report.bytes).toBeGreaterThan(10)
+  })
+
+  it('keeps a club saved while an older read is still finishing', async () => {
+    let disk: any = null
+    const queue = createDiscussionCacheQueue(
+      async () => disk,
+      async store => {
+        disk = store
+      },
+    )
+    const saved = queue.update(store => ({
+      ...store,
+      discussions: [{ id: '9', openedAt: 1, posts: {}, pages: {} }],
+    }))
+    const history = queue.update(store => rememberHistoryList(store, [{ id: 1 }], false))
+    await Promise.all([saved, history])
+    expect(disk.discussions.map((entry: any) => entry.id)).toEqual(['9'])
+    expect(disk.history.discussions).toHaveLength(1)
+  })
+
+  it('does not replace the cache when reading it fails', async () => {
+    const writes: any[] = []
+    const queue = createDiscussionCacheQueue(
+      async () => {
+        throw new Error('corrupt')
+      },
+      async store => {
+        writes.push(store)
+      },
+    )
+    await expect(queue.update(store => rememberHistoryList(store, [{ id: 1 }], false))).rejects.toThrow('corrupt')
+    expect(writes).toEqual([])
   })
 
   it('drops one club and can clear the whole store', () => {

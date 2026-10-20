@@ -283,6 +283,105 @@ export const cachedPageResponse = (entry: DiscussionCacheEntry | null | undefine
   return { posts, discussion_common: entry.common || null }
 }
 
+export type DiscussionListCache = {
+  history: CachedHistoryList | null
+  bookmarks: CachedBookmarkList | null
+}
+
+export const emptyListCache = (): DiscussionListCache => ({ history: null, bookmarks: null })
+
+export const normalizeListCache = (value: unknown): DiscussionListCache => {
+  const raw = value as DiscussionCacheStore
+  const history = raw?.history
+  const bookmarks = raw?.bookmarks
+  return {
+    history:
+      history && Array.isArray(history.discussions)
+        ? { discussions: history.discussions, showingRead: !!history.showingRead, savedAt: Number(history.savedAt) || 0 }
+        : null,
+    bookmarks:
+      bookmarks && Array.isArray(bookmarks.bookmarks)
+        ? {
+            bookmarks: bookmarks.bookmarks,
+            reminderCount: Number(bookmarks.reminderCount) || 0,
+            includeSeen: !!bookmarks.includeSeen,
+            savedAt: Number(bookmarks.savedAt) || 0,
+          }
+        : null,
+  }
+}
+
+export const rememberHistoryOnList = (
+  list: DiscussionListCache | null | undefined,
+  discussions: any[] = [],
+  showingRead = false,
+  now = Date.now(),
+): DiscussionListCache => ({
+  ...normalizeListCache(list),
+  history: { discussions, showingRead: !!showingRead, savedAt: now },
+})
+
+export const rememberBookmarksOnList = (
+  list: DiscussionListCache | null | undefined,
+  bookmarks: any[] = [],
+  reminderCount = 0,
+  includeSeen = false,
+  now = Date.now(),
+): DiscussionListCache => ({
+  ...normalizeListCache(list),
+  bookmarks: {
+    bookmarks,
+    reminderCount: Number(reminderCount) || 0,
+    includeSeen: !!includeSeen,
+    savedAt: now,
+  },
+})
+
+export function createDiscussionCacheQueue<T>(
+  read: () => Promise<unknown>,
+  write: (store: T) => Promise<void>,
+  normalize: (value: unknown) => T = normalizeDiscussionCache as unknown as (value: unknown) => T,
+) {
+  let chain: Promise<unknown> = Promise.resolve()
+  let memory: T | null = null
+
+  const enqueue = <R>(task: () => Promise<R>): Promise<R> => {
+    const run = chain.then(task, task)
+    chain = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+
+  const load = async () => {
+    if (!memory) {
+      memory = normalize(await read())
+    }
+    return memory
+  }
+
+  return {
+    read: () => enqueue(load),
+    update: (mutate: (store: T) => T) =>
+      enqueue(async () => {
+        const current = await load()
+        const next = mutate(current)
+        if (next === current) {
+          return current
+        }
+        try {
+          await write(next)
+        } catch (e) {
+          console.warn(e)
+          return current
+        }
+        memory = next
+        return next
+      }),
+  }
+}
+
 export const putCachedDiscussion = (store: DiscussionCacheStore, entry: DiscussionCacheEntry): DiscussionCacheStore => {
   const rest = store.discussions.filter(item => item.id !== entry.id)
   return withDiscussions(store, [entry, ...rest])

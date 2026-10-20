@@ -17,6 +17,7 @@ const StorageKeys = {
   uploadSettings: 'uploadSettings',
   fingerprintBackgroundAt: 'fingerprintBackgroundAt',
   discussionCache: 'discussionCache',
+  discussionListCache: 'discussionListCache',
 }
 
 const set = async (key, value) => {
@@ -103,9 +104,35 @@ const getFingerprintBackgroundAt = async (): Promise<number | null> => {
 const setFingerprintBackgroundAt = async (at: number | null) =>
   set(StorageKeys.fingerprintBackgroundAt, at == null ? null : { at })
 
-const getDiscussionCache = async () => get(StorageKeys.discussionCache)
+const readStoredJson = async key => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(key)
+    if (jsonValue == null) {
+      return null
+    }
+    return JSON.parse(jsonValue)
+  } catch (e) {
+    console.warn(e)
+    return null
+  }
+}
 
-const setDiscussionCache = async cache => set(StorageKeys.discussionCache, cache)
+const getDiscussionCache = async () => readStoredJson(StorageKeys.discussionCache)
+
+const setDiscussionCache = async cache => {
+  try {
+    await AsyncStorage.setItem(StorageKeys.discussionCache, JSON.stringify(cache))
+  } catch (e) {
+    console.warn(e)
+    throw e
+  }
+}
+
+const getDiscussionListCache = async () => readStoredJson(StorageKeys.discussionListCache)
+
+const setDiscussionListCache = async cache => {
+  await AsyncStorage.setItem(StorageKeys.discussionListCache, JSON.stringify(cache))
+}
 
 const removeAll = async () =>
   set(StorageKeys.auth, null)
@@ -152,5 +179,7 @@ export const Storage = {
   setFingerprintBackgroundAt,
   getDiscussionCache,
   setDiscussionCache,
+  getDiscussionListCache,
+  setDiscussionListCache,
   removeAll,
 }

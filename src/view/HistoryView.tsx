@@ -4,10 +4,10 @@ import { DiscussionRowComponent } from '../component'
 import {
   filterDiscussions,
   LayoutAnimConf,
-  normalizeDiscussionCache,
+  readDiscussionListCache,
   recountDiscussionList,
-  rememberHistoryList,
-  Storage,
+  rememberHistoryOnList,
+  updateDiscussionListCache,
   Theme,
 } from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
@@ -51,16 +51,15 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     if (!this.cacheOn()) {
       return
     }
-    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    await Storage.setDiscussionCache(rememberHistoryList(store, discussions, this.state.isShowingRead))
+    await updateDiscussionListCache(list => rememberHistoryOnList(list, discussions, this.state.isShowingRead))
   }
 
   async cachedHistory() {
     if (!this.cacheOn()) {
       return null
     }
-    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    return store.history
+    const list = await readDiscussionListCache()
+    return list.history
   }
 
   async getList(isAnimated = false) {
@@ -75,8 +74,8 @@ export class HistoryView extends BaseDiscussionListView<Props> {
         res = null
       }
       if (!res?.error && Array.isArray(res?.discussions)) {
-        await this.saveHistory(res.discussions)
         this.showDiscussions(res.discussions, isAnimated)
+        this.saveHistory(res.discussions).catch(e => console.warn(e))
         return
       }
       if (this.state.discussions?.length) {

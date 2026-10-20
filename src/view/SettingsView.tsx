@@ -35,7 +35,10 @@ import {
   discussionCacheReport,
   emptyDiscussionCache,
   forgetCachedDiscussion,
-  normalizeDiscussionCache,
+  readDiscussionCache,
+  readDiscussionListCache,
+  updateDiscussionCache,
+  updateDiscussionListCache,
   normalizeDiscussionCacheLimit,
   normalizeFetchProgressMode,
   resolveFetchProgressGlobal,
@@ -231,19 +234,18 @@ export class SettingsView extends Component<Props> {
     }
   }
 
-  async writeDiscussionCache(store) {
-    const next = normalizeDiscussionCache(store)
-    await Storage.setDiscussionCache(next)
+  async writeDiscussionCache(mutate) {
+    const next = await updateDiscussionCache(mutate)
     this.setState({ discussionCacheReport: discussionCacheReport(next), confirmingCacheClubId: null })
   }
 
   async deleteCachedClub(id: string) {
-    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    await this.writeDiscussionCache(forgetCachedDiscussion(store, id))
+    await this.writeDiscussionCache(store => forgetCachedDiscussion(store, id))
   }
 
   async deleteDiscussionCache() {
-    await this.writeDiscussionCache(emptyDiscussionCache())
+    await this.writeDiscussionCache(() => emptyDiscussionCache())
+    await updateDiscussionListCache(() => ({ history: null, bookmarks: null }))
     this.setState({ isDiscussionCacheClubsVisible: false })
   }
 
@@ -264,8 +266,17 @@ export class SettingsView extends Component<Props> {
   }
 
   async loadDiscussionCacheReport() {
-    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    this.setState({ discussionCacheReport: discussionCacheReport(store) })
+    try {
+      const [clubs, lists] = await Promise.all([readDiscussionCache(), readDiscussionListCache()])
+      this.setState({
+        discussionCacheReport: discussionCacheReport({ ...clubs, history: lists.history, bookmarks: lists.bookmarks }),
+      })
+    } catch (e) {
+      console.warn(e)
+      this.setState({
+        discussionCacheReport: discussionCacheReport({ discussions: [], history: null, bookmarks: null }),
+      })
+    }
   }
 
   discussionCacheContentLabel(report: { clubs: any[]; historyCount: number; bookmarkCount: number }) {

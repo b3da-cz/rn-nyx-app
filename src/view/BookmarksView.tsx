@@ -10,10 +10,11 @@ import {
   LayoutAnimConf,
   nextBookmarkSectionReadFilter,
   normalizeBookmarkSectionFilters,
-  normalizeDiscussionCache,
+  readDiscussionListCache,
   recountDiscussionList,
-  rememberBookmarkList,
+  rememberBookmarksOnList,
   Storage,
+  updateDiscussionListCache,
   Theme,
 } from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
@@ -141,8 +142,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     if (!this.cacheOn()) {
       return
     }
-    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
-    await Storage.setDiscussionCache(rememberBookmarkList(store, bookmarks, reminderCount, includeSeen))
+    await updateDiscussionListCache(list => rememberBookmarksOnList(list, bookmarks, reminderCount, includeSeen))
   }
 
   async getList() {
@@ -160,8 +160,8 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         res = null
       }
       if (!res?.error && res?.bookmarks?.length) {
-        await this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
         this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
+        this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen).catch(e => console.warn(e))
         return
       }
       if (!res?.error && Array.isArray(res?.bookmarks)) {
@@ -179,7 +179,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         return
       }
       if (this.cacheOn()) {
-        const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+        const store = await readDiscussionListCache()
         if (store.bookmarks?.bookmarks?.length) {
           this.showBookmarks(store.bookmarks.bookmarks, store.bookmarks.reminderCount, store.bookmarks.includeSeen)
           servedFromCache = true
