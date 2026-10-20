@@ -10,7 +10,9 @@ import {
   LayoutAnimConf,
   nextBookmarkSectionReadFilter,
   normalizeBookmarkSectionFilters,
+  normalizeDiscussionCache,
   recountDiscussionList,
+  rememberBookmarkList,
   Storage,
   Theme,
 } from '../lib'
@@ -110,46 +112,88 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     this.getList()
   }
 
+  cacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
+  showBookmarks(bookmarks, reminderCount, includeSeen) {
+    this.fetchedIncludesSeen = includeSeen
+    const sectionedBookmarks = (bookmarks || []).map(b => ({
+      title: b.category.category_name,
+      data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
+    }))
+    if (this.shownCategories.length === 0) {
+      this.shownCategories = Array.from(new Set(sectionedBookmarks.map(section => section.title)))
+    }
+    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    this.setState({
+      reminderCount: reminderCount || 0,
+      sectionedBookmarks,
+      shownCategories: this.shownCategories,
+      sectionReadFilters: this.sectionFilters,
+      isShowingRead: this.showingRead,
+      isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
+      isFetching: false,
+    })
+  }
+
+  async saveBookmarks(bookmarks, reminderCount, includeSeen) {
+    if (!this.cacheOn()) {
+      return
+    }
+    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    await Storage.setDiscussionCache(rememberBookmarkList(store, bookmarks, reminderCount, includeSeen))
+  }
+
   async getList() {
     this.ensureReady()
     this.syncSharedSettings()
     this.setState({ isFetching: true })
     const includeSeen = bookmarkFetchIncludesSeen(this.sectionFilterEnabled, this.showingRead, this.sectionFilters)
-    let res
+    this.nyx?.holdErrors()
+    let servedFromCache = false
     try {
-      res = await this.nyx?.api.getBookmarks(includeSeen)
-    } catch {
-      this.setState({ isFetching: false })
-      return
-    }
-    if (res?.bookmarks?.length) {
-      this.fetchedIncludesSeen = includeSeen
-      const reminderCount = res.reminder_count || 0
-      const sectionedBookmarks = res.bookmarks.map(b => ({
-        title: b.category.category_name,
-        data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
-      }))
-      if (this.shownCategories.length === 0) {
-        this.shownCategories = Array.from(new Set(sectionedBookmarks.map(section => section.title)))
+      let res
+      try {
+        res = await this.nyx?.api.getBookmarks(includeSeen)
+      } catch (e) {
+        res = null
       }
-      const shownCategories = this.shownCategories
-      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+      if (!res?.error && res?.bookmarks?.length) {
+        await this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
+        this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
+        return
+      }
+      if (!res?.error && Array.isArray(res?.bookmarks)) {
+        this.setState({
+          isFetching: false,
+          isShowingRead: this.showingRead,
+          isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
+          sectionReadFilters: this.sectionFilters,
+        })
+        return
+      }
+      if (this.state.sectionedBookmarks?.some(section => section.data?.length)) {
+        this.setState({ isFetching: false })
+        servedFromCache = true
+        return
+      }
+      if (this.cacheOn()) {
+        const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+        if (store.bookmarks?.bookmarks?.length) {
+          this.showBookmarks(store.bookmarks.bookmarks, store.bookmarks.reminderCount, store.bookmarks.includeSeen)
+          servedFromCache = true
+          return
+        }
+      }
       this.setState({
-        reminderCount,
-        sectionedBookmarks,
-        shownCategories,
-        sectionReadFilters: this.sectionFilters,
+        isFetching: false,
         isShowingRead: this.showingRead,
         isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
-        isFetching: false,
-      })
-    } else {
-      this.setState({
-        isFetching: false,
-        isShowingRead: this.showingRead,
-        isBookmarkSectionReadFilterEnabled: this.sectionFilterEnabled,
         sectionReadFilters: this.sectionFilters,
       })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
     }
   }
 

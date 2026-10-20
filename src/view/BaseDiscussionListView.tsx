@@ -13,6 +13,7 @@ export class BaseDiscussionListView<P> extends Component<Props> {
   filters: string[] = []
   navFocusListener?: Function
   navTabPressListener?: Function
+  listRequest = 0
   constructor(props) {
     super(props)
   }
@@ -22,7 +23,7 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      setTimeout(() => this.getList(), 100)
+      this.scheduleList()
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused = this.props.navigation.isFocused()
@@ -32,6 +33,16 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     })
     setTimeout(() => {
       this.init()
+      this.scheduleList()
+    }, 100)
+  }
+
+  scheduleList() {
+    const request = ++this.listRequest
+    setTimeout(() => {
+      if (request !== this.listRequest) {
+        return
+      }
       this.getList()
     }, 100)
   }

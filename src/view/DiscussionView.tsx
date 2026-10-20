@@ -18,7 +18,17 @@ import {
   applyRevealedImageToPosts,
   applyUnreadFlags,
   assignPostOffsets,
+  cachedPageResponse,
   CLUB_START_POST_ID,
+  discussionQueryParts,
+  findCachedDiscussion,
+  forgetCachedPost,
+  normalizeDiscussionCache,
+  normalizeDiscussionCacheLimit,
+  putCachedDiscussion,
+  Storage,
+  syncCachedPage,
+  touchCachedDiscussion,
   filterPostsByAuthor,
   filterPostsByContent,
   getOldestUnreadIndex,
@@ -123,6 +133,8 @@ export class DiscussionView extends Component<Props> {
   _olderEnd = initialOlderEndState()
   _clubStartPost: any = null
   _listGeneration = 0
+  _discussionCache: any = null
+  _olderMiss = false
   _revealQueue: Promise<void> = Promise.resolve()
   refScroll: any
   refMsgBoxDialog: any
@@ -181,6 +193,8 @@ export class DiscussionView extends Component<Props> {
         this.setState({ isSubmenuVisible: true })
       }
       this.revealLoadedPlaceholders()
+      this._olderMiss = false
+      this._discussionCache = null
       this.handleSharedContent()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
@@ -279,6 +293,58 @@ export class DiscussionView extends Component<Props> {
     return this.context?.config?.imageDownloadMaxKb ?? this.config?.imageDownloadMaxKb
   }
 
+  discussionCacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
+  async discussionCacheStore() {
+    if (!this._discussionCache) {
+      this._discussionCache = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    }
+    return this._discussionCache
+  }
+
+  async persistDiscussionCache(store) {
+    this._discussionCache = store
+    await Storage.setDiscussionCache(store)
+  }
+
+  async rememberDiscussion(discussionId) {
+    if (!this.discussionCacheOn() || !discussionId) {
+      return null
+    }
+    const store = await this.discussionCacheStore()
+    if (!findCachedDiscussion(store, discussionId)) {
+      return null
+    }
+    const limit = normalizeDiscussionCacheLimit(this.context?.config?.discussionCacheLimit)
+    const next = touchCachedDiscussion(store, discussionId, limit)
+    await this.persistDiscussionCache(next)
+    return findCachedDiscussion(next, discussionId) || null
+  }
+
+  async saveDiscussionPage(discussionId, pageKey, res, posts, header?) {
+    if (!this.discussionCacheOn() || !discussionId) {
+      return
+    }
+    const limit = normalizeDiscussionCacheLimit(this.context?.config?.discussionCacheLimit)
+    let store = touchCachedDiscussion(await this.discussionCacheStore(), discussionId, limit)
+    let entry = findCachedDiscussion(store, discussionId)
+    if (!entry) {
+      return
+    }
+    entry = syncCachedPage(entry, pageKey, posts || [])
+    if (header?.length) {
+      entry = syncCachedPage(entry, 'header', header)
+    }
+    if (res?.discussion_common) {
+      entry = { ...entry, common: res.discussion_common }
+    }
+    store = putCachedDiscussion(store, entry)
+    store = { ...store, discussions: store.discussions.slice(0, limit) }
+    await this.persistDiscussionCache(store)
+  }
+
   async reloadDiscussionLatest(andScrollToTop = false) {
     await this.fetchDiscussion(this.state.discussionId ? this.state.discussionId : this.props.id)
     if (andScrollToTop) {
@@ -296,6 +362,7 @@ export class DiscussionView extends Component<Props> {
 
   async loadDiscussionToLastSeen(knownLastSeenPostId?: number) {
     const discussionId = this.props.id
+    this.nyx?.holdErrors()
     this.fetchLock = true
     this._pendingDiscussion = null
     this.setState({ isFetching: true, lastSeenPostId: knownLastSeenPostId, fetchProgress: emptyFetchProgress() })
@@ -324,6 +391,7 @@ export class DiscussionView extends Component<Props> {
     } finally {
       this.fetchLock = false
       this.setState({ isFetching: false })
+      this.nyx?.releaseErrors(false)
     }
   }
 
@@ -381,6 +449,7 @@ export class DiscussionView extends Component<Props> {
 
   async loadDiscussionBottom() {
     if (
+      this._olderMiss ||
       this._olderEnd.reached ||
       this._olderEnd.attempts >= OLDER_END_FETCH_LIMIT ||
       this.fetchLock ||
@@ -404,6 +473,11 @@ export class DiscussionView extends Component<Props> {
     try {
       added = await this.fetchDiscussion(queryString)
     } catch (e) {
+      this._olderMiss = true
+      return
+    }
+    if (added < 0) {
+      this._olderMiss = true
       return
     }
     if (generation !== this._listGeneration) {
@@ -486,6 +560,7 @@ export class DiscussionView extends Component<Props> {
       this._olderEnd = initialOlderEndState()
       this._clubStartPost = null
       this._listGeneration += 1
+      this._olderMiss = false
     }
     if (!opts.holdLock) {
       if (this.fetchLock) {
@@ -496,6 +571,8 @@ export class DiscussionView extends Component<Props> {
     } else {
       this.trackLoad(request)
     }
+    let servedFromCache = false
+    this.nyx?.holdErrors()
     try {
       if (filterUser?.length) {
         idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}user=${filterUser}`
@@ -506,9 +583,39 @@ export class DiscussionView extends Component<Props> {
       if (filterRating !== 0) {
         idOrQueryString = `${idOrQueryString}${`${idOrQueryString}`.includes('?') ? '&' : '?'}rating=${filterRating}`
       }
-      const res = await this.nyx?.api.getDiscussion(idOrQueryString)
+      const queryParts = discussionQueryParts(String(idOrQueryString))
+      const cacheOn = this.discussionCacheOn()
+      let cacheEntry = cacheOn ? await this.rememberDiscussion(queryParts.discussionId) : null
+      let fromCache = false
+      let res
+      try {
+        res = await this.nyx?.api.getDiscussion(idOrQueryString)
+      } catch (e) {
+        const cached = cacheEntry ? cachedPageResponse(cacheEntry, queryParts.pageKey) : null
+        if (!cached) {
+          throw e
+        }
+        res = cached
+        fromCache = true
+      }
+      if (!fromCache && res && !res.error) {
+        this._olderMiss = false
+      }
+      if (!fromCache && (!res || res.error)) {
+        const cached = cacheEntry ? cachedPageResponse(cacheEntry, queryParts.pageKey) : null
+        if (cached) {
+          res = cached
+          fromCache = true
+        }
+      }
+      if (fromCache) {
+        servedFromCache = true
+      }
       this.trackLoad({ ...request, done: 1 })
       if (!res?.posts?.length) {
+        if (!fromCache && res && !res.error) {
+          await this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, [])
+        }
         const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
           this.setState(eventDetail ? { isFetching: false, eventDetail } : { isFetching: false })
@@ -542,6 +649,7 @@ export class DiscussionView extends Component<Props> {
         themeBaseFontSize,
         this.imageDownloadMaxKb(),
         this.trackLoad,
+        cacheEntry,
       )
       applyUnreadFlags(nextPosts, this._sessionInitialLastSeenPostId)
       const title = `${res?.discussion_common?.discussion.name_static}${
@@ -562,7 +670,13 @@ export class DiscussionView extends Component<Props> {
           themeBaseFontSize,
           this.imageDownloadMaxKb(),
           this.trackScoped('header', t('load.header')),
+          cacheEntry,
         )
+      }
+      if (!fromCache) {
+        const pageIds = new Set((filteredPosts || []).map(post => String(post.id)))
+        const pagePosts = nextPosts.filter(post => pageIds.has(String(post.id)))
+        await this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, pagePosts, header)
       }
       const postsForList =
         !clearPosts && this._olderEnd.reached && this._clubStartPost
@@ -611,6 +725,7 @@ export class DiscussionView extends Component<Props> {
       if (!opts.holdLock) {
         this.fetchLock = false
       }
+      this.nyx?.releaseErrors(servedFromCache)
     }
   }
 
@@ -820,6 +935,13 @@ export class DiscussionView extends Component<Props> {
     const posts = this.state.posts.filter(p => p.id != postId)
     this._posts = posts
     this.setState({ posts })
+    const discussionId = this.state.discussionId || this.props.id
+    const entry = this._discussionCache && findCachedDiscussion(this._discussionCache, discussionId)
+    if (entry) {
+      this.persistDiscussionCache(putCachedDiscussion(this._discussionCache, forgetCachedPost(entry, postId))).catch(e =>
+        console.warn(e),
+      )
+    }
   }
 
   showMsgBox() {

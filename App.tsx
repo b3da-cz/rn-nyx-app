@@ -24,6 +24,7 @@ import {
   MainContextConfig,
   Nyx,
   normalizeBookmarkSectionFilters,
+  normalizeDiscussionCacheLimit,
   FETCH_PROGRESS_ENTER_DEFAULT,
   FETCH_PROGRESS_LISTS_DEFAULT,
   FETCH_PROGRESS_MORE_DEFAULT,
@@ -257,6 +258,8 @@ const App: () => ReactNode = () => {
       isBookmarkSectionReadFilterEnabled:
         conf.isBookmarkSectionReadFilterEnabled === undefined ? true : !!conf.isBookmarkSectionReadFilterEnabled,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(conf.imageDownloadMaxKb),
+      isDiscussionCacheEnabled: conf.isDiscussionCacheEnabled !== false,
+      discussionCacheLimit: normalizeDiscussionCacheLimit(conf.discussionCacheLimit),
       isFetchProgressEnabled: resolveFetchProgressGlobal(conf) !== 'off',
       fetchProgress: resolveFetchProgressGlobal(conf),
       fetchProgressEnter: normalizeFetchProgressMode(conf.fetchProgressEnter, FETCH_PROGRESS_ENTER_DEFAULT),

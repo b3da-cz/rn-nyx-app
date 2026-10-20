@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, LayoutAnimation, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, LayoutAnimation, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
   androidStackBottomInset,
   ButtonComponent,
   confirm,
+  DoubleTapDeleteButton,
   FilterSettingsDialog,
   FormRowSelectComponent,
   FormRowToggleComponent,
@@ -31,12 +32,18 @@ import {
   FETCH_PROGRESS_ENTER_DEFAULT,
   FETCH_PROGRESS_LISTS_DEFAULT,
   FETCH_PROGRESS_MORE_DEFAULT,
+  discussionCacheReport,
+  emptyDiscussionCache,
+  forgetCachedDiscussion,
+  normalizeDiscussionCache,
+  normalizeDiscussionCacheLimit,
   normalizeFetchProgressMode,
   resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
   normalizeTimelineVisibleDays,
   setAppLanguage,
+  uploadSizeLabel,
   timelineVisibleDayOptions,
   useTheme,
 } from '../lib'
@@ -150,6 +157,16 @@ type State = {
   isAppCoverEnabled: boolean
   hasFingerprint: boolean
   imageDownloadMaxKb: number | null
+  isDiscussionCacheEnabled: boolean
+  discussionCacheLimit: number | string
+  discussionCacheReport: {
+    bytes: number
+    clubs: Array<{ id: string; name: string; posts: number; from: string; to: string }>
+    historyCount: number
+    bookmarkCount: number
+  } | null
+  isDiscussionCacheClubsVisible: boolean
+  confirmingCacheClubId?: string | null
   isFetchProgressEnabled: boolean
   fetchProgress: string
   fetchProgressEnter: string
@@ -176,6 +193,7 @@ export class SettingsView extends Component<Props> {
   static contextType = MainContext
   nyx?: Nyx
   unsubscribeFocus?: () => void
+  cacheClubTimer?: ReturnType<typeof setTimeout>
   state: Readonly<Partial<State>> = {}
   constructor(props) {
     super(props)
@@ -187,8 +205,10 @@ export class SettingsView extends Component<Props> {
     this.setTheme()
     this.loadCachedModels()
     hasFingerprintSensor().then(hasFingerprint => this.setState({ hasFingerprint }))
+    this.loadDiscussionCacheReport()
     this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => {
       this.refreshTimelineDays()
+      this.loadDiscussionCacheReport()
       this.loadCachedModels()
     })
   }
@@ -206,6 +226,67 @@ export class SettingsView extends Component<Props> {
 
   componentWillUnmount() {
     this.unsubscribeFocus?.()
+    if (this.cacheClubTimer) {
+      clearTimeout(this.cacheClubTimer)
+    }
+  }
+
+  async writeDiscussionCache(store) {
+    const next = normalizeDiscussionCache(store)
+    await Storage.setDiscussionCache(next)
+    this.setState({ discussionCacheReport: discussionCacheReport(next), confirmingCacheClubId: null })
+  }
+
+  async deleteCachedClub(id: string) {
+    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    await this.writeDiscussionCache(forgetCachedDiscussion(store, id))
+  }
+
+  async deleteDiscussionCache() {
+    await this.writeDiscussionCache(emptyDiscussionCache())
+    this.setState({ isDiscussionCacheClubsVisible: false })
+  }
+
+  onCachedClubPress(id: string) {
+    if (this.cacheClubTimer) {
+      clearTimeout(this.cacheClubTimer)
+    }
+    if (this.state.confirmingCacheClubId === id) {
+      this.deleteCachedClub(id)
+      return
+    }
+    this.setState({ confirmingCacheClubId: id })
+    this.cacheClubTimer = setTimeout(() => {
+      if (this.state.confirmingCacheClubId === id) {
+        this.setState({ confirmingCacheClubId: null })
+      }
+    }, 3500)
+  }
+
+  async loadDiscussionCacheReport() {
+    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    this.setState({ discussionCacheReport: discussionCacheReport(store) })
+  }
+
+  discussionCacheContentLabel(report: { clubs: any[]; historyCount: number; bookmarkCount: number }) {
+    const clubs = this.czechCount(
+      report.clubs.length,
+      t('profile.discussionCacheClubOne'),
+      `${t('profile.discussionCacheClubFew')}`.replace('%s', String(report.clubs.length)),
+      `${t('profile.discussionCacheClubMany')}`.replace('%s', String(report.clubs.length)),
+    )
+    return `${clubs}, ${t('history')} ${report.historyCount}, ${t('bookmarks')} ${report.bookmarkCount}`
+  }
+
+  czechCount(count: number, one: string, few: string, many: string) {
+    const n = Math.abs(count)
+    if (n === 1) {
+      return one
+    }
+    if (n >= 2 && n <= 4) {
+      return few
+    }
+    return many
   }
 
   async refreshTimelineDays() {
@@ -253,6 +334,11 @@ export class SettingsView extends Component<Props> {
       isAppCoverEnabled: !!config?.isAppCoverEnabled,
       hasFingerprint: false,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
+      isDiscussionCacheEnabled: config?.isDiscussionCacheEnabled !== false,
+      discussionCacheLimit: normalizeDiscussionCacheLimit(config?.discussionCacheLimit),
+      discussionCacheReport: null,
+      isDiscussionCacheClubsVisible: false,
+      confirmingCacheClubId: null,
       isFetchProgressEnabled: resolveFetchProgressGlobal(config) !== 'off',
       fetchProgress: resolveFetchProgressGlobal(config),
       fetchProgressEnter: normalizeFetchProgressMode(config?.fetchProgressEnter, FETCH_PROGRESS_ENTER_DEFAULT),
@@ -668,6 +754,94 @@ export class SettingsView extends Component<Props> {
                 />
               </View>
             )}
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.discussionCache')}
+              value={this.state.isDiscussionCacheEnabled !== false}
+              onChange={val => this.setOption('isDiscussionCacheEnabled', val)}
+            />
+            {this.state.isDiscussionCacheEnabled !== false && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  height: rowHeight,
+                  overflow: 'hidden',
+                  backgroundColor: theme.colors.surface,
+                  borderRadius: 0,
+                  marginBottom: theme.metrics.blocks.small,
+                  paddingHorizontal: theme.metrics.blocks.medium,
+                }}>
+                <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                  {t('profile.discussionCacheLimit')}
+                </Text>
+                <TextInput
+                  value={String(this.state.discussionCacheLimit ?? 30)}
+                  keyboardType="number-pad"
+                  onChangeText={val => this.setState({ discussionCacheLimit: val.replace(/[^0-9]/g, '') })}
+                  onBlur={() =>
+                    this.setOption(
+                      'discussionCacheLimit',
+                      normalizeDiscussionCacheLimit(this.state.discussionCacheLimit),
+                    )
+                  }
+                  style={{
+                    width: 72,
+                    color: theme.colors.text,
+                    fontSize: theme.metrics.fontSizes.p,
+                    textAlign: 'right',
+                    paddingVertical: 8,
+                  }}
+                />
+              </View>
+            )}
+            {this.state.isDiscussionCacheEnabled !== false && this.state.discussionCacheReport && (
+              <View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: 0,
+                    marginBottom: theme.metrics.blocks.small,
+                    paddingHorizontal: theme.metrics.blocks.medium,
+                    paddingVertical: theme.metrics.blocks.small,
+                  }}>
+                  <View style={{ flex: 1, paddingRight: theme.metrics.blocks.medium }}>
+                    <Text style={{ color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                      {`${t('profile.discussionCacheSize')} ${uploadSizeLabel(this.state.discussionCacheReport.bytes)}`}
+                    </Text>
+                    <Text style={{ color: theme.colors.faded, fontSize: theme.metrics.fontSizes.small, marginTop: 4 }}>
+                      {this.discussionCacheContentLabel(this.state.discussionCacheReport)}
+                    </Text>
+                  </View>
+                  <DoubleTapDeleteButton
+                    iconSize={theme.metrics.fontSizes.p}
+                    onDelete={() => this.deleteDiscussionCache()}
+                    style={{ borderRadius: 0, alignSelf: 'center' }}
+                  />
+                </View>
+                <TouchableRipple
+                  rippleColor={theme.colors.ripple}
+                  onPress={() => this.setState({ isDiscussionCacheClubsVisible: true })}
+                  style={{
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: 0,
+                    marginBottom: theme.metrics.blocks.small,
+                    minHeight: rowHeight,
+                    paddingHorizontal: theme.metrics.blocks.medium,
+                    justifyContent: 'center',
+                  }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: rowHeight }}>
+                    <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                      {t('profile.discussionCacheClubs')}
+                    </Text>
+                    <Icon name="chevron-right" size={theme.metrics.fontSizes.p} color={theme.colors.faded} />
+                  </View>
+                </TouchableRipple>
+              </View>
+            )}
           </SettingsSection>
           <SettingsSection
             title={t('events.title')}
@@ -964,6 +1138,71 @@ export class SettingsView extends Component<Props> {
           onCancel={() => this.setState({ isSystemPromptDialogVisible: false })}
         />
         <FilterSettingsDialog onUpdate={filters => this.setFilters(filters)} />
+        <Modal
+          visible={!!this.state.isDiscussionCacheClubsVisible}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={() => this.setState({ isDiscussionCacheClubsVisible: false })}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 50 }}>
+              <TouchableRipple
+                rippleColor={theme.colors.ripple}
+                onPress={() => this.setState({ isDiscussionCacheClubsVisible: false })}
+                style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="arrow-left" size={24} color={theme.colors.primary} />
+              </TouchableRipple>
+              <Text numberOfLines={1} style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                {t('profile.discussionCacheClubs')}
+              </Text>
+            </View>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
+              {this.state.discussionCacheReport?.clubs?.length ? (
+                this.state.discussionCacheReport.clubs.map(club => {
+                  const confirming = this.state.confirmingCacheClubId === club.id
+                  return (
+                    <TouchableRipple
+                      key={club.id}
+                      rippleColor={theme.colors.ripple}
+                      onPress={() => this.onCachedClubPress(club.id)}>
+                      <View
+                        style={{
+                          backgroundColor: theme.colors.surface,
+                          marginBottom: theme.metrics.blocks.small,
+                          paddingHorizontal: theme.metrics.blocks.medium,
+                          paddingVertical: theme.metrics.blocks.small,
+                          borderLeftWidth: 3,
+                          borderLeftColor: confirming ? '#DC2626' : theme.colors.surface,
+                        }}>
+                        <Text numberOfLines={2} style={{ color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                          {club.name}
+                        </Text>
+                        <Text style={{ color: confirming ? '#DC2626' : theme.colors.faded, fontSize: theme.metrics.fontSizes.small, marginTop: 2 }}>
+                          {confirming
+                            ? t('profile.discussionCacheDeleteAgain')
+                            : `${this.czechCount(
+                                club.posts,
+                                t('profile.discussionCachePostOne'),
+                                t('profile.discussionCachePostFew').replace('%s', String(club.posts)),
+                                t('profile.discussionCachePostMany').replace('%s', String(club.posts)),
+                              )}${club.from ? ` · ${club.to ? `${club.from} – ${club.to}` : club.from}` : ''}`}
+                        </Text>
+                      </View>
+                    </TouchableRipple>
+                  )
+                })
+              ) : (
+                <Text
+                  style={{
+                    color: theme.colors.faded,
+                    fontSize: theme.metrics.fontSizes.p,
+                    paddingHorizontal: theme.metrics.blocks.medium,
+                  }}>
+                  {t('profile.discussionCacheEmpty')}
+                </Text>
+              )}
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
       </View>
     )
   }

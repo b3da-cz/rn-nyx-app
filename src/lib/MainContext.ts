@@ -9,6 +9,7 @@ import {
   FETCH_PROGRESS_LISTS_DEFAULT,
   FETCH_PROGRESS_MORE_DEFAULT,
 } from './fetchProgress'
+import { DISCUSSION_CACHE_LIMIT_DEFAULT } from './discussionCache'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
 
@@ -36,6 +37,8 @@ export type MainContextConfig = {
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
+  isDiscussionCacheEnabled: boolean
+  discussionCacheLimit: number
   isFetchProgressEnabled: boolean
   fetchProgress: 'off' | 'detailed'
   fetchProgressEnter: 'off' | 'overall' | 'detailed'
@@ -91,6 +94,8 @@ export const initialConfig: MainContextConfig = {
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
+  isDiscussionCacheEnabled: true,
+  discussionCacheLimit: DISCUSSION_CACHE_LIMIT_DEFAULT,
   isFetchProgressEnabled: true,
   fetchProgress: FETCH_PROGRESS_GLOBAL_DEFAULT,
   fetchProgressEnter: FETCH_PROGRESS_ENTER_DEFAULT,

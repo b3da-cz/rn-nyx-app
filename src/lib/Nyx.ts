@@ -11,6 +11,10 @@ export class Nyx {
   appVersion: string
   userAgent: string
   username?: string
+  lastError = ''
+  holdErrorDepth = 0
+  heldError = ''
+  heldServedFromCache = false
   constructor(username?) {
     this.username = username
     this.appVersion = DeviceInfo.getVersion()
@@ -71,15 +75,52 @@ export class Nyx {
     return res
   }
 
+  holdErrors() {
+    this.holdErrorDepth += 1
+  }
+
+  // One failed request can emit the same error twice. Hold those, then show a single
+  // banner. When the screen fell back to cache, that banner also says so.
+  releaseErrors(servedFromCache = false) {
+    if (servedFromCache) {
+      this.heldServedFromCache = true
+    }
+    if (this.holdErrorDepth === 0) {
+      return
+    }
+    this.holdErrorDepth -= 1
+    if (this.holdErrorDepth > 0) {
+      return
+    }
+    const msg = this.heldError
+    const served = this.heldServedFromCache
+    this.heldError = ''
+    this.heldServedFromCache = false
+    if (!msg && !served) {
+      return
+    }
+    const servedLine = t('profile.discussionCacheServed')
+    this.showErrorBanner(served ? (msg ? `${msg}\n${servedLine}` : servedLine) : msg, msg)
+  }
+
   showNotification(msg) {
+    this.lastError = msg || ''
+    if (this.holdErrorDepth > 0) {
+      this.heldError = msg || this.heldError
+      return
+    }
+    this.showErrorBanner(msg, msg)
+  }
+
+  showErrorBanner(body: string, raw = '') {
     showNotificationBanner({
       title: 'Error',
-      body: msg,
+      body,
       tintColor: '#FF0000',
       textColor: '#FFFFFF',
       icon: 'alert-circle',
       onClick: async () => {
-        if (msg === 'Invalid token') {
+        if (raw === 'Invalid token') {
           this.logout()
         }
         RNNotificationBanner.Dismiss()

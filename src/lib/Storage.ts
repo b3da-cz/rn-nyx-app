@@ -16,6 +16,7 @@ const StorageKeys = {
   lastPurchaseSync: 'lastPurchaseSync',
   uploadSettings: 'uploadSettings',
   fingerprintBackgroundAt: 'fingerprintBackgroundAt',
+  discussionCache: 'discussionCache',
 }
 
 const set = async (key, value) => {
@@ -102,6 +103,10 @@ const getFingerprintBackgroundAt = async (): Promise<number | null> => {
 const setFingerprintBackgroundAt = async (at: number | null) =>
   set(StorageKeys.fingerprintBackgroundAt, at == null ? null : { at })
 
+const getDiscussionCache = async () => get(StorageKeys.discussionCache)
+
+const setDiscussionCache = async cache => set(StorageKeys.discussionCache, cache)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -145,5 +150,7 @@ export const Storage = {
   setUploadSettings,
   getFingerprintBackgroundAt,
   setFingerprintBackgroundAt,
+  getDiscussionCache,
+  setDiscussionCache,
   removeAll,
 }

@@ -552,6 +552,58 @@
       "cs": "Celkový",
       "en": "Overall"
     },
+    "discussionCache": {
+      "cs": "Cache klubů",
+      "en": "Club cache"
+    },
+    "discussionCacheLimit": {
+      "cs": "Posledních klubů",
+      "en": "Recent clubs"
+    },
+    "discussionCacheSize": {
+      "cs": "Velikost",
+      "en": "Size"
+    },
+    "discussionCacheClubs": {
+      "cs": "Kluby",
+      "en": "Clubs"
+    },
+    "discussionCacheEmpty": {
+      "cs": "Zatím nic",
+      "en": "Nothing yet"
+    },
+    "discussionCacheDeleteAgain": {
+      "cs": "Klepni znovu pro smazání",
+      "en": "Tap again to delete"
+    },
+    "discussionCacheServed": {
+      "cs": "Zobrazený je poslední známý stav z cache.",
+      "en": "Showing the last known state from cache."
+    },
+    "discussionCacheClubOne": {
+      "cs": "1 klub",
+      "en": "1 club"
+    },
+    "discussionCacheClubFew": {
+      "cs": "%s kluby",
+      "en": "%s clubs"
+    },
+    "discussionCacheClubMany": {
+      "cs": "%s klubů",
+      "en": "%s clubs"
+    },
+    "discussionCachePostOne": {
+      "cs": "1 příspěvek",
+      "en": "1 post"
+    },
+    "discussionCachePostFew": {
+      "cs": "%s příspěvky",
+      "en": "%s posts"
+    },
+    "discussionCachePostMany": {
+      "cs": "%s příspěvků",
+      "en": "%s posts"
+    },
     "fetchProgressDetailed": {
       "cs": "Detailní",
       "en": "Detailed"

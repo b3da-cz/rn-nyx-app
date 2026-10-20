@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.31.0
+- cache klubů ukládá příspěvky, rozměry a velikosti obrázků a výšku textu
+- v nastavení jde cache zapnout a zvolit počet posledních klubů, výchozí je 30
+- online se načtený klub vždy aktualizuje, offline se berou uložené stránky
+- poslední historie a záložky zůstanou, aby se do klubu dalo dostat offline
+- u chyby spojení je jedna hláška a při cache i věta, že jde o poslední známý stav
+- nastavení ukazuje velikost a obsah cache a dialog se seznamem klubů
+- klub i celá cache se mažou dvojitým klepnutím
+
 ## 0.30.4
 - na konci klubu se po prázdné stránce starších příspěvků ukáže začátek klubu
 - nová instalace má všude celkový průběh načítání

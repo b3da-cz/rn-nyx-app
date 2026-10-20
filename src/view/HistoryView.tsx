@@ -1,7 +1,15 @@
 import React from 'react'
 import { ScrollView, RefreshControl, View, LayoutAnimation } from 'react-native'
 import { DiscussionRowComponent } from '../component'
-import { filterDiscussions, LayoutAnimConf, recountDiscussionList, Theme } from '../lib'
+import {
+  filterDiscussions,
+  LayoutAnimConf,
+  normalizeDiscussionCache,
+  recountDiscussionList,
+  rememberHistoryList,
+  Storage,
+  Theme,
+} from '../lib'
 import { BaseDiscussionListView } from './BaseDiscussionListView'
 
 type Props = {
@@ -25,16 +33,67 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     }
   }
 
-  async getList(isAnimated = false) {
-    this.setState({ isFetching: true })
-    const res = await this.nyx?.api.getHistory(this.state.isShowingRead)
+  cacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
+  showDiscussions(discussions, isAnimated = false) {
     if (isAnimated) {
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     }
     this.setState({
-      discussions: filterDiscussions(recountDiscussionList(res?.discussions || []), this.filters),
+      discussions: filterDiscussions(recountDiscussionList(discussions || []), this.filters),
       isFetching: false,
     })
+  }
+
+  async saveHistory(discussions) {
+    if (!this.cacheOn()) {
+      return
+    }
+    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    await Storage.setDiscussionCache(rememberHistoryList(store, discussions, this.state.isShowingRead))
+  }
+
+  async cachedHistory() {
+    if (!this.cacheOn()) {
+      return null
+    }
+    const store = normalizeDiscussionCache(await Storage.getDiscussionCache())
+    return store.history
+  }
+
+  async getList(isAnimated = false) {
+    this.setState({ isFetching: true })
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    try {
+      let res
+      try {
+        res = await this.nyx?.api.getHistory(this.state.isShowingRead)
+      } catch (e) {
+        res = null
+      }
+      if (!res?.error && Array.isArray(res?.discussions)) {
+        await this.saveHistory(res.discussions)
+        this.showDiscussions(res.discussions, isAnimated)
+        return
+      }
+      if (this.state.discussions?.length) {
+        this.setState({ isFetching: false })
+        servedFromCache = true
+        return
+      }
+      const cached = await this.cachedHistory()
+      if (cached?.discussions?.length) {
+        this.showDiscussions(cached.discussions, isAnimated)
+        servedFromCache = true
+        return
+      }
+      this.setState({ isFetching: false })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
+    }
   }
 
   render() {

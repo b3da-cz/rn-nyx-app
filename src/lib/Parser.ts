@@ -1,6 +1,7 @@
 import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
+import { applyCachedLayouts } from './discussionCache'
 import { FetchProgressEvent } from './fetchProgress'
 import { applyImageDownloadPolicy, assignPostOffsets, getBlockSizes, postsNeedingLayout } from './LayoutHelper'
 import { uniqueVideoTags } from './compose'
@@ -476,9 +477,13 @@ export const preparePosts = async (
   themeBaseFontSize?,
   imageDownloadMaxKb?: number | null,
   onProgress?: (event: FetchProgressEvent) => void,
+  cacheEntry?: { posts?: Record<string, any> } | null,
 ) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
+  if (cacheEntry) {
+    applyCachedLayouts(parsedPosts, cacheEntry)
+  }
   if (calculateSizes) {
     const pending = postsNeedingLayout(parsedPosts)
     if (pending.length) {
