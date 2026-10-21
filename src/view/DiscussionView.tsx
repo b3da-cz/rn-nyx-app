@@ -352,13 +352,21 @@ export class DiscussionView extends Component<Props> {
       if (!this._sessionInitialLastSeenPostId && lastSeenPostId && Number(lastSeenPostId) > 0) {
         this._sessionInitialLastSeenPostId = Number(lastSeenPostId)
       }
+      let olderLoaded = 0
       try {
-        await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
+        olderLoaded = await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
           holdLock: true,
           deferUi: true,
         })
       } catch (e) {
-        await this.fetchDiscussion(discussionId, true, { holdLock: true, deferUi: true })
+        olderLoaded = -1
+      }
+      if (olderLoaded <= 0 && !this._pendingDiscussion) {
+        try {
+          await this.fetchDiscussion(discussionId, true, { holdLock: true, deferUi: true })
+        } catch (e) {
+          // fallback failed
+        }
       }
       try {
         await this.fetchDiscussion(`${discussionId}?order=newer_than&from_id=${lastSeenPostId}`, false, {
@@ -368,11 +376,19 @@ export class DiscussionView extends Component<Props> {
       } catch (e) {
         // newer_than may fail offline or when empty, older posts are already loaded
       }
+      if (!this._pendingDiscussion && this._posts.length === 0) {
+        try {
+          await this.fetchDiscussion(discussionId, true, { holdLock: true, deferUi: true })
+        } catch (e) {
+          // fallback failed
+        }
+      }
       this.commitDeferredDiscussion(true)
     } finally {
       this.fetchLock = false
       this.setState({ isFetching: false })
-      this.nyx?.releaseErrors(false)
+      const hadContent = Boolean(this._pendingDiscussion || this._posts.length > 0)
+      this.nyx?.releaseErrors(hadContent)
     }
   }
 
@@ -636,9 +652,10 @@ export class DiscussionView extends Component<Props> {
         cacheEntry,
       )
       applyUnreadFlags(nextPosts, this._sessionInitialLastSeenPostId)
-      const title = `${res?.discussion_common?.discussion.name_static}${
-        res?.discussion_common?.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
-      }`
+      const disc = res?.discussion_common?.discussion
+      const title = disc?.name_static
+        ? `${disc.name_static}${disc.name_dynamic ? ' ' + disc.name_dynamic : ''}`
+        : this.state.title || String(this.state.discussionId || this.props.id || '')
       if (!isDiscussionPermitted(title, this.filters)) {
         alert('Blocked content')
         this.props.navigation.goBack()
@@ -684,8 +701,8 @@ export class DiscussionView extends Component<Props> {
         eventDetail,
         isFetching: opts.holdLock ? true : false,
         imgPrefetchProgress: { length: 0, done: 0 },
-        hasBoard: res.discussion_common?.discussion?.has_home,
-        hasHeader: res.discussion_common?.discussion?.has_header,
+        hasBoard: res?.discussion_common?.discussion?.has_home,
+        hasHeader: res?.discussion_common?.discussion?.has_header,
         isListing: this.state.isListing || this._pendingDiscussion?.isListing || isListingDiscussion(title, res.posts),
       }
       this._pendingDiscussion = { ...nextState, uploadedFiles }

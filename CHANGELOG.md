@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.3
+- offline se načtou uložené příspěvky klubu i při nesouladu čísla stránky či změně naposledy viděného příspěvku
+- spolehlivý přechod na nejnovější příspěvky z cache, když konkrétní starší offset není uložen
+
 ## 0.31.2
 - kluby se ukládají v mezipaměti odděleně, takže velká cache nenarazí na limit Android CursorWindow
 - historie a záložky se při prázdném nebo přečteném stavu nepřemažou

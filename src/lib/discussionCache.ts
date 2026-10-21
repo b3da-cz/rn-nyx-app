@@ -244,6 +244,16 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
   const previous = entry.pages[pageKey] || []
   let pages = { ...entry.pages, [pageKey]: ids }
 
+  if (pageKey.startsWith('newer:') && ids.length > 0) {
+    const prevLatest = pages.latest || []
+    const combined = [...ids, ...prevLatest.filter(id => !seen.has(id))]
+    combined.sort((a, b) => Number(b) - Number(a))
+    pages.latest = combined.slice(0, 20)
+  } else if (!pages.latest && pageKey !== 'header' && !pageKey.includes('|') && ids.length > 0) {
+    const sorted = [...ids].sort((a, b) => Number(b) - Number(a))
+    pages.latest = sorted.slice(0, 20)
+  }
+
   const pageKeys = Object.keys(pages)
   if (pageKeys.length > MAX_CACHED_PAGES_PER_CLUB) {
     const essential = new Set(['header', 'latest', pageKey])
@@ -297,12 +307,86 @@ export const forgetCachedPost = (entry: DiscussionCacheEntry, postId: string | n
 }
 
 export const cachedPageResponse = (entry: DiscussionCacheEntry | null | undefined, pageKey: string) => {
-  const ids = entry?.pages?.[pageKey]
-  if (!ids) {
+  if (!entry || !entry.posts || Object.keys(entry.posts).length === 0) {
     return null
   }
-  const posts = ids.map(id => entry.posts[id]?.post).filter(Boolean)
-  return { posts, discussion_common: entry.common || null }
+  const common = entry.common
+    ? {
+        ...entry.common,
+        discussion: entry.common.discussion || { id: entry.id, name_static: entry.id },
+      }
+    : { discussion: { id: entry.id, name_static: entry.id } }
+
+  if (pageKey === 'header') {
+    const headerIds = entry.pages?.header
+    if (headerIds && headerIds.length > 0) {
+      const posts = headerIds.map(id => entry.posts[id]?.post).filter(Boolean)
+      if (posts.length > 0) {
+        return { posts, discussion_common: common }
+      }
+    }
+    const commonHeader = entry.common?.discussion_specific_data?.header
+    if (Array.isArray(commonHeader) && commonHeader.length > 0) {
+      return { posts: commonHeader, discussion_common: common }
+    }
+    return null
+  }
+
+  const exactIds = entry.pages?.[pageKey]
+  if (exactIds && exactIds.length > 0) {
+    const posts = exactIds.map(id => entry.posts[id]?.post).filter(Boolean)
+    if (posts.length > 0) {
+      return { posts, discussion_common: common }
+    }
+  }
+
+  const headerIds = new Set(entry.pages?.header || [])
+  const allPosts = Object.values(entry.posts)
+    .map(record => record?.post)
+    .filter(p => p && p.id != null && !p.isClubStart && !headerIds.has(String(p.id)))
+
+  if (allPosts.length === 0) {
+    return null
+  }
+
+  allPosts.sort((a, b) => Number(b.id) - Number(a.id))
+
+  const [baseKey, userFilter, textFilter, ratingFilter] = pageKey.split('|')
+  let candidates = allPosts
+  if (userFilter) {
+    const u = userFilter.toLowerCase()
+    candidates = candidates.filter(
+      p => (p.username || p.author || p.user || '').toLowerCase() === u,
+    )
+  }
+  if (textFilter) {
+    const t = textFilter.toLowerCase()
+    candidates = candidates.filter(p => (p.content || '').toLowerCase().includes(t))
+  }
+  if (ratingFilter && ratingFilter !== '0') {
+    const minRating = Number(ratingFilter)
+    if (Number.isFinite(minRating)) {
+      candidates = candidates.filter(p => (Number(p.rating) || 0) >= minRating)
+    }
+  }
+
+  if (baseKey.startsWith('older:')) {
+    const fromId = Number(baseKey.slice(6))
+    if (Number.isFinite(fromId)) {
+      const older = candidates.filter(p => Number(p.id) < fromId)
+      return { posts: older, discussion_common: common }
+    }
+  }
+
+  if (baseKey.startsWith('newer:')) {
+    const fromId = Number(baseKey.slice(6))
+    if (Number.isFinite(fromId)) {
+      const newer = candidates.filter(p => Number(p.id) > fromId)
+      return { posts: newer, discussion_common: common }
+    }
+  }
+
+  return { posts: candidates, discussion_common: common }
 }
 
 export type DiscussionListCache = {

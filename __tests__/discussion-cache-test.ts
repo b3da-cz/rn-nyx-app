@@ -141,14 +141,30 @@ describe('discussion cache', () => {
     expect(cleared.bookmarks).toBeNull()
   })
 
-  it('replays a cached page with the stored discussion', () => {
+  it('replays a cached page with the stored discussion and falls back to latest or filtered posts', () => {
     const entry = syncCachedPage({ id: '9', openedAt: 1, posts: {}, pages: {}, common: { ok: true } }, 'older:4', [
       post(3),
       post(2),
     ])
     expect(cachedPageResponse(entry, 'older:4')?.posts.map((item: any) => item.id)).toEqual([3, 2])
-    expect(cachedPageResponse(entry, 'older:4')?.discussion_common).toEqual({ ok: true })
-    expect(cachedPageResponse(entry, 'latest')).toBeNull()
+    expect(cachedPageResponse(entry, 'older:4')?.discussion_common).toMatchObject({ ok: true })
+    // When offline and asking for latest, reconstructs available posts instead of returning null
+    expect(cachedPageResponse(entry, 'latest')?.posts.map((item: any) => item.id)).toEqual([3, 2])
+
+    // When lastSeenPostId differs from cached page key (e.g. older:10 requested offline)
+    expect(cachedPageResponse(entry, 'older:10')?.posts.map((item: any) => item.id)).toEqual([3, 2])
+
+    // When older:2 is requested and no posts are < 2, returns empty array rather than failing
+    expect(cachedPageResponse(entry, 'older:2')?.posts).toEqual([])
+
+    // When newer:2 is requested, returns posts > 2
+    expect(cachedPageResponse(entry, 'newer:2')?.posts.map((item: any) => item.id)).toEqual([3])
+
+    // When newer:5 is requested and no posts are > 5, returns empty array rather than failing
+    expect(cachedPageResponse(entry, 'newer:5')?.posts).toEqual([])
+
+    // Empty club returns null
+    expect(cachedPageResponse({ id: '9', openedAt: 1, posts: {}, pages: {} }, 'latest')).toBeNull()
   })
 
   it('does not wipe cached history when empty or unread-only discussions are received', () => {
