@@ -28,8 +28,16 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     super(props)
     this.state = {
       discussions: [],
-      isShowingRead: false,
+      isShowingRead: true,
       isFetching: false,
+    }
+  }
+
+  init() {
+    super.init()
+    const configShowingRead = this.context?.config?.isShowingReadOnLists
+    if (typeof configShowingRead === 'boolean') {
+      this.setState({ isShowingRead: configShowingRead })
     }
   }
 
@@ -63,19 +71,26 @@ export class HistoryView extends BaseDiscussionListView<Props> {
   }
 
   async getList(isAnimated = false) {
+    const configShowingRead = this.context?.config?.isShowingReadOnLists
+    const showingRead = typeof configShowingRead === 'boolean' ? configShowingRead : this.state.isShowingRead
+    if (showingRead !== this.state.isShowingRead) {
+      this.setState({ isShowingRead: showingRead })
+    }
     this.setState({ isFetching: true })
     this.nyx?.holdErrors()
     let servedFromCache = false
     try {
       let res
       try {
-        res = await this.nyx?.api.getHistory(this.state.isShowingRead)
+        res = await this.nyx?.api.getHistory(showingRead)
       } catch (e) {
         res = null
       }
       if (!res?.error && Array.isArray(res?.discussions)) {
         this.showDiscussions(res.discussions, isAnimated)
-        this.saveHistory(res.discussions).catch(e => console.warn(e))
+        if (res.discussions.length > 0 || showingRead) {
+          this.saveHistory(res.discussions).catch(e => console.warn(e))
+        }
         return
       }
       if (this.state.discussions?.length) {

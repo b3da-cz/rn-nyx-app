@@ -5,11 +5,17 @@ import {
   discussionQueryParts,
   createDiscussionCacheQueue,
   emptyDiscussionCache,
+  emptyListCache,
   forgetCachedDiscussion,
+  mergeBookmarkSections,
+  mergeHistoryDiscussions,
   rememberBookmarkList,
+  rememberBookmarksOnList,
   rememberHistoryList,
+  rememberHistoryOnList,
   syncCachedPage,
   touchCachedDiscussion,
+  MAX_CACHED_PAGES_PER_CLUB,
 } from '../src/lib/discussionCache'
 
 const post = (id: number, content = `post ${id}`, height = 100) => ({
@@ -143,5 +149,54 @@ describe('discussion cache', () => {
     expect(cachedPageResponse(entry, 'older:4')?.posts.map((item: any) => item.id)).toEqual([3, 2])
     expect(cachedPageResponse(entry, 'older:4')?.discussion_common).toEqual({ ok: true })
     expect(cachedPageResponse(entry, 'latest')).toBeNull()
+  })
+
+  it('does not wipe cached history when empty or unread-only discussions are received', () => {
+    let list = rememberHistoryOnList(emptyListCache(), [{ discussion_id: 10, name: 'A' }, { discussion_id: 20, name: 'B' }], true)
+    expect(list.history?.discussions).toHaveLength(2)
+
+    // Receiving empty discussions must not wipe cache
+    list = rememberHistoryOnList(list, [], false)
+    expect(list.history?.discussions).toHaveLength(2)
+
+    // Receiving only unread item (id 10) merges with read item (id 20) instead of dropping it
+    list = rememberHistoryOnList(list, [{ discussion_id: 10, name: 'A fresh' }], false)
+    expect(list.history?.discussions).toHaveLength(2)
+    expect(list.history?.discussions[0].name).toBe('A fresh')
+    expect(list.history?.discussions[1].discussion_id).toBe(20)
+  })
+
+  it('does not wipe cached bookmarks when empty unread categories are received', () => {
+    const fullCategories = [
+      { category: { id: 1, category_name: 'Cat 1' }, bookmarks: [{ discussion_id: 101, name: 'B1' }, { discussion_id: 102, name: 'B2' }] },
+    ]
+    let list = rememberBookmarksOnList(emptyListCache(), fullCategories, 2, true)
+    expect(list.bookmarks?.bookmarks?.[0].bookmarks).toHaveLength(2)
+
+    // When everything is read, API returns categories with bookmarks: []
+    const emptyUnread = [{ category: { id: 1, category_name: 'Cat 1' }, bookmarks: [] }]
+    list = rememberBookmarksOnList(list, emptyUnread, 0, false)
+    expect(list.bookmarks?.bookmarks?.[0].bookmarks).toHaveLength(2)
+
+    // When only 1 item is unread, it merges and preserves the read item
+    const oneUnread = [{ category: { id: 1, category_name: 'Cat 1' }, bookmarks: [{ discussion_id: 101, name: 'B1 unread' }] }]
+    list = rememberBookmarksOnList(list, oneUnread, 1, false)
+    expect(list.bookmarks?.bookmarks?.[0].bookmarks).toHaveLength(2)
+    expect(list.bookmarks?.bookmarks?.[0].bookmarks[0].name).toBe('B1 unread')
+    expect(list.bookmarks?.bookmarks?.[0].bookmarks[1].discussion_id).toBe(102)
+  })
+
+  it('caps the number of cached pages per club and prunes old posts', () => {
+    let entry: any = { id: '5', openedAt: 1, posts: {}, pages: {} }
+    for (let i = 1; i <= 20; i++) {
+      entry = syncCachedPage(entry, `older:${i}`, [post(i)])
+    }
+    const pageKeys = Object.keys(entry.pages)
+    expect(pageKeys.length).toBeLessThanOrEqual(MAX_CACHED_PAGES_PER_CLUB)
+    const remainingPostIds = new Set(Object.keys(entry.posts))
+    const referencedIds = new Set(Object.values(entry.pages).flat())
+    for (const id of remainingPostIds) {
+      expect(referencedIds.has(id)).toBe(true)
+    }
   })
 })

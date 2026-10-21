@@ -104,26 +104,100 @@ const getFingerprintBackgroundAt = async (): Promise<number | null> => {
 const setFingerprintBackgroundAt = async (at: number | null) =>
   set(StorageKeys.fingerprintBackgroundAt, at == null ? null : { at })
 
-const readStoredJson = async key => {
+const readRawStorageItem = async (key: string, retries = 1): Promise<string | null> => {
   try {
-    const jsonValue = await AsyncStorage.getItem(key)
-    if (jsonValue == null) {
-      return null
+    return await AsyncStorage.getItem(key)
+  } catch (e) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 60))
+      return readRawStorageItem(key, retries - 1)
     }
+    console.warn(`Storage.getItem error for key "${key}":`, e)
+    throw e
+  }
+}
+
+const readStoredJson = async key => {
+  const jsonValue = await readRawStorageItem(key)
+  if (jsonValue == null) {
+    return null
+  }
+  try {
     return JSON.parse(jsonValue)
   } catch (e) {
-    console.warn(e)
+    console.warn(`Storage JSON parse error for key "${key}":`, e)
     return null
   }
 }
 
-const getDiscussionCache = async () => readStoredJson(StorageKeys.discussionCache)
+const clubStorageKey = (id: string | number) => `discussionCache:club:${id}`
+
+const getDiscussionCache = async () => {
+  const manifest = await readStoredJson(StorageKeys.discussionCache)
+  if (!manifest) {
+    return null
+  }
+  if (!manifest.sharded) {
+    return manifest
+  }
+  const index: { id: string; openedAt?: number }[] = Array.isArray(manifest.index) ? manifest.index : []
+  if (index.length === 0) {
+    return { discussions: [] }
+  }
+  const discussions: any[] = []
+  for (const item of index) {
+    const id = String(item?.id ?? '')
+    if (!id) {
+      continue
+    }
+    try {
+      const club = await readStoredJson(clubStorageKey(id))
+      if (club && typeof club === 'object') {
+        discussions.push(club)
+      } else if (item?.openedAt) {
+        discussions.push({ id, openedAt: item.openedAt, posts: {}, pages: {} })
+      }
+    } catch (e) {
+      console.warn(`Failed to read club "${id}" from cache:`, e)
+      discussions.push({ id, openedAt: Number(item?.openedAt) || 0, posts: {}, pages: {} })
+    }
+  }
+  return { discussions }
+}
 
 const setDiscussionCache = async cache => {
   try {
-    await AsyncStorage.setItem(StorageKeys.discussionCache, JSON.stringify(cache))
+    const discussions = Array.isArray(cache?.discussions) ? cache.discussions : []
+    const previousManifest = await readStoredJson(StorageKeys.discussionCache).catch(() => null)
+    const prevIds = new Set<string>()
+    if (previousManifest?.sharded && Array.isArray(previousManifest.index)) {
+      previousManifest.index.forEach((item: any) => {
+        if (item?.id) prevIds.add(String(item.id))
+      })
+    }
+    const currentIds = new Set<string>()
+    for (const club of discussions) {
+      if (club && club.id != null) {
+        const id = String(club.id)
+        currentIds.add(id)
+        await AsyncStorage.setItem(clubStorageKey(id), JSON.stringify(club))
+      }
+    }
+    for (const prevId of prevIds) {
+      if (!currentIds.has(prevId)) {
+        await AsyncStorage.removeItem(clubStorageKey(prevId)).catch(() => {})
+      }
+    }
+    const manifest = {
+      sharded: true,
+      index: discussions.map(club => ({
+        id: String(club.id),
+        openedAt: Number(club.openedAt) || 0,
+      })),
+    }
+    await AsyncStorage.setItem(StorageKeys.discussionCache, JSON.stringify(manifest))
   } catch (e) {
-    console.warn(e)
+    console.warn('Failed to save discussion cache:', e)
     throw e
   }
 }
@@ -131,7 +205,12 @@ const setDiscussionCache = async cache => {
 const getDiscussionListCache = async () => readStoredJson(StorageKeys.discussionListCache)
 
 const setDiscussionListCache = async cache => {
-  await AsyncStorage.setItem(StorageKeys.discussionListCache, JSON.stringify(cache))
+  try {
+    await AsyncStorage.setItem(StorageKeys.discussionListCache, JSON.stringify(cache))
+  } catch (e) {
+    console.warn('Failed to save discussion list cache:', e)
+    throw e
+  }
 }
 
 const removeAll = async () =>

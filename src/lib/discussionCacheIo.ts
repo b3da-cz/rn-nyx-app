@@ -16,6 +16,8 @@ const clubs = createDiscussionCacheQueue(
         history: existing.history || store.history || null,
         bookmarks: existing.bookmarks || store.bookmarks || null,
       })
+      delete (store as any).history
+      delete (store as any).bookmarks
     }
     const { history: _history, bookmarks: _bookmarks, ...clubsOnly } = store
     await Storage.setDiscussionCache(clubsOnly)

@@ -236,11 +236,28 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
   return posts
 }
 
+export const MAX_CACHED_PAGES_PER_CLUB = 12
+
 export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, posts: any[] = []): DiscussionCacheEntry => {
   const ids = posts.filter(post => post && !post.isClubStart && post.id != null).map(post => String(post.id))
   const seen = new Set(ids)
   const previous = entry.pages[pageKey] || []
-  const pages = { ...entry.pages, [pageKey]: ids }
+  let pages = { ...entry.pages, [pageKey]: ids }
+
+  const pageKeys = Object.keys(pages)
+  if (pageKeys.length > MAX_CACHED_PAGES_PER_CLUB) {
+    const essential = new Set(['header', 'latest', pageKey])
+    const others = pageKeys.filter(k => !essential.has(k))
+    const toDrop = others.slice(0, pageKeys.length - MAX_CACHED_PAGES_PER_CLUB)
+    const nextPages: Record<string, string[]> = {}
+    Object.entries(pages).forEach(([k, list]) => {
+      if (!toDrop.includes(k)) {
+        nextPages[k] = list
+      }
+    })
+    pages = nextPages
+  }
+
   const keptElsewhere = new Set<string>()
   Object.entries(pages).forEach(([key, list]) => {
     if (key === pageKey) {
@@ -250,6 +267,11 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
   })
   const stored = { ...entry.posts }
   previous.forEach(id => {
+    if (!seen.has(id) && !keptElsewhere.has(id)) {
+      delete stored[id]
+    }
+  })
+  Object.keys(stored).forEach(id => {
     if (!seen.has(id) && !keptElsewhere.has(id)) {
       delete stored[id]
     }
@@ -311,15 +333,88 @@ export const normalizeListCache = (value: unknown): DiscussionListCache => {
   }
 }
 
+export const mergeHistoryDiscussions = (
+  existing: any[] = [],
+  fresh: any[] = [],
+  showingRead = false,
+): any[] => {
+  if (!Array.isArray(fresh) || fresh.length === 0) {
+    return Array.isArray(existing) ? existing : []
+  }
+  if (showingRead || !Array.isArray(existing) || existing.length === 0) {
+    return fresh
+  }
+  const freshIds = new Set(fresh.map(d => String(d?.discussion_id ?? d?.id ?? '')))
+  const keptExisting = existing
+    .filter(d => !freshIds.has(String(d?.discussion_id ?? d?.id ?? '')))
+    .map(d => ({ ...d, new_posts_count: 0 }))
+  return [...fresh, ...keptExisting]
+}
+
+export const countBookmarkItems = (sections: any[] = []): number =>
+  (sections || []).reduce((sum, s) => sum + (Array.isArray(s?.bookmarks) ? s.bookmarks.length : 0), 0)
+
+export const mergeBookmarkSections = (
+  existing: any[] = [],
+  fresh: any[] = [],
+  includeSeen = false,
+): any[] => {
+  if (!Array.isArray(fresh) || fresh.length === 0) {
+    return Array.isArray(existing) ? existing : []
+  }
+  const freshItemCount = countBookmarkItems(fresh)
+  if (freshItemCount === 0 && countBookmarkItems(existing) > 0) {
+    return existing
+  }
+  if (includeSeen || !Array.isArray(existing) || existing.length === 0) {
+    return fresh
+  }
+  const existingMap = new Map<string, any>()
+  existing.forEach(s => {
+    const key = String(s?.category?.id ?? s?.category?.category_name ?? s?.title ?? '')
+    if (key) existingMap.set(key, s)
+  })
+  const merged = fresh.map(section => {
+    const key = String(section?.category?.id ?? section?.category?.category_name ?? section?.title ?? '')
+    const prevSection = existingMap.get(key)
+    if (!prevSection || !Array.isArray(prevSection.bookmarks)) {
+      return section
+    }
+    const freshIds = new Set((section.bookmarks || []).map((b: any) => String(b?.discussion_id ?? b?.id ?? '')))
+    const kept = prevSection.bookmarks
+      .filter((b: any) => !freshIds.has(String(b?.discussion_id ?? b?.id ?? '')))
+      .map((b: any) => ({ ...b, new_posts_count: 0 }))
+    return {
+      ...section,
+      bookmarks: [...(section.bookmarks || []), ...kept],
+    }
+  })
+  const freshCatKeys = new Set(fresh.map(s => String(s?.category?.id ?? s?.category?.category_name ?? s?.title ?? '')))
+  existing.forEach(s => {
+    const key = String(s?.category?.id ?? s?.category?.category_name ?? s?.title ?? '')
+    if (key && !freshCatKeys.has(key)) {
+      merged.push(s)
+    }
+  })
+  return merged
+}
+
 export const rememberHistoryOnList = (
   list: DiscussionListCache | null | undefined,
   discussions: any[] = [],
   showingRead = false,
   now = Date.now(),
-): DiscussionListCache => ({
-  ...normalizeListCache(list),
-  history: { discussions, showingRead: !!showingRead, savedAt: now },
-})
+): DiscussionListCache => {
+  const current = normalizeListCache(list)
+  if ((!discussions || discussions.length === 0) && current.history?.discussions?.length) {
+    return current
+  }
+  const merged = mergeHistoryDiscussions(current.history?.discussions, discussions, showingRead)
+  return {
+    ...current,
+    history: { discussions: merged, showingRead: !!showingRead, savedAt: now },
+  }
+}
 
 export const rememberBookmarksOnList = (
   list: DiscussionListCache | null | undefined,
@@ -327,15 +422,22 @@ export const rememberBookmarksOnList = (
   reminderCount = 0,
   includeSeen = false,
   now = Date.now(),
-): DiscussionListCache => ({
-  ...normalizeListCache(list),
-  bookmarks: {
-    bookmarks,
-    reminderCount: Number(reminderCount) || 0,
-    includeSeen: !!includeSeen,
-    savedAt: now,
-  },
-})
+): DiscussionListCache => {
+  const current = normalizeListCache(list)
+  if (countBookmarkItems(bookmarks) === 0 && countBookmarkItems(current.bookmarks?.bookmarks ?? []) > 0) {
+    return current
+  }
+  const merged = mergeBookmarkSections(current.bookmarks?.bookmarks ?? [], bookmarks, includeSeen)
+  return {
+    ...current,
+    bookmarks: {
+      bookmarks: merged,
+      reminderCount: Number(reminderCount) || 0,
+      includeSeen: !!includeSeen,
+      savedAt: now,
+    },
+  }
+}
 
 export function createDiscussionCacheQueue<T>(
   read: () => Promise<unknown>,
@@ -394,9 +496,13 @@ export const rememberHistoryList = (
   now = Date.now(),
 ): DiscussionCacheStore => {
   const source = normalizeDiscussionCache(store)
+  if ((!discussions || discussions.length === 0) && source.history?.discussions?.length) {
+    return source
+  }
+  const merged = mergeHistoryDiscussions(source.history?.discussions, discussions, showingRead)
   return {
     ...source,
-    history: { discussions, showingRead: !!showingRead, savedAt: now },
+    history: { discussions: merged, showingRead: !!showingRead, savedAt: now },
   }
 }
 
@@ -408,10 +514,14 @@ export const rememberBookmarkList = (
   now = Date.now(),
 ): DiscussionCacheStore => {
   const source = normalizeDiscussionCache(store)
+  if (countBookmarkItems(bookmarks) === 0 && countBookmarkItems(source.bookmarks?.bookmarks ?? []) > 0) {
+    return source
+  }
+  const merged = mergeBookmarkSections(source.bookmarks?.bookmarks ?? [], bookmarks, includeSeen)
   return {
     ...source,
     bookmarks: {
-      bookmarks,
+      bookmarks: merged,
       reminderCount: Number(reminderCount) || 0,
       includeSeen: !!includeSeen,
       savedAt: now,

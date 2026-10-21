@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, LayoutAnimation, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, FlatList, LayoutAnimation, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
@@ -235,8 +235,11 @@ export class SettingsView extends Component<Props> {
   }
 
   async writeDiscussionCache(mutate) {
-    const next = await updateDiscussionCache(mutate)
-    this.setState({ discussionCacheReport: discussionCacheReport(next), confirmingCacheClubId: null })
+    const [next, lists] = await Promise.all([updateDiscussionCache(mutate), readDiscussionListCache()])
+    this.setState({
+      discussionCacheReport: discussionCacheReport({ ...next, history: lists.history, bookmarks: lists.bookmarks }),
+      confirmingCacheClubId: null,
+    })
   }
 
   async deleteCachedClub(id: string) {
@@ -244,8 +247,8 @@ export class SettingsView extends Component<Props> {
   }
 
   async deleteDiscussionCache() {
-    await this.writeDiscussionCache(() => emptyDiscussionCache())
     await updateDiscussionListCache(() => ({ history: null, bookmarks: null }))
+    await this.writeDiscussionCache(() => emptyDiscussionCache())
     this.setState({ isDiscussionCacheClubsVisible: false })
   }
 
@@ -1166,9 +1169,24 @@ export class SettingsView extends Component<Props> {
                 {t('profile.discussionCacheClubs')}
               </Text>
             </View>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
-              {this.state.discussionCacheReport?.clubs?.length ? (
-                this.state.discussionCacheReport.clubs.map(club => {
+            <FlatList
+              style={{ flex: 1 }}
+              data={this.state.discussionCacheReport?.clubs || []}
+              keyExtractor={item => item.id}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 60 + androidStackBottomInset }}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    color: theme.colors.faded,
+                    fontSize: theme.metrics.fontSizes.p,
+                    paddingHorizontal: theme.metrics.blocks.medium,
+                  }}>
+                  {t('profile.discussionCacheEmpty')}
+                </Text>
+              }
+              renderItem={({ item: club }) => {
                   const confirming = this.state.confirmingCacheClubId === club.id
                   return (
                     <TouchableRipple
@@ -1200,18 +1218,8 @@ export class SettingsView extends Component<Props> {
                       </View>
                     </TouchableRipple>
                   )
-                })
-              ) : (
-                <Text
-                  style={{
-                    color: theme.colors.faded,
-                    fontSize: theme.metrics.fontSizes.p,
-                    paddingHorizontal: theme.metrics.blocks.medium,
-                  }}>
-                  {t('profile.discussionCacheEmpty')}
-                </Text>
-              )}
-            </ScrollView>
+              }}
+            />
           </SafeAreaView>
         </Modal>
       </View>

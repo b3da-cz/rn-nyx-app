@@ -159,9 +159,15 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       } catch (e) {
         res = null
       }
+      const totalItems = (res?.bookmarks || []).reduce(
+        (sum, s) => sum + (Array.isArray(s?.bookmarks) ? s.bookmarks.length : 0),
+        0,
+      )
       if (!res?.error && res?.bookmarks?.length) {
         this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
-        this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen).catch(e => console.warn(e))
+        if (totalItems > 0 || includeSeen) {
+          this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen).catch(e => console.warn(e))
+        }
         return
       }
       if (!res?.error && Array.isArray(res?.bookmarks)) {

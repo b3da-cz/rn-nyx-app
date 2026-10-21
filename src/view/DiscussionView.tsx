@@ -352,14 +352,22 @@ export class DiscussionView extends Component<Props> {
       if (!this._sessionInitialLastSeenPostId && lastSeenPostId && Number(lastSeenPostId) > 0) {
         this._sessionInitialLastSeenPostId = Number(lastSeenPostId)
       }
-      await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
-        holdLock: true,
-        deferUi: true,
-      })
-      await this.fetchDiscussion(`${discussionId}?order=newer_than&from_id=${lastSeenPostId}`, false, {
-        holdLock: true,
-        deferUi: true,
-      })
+      try {
+        await this.fetchDiscussion(`${discussionId}?order=older_than&from_id=${Number(lastSeenPostId) + 1}`, true, {
+          holdLock: true,
+          deferUi: true,
+        })
+      } catch (e) {
+        await this.fetchDiscussion(discussionId, true, { holdLock: true, deferUi: true })
+      }
+      try {
+        await this.fetchDiscussion(`${discussionId}?order=newer_than&from_id=${lastSeenPostId}`, false, {
+          holdLock: true,
+          deferUi: true,
+        })
+      } catch (e) {
+        // newer_than may fail offline or when empty, older posts are already loaded
+      }
       this.commitDeferredDiscussion(true)
     } finally {
       this.fetchLock = false
@@ -592,9 +600,6 @@ export class DiscussionView extends Component<Props> {
       }
       this.trackLoad({ ...request, done: 1 })
       if (!res?.posts?.length) {
-        if (!fromCache && res && !res.error) {
-          this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, []).catch(e => console.warn(e))
-        }
         const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
           this.setState(eventDetail ? { isFetching: false, eventDetail } : { isFetching: false })

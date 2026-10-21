@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.31.2
+- kluby se ukládají v mezipaměti odděleně, takže velká cache nenarazí na limit Android CursorWindow
+- historie a záložky se při prázdném nebo přečteném stavu nepřemažou
+- limit velikosti AsyncStorage na Androidu je navýšen na 50 MB
+- dočasná chyba čtení z úložiště nepřepíše data prázdnou mezipamětí
+- seznam uložených klubů v nastavení používá FlatList a je spolehlivě scrollovatelný
+
+
 ## 0.31.1
 - cache se už nesmaže, když se klub, historie a záložky zapisují najednou
 - historie a záložky se ukážou hned a ukládají se odděleně od klubů
