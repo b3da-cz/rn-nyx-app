@@ -96,11 +96,11 @@ export class Nyx {
     const served = this.heldServedFromCache
     this.heldError = ''
     this.heldServedFromCache = false
-    if (!msg && !served) {
+    if (!msg) {
       return
     }
     const servedLine = t('profile.discussionCacheServed')
-    this.showErrorBanner(served ? (msg ? `${msg}\n${servedLine}` : servedLine) : msg, msg)
+    this.showErrorBanner(served ? `${msg}\n${servedLine}` : msg, msg)
   }
 
   showNotification(msg) {

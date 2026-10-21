@@ -387,8 +387,7 @@ export class DiscussionView extends Component<Props> {
     } finally {
       this.fetchLock = false
       this.setState({ isFetching: false })
-      const hadContent = Boolean(this._pendingDiscussion || this._posts.length > 0)
-      this.nyx?.releaseErrors(hadContent)
+      this.nyx?.releaseErrors(false)
     }
   }
 

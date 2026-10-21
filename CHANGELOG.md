@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.31.4
+- notifikace o načtení z mezipaměti se zobrazí pouze při chybě sítě, ne při běžném online načtení
+
 ## 0.31.3
 - offline se načtou uložené příspěvky klubu i při nesouladu čísla stránky či změně naposledy viděného příspěvku
 - spolehlivý přechod na nejnovější příspěvky z cache, když konkrétní starší offset není uložen
