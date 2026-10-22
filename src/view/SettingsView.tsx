@@ -582,8 +582,9 @@ export class SettingsView extends Component<Props> {
   }
 
   render() {
-    const { theme } = this.state
-    if (!theme) {
+    const liveTheme = (this.context as any)?.theme
+    const theme = liveTheme?.colors ? liveTheme : this.state.theme
+    if (!theme?.colors) {
       return null
     }
     const rowHeight = Math.max(48, Math.round(theme.metrics.blocks.rowDiscussion + theme.metrics.blocks.large))

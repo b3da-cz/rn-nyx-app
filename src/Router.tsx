@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useEffect, useRef } from 'react'
+import React, { useContext, useEffect, useRef } from 'react'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
@@ -12,6 +12,7 @@ import { ExpandableTabBar, NotificationIconComponent, StackHeaderComponent } fro
 import {
   discussionScreenOptions,
   LlmQueue,
+  MainContext,
   NavOptions,
   Nyx,
   rgbToHex,
@@ -49,7 +50,6 @@ import {
 } from './view'
 
 type Props = {
-  config: any
   nyx: Nyx
   refs: any
   theme: Theme
@@ -88,8 +88,173 @@ const Gallery = ({ navigation, route }) => {
   )
 }
 
-export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersReload }: Props) => {
-  let nav: any = null // meh, there have to be cleaner way to do this outside of root stack, .. except there is not :( ref not working on latest RN-N
+// Screen components have to stay the same function across renders. An inline
+// component is a new type every time, so React Navigation remounts the screen
+// on each settings save: the view blanks and the scroll offset is lost.
+const RootStack = createNativeStackNavigator()
+const Tab = createMaterialTopTabNavigator()
+
+let rootNav: any = null
+
+const routerHandlers: { onConfigReload: Function; onFiltersReload: Function } = {
+  onConfigReload: () => {},
+  onFiltersReload: () => {},
+}
+
+const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
+const About = ({ navigation }) => <AboutView navigation={navigation} />
+const Support = ({ navigation }) => <SupportView navigation={navigation} />
+
+const Settings = ({ navigation }) => {
+  const { config } = useContext(MainContext)
+  return (
+    <SettingsView
+      navigation={navigation}
+      config={config}
+      onConfigChange={() => routerHandlers.onConfigReload()}
+      onFiltersChange={() => routerHandlers.onFiltersReload()}
+    />
+  )
+}
+
+const ThemeScreen = () => {
+  const { config } = useContext(MainContext)
+  return <ThemeView config={config} onConfigChange={() => routerHandlers.onConfigReload()} />
+}
+
+const TabContainer = ({ navigation }) => {
+  rootNav = navigation
+  const { config, theme, refs } = useContext(MainContext)
+  if (refs) {
+    refs.nav = navigation
+  }
+  const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
+  const renderTabBar = props => {
+    if (refs) {
+      refs.tabNav = props.navigation
+      refs.jumpTo = props.jumpTo
+      refs.tabState = props.state
+    }
+    return config.isNavbarExpandEnabled ? (
+      <ExpandableTabBar {...props} config={config} theme={theme} />
+    ) : (
+      <MaterialTopTabBar {...props} />
+    )
+  }
+  return (
+    <Tab.Navigator
+      initialRouteName={config.initialRouteName}
+      tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
+      backBehavior="history"
+      tabBar={renderTabBar}
+      // gestureHandlerProps={{
+      //   wip, needs more testing
+      //   maxPointers: 1,
+      //   minDist: 200,
+      //   minDeltaX: 80,
+      //   activeOffsetX: undefined,
+      //
+      //   hitSlop: {height: 60, bottom: 0},
+      //   minDeltaY: 0,
+      // }}
+      // options={{ cardStyle: NavOptions.cardStyle(theme) }}
+      overScrollMode="never"
+      screenOptions={{
+        lazy: true,
+        swipeEnabled: config.isNavGesturesEnabled,
+        ...NavOptions.tabBarOptions(theme),
+      }}>
+      {config.isHistoryEnabled && (
+        <Tab.Screen
+          name={'historyStack'}
+          component={HistoryStackContainer}
+          options={{
+            title: t('history'),
+            tabBarLabel: ({ focused }) => <Icon name="book-open" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      {config.isBookmarksEnabled && (
+        <Tab.Screen
+          name={'bookmarksStack'}
+          component={BookmarksStackContainer}
+          options={{
+            title: t('bookmarks'),
+            tabBarLabel: ({ focused }) => <Icon name="bookmark" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      {config.isSearchEnabled && (
+        <Tab.Screen
+          name={'searchStack'}
+          component={SearchStackContainer}
+          options={{
+            title: t('search.title'),
+            tabBarLabel: ({ focused }) => <Icon name="search" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      {config.isLastEnabled && (
+        <Tab.Screen
+          name={'lastPostsStack'}
+          component={LastPostsStackContainer}
+          options={{
+            title: t('last'),
+            tabBarLabel: ({ focused }) => <Icon name="inbox" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      {config.isRemindersEnabled && (
+        <Tab.Screen
+          name={'remindersStack'}
+          component={RemindersStackContainer}
+          options={{
+            title: t('reminders.title'),
+            tabBarLabel: ({ focused }) => <Icon name="bell" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      {config.isEventsEnabled && (
+        <Tab.Screen
+          name={'eventsStack'}
+          component={EventsStackContainer}
+          options={{
+            title: t('events.title'),
+            tabBarLabel: ({ focused }) => <Icon name="calendar" size={14} color={getTabIconColor(focused)} />,
+          }}
+        />
+      )}
+      <Tab.Screen
+        name={'notificationsStack'}
+        component={NotificationsStackContainer}
+        options={{
+          title: t('notifications'),
+          tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} />,
+        }}
+      />
+      <Tab.Screen
+        name={'mailStack'}
+        component={MailStackContainer}
+        options={{
+          title: t('mail'),
+          tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} isMail={true} />,
+        }}
+      />
+      <Tab.Screen
+        name={'profile'}
+        component={Profile}
+        options={{
+          title: t('profile.tab'),
+          tabBarLabel: ({ focused }) => <Icon name={'user'} size={14} color={getTabIconColor(focused)} />,
+        }}
+      />
+    </Tab.Navigator>
+  )
+}
+
+export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Props) => {
+  routerHandlers.onConfigReload = onConfigReload
+  routerHandlers.onFiltersReload = onFiltersReload
   useEffect(() => {
     const sub = subscribeFCM(message => {
       nyx.api.getContext()
@@ -105,8 +270,8 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
               refs.tabNav.navigate('mailStack', { screen: 'mail' })
             } else if (refs?.nav?.navigate) {
               refs.nav.navigate('mailStack', { screen: 'mail' })
-            } else if (nav?.navigate) {
-              nav.navigate('mailStack', { screen: 'mail' })
+            } else if (rootNav?.navigate) {
+              rootNav.navigate('mailStack', { screen: 'mail' })
             }
             await wait(200)
             refs?.MailView?.getLatestMessages()
@@ -128,8 +293,8 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
           }
           break
         case 'reply':
-          if (!message.isForegroundMsg && nav && typeof nav.navigate === 'function') {
-            setTimeout(() => nav.navigate('notificationsStack', { screen: 'notifications' }), 300)
+          if (!message.isForegroundMsg && rootNav && typeof rootNav.navigate === 'function') {
+            setTimeout(() => rootNav.navigate('notificationsStack', { screen: 'notifications' }), 300)
           }
           if (message.isForegroundMsg) {
             showNotificationBanner({
@@ -138,10 +303,10 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
               tintColor: rgbToHex(theme.colors.primary),
               icon: 'corner-down-right',
               onClick: async () => {
-                nav.navigate('notificationsStack', { screen: 'notifications' })
+                rootNav.navigate('notificationsStack', { screen: 'notifications' })
                 if (message.discussionId > 0) {
                   await wait()
-                  nav.push('discussion', { discussionId: message.discussionId, postId: message.postId })
+                  rootNav.push('discussion', { discussionId: message.discussionId, postId: message.postId })
                 }
                 RNNotificationBanner.Dismiss()
               },
@@ -157,13 +322,13 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
         tintColor: rgbToHex(theme.colors.primary),
         icon: 'check-circle',
         onClick: async () => {
-          if (nav && typeof nav.navigate === 'function') {
-            nav.navigate('tabs', { screen: 'profile' })
+          if (rootNav && typeof rootNav.navigate === 'function') {
+            rootNav.navigate('tabs', { screen: 'profile' })
             await wait(100)
-            if (typeof nav.push === 'function') {
-              nav.push('llmLibrary')
+            if (typeof rootNav.push === 'function') {
+              rootNav.push('llmLibrary')
             } else {
-              nav.navigate('llmLibrary')
+              rootNav.navigate('llmLibrary')
             }
           }
           RNNotificationBanner.Dismiss()
@@ -183,152 +348,6 @@ export const Router = ({ config, nyx, refs, theme, onConfigReload, onFiltersRelo
     }
   })
 
-  const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
-
-  const RootStack = createNativeStackNavigator()
-  const Tab = createMaterialTopTabNavigator()
-
-  const renderTabBar = props => {
-    if (refs) {
-      refs.tabNav = props.navigation
-      refs.jumpTo = props.jumpTo
-      refs.tabState = props.state
-    }
-    return config.isNavbarExpandEnabled ? (
-      <ExpandableTabBar {...props} config={config} theme={theme} />
-    ) : (
-      <MaterialTopTabBar {...props} />
-    )
-  }
-
-  const Profile = ({ navigation }) => <ProfileView navigation={navigation} />
-  const About = ({ navigation }) => <AboutView navigation={navigation} />
-  const Support = ({ navigation }) => <SupportView navigation={navigation} />
-  const Settings = ({ navigation }) => (
-    <SettingsView
-      navigation={navigation}
-      config={config}
-      onConfigChange={() => onConfigReload()}
-      onFiltersChange={() => onFiltersReload()}
-    />
-  )
-  const ThemeScreen = () => <ThemeView config={config} onConfigChange={() => onConfigReload()} />
-
-  const TabContainer = ({ navigation }) => {
-    nav = navigation
-    if (refs) {
-      refs.nav = navigation
-    }
-    return (
-      <Tab.Navigator
-        initialRouteName={config.initialRouteName}
-        tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
-        backBehavior="history"
-        tabBar={renderTabBar}
-        // gestureHandlerProps={{
-        //   wip, needs more testing
-        //   maxPointers: 1,
-        //   minDist: 200,
-        //   minDeltaX: 80,
-        //   activeOffsetX: undefined,
-        //
-        //   hitSlop: {height: 60, bottom: 0},
-        //   minDeltaY: 0,
-        // }}
-        // options={{ cardStyle: NavOptions.cardStyle(theme) }}
-        overScrollMode="never"
-        screenOptions={{
-          lazy: true,
-          swipeEnabled: config.isNavGesturesEnabled,
-          ...NavOptions.tabBarOptions(theme),
-        }}>
-        {config.isHistoryEnabled && (
-          <Tab.Screen
-            name={'historyStack'}
-            component={HistoryStackContainer}
-            options={{
-              title: t('history'),
-              tabBarLabel: ({ focused }) => <Icon name="book-open" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        {config.isBookmarksEnabled && (
-          <Tab.Screen
-            name={'bookmarksStack'}
-            component={BookmarksStackContainer}
-            options={{
-              title: t('bookmarks'),
-              tabBarLabel: ({ focused }) => <Icon name="bookmark" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        {config.isSearchEnabled && (
-          <Tab.Screen
-            name={'searchStack'}
-            component={SearchStackContainer}
-            options={{
-              title: t('search.title'),
-              tabBarLabel: ({ focused }) => <Icon name="search" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        {config.isLastEnabled && (
-          <Tab.Screen
-            name={'lastPostsStack'}
-            component={LastPostsStackContainer}
-            options={{
-              title: t('last'),
-              tabBarLabel: ({ focused }) => <Icon name="inbox" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        {config.isRemindersEnabled && (
-          <Tab.Screen
-            name={'remindersStack'}
-            component={RemindersStackContainer}
-            options={{
-              title: t('reminders.title'),
-              tabBarLabel: ({ focused }) => <Icon name="bell" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        {config.isEventsEnabled && (
-          <Tab.Screen
-            name={'eventsStack'}
-            component={EventsStackContainer}
-            options={{
-              title: t('events.title'),
-              tabBarLabel: ({ focused }) => <Icon name="calendar" size={14} color={getTabIconColor(focused)} />,
-            }}
-          />
-        )}
-        <Tab.Screen
-          name={'notificationsStack'}
-          component={NotificationsStackContainer}
-          options={{
-            title: t('notifications'),
-            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} />,
-          }}
-        />
-        <Tab.Screen
-          name={'mailStack'}
-          component={MailStackContainer}
-          options={{
-            title: t('mail'),
-            tabBarLabel: ({ focused }) => <NotificationIconComponent color={getTabIconColor(focused)} isMail={true} />,
-          }}
-        />
-        <Tab.Screen
-          name={'profile'}
-          component={Profile}
-          options={{
-            title: t('profile.tab'),
-            tabBarLabel: ({ focused }) => <Icon name={'user'} size={14} color={getTabIconColor(focused)} />,
-          }}
-        />
-      </Tab.Navigator>
-    )
-  }
   return (
     <RootStack.Navigator
       initialRouteName={'tabs'}

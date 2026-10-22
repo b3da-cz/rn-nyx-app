@@ -358,7 +358,6 @@ const App: () => ReactNode = () => {
                 <NavigationContainer ref={navigationRef} theme={theme}>
                   <NestedBackHandler navigationRef={navigationRef} />
                   <Router
-                    config={config}
                     nyx={nyx}
                     refs={refs}
                     theme={theme}

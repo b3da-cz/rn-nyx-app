@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.31.5
+- nastavení při změně už neblikne a neskočí nahoru, když je odscrollované
+
 ## 0.31.4
 - notifikace o načtení z mezipaměti se zobrazí pouze při chybě sítě, ne při běžném online načtení
 
