@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.33.3
+- v O aplikaci jde seznam doscrollovat až na poslední jméno
+
 ## 0.33.2
 - souhrn v klubu s nenulovým časem smazání nejde kopírovat ani označit
 - dokud je takový rozbalený souhrn na obrazovce, jsou vypnuté screenshoty; po skrytí platí zase nastavení ochrany

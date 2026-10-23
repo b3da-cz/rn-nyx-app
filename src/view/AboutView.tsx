@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Linking, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
-import { LinkComponent, SectionHeaderComponent, UserRowComponent } from '../component'
+import { androidStackBottomInset, LinkComponent, SectionHeaderComponent, UserRowComponent } from '../component'
 import { MainContext, Theme, Nyx } from '../lib'
 import { contributors, testers, supporters } from '../../credits.json'
 
@@ -34,8 +34,10 @@ export class AboutView extends Component<Props> {
       return null
     }
     return (
-      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
-        <ScrollView style={{ backgroundColor: theme.colors.background }}>
+      <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
+        <ScrollView
+          style={{ backgroundColor: theme.colors.background, flex: 1 }}
+          contentContainerStyle={{ paddingBottom: androidStackBottomInset }}>
           <SectionHeaderComponent title={'Nnn'} backgroundColor={theme.colors.surface} />
           <Text style={{ padding: 5 }}>
             Nnn je neoficiální mobilní klient pro diskuzní server Nyx.cz, psaný v JS/TS s použitím frameworku
@@ -66,20 +68,20 @@ export class AboutView extends Component<Props> {
             {'Děkuji všem, kteří se podíleli na testování a ladění prvních vydání aplikace, či přispěli svým kódem později, zejména pak IDs níže.' +
               '\nTaké bych rád poděkoval těm, kteří se rozhodli podpořit vývoj aplikace na buymeacoffee.'}
           </Text>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ width: '33.333%' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
               <SectionHeaderComponent title={'Testeři'} backgroundColor={theme.colors.surface} />
               {testers.map(tester => (
                 <UserRowComponent user={{ username: tester }} key={`tester-${tester}`} />
               ))}
             </View>
-            <View style={{ width: '33.333%' }}>
+            <View style={{ flex: 1 }}>
               <SectionHeaderComponent title={'Contributors'} backgroundColor={theme.colors.surface} />
               {contributors.map(contributor => (
                 <UserRowComponent user={{ username: contributor }} key={`contributor-${contributor}`} />
               ))}
             </View>
-            <View style={{ width: '33.333%' }}>
+            <View style={{ flex: 1 }}>
               <SectionHeaderComponent
                 title={'Podporovatelé'}
                 backgroundColor={theme.colors.surface}
