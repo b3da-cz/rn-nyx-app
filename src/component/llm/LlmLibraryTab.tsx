@@ -8,6 +8,7 @@ import {
   LlmHistoryItem,
   LlmPendingTask,
   LlmQueue,
+  notifySecureLayout,
   t,
   useTheme,
 } from '../../lib'
@@ -21,6 +22,7 @@ type Props = {
   onUsePrompt: (prompt: string) => void
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   onCountChange?: (count: number) => void
+  clubTtlMs?: number
 }
 
 export const LlmLibraryTab: React.FC<Props> = ({
@@ -28,6 +30,7 @@ export const LlmLibraryTab: React.FC<Props> = ({
   onUsePrompt,
   onNavigateToPost,
   onCountChange,
+  clubTtlMs,
 }) => {
   const {
     colors,
@@ -125,6 +128,8 @@ export const LlmLibraryTab: React.FC<Props> = ({
       <FlatList
         data={filteredAndSortedHistory}
         keyExtractor={item => item.id}
+        onScroll={notifySecureLayout}
+        scrollEventThrottle={32}
         ListHeaderComponent={
           filteredPendingTasks.length > 0 ? (
             <View>
@@ -143,6 +148,8 @@ export const LlmLibraryTab: React.FC<Props> = ({
           <LlmLibraryItemCard
             item={item}
             query={search}
+            clubTtlMs={clubTtlMs}
+            activeDiscussionId={activeDiscussionId}
             onDelete={handleDeleteItem}
             onUsePrompt={onUsePrompt}
             onNavigateToPost={onNavigateToPost}

@@ -1,4 +1,5 @@
 export * from './appGuard'
+export * from './screenSecure'
 export * from './fingerprintLock'
 export * from './FCM'
 export * from './fetchProgress'

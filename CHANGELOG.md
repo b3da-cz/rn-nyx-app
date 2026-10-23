@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.33.2
+- souhrn v klubu s nenulovým časem smazání nejde kopírovat ani označit
+- dokud je takový rozbalený souhrn na obrazovce, jsou vypnuté screenshoty; po skrytí platí zase nastavení ochrany
+
 ## 0.33.1
 - tlačítko nové zprávy v mailu zůstává dole jako v diskuzi
 

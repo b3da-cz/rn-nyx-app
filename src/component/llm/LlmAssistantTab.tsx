@@ -1,7 +1,7 @@
 import React from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import { Button, Text } from 'react-native-paper'
-import { LlmQueue, Styling, t, useTheme } from '../../lib'
+import { isSummaryCopyLocked, LlmQueue, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
@@ -29,6 +29,7 @@ type Props = {
   agentAllowed?: boolean
   ttlMs?: number
   blockMessage?: string
+  shown?: boolean
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -147,6 +148,12 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           onExpired={a.expireResult}
           onNewQuery={a.clearResult}
           onNavigateToPost={props.onNavigateToPost}
+          copyLocked={isSummaryCopyLocked({
+            clubTtlMs: props.ttlMs,
+            sameClub: true,
+            expiresAt: a.result.expiresAt,
+          })}
+          shown={props.shown !== false}
         />
       )}
     </View>

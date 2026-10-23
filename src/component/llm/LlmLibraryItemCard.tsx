@@ -3,13 +3,14 @@ import { LayoutAnimation, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Icon from 'react-native-vector-icons/Feather'
-import { formatDuration, LayoutAnimConf, LlmHistoryItem, Styling, t, useTheme } from '../../lib'
+import { formatDuration, isSummaryCopyLocked, LayoutAnimConf, LlmHistoryItem, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { SearchHighlight } from '../SearchHighlight'
 import { LlmAnswerBody } from './LlmAnswerBody'
 import { LlmTtlBadge } from './LlmTtlBadge'
 import { formatLlmDate, formatLlmDateRange, formatPostCount, joinMeta } from './llmFormat'
+import { useHoldScreenSecure } from './useHoldScreenSecure'
 
 type Props = {
   item: LlmHistoryItem
@@ -17,9 +18,19 @@ type Props = {
   onUsePrompt: (prompt: string) => void
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   query?: string
+  clubTtlMs?: number
+  activeDiscussionId?: number | string
 }
 
-export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePrompt, onNavigateToPost, query }) => {
+export const LlmLibraryItemCard: React.FC<Props> = ({
+  item,
+  onDelete,
+  onUsePrompt,
+  onNavigateToPost,
+  query,
+  clubTtlMs,
+  activeDiscussionId,
+}) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -27,12 +38,21 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
   const [isExpanded, setIsExpanded] = useState(false)
   const [isRaw, setIsRaw] = useState(false)
   const [copied, setCopied] = useState(false)
+  const copyLocked = isSummaryCopyLocked({
+    clubTtlMs,
+    sameClub: activeDiscussionId != null && `${item.discussionId}` === `${activeDiscussionId}`,
+    expiresAt: item.expiresAt,
+  })
+  const secure = useHoldScreenSecure(copyLocked && isExpanded)
 
   const toggle = () => {
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     setIsExpanded(!isExpanded)
   }
   const handleCopy = () => {
+    if (copyLocked) {
+      return
+    }
     Clipboard.setString(item.response)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -88,7 +108,15 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
       </TouchableRipple>
       {isExpanded && (
         <>
-          <LlmAnswerBody content={item.response} isRaw={isRaw} query={query} onNavigateToPost={onNavigateToPost} />
+          <View ref={secure.ref} onLayout={secure.onLayout} collapsable={false}>
+            <LlmAnswerBody
+              content={item.response}
+              isRaw={isRaw}
+              query={query}
+              copyLocked={copyLocked}
+              onNavigateToPost={onNavigateToPost}
+            />
+          </View>
           <View style={[Styling.groups.flexRowCentered, { paddingRight: blocks.medium }]}>
             <View style={{ flex: 1, flexDirection: 'row' }}>
               <ButtonComponent
@@ -100,9 +128,10 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
               />
               <ButtonComponent
                 label={copied ? t('llm.copiedShort') : t('llm.copy')}
-                color={copied ? colors.accent : colors.faded}
+                color={copyLocked ? colors.disabled : copied ? colors.accent : colors.faded}
                 fontSize={fontSizes.p}
                 width={'33%'}
+                isDisabled={copyLocked}
                 onPress={handleCopy}
               />
               <ButtonComponent

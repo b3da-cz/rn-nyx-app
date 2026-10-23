@@ -169,6 +169,19 @@ export function formatTtlCountdown(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+// A summary stays uncopyable when this club currently deletes results, or when the
+// saved answer itself still carries a deletion time (global library, other clubs).
+export function isSummaryCopyLocked(input: {
+  clubTtlMs?: number
+  sameClub?: boolean
+  expiresAt?: string | null
+}): boolean {
+  if (input.expiresAt) {
+    return true
+  }
+  return !!input.sameClub && (input.clubTtlMs || 0) > 0
+}
+
 export function isLlmResultExpired(item: { expiresAt?: string | null }, now = Date.now()): boolean {
   if (!item?.expiresAt) {
     return false

@@ -8,17 +8,18 @@ type Props = {
   content: string
   isRaw?: boolean
   query?: string
+  copyLocked?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
 }
 
 // Answer text laid out like post content (plain background, side padding).
-export const LlmAnswerBody = ({ content, isRaw, query, onNavigateToPost }: Props) => {
+export const LlmAnswerBody = ({ content, isRaw, query, copyLocked, onNavigateToPost }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
   const { config } = useContext(MainContext)
-  const selectable = isTextSelectionEnabled(config)
+  const selectable = !copyLocked && isTextSelectionEnabled(config)
   const showUserAvatars = config?.isLlmUserAvatarsEnabled !== false
   return (
     <View style={{ paddingHorizontal: blocks.medium, paddingTop: blocks.small }}>

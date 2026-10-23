@@ -7,6 +7,7 @@ import { SectionHeaderComponent } from '../SectionHeaderComponent'
 import { LlmAnswerBody } from './LlmAnswerBody'
 import { LlmTtlBadge } from './LlmTtlBadge'
 import { joinMeta } from './llmFormat'
+import { useHoldScreenSecure } from './useHoldScreenSecure'
 
 type Props = {
   result: string
@@ -16,6 +17,8 @@ type Props = {
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   expiresAt?: string | null
   onExpired?: () => void
+  copyLocked?: boolean
+  shown?: boolean
 }
 
 export const LlmResultSection: React.FC<Props> = ({
@@ -26,6 +29,8 @@ export const LlmResultSection: React.FC<Props> = ({
   onNavigateToPost,
   expiresAt,
   onExpired,
+  copyLocked,
+  shown = true,
 }) => {
   const {
     colors,
@@ -33,8 +38,12 @@ export const LlmResultSection: React.FC<Props> = ({
   } = useTheme()
   const [isRaw, setIsRaw] = useState(false)
   const [copied, setCopied] = useState(false)
+  const secure = useHoldScreenSecure(!!copyLocked && shown)
 
   const handleCopy = () => {
+    if (copyLocked) {
+      return
+    }
     Clipboard.setString(result)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -53,7 +62,9 @@ export const LlmResultSection: React.FC<Props> = ({
         backgroundColor={colors.surface}
         trailing={expiresAt ? <LlmTtlBadge expiresAt={expiresAt} onExpired={onExpired} /> : null}
       />
-      <LlmAnswerBody content={result} isRaw={isRaw} onNavigateToPost={onNavigateToPost} />
+      <View ref={secure.ref} onLayout={secure.onLayout} collapsable={false}>
+        <LlmAnswerBody content={result} isRaw={isRaw} copyLocked={copyLocked} onNavigateToPost={onNavigateToPost} />
+      </View>
       <View style={{ flexDirection: 'row' }}>
         <ButtonComponent
           label={isRaw ? t('llm.viewFormatted') : t('llm.viewRaw')}
@@ -64,9 +75,10 @@ export const LlmResultSection: React.FC<Props> = ({
         />
         <ButtonComponent
           label={copied ? t('llm.copiedShort') : t('llm.copy')}
-          color={copied ? colors.accent : colors.faded}
+          color={copyLocked ? colors.disabled : copied ? colors.accent : colors.faded}
           fontSize={fontSizes.p}
           width={'33.3%'}
+          isDisabled={!!copyLocked}
           onPress={handleCopy}
         />
         <ButtonComponent

@@ -9,6 +9,7 @@ import {
   emptyViewerRights,
   formatAgentTtlLabel,
   MainContext,
+  notifySecureLayout,
   parseAgentRule,
   showNotificationBanner,
   signedInUsername,
@@ -69,8 +70,13 @@ export const LlmAssistantView: React.FC<Props> = ({
     }, 50)
 
   useEffect(() => {
+    notifySecureLayout()
+  }, [activeTab])
+
+  useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', e => {
       setKeyboardHeight(e.endCoordinates.height)
+      notifySecureLayout()
       if (isPromptFocusedRef.current) {
         scrollToPrompt()
       }
@@ -78,6 +84,7 @@ export const LlmAssistantView: React.FC<Props> = ({
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardHeight(0)
       isPromptFocusedRef.current = false
+      notifySecureLayout()
     })
     return () => {
       showSub.remove()
@@ -219,7 +226,9 @@ export const LlmAssistantView: React.FC<Props> = ({
             ref={scrollRef}
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+            onScroll={notifySecureLayout}
+            scrollEventThrottle={32}>
             <LlmAssistantTab
               discussionId={discussionId}
               discussionTitle={discussionTitle || ''}
@@ -242,6 +251,7 @@ export const LlmAssistantView: React.FC<Props> = ({
               agentAllowed={agentAllowed}
               ttlMs={rule.found ? rule.ttlMs : 0}
               blockMessage={blockMessage}
+              shown={activeTab === 'assistant'}
             />
           </ScrollView>
         </View>
@@ -249,6 +259,7 @@ export const LlmAssistantView: React.FC<Props> = ({
       {activeTab !== 'assistant' && (
         <LlmLibraryTab
           activeDiscussionId={discussionId}
+          clubTtlMs={rule.found ? rule.ttlMs : 0}
           onUsePrompt={usedPrompt => {
             setPrompt(usedPrompt)
             setActiveTab('assistant')

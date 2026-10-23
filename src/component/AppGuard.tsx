@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AppState, AppStateStatus, BackHandler, View } from 'react-native'
 import { Portal, Text } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { authenticateFingerprint, setAppSecure, shouldRequireFingerprint, Storage, t, Theme } from '../lib'
+import { authenticateFingerprint, setSettingsCover, shouldRequireFingerprint, Storage, t, Theme } from '../lib'
 import { ButtonComponent } from './ButtonComponent'
 
 type Props = {
@@ -25,7 +25,7 @@ export const AppGuard = ({ ready, enabled, minutes, cover, theme }: Props) => {
     if (!ready) {
       return
     }
-    setAppSecure(cover)
+    setSettingsCover(cover)
   }, [ready, cover])
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export const AppGuard = ({ ready, enabled, minutes, cover, theme }: Props) => {
         return
       }
       setCovered(false)
-      setAppSecure(cover)
+      setSettingsCover(cover)
       if (ignoreNextActive.current) {
         ignoreNextActive.current = false
         return

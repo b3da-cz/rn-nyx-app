@@ -6,6 +6,7 @@ import {
   emptyViewerRights,
   formatAgentTtlLabel,
   formatTtlCountdown,
+  isSummaryCopyLocked,
   parseAgentRule,
   postOptsOutOfAgents,
   viewerRightsFromDiscussion,
@@ -199,6 +200,24 @@ describe('sendOpenRouterChat anonymity', () => {
     const sent = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body).messages[1].content as string
     expect(sent).not.toContain('KAREL')
     expect(sent).not.toContain('ne [agents:ignore]')
+  })
+})
+
+describe('summary copy lock', () => {
+  it('locks every summary of a club whose header ttl is non-zero', () => {
+    expect(isSummaryCopyLocked({ clubTtlMs: 120_000, sameClub: true })).toBe(true)
+    expect(isSummaryCopyLocked({ clubTtlMs: 120_000, sameClub: true, expiresAt: null })).toBe(true)
+  })
+
+  it('leaves a permanent summary copyable', () => {
+    expect(isSummaryCopyLocked({ clubTtlMs: 0, sameClub: true })).toBe(false)
+    expect(isSummaryCopyLocked({ clubTtlMs: 120_000, sameClub: false })).toBe(false)
+    expect(isSummaryCopyLocked({})).toBe(false)
+  })
+
+  it('locks a saved summary that still carries a deletion time', () => {
+    expect(isSummaryCopyLocked({ expiresAt: '2026-10-23T12:00:00.000Z' })).toBe(true)
+    expect(isSummaryCopyLocked({ clubTtlMs: 0, sameClub: false, expiresAt: '2026-10-23T12:00:00.000Z' })).toBe(true)
   })
 })
 
