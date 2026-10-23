@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   applyModelChoice,
   applySystemPromptChoice,
+  deleteLlmHistoryEntry,
   filterAndFormatPostsForLlm,
   getLlmHistory,
   LlmPendingTask,
@@ -25,6 +26,8 @@ type Params = {
   onChangePrompt: (val: string) => void
   onLoadMorePosts?: () => Promise<number>
   onHistoryEntryAdded?: () => void
+  agentAllowed?: boolean
+  ttlMs?: number
 }
 
 export function useLlmAssistant(p: Params) {
@@ -43,7 +46,13 @@ export function useLlmAssistant(p: Params) {
   const persistQueue = useRef(Promise.resolve())
   const [pendingTasks, setPendingTasks] = useState<LlmPendingTask[]>([])
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
-  const [result, setResult] = useState<{ text: string; usage: any; durationMs: number | null } | null>(null)
+  const [result, setResult] = useState<{
+    id: string
+    text: string
+    usage: any
+    durationMs: number | null
+    expiresAt: string | null
+  } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const lastSentTaskIdRef = useRef<string | null>(null)
   const { discussionId, onHistoryEntryAdded } = p
@@ -58,7 +67,13 @@ export function useLlmAssistant(p: Params) {
         getLlmHistory().then(history => {
           const latest = history.find(it => `${it.discussionId}` === `${discussionId}`)
           if (latest) {
-            setResult({ text: latest.response, usage: latest.usage, durationMs: latest.durationMs ?? null })
+            setResult({
+              id: latest.id,
+              text: latest.response,
+              usage: latest.usage,
+              durationMs: latest.durationMs ?? null,
+              expiresAt: latest.expiresAt ?? null,
+            })
             onHistoryEntryAdded?.()
           }
         })
@@ -135,7 +150,7 @@ export function useLlmAssistant(p: Params) {
   )
   const isSending = activeTask?.status === 'pending'
 
-  const { count: postCount, wordCount } = useMemo(
+  const { count: postCount, wordCount, ignoredCount } = useMemo(
     () => filterAndFormatPostsForLlm(p.posts, dateFrom, dateTo, p.discussionTitle),
     [p.posts, dateFrom, dateTo, p.discussionTitle],
   )
@@ -162,10 +177,11 @@ export function useLlmAssistant(p: Params) {
     }
   }
 
-  const canSend = !isSending && !!p.prompt.trim() && postCount > 0 && !!modelRef.current.id
+  const agentAllowed = p.agentAllowed !== false
+  const canSend = agentAllowed && !isSending && !!p.prompt.trim() && postCount > 0 && !!modelRef.current.id
 
   const send = async () => {
-    if (!canSend) {
+    if (!canSend || p.agentAllowed === false) {
       return
     }
     setErrorMessage(null)
@@ -184,6 +200,7 @@ export function useLlmAssistant(p: Params) {
         dateTo: dateTo || undefined,
         postCount,
         systemPrompt: systemPromptRef.current,
+        ttlMs: p.ttlMs,
       })
       p.onChangePrompt('')
     } catch (e: any) {
@@ -199,6 +216,7 @@ export function useLlmAssistant(p: Params) {
     isSending,
     postCount,
     wordCount,
+    ignoredCount,
     canLoadOlder,
     isLoadingOlder,
     loadOlder,
@@ -206,6 +224,19 @@ export function useLlmAssistant(p: Params) {
     send,
     result,
     clearResult: () => setResult(null),
+    expireResult: async () => {
+      const id = result?.id
+      setResult(null)
+      if (!id) {
+        return
+      }
+      try {
+        await deleteLlmHistoryEntry(id)
+        onHistoryEntryAdded?.()
+      } catch (e) {
+        console.warn('Failed to delete expired LLM result', e)
+      }
+    },
     errorMessage,
   }
 }

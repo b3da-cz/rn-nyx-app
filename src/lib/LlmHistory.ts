@@ -1,3 +1,4 @@
+import { isLlmResultExpired } from './llmAgents'
 import { Storage } from './Storage'
 
 export type LlmHistoryItem = {
@@ -18,6 +19,7 @@ export type LlmHistoryItem = {
     completion_tokens?: number
     total_tokens?: number
   }
+  expiresAt?: string | null
 }
 
 export function formatDuration(durationMs?: number): string {
@@ -43,10 +45,23 @@ function generateUuidV4(): string {
   })
 }
 
+async function readLlmHistory(): Promise<LlmHistoryItem[]> {
+  const list = await Storage.getLlmHistory()
+  return Array.isArray(list) ? list : []
+}
+
+export async function purgeExpiredLlmHistory(now = Date.now()): Promise<LlmHistoryItem[]> {
+  const list = await readLlmHistory()
+  const kept = list.filter(item => !isLlmResultExpired(item, now))
+  if (kept.length !== list.length) {
+    await Storage.setLlmHistory(kept)
+  }
+  return kept
+}
+
 export async function getLlmHistory(): Promise<LlmHistoryItem[]> {
   try {
-    const list = await Storage.getLlmHistory()
-    return Array.isArray(list) ? list : []
+    return await purgeExpiredLlmHistory()
   } catch (e) {
     console.warn('Failed to load LLM history', e)
     return []

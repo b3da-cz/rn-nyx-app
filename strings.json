@@ -1407,6 +1407,26 @@
     "postCountMany": {
       "cs": "příspěvků",
       "en": "posts"
+    },
+    "agentsDeniedTitle": {
+      "cs": "LLM Asistent",
+      "en": "LLM Assistant"
+    },
+    "agentsDeniedBody": {
+      "cs": "Tento klub neumožňuje použití LLM.",
+      "en": "This club does not allow the LLM assistant."
+    },
+    "agentsVerifyFailed": {
+      "cs": "Pravidla klubu se nepodařilo ověřit.",
+      "en": "Could not verify the club rules."
+    },
+    "agentsAllIgnored": {
+      "cs": "Všechny příspěvky v období mají zákaz shrnutí ([agents:ignore]).",
+      "en": "Every post in this period opts out of summaries ([agents:ignore])."
+    },
+    "ignoredPosts": {
+      "cs": "vynecháno %s× [agents:ignore]",
+      "en": "skipping %s× [agents:ignore]"
     }
   },
   "ratingPrompt": {

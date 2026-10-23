@@ -1,3 +1,10 @@
+import {
+  collectNicknames,
+  createNicknameScrubber,
+  LLM_ANONYMITY_INSTRUCTION,
+  postOptsOutOfAgents,
+  withAnonymityInstruction,
+} from './llmAgents'
 import { t } from './Strings'
 
 export type OpenRouterPricing = {
@@ -17,9 +24,10 @@ export const DEFAULT_LLM_SYSTEM_PROMPT =
   'Jsi asistent pro českou diskuzní sociální síť Nyx.cz. Tvým úkolem je analyzovat, shrnovat nebo zpracovávat příspěvky z diskuze podle zadání uživatele.\n\n' +
   'Pravidla formátování odpovědi:\n' +
   '- Odpověď formátuj v přehledném Markdownu.\n' +
-  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@NYX](https://nyx.cz/discussion/{discussion_id}/id/12345)).\n' +
+  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@USER_A1B2](https://nyx.cz/discussion/{discussion_id}/id/12345)).\n' +
   '- Přímo kolem odkazu nedělej žádné symboly (závorky, hvězdičky, čárku, tečku, ..) - před [ a po ) MUSÍ být mezery!\n' +
-  '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.'
+  '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.\n\n' +
+  LLM_ANONYMITY_INSTRUCTION
 
 export type OpenRouterChatParams = {
   apiKey: string
@@ -137,8 +145,8 @@ export function filterAndFormatPostsForLlm(
   dateFrom?: string,
   dateTo?: string,
   discussionTitle = '',
-): { formattedText: string; count: number; wordCount: number; matchedPosts: any[] } {
-  const filtered = posts.filter(post => {
+): { formattedText: string; count: number; wordCount: number; matchedPosts: any[]; ignoredCount: number } {
+  const inRange = posts.filter(post => {
     if (!post || post.location === 'header' || post.location === 'home') {
       return false
     }
@@ -153,6 +161,8 @@ export function filterAndFormatPostsForLlm(
     }
     return true
   })
+  const ignoredCount = inRange.filter(postOptsOutOfAgents).length
+  const filtered = inRange.filter(post => !postOptsOutOfAgents(post))
 
   // Sort chronologically (oldest first: smaller ID first)
   const sorted = [...filtered].sort((a, b) => {
@@ -189,6 +199,7 @@ export function filterAndFormatPostsForLlm(
     count: sorted.length,
     wordCount: totalWords,
     matchedPosts: sorted,
+    ignoredCount,
   }
 }
 
@@ -219,9 +230,19 @@ export async function sendOpenRouterChat({
   }
 
   onProgress?.('Filtruji a připravuji příspěvky...')
-  const { formattedText, count, wordCount } = filterAndFormatPostsForLlm(posts, dateFrom, dateTo, discussionTitle)
+  const { formattedText, count, wordCount, matchedPosts, ignoredCount } = filterAndFormatPostsForLlm(
+    posts,
+    dateFrom,
+    dateTo,
+    discussionTitle,
+  )
 
   if (count === 0) {
+    if (ignoredCount > 0) {
+      throw new Error(
+        t('llm.agentsAllIgnored') || 'Všechny příspěvky v období mají zákaz shrnutí ([agents:ignore]).',
+      )
+    }
     throw new Error('V zadaném časovém období nebyly nalezeny žádné příspěvky ke zpracování.')
   }
 
@@ -250,12 +271,20 @@ export async function sendOpenRouterChat({
     ? `https://nyx.cz/discussion/${discussionId}/id/{post_id}`
     : 'https://nyx.cz/discussion/{discussion_id}/id/{post_id}'
 
+  const scrubber = createNicknameScrubber(
+    collectNicknames(matchedPosts, [userPrompt, discussionTitle, formattedText]),
+  )
+  const anonTitle = scrubber.apply(discussionTitle || 'Klub')
+  const anonPrompt = scrubber.apply(userPrompt.trim())
+  const anonPosts = scrubber.apply(formattedText)
+  const anonSystemPrompt = withAnonymityInstruction(scrubber.apply(resolvedSystemPrompt))
+
   const userMessage =
-    `${userPrompt.trim()}\n\n` +
-    `--- Začátek příspěvků z diskuze "${discussionTitle || 'Klub'}"${discIdLabel} (${dateRangeLabel}, celkem ${count} příspěvků) ---\n` +
-    `Příspěvky mají formát [ID:{post_id}] [{datum}] @{autor}: {text}.\n` +
+    `${anonPrompt}\n\n` +
+    `--- Začátek příspěvků z diskuze "${anonTitle}"${discIdLabel} (${dateRangeLabel}, celkem ${count} příspěvků) ---\n` +
+    `Příspěvky mají formát [ID:{post_id}] [{datum}] @{autor}: {text}. Autor je anonymní identifikátor USER_XXXX a v odpovědi ho uveď přesně tak.\n` +
     `Odkaz na příspěvek vytvoř jako [@autor](${postUrlPattern}).\n\n` +
-    `${formattedText}\n\n` +
+    `${anonPosts}\n\n` +
     `--- Konec příspěvků ---`
 
   onProgress?.(`Odesílám HTTP požadavek na OpenRouter (${model})...`)
@@ -271,7 +300,7 @@ export async function sendOpenRouterChat({
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: resolvedSystemPrompt },
+        { role: 'system', content: anonSystemPrompt },
         { role: 'user', content: userMessage },
       ],
     }),
@@ -287,7 +316,7 @@ export async function sendOpenRouterChat({
 
   onProgress?.('Odpověď přijata, zpracovávám výsledek...')
   const choice = json.choices?.[0]
-  const content = choice?.message?.content || ''
+  const content = scrubber.restore(choice?.message?.content || '')
 
   return {
     content,

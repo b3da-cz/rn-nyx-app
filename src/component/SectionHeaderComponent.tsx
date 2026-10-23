@@ -16,6 +16,7 @@ type Props = {
   isPressable?: boolean
   onPress?: Function
   onIconPress?: Function
+  trailing?: React.ReactNode
 }
 export const SectionHeaderComponent = ({
   title,
@@ -26,6 +27,7 @@ export const SectionHeaderComponent = ({
   isPressable,
   onPress,
   onIconPress,
+  trailing,
 }: Props) => {
   const {
     colors,
@@ -79,6 +81,9 @@ export const SectionHeaderComponent = ({
               style={{ flex: 1, fontSize: titleSize, lineHeight: titleLine, color: colors.text }}>
               {title}
             </Text>
+            {trailing ? (
+              <View style={{ flexShrink: 0, marginLeft: blocks.small, justifyContent: 'center' }}>{trailing}</View>
+            ) : null}
             {!hasIconAction && iconNode}
           </View>
         </TouchableRipple>

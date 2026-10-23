@@ -94,6 +94,28 @@ describe('OpenRouter helper tests', () => {
       expect(res.count).toBe(0)
       expect(res.wordCount).toBe(0)
     })
+
+    it('drops posts that opt out with [agents:ignore]', () => {
+      const res = filterAndFormatPostsForLlm(
+        [
+          ...samplePosts,
+          {
+            id: 104,
+            username: 'dave',
+            inserted_at: '2026-10-04 16:00:00',
+            content: 'tajné [agents:ignore]',
+            parsed: { clearText: 'tajné [agents:ignore]' },
+          },
+        ],
+        '2026-10-04',
+        '2026-10-04',
+        'Test Klub',
+      )
+      expect(res.count).toBe(1)
+      expect(res.ignoredCount).toBe(1)
+      expect(res.formattedText).not.toContain('tajné')
+      expect(res.matchedPosts[0].id).toBe(103)
+    })
   })
 
   describe('RECOMMENDED_MODEL_IDS', () => {

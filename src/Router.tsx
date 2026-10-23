@@ -12,6 +12,7 @@ import { ExpandableTabBar, NotificationIconComponent, StackHeaderComponent } fro
 import {
   discussionScreenOptions,
   LlmQueue,
+  purgeExpiredLlmHistory,
   MainContext,
   NavOptions,
   Nyx,
@@ -256,6 +257,7 @@ export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Pr
   routerHandlers.onConfigReload = onConfigReload
   routerHandlers.onFiltersReload = onFiltersReload
   useEffect(() => {
+    purgeExpiredLlmHistory().catch(() => undefined)
     const sub = subscribeFCM(message => {
       nyx.api.getContext()
       switch (message.type) {

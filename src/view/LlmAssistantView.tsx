@@ -1,7 +1,23 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Keyboard, ScrollView, View } from 'react-native'
 import { IconButton, Text } from 'react-native-paper'
-import { MainContext, Styling, t, useTheme } from '../lib'
+import {
+  AgentRule,
+  agentRuleSource,
+  canUseAgent,
+  defaultAgentRule,
+  emptyViewerRights,
+  formatAgentTtlLabel,
+  MainContext,
+  parseAgentRule,
+  showNotificationBanner,
+  signedInUsername,
+  Styling,
+  t,
+  useTheme,
+  ViewerClubRights,
+  viewerRightsFromDiscussion,
+} from '../lib'
 import { LlmAssistantTab, LlmLibraryTab, LlmSegmentedRow } from '../component/llm'
 
 type Props = {
@@ -9,11 +25,20 @@ type Props = {
   discussionId?: number | string
   discussionTitle?: string
   initialPosts?: any[]
+  agentRule?: AgentRule
+  viewerRights?: ViewerClubRights
 }
 
 type TabType = 'assistant' | 'library'
 
-export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, discussionTitle, initialPosts = [] }) => {
+export const LlmAssistantView: React.FC<Props> = ({
+  navigation,
+  discussionId,
+  discussionTitle,
+  initialPosts = [],
+  agentRule,
+  viewerRights,
+}) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -27,7 +52,13 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
   const [posts, setPosts] = useState<any[]>(initialPosts)
   const [historyCount, setHistoryCount] = useState(0)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [rule, setRule] = useState<AgentRule>(agentRule || defaultAgentRule())
+  const [rights, setRights] = useState<ViewerClubRights>(viewerRights || emptyViewerRights(signedInUsername(nyx)))
+  const [policyReady, setPolicyReady] = useState(!discussionId || !!agentRule)
+  const [verifyFailed, setVerifyFailed] = useState(false)
+  const deniedNotice = useRef(false)
 
+  const seededPosts = useRef(initialPosts)
   const isPromptFocusedRef = useRef(false)
   const promptLayoutYRef = useRef(0)
   const scrollRef = useRef<ScrollView>(null)
@@ -55,19 +86,77 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
   }, [])
 
   useEffect(() => {
-    if (initialPosts.length > 0) {
-      setPosts(initialPosts)
-    } else if (discussionId && nyx) {
-      nyx.api
-        .getDiscussion(`${discussionId}`)
-        .then((res: any) => {
-          if (res?.posts?.length) {
-            setPosts(res.posts)
-          }
-        })
-        .catch((e: any) => console.warn('Failed to fetch initial posts for LLM', e))
+    if (seededPosts.current.length > 0) {
+      setPosts(seededPosts.current)
     }
-  }, [discussionId, initialPosts, nyx])
+    if (!discussionId) {
+      setPolicyReady(true)
+      return
+    }
+    if (!nyx) {
+      return
+    }
+    let cancelled = false
+    const hadRule = !!agentRule
+    nyx.api
+      .getDiscussion(`${discussionId}`)
+      .then((res: any) => {
+        if (cancelled) {
+          return
+        }
+        if (!res?.discussion_common) {
+          if (!hadRule) {
+            setVerifyFailed(true)
+            setPolicyReady(true)
+          }
+          return
+        }
+        setRule(parseAgentRule(agentRuleSource(res.discussion_common.discussion_specific_data?.header)))
+        setRights(viewerRightsFromDiscussion(res.discussion_common, signedInUsername(nyx)))
+        setVerifyFailed(false)
+        setPolicyReady(true)
+        if (seededPosts.current.length === 0 && res?.posts?.length) {
+          setPosts(res.posts)
+        }
+      })
+      .catch((e: any) => {
+        console.warn('Failed to read club agent rules', e)
+        if (cancelled) {
+          return
+        }
+        if (!hadRule) {
+          setVerifyFailed(true)
+          setPolicyReady(true)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [discussionId, nyx, agentRule])
+
+  const agentAllowed = !discussionId || (policyReady && !verifyFailed && canUseAgent(rule, rights))
+  const rightsDenied = !!discussionId && policyReady && !verifyFailed && !agentAllowed
+  const ttlLabel = formatAgentTtlLabel(rule)
+  const blockMessage = !discussionId
+    ? undefined
+    : verifyFailed
+      ? t('llm.agentsVerifyFailed')
+      : policyReady && !agentAllowed
+        ? t('llm.agentsDeniedBody')
+        : undefined
+
+  useEffect(() => {
+    if (!rightsDenied || deniedNotice.current) {
+      return
+    }
+    deniedNotice.current = true
+    showNotificationBanner({
+      title: t('llm.agentsDeniedTitle'),
+      body: t('llm.agentsDeniedBody'),
+      tintColor: colors.error,
+      icon: 'slash',
+    })
+  }, [rightsDenied, colors.error])
 
   const handleLoadOlderPosts = async (): Promise<number> => {
     if (!discussionId || !nyx || posts.length === 0) {
@@ -91,7 +180,7 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={[Styling.groups.flexRowCentered, { height: 50 }]}>
+      <View style={[Styling.groups.flexRowCentered, { minHeight: 50 }]}>
         <IconButton
           icon={'arrow-left'}
           size={25}
@@ -100,9 +189,19 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
           rippleColor={colors.ripple}
           onPress={() => navigation.goBack()}
         />
-        <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p + 2, marginHorizontal: blocks.large }}>
+        <Text
+          numberOfLines={1}
+          style={{ flex: 1, fontSize: fontSizes.p + 2, marginLeft: blocks.large, marginRight: blocks.small }}>
           {discussionTitle || t('llm.title')}
         </Text>
+        {!!discussionId && rule.found && (
+          <View style={{ alignItems: 'flex-end', marginRight: blocks.medium }}>
+            <Text style={{ color: rightsDenied ? colors.error : colors.text, fontSize: fontSizes.small }}>{rule.role}</Text>
+            {!!ttlLabel && (
+              <Text style={{ color: colors.error, fontSize: fontSizes.small }}>{ttlLabel}</Text>
+            )}
+          </View>
+        )}
       </View>
       {!!discussionId && (
         <LlmSegmentedRow
@@ -140,6 +239,9 @@ export const LlmAssistantView: React.FC<Props> = ({ navigation, discussionId, di
               onPromptLayout={y => {
                 promptLayoutYRef.current = y
               }}
+              agentAllowed={agentAllowed}
+              ttlMs={rule.found ? rule.ttlMs : 0}
+              blockMessage={blockMessage}
             />
           </ScrollView>
         </View>

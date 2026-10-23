@@ -5,6 +5,7 @@ import { formatDuration, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { SectionHeaderComponent } from '../SectionHeaderComponent'
 import { LlmAnswerBody } from './LlmAnswerBody'
+import { LlmTtlBadge } from './LlmTtlBadge'
 import { joinMeta } from './llmFormat'
 
 type Props = {
@@ -13,9 +14,19 @@ type Props = {
   durationMs?: number | null
   onNewQuery: () => void
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
+  expiresAt?: string | null
+  onExpired?: () => void
 }
 
-export const LlmResultSection: React.FC<Props> = ({ result, usage, durationMs, onNewQuery, onNavigateToPost }) => {
+export const LlmResultSection: React.FC<Props> = ({
+  result,
+  usage,
+  durationMs,
+  onNewQuery,
+  onNavigateToPost,
+  expiresAt,
+  onExpired,
+}) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -37,7 +48,11 @@ export const LlmResultSection: React.FC<Props> = ({ result, usage, durationMs, o
 
   return (
     <View style={{ marginTop: blocks.medium }}>
-      <SectionHeaderComponent title={title} backgroundColor={colors.surface} />
+      <SectionHeaderComponent
+        title={title}
+        backgroundColor={colors.surface}
+        trailing={expiresAt ? <LlmTtlBadge expiresAt={expiresAt} onExpired={onExpired} /> : null}
+      />
       <LlmAnswerBody content={result} isRaw={isRaw} onNavigateToPost={onNavigateToPost} />
       <View style={{ flexDirection: 'row' }}>
         <ButtonComponent

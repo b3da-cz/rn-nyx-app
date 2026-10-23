@@ -72,6 +72,30 @@ describe('LlmHistory tests', () => {
     expect(list[1].id).toBe(item1.id)
   })
 
+  it('drops an expired result the next time history is read', async () => {
+    await addLlmHistoryEntry({
+      discussionId: 10,
+      discussionTitle: 'Klub',
+      modelId: 'm1',
+      postCount: 1,
+      prompt: 'keep',
+      response: 'zůstane',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    await addLlmHistoryEntry({
+      discussionId: 10,
+      discussionTitle: 'Klub',
+      modelId: 'm1',
+      postCount: 1,
+      prompt: 'drop',
+      response: 'pryč',
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+    })
+
+    const list = await getLlmHistory()
+    expect(list.map(item => item.prompt)).toEqual(['keep'])
+  })
+
   it('deletes an entry by id', async () => {
     const item1 = await addLlmHistoryEntry({
       discussionId: 10,

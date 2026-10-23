@@ -26,6 +26,9 @@ type Props = {
   onHistoryEntryAdded?: () => void
   onPromptFocus?: () => void
   onPromptLayout?: (y: number) => void
+  agentAllowed?: boolean
+  ttlMs?: number
+  blockMessage?: string
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -68,6 +71,11 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           {a.postCount > 0
             ? `${t('llm.postsCount')}`.replace('%s', `${a.postCount}`).replace('%s', `${a.wordCount}`)
             : t('llm.noPosts')}
+          {a.ignoredCount > 0 ? (
+            <Text style={{ color: colors.error }}>
+              {`  ${`${t('llm.ignoredPosts')}`.replace('%s', `${a.ignoredCount}`)}`}
+            </Text>
+          ) : null}
         </Text>
         {a.canLoadOlder &&
           (a.isLoadingOlder ? (
@@ -114,6 +122,14 @@ export const LlmAssistantTab: React.FC<Props> = props => {
         />
       )}
 
+      {!!props.blockMessage && (
+        <Text
+          selectable
+          style={{ color: colors.error, fontSize: fontSizes.small, paddingHorizontal: blocks.medium, marginTop: blocks.small }}>
+          {props.blockMessage}
+        </Text>
+      )}
+
       {!!a.errorMessage && (
         <Text
           selectable
@@ -127,6 +143,8 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           result={a.result.text}
           usage={a.result.usage}
           durationMs={a.result.durationMs}
+          expiresAt={a.result.expiresAt}
+          onExpired={a.expireResult}
           onNewQuery={a.clearResult}
           onNavigateToPost={props.onNavigateToPost}
         />

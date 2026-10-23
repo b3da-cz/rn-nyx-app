@@ -48,7 +48,11 @@ import {
   MyAttendance,
   MainContext,
   Nyx,
+  agentRuleSource,
+  parseAgentRule,
   parsePostsContent,
+  signedInUsername,
+  viewerRightsFromDiscussion,
   emptyFetchProgress,
   FetchProgressEvent,
   FetchProgressState,
@@ -132,6 +136,7 @@ export class DiscussionView extends Component<Props> {
   _skipJumpToLastSeen = false
   _olderEnd = initialOlderEndState()
   _clubStartPost: any = null
+  _agentPolicy?: { rule: ReturnType<typeof parseAgentRule>; rights: ReturnType<typeof viewerRightsFromDiscussion> }
   _listGeneration = 0
   _olderMiss = false
   _revealQueue: Promise<void> = Promise.resolve()
@@ -614,6 +619,12 @@ export class DiscussionView extends Component<Props> {
         servedFromCache = true
       }
       this.trackLoad({ ...request, done: 1 })
+      if (res?.discussion_common) {
+        this._agentPolicy = {
+          rule: parseAgentRule(agentRuleSource(res.discussion_common.discussion_specific_data?.header)),
+          rights: viewerRightsFromDiscussion(res.discussion_common, signedInUsername(this.nyx)),
+        }
+      }
       if (!res?.posts?.length) {
         const eventDetail = this.eventDetailFromResponse(toEventDetail(res?.discussion_common))
         if (!opts.holdLock) {
@@ -1180,6 +1191,8 @@ export class DiscussionView extends Component<Props> {
             discussionId: this.state.discussionId ? this.state.discussionId : this.props.id,
             discussionTitle: this.state.title,
             posts: this._posts?.length ? this._posts : this.state.posts,
+            agentRule: this._agentPolicy?.rule,
+            viewerRights: this._agentPolicy?.rights,
           }),
       })
     }

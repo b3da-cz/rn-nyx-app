@@ -20,6 +20,7 @@ export type LlmPendingTask = {
   apiKey: string
   systemPrompt?: string
   posts?: any[]
+  ttlMs?: number
 }
 
 type LlmQueueListener = (tasks: LlmPendingTask[]) => void
@@ -115,6 +116,7 @@ class LlmQueueService {
     dateTo?: string
     postCount: number
     systemPrompt?: string
+    ttlMs?: number
   }): Promise<string> {
     await this.init()
 
@@ -132,6 +134,7 @@ class LlmQueueService {
       apiKey: params.apiKey,
       systemPrompt: params.systemPrompt,
       posts: params.posts,
+      ttlMs: params.ttlMs && params.ttlMs > 0 ? params.ttlMs : undefined,
       status: 'pending',
     }
 
@@ -173,6 +176,7 @@ class LlmQueueService {
         response: res.content,
         durationMs,
         usage: res.usage,
+        expiresAt: task.ttlMs && task.ttlMs > 0 ? new Date(Date.now() + task.ttlMs).toISOString() : undefined,
       })
 
       // Remove completed task from queue

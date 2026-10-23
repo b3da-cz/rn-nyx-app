@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.32.0
+- asistent v klubu čte ze záhlaví, kdo ho smí spustit a za jak dlouho se výsledek smaže
+- když na agenta nemáš právo, odeslání je vypnuté a vyskočí hláška
+- čas smazání je v záhlaví červeně, role taky, pokud na ni nemáš právo
+- výsledek s časem smazání má odpočet a po vypršení zmizí z knihovny
+- přezdívky se do modelu posílají anonymně a v odpovědi se vrátí
+- příspěvky s [agents:ignore] se vynechají a jejich počet je červeně u nalezených příspěvků
+
 ## 0.31.5
 - nastavení při změně už neblikne a neskočí nahoru, když je odscrollované
 

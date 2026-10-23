@@ -8,6 +8,7 @@ import { ButtonComponent } from '../ButtonComponent'
 import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { SearchHighlight } from '../SearchHighlight'
 import { LlmAnswerBody } from './LlmAnswerBody'
+import { LlmTtlBadge } from './LlmTtlBadge'
 import { formatLlmDate, formatLlmDateRange, formatPostCount, joinMeta } from './llmFormat'
 
 type Props = {
@@ -66,6 +67,7 @@ export const LlmLibraryItemCard: React.FC<Props> = ({ item, onDelete, onUsePromp
             <Text numberOfLines={1} style={{ flex: 1, fontSize: fontSizes.p - 1, color: colors.text }}>
               {item.discussionTitle || `#${item.discussionId}`}
             </Text>
+            <LlmTtlBadge expiresAt={item.expiresAt} onExpired={() => onDelete(item.id)} />
             <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={fontSizes.p} color={colors.faded} />
           </View>
           <Text numberOfLines={1} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
