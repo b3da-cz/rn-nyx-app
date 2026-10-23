@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.33.1
+- tlačítko nové zprávy v mailu zůstává dole jako v diskuzi
+
 ## 0.33.0
 - rozepsaná zpráva v klubu zůstane po vypnutí aplikace, v každém klubu zvlášť
 - v mailu se text vrátí po zadání stejné přezdívky

@@ -386,7 +386,6 @@ export class MailView extends Component<Props> {
           params={{ mailRecipient: this.state.activeRecipient !== 'all' ? this.state.activeRecipient : '' }}
           fabBackgroundColor={theme.colors.secondary}
           fabIcon={'email'}
-          fabBottomPosition={50}
           isVisible={this.state.isMsgBtnVisible}
           onSend={() => this.getLatestMessages()}
         />

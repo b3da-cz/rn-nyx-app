@@ -1100,16 +1100,13 @@ export class MessageBoxDialog extends Component<Props> {
           </Dialog.Actions>
         </Dialog>
     )
+    // The mail list already ends above the tab bar. A bottom offset inside that
+    // screen lifts the button into the messages. The discussion button is portaled
+    // to the window and only clears the tab bar, so this one uses the same anchor.
+    const tabLift = this.context?.config?.isBottomTabs ? 45 : 0
+    const fabBottom = this.props.fabTopPosition === undefined ? (this.props.fabBottomPosition ?? tabLift) : undefined
     return (
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          height: 100,
-          right: 0,
-        }}
-        pointerEvents="box-none"
-      >
+      <>
         {isDialogVisible && (
           <Modal
             visible
@@ -1139,28 +1136,27 @@ export class MessageBoxDialog extends Component<Props> {
             </Portal.Host>
           </Modal>
         )}
-        <SafeBottom>
-          {insetBottom => (
-            <FAB
-              small={this.props.params.isGitIssue}
-              style={{
-                position: 'absolute',
-                margin: 16,
-                right: 0,
-                bottom:
-                  this.props.fabTopPosition === undefined
-                    ? (this.props.fabBottomPosition || 0) + insetBottom
-                    : undefined,
-                top: this.props.fabTopPosition,
-                backgroundColor: this.props.fabBackgroundColor || colors.primary,
-              }}
-              icon={this.props.fabIcon || 'message'}
-              visible={isVisible && !isDialogVisible}
-              onPress={() => this.showDialog(true)}
-            />
-          )}
-        </SafeBottom>
-      </View>
+        <Portal>
+          <SafeBottom>
+            {insetBottom => (
+              <FAB
+                small={this.props.params.isGitIssue}
+                style={{
+                  position: 'absolute',
+                  margin: 16,
+                  right: 0,
+                  bottom: fabBottom === undefined ? undefined : fabBottom + insetBottom,
+                  top: this.props.fabTopPosition,
+                  backgroundColor: this.props.fabBackgroundColor || colors.primary,
+                }}
+                icon={this.props.fabIcon || 'message'}
+                visible={isVisible && !isDialogVisible}
+                onPress={() => this.showDialog(true)}
+              />
+            )}
+          </SafeBottom>
+        </Portal>
+      </>
     )
   }
 }
