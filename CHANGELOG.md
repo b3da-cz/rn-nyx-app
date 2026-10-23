@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.33.0
+- rozepsaná zpráva v klubu zůstane po vypnutí aplikace, v každém klubu zvlášť
+- v mailu se text vrátí po zadání stejné přezdívky
+- odeslání nebo vymazání textu ten koncept smaže
+
 ## 0.32.0
 - asistent v klubu čte ze záhlaví, kdo ho smí spustit a za jak dlouho se výsledek smaže
 - když na agenta nemáš právo, odeslání je vypnuté a vyskočí hláška

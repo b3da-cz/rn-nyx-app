@@ -2,6 +2,7 @@ import DeviceInfo from 'react-native-device-info'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import { confirm } from '../component'
 import { t, showNotificationBanner, Storage } from '../lib'
+import { resetMessageDraftMemory } from './messageDrafts'
 import { NyxEventsApi } from './NyxEventsApi'
 // @ts-ignore
 import { gplayTestId, gplayTestToken } from '../../keys.json'
@@ -60,6 +61,7 @@ export class Nyx {
 
   logout() {
     Storage.removeAll()
+    resetMessageDraftMemory()
     this.api.deleteAuthToken()
     this.api.logout()
   }

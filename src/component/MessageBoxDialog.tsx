@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import {
   ActivityIndicator,
+  AppState,
   View,
   ScrollView,
   Image,
@@ -37,6 +38,14 @@ import {
   asFileUri,
   keyboardLift,
   showNotificationBanner,
+  clubDraftKey,
+  mailDraftKey,
+  hydrateMessageDrafts,
+  readMessageDraft,
+  rememberDraft,
+  switchMailDraft,
+  flushMessageDrafts,
+  DraftBucket,
 } from '../lib'
 
 type Props = {
@@ -83,6 +92,11 @@ export class MessageBoxDialog extends Component<Props> {
   overlayRef: any
   kbTimers: Array<ReturnType<typeof setTimeout>>
   alive = true
+  messageText = ''
+  draftEpoch = 0
+  clubDraftReady?: Promise<void>
+  mailQueue: Promise<void> = Promise.resolve()
+  appStateSub?: { remove: () => void }
   openedFocus = false
   _isUploadingCustomFile = false
   constructor(props) {
@@ -143,6 +157,8 @@ export class MessageBoxDialog extends Component<Props> {
       }
     })
     this.loadUploadSettings()
+    this.appStateSub = AppState.addEventListener('change', this.onAppStateChange)
+    this.ensureClubDraft()
   }
 
   kbEvent: any = null
@@ -220,9 +236,25 @@ export class MessageBoxDialog extends Component<Props> {
     this.keyboardShowSub?.remove()
     this.keyboardHideSub?.remove()
     this.dimensionsSub?.remove()
+    this.appStateSub?.remove()
+    this.persistOpenDraft()
+    flushMessageDrafts().catch(() => undefined)
   }
 
-  componentDidUpdate(_prevProps, prevState) {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.params.discussionId !== this.props.params.discussionId) {
+      const previousKey = clubDraftKey(prevProps.params.discussionId)
+      if (previousKey) {
+        rememberDraft('club', previousKey, this.messageText)
+      }
+      this.messageText = ''
+      this.draftEpoch += 1
+      this.clubDraftReady = undefined
+      this.ensureClubDraft()
+    }
+    if (this.isMailComposer() && prevState.selectedRecipient !== this.state.selectedRecipient) {
+      this.queueMailDraftSwitch(prevState.selectedRecipient, this.state.selectedRecipient)
+    }
     if (this.state.isDialogVisible && !prevState.isDialogVisible && (this.kbEvent || Keyboard.isVisible())) {
       if (!this.kbEvent && Keyboard.metrics()) {
         this.kbEvent = { endCoordinates: Keyboard.metrics() }
@@ -254,8 +286,104 @@ export class MessageBoxDialog extends Component<Props> {
     }
   }
 
+  onAppStateChange = (state: string) => {
+    if (state !== 'background' && state !== 'inactive') {
+      return
+    }
+    this.persistOpenDraft()
+    flushMessageDrafts().catch(() => undefined)
+  }
+
+  isMailComposer() {
+    return !(this.props.params.discussionId && this.props.params.discussionId > 0) && !this.props.params.isGitIssue
+  }
+
+  draftBucket(): DraftBucket | null {
+    if (this.props.params.discussionId && this.props.params.discussionId > 0) {
+      return 'club'
+    }
+    if (this.isMailComposer()) {
+      return 'mail'
+    }
+    return null
+  }
+
+  draftKey(): string {
+    const bucket = this.draftBucket()
+    if (bucket === 'club') {
+      return clubDraftKey(this.props.params.discussionId)
+    }
+    if (bucket === 'mail') {
+      return mailDraftKey(this.state.selectedRecipient)
+    }
+    return ''
+  }
+
+  ensureClubDraft(): Promise<void> {
+    if (this.clubDraftReady) {
+      return this.clubDraftReady
+    }
+    const key = clubDraftKey(this.props.params.discussionId)
+    const epoch = this.draftEpoch
+    if (!key) {
+      this.clubDraftReady = Promise.resolve()
+      return this.clubDraftReady
+    }
+    this.clubDraftReady = hydrateMessageDrafts()
+      .then(() => {
+        if (!this.alive || epoch !== this.draftEpoch || this.messageText) {
+          return
+        }
+        const text = readMessageDraft('club', key)
+        if (!text || this.messageText) {
+          return
+        }
+        this.messageText = text
+        this.setState({ message: text })
+      })
+      .catch(error => console.warn('message draft', error))
+    return this.clubDraftReady
+  }
+
+  persistOpenDraft() {
+    const bucket = this.draftBucket()
+    const key = this.draftKey()
+    if (!bucket || !key) {
+      return
+    }
+    rememberDraft(bucket, key, this.messageText)
+  }
+
+  queueMailDraftSwitch(previous?: string, next?: string) {
+    const snapshot = this.messageText
+    this.mailQueue = this.mailQueue
+      .then(async () => {
+        await hydrateMessageDrafts()
+        if (!this.alive) {
+          return
+        }
+        const typedSince = this.messageText !== snapshot
+        if (!typedSince) {
+          const text = switchMailDraft(previous, next, snapshot)
+          this.messageText = text
+          if (this.state.message !== text) {
+            this.setState({ message: text })
+          }
+          return
+        }
+        switchMailDraft(previous, next, snapshot)
+        const nextKey = mailDraftKey(next)
+        if (nextKey) {
+          rememberDraft('mail', nextKey, this.messageText)
+        }
+      })
+      .catch(error => console.warn('message draft', error))
+  }
+
   onMessageChange(val: string) {
+    this.messageText = val
     this.setState({ message: val })
+    this.persistOpenDraft()
     this.sendTypingNotification()
   }
 
@@ -357,10 +485,13 @@ export class MessageBoxDialog extends Component<Props> {
             ...res,
             size: file.size != null ? file.size : res.size,
           }
+          const message = this.messageWithVideoTag(prev.message, uploaded)
+          this.messageText = message
+          this.persistOpenDraft()
           return {
             isUploading: false,
             uploadedFiles: prev.uploadedFiles?.length ? [...prev.uploadedFiles, uploaded] : [uploaded],
-            message: this.messageWithVideoTag(prev.message, uploaded),
+            message,
           }
         })
         Bugfender.log('INFO', 'upload file ok')
@@ -439,13 +570,18 @@ export class MessageBoxDialog extends Component<Props> {
           ...res,
           size: targetFile.size != null ? targetFile.size : res.size,
         }
-        this.setState(prev => ({
-          isUploading: false,
-          uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
-            ? prev.uploadedFiles
-            : [...(prev.uploadedFiles || []), uploaded],
-          message: this.messageWithVideoTag(prev.message, uploaded),
-        }))
+        this.setState(prev => {
+          const message = this.messageWithVideoTag(prev.message, uploaded)
+          this.messageText = message
+          this.persistOpenDraft()
+          return {
+            isUploading: false,
+            uploadedFiles: prev.uploadedFiles?.some(f => f.id === uploaded.id)
+              ? prev.uploadedFiles
+              : [...(prev.uploadedFiles || []), uploaded],
+            message,
+          }
+        })
         Bugfender.log('INFO', 'upload shared file ok')
         await this.fetchUploadedFiles()
       } else {
@@ -502,8 +638,19 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   addText(text, addNewline = false) {
-    this.setState({
-      message: `${this.state.message}${addNewline && this.state.message?.length > 0 ? '\n' : ''}${text}`,
+    this.ensureClubDraft().then(() => {
+      if (!this.alive) {
+        return
+      }
+      const base = this.messageText || ''
+      let extra = text || ''
+      const needsNewline = base.length > 0 && extra.length > 0 && !extra.startsWith('\n')
+      if ((addNewline || needsNewline) && base.length > 0 && extra.length > 0 && !extra.startsWith('\n')) {
+        extra = `\n${extra}`
+      }
+      this.messageText = `${base}${extra}`
+      this.setState({ message: this.messageText })
+      this.persistOpenDraft()
     })
   }
 
@@ -525,6 +672,9 @@ export class MessageBoxDialog extends Component<Props> {
       console.warn(res)
       return
     }
+    this.messageText = ''
+    this.persistOpenDraft()
+    flushMessageDrafts().catch(() => undefined)
     this.clearKeyboardSync()
     this.setState({
       isFetching: false,
@@ -538,6 +688,8 @@ export class MessageBoxDialog extends Component<Props> {
   }
 
   dismissDialog() {
+    this.persistOpenDraft()
+    flushMessageDrafts().catch(() => undefined)
     this.clearKeyboardSync()
     this.setState({ isDialogVisible: false, keyboardVisible: false, keyboardHeight: 0 })
     typeof this.props.onDismiss === 'function' && this.props.onDismiss()

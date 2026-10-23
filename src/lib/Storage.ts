@@ -18,6 +18,7 @@ const StorageKeys = {
   fingerprintBackgroundAt: 'fingerprintBackgroundAt',
   discussionCache: 'discussionCache',
   discussionListCache: 'discussionListCache',
+  messageDrafts: 'messageDrafts',
 }
 
 const set = async (key, value) => {
@@ -213,6 +214,10 @@ const setDiscussionListCache = async cache => {
   }
 }
 
+const getMessageDrafts = async () => get(StorageKeys.messageDrafts)
+
+const setMessageDrafts = async drafts => set(StorageKeys.messageDrafts, drafts)
+
 const removeAll = async () =>
   set(StorageKeys.auth, null)
     .then(() => set(StorageKeys.blockedUsers, null))
@@ -224,6 +229,7 @@ const removeAll = async () =>
     .then(() => set(StorageKeys.favoriteLlmModels, null))
     .then(() => set(StorageKeys.llmPendingTasks, null))
     .then(() => set(StorageKeys.llmPromptTemplates, null))
+    .then(() => set(StorageKeys.messageDrafts, null))
 
 export const Storage = {
   getAuth,
@@ -260,5 +266,7 @@ export const Storage = {
   setDiscussionCache,
   getDiscussionListCache,
   setDiscussionListCache,
+  getMessageDrafts,
+  setMessageDrafts,
   removeAll,
 }
