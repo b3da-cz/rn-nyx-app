@@ -136,7 +136,35 @@ describe('agent opt-out and nickname scrubber', () => {
     const scrubber = createNicknameScrubber(['USER', 'FOX', 'FOXY'])
     const hidden = scrubber.apply('FOX a FOXY a USER')
     expect(hidden.match(/USER_[A-Z0-9]{4}/g)).toHaveLength(3)
+    expect(hidden).toMatch(/USER_[A-Z]*[0-9][A-Z0-9]*/)
     expect(scrubber.restore(hidden)).toBe('FOX a FOXY a USER')
+  })
+
+  it('restores a code when the model drops, escapes, or inflects the token', () => {
+    const scrubber = createNicknameScrubber(['ALICE', 'BOB', 'A1B2'])
+    const hidden = scrubber.apply('@ALICE, BOB a A1B2')
+    const codes = [...hidden.matchAll(/USER_([A-Z0-9]{4})/g)].map(match => match[1])
+    expect(codes).toHaveLength(3)
+    codes.forEach(code => {
+      expect(code).toMatch(/[A-Z]/)
+      expect(code).toMatch(/[0-9]/)
+      expect(code).not.toBe('A1B2')
+    })
+    const [alice, bob] = codes
+    const answer = [
+      `Uživatel [@${alice}](https://nyx.cz/discussion/1/id/2) informuje.`,
+      `USER\\_${bob} a user-${bob} a ${bob}ovi a _USER_${bob}_.`,
+      `${alice}a zůstává, ${alice}alfa ne.`,
+      'NATO 2024 zůstává.',
+    ].join(' ')
+    const restored = scrubber.restore(answer)
+    expect(restored).toContain('[@ALICE](https://nyx.cz/discussion/1/id/2)')
+    expect(restored).toContain('BOB a BOB a BOB a _BOB_.')
+    expect(restored).toContain(`ALICE zůstává, ${alice}alfa ne.`)
+    expect(restored).toContain('NATO 2024 zůstává.')
+    expect(restored).not.toContain(`[@${alice}]`)
+    expect(restored).not.toContain(bob)
+    expect(scrubber.restore(hidden)).toBe('@ALICE, BOB a A1B2')
   })
 
   it('adds the anonymity instruction once', () => {

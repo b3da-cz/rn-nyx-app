@@ -16,6 +16,8 @@ import {
   syncCachedPage,
   touchCachedDiscussion,
   MAX_CACHED_PAGES_PER_CLUB,
+  DISCUSSION_CACHE_LIMIT_MAX,
+  normalizeDiscussionCacheLimit,
 } from '../src/lib/discussionCache'
 
 const post = (id: number, content = `post ${id}`, height = 100) => ({
@@ -29,6 +31,13 @@ const post = (id: number, content = `post ${id}`, height = 100) => ({
 })
 
 describe('discussion cache', () => {
+  it('accepts up to 1000 cached clubs', () => {
+    expect(DISCUSSION_CACHE_LIMIT_MAX).toBe(1000)
+    expect(normalizeDiscussionCacheLimit(1000)).toBe(1000)
+    expect(normalizeDiscussionCacheLimit(1001)).toBe(1000)
+    expect(normalizeDiscussionCacheLimit(200)).toBe(200)
+  })
+
   it('keys the latest page and older or newer pages', () => {
     expect(discussionQueryParts('15').pageKey).toBe('latest')
     expect(discussionQueryParts('15?order=older_than&from_id=8')).toEqual({

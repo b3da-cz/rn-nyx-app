@@ -476,8 +476,8 @@ export async function sendOpenRouterChat({
   const userMessage =
     `${anonPrompt}\n\n` +
     `--- Začátek příspěvků z diskuze "${anonTitle}"${discIdLabel} (${dateRangeLabel}, celkem ${count} příspěvků) ---\n` +
-    `Příspěvky mají formát [ID:{post_id}] [{datum}] @{autor}: {text}. Autor je anonymní identifikátor USER_XXXX a v odpovědi ho uveď přesně tak.\n` +
-    `Odkaz na příspěvek vytvoř jako [@autor](${postUrlPattern}).\n\n` +
+    `Příspěvky mají formát [ID:{post_id}] [{datum}] @{autor}: {text}. Autor je celý identifikátor USER_XXXX.\n` +
+    `V odpovědi ho nech beze změny, včetně předpony USER_. Odkaz na příspěvek vytvoř jako [@USER_XXXX](${postUrlPattern}).\n\n` +
     `${anonPosts}\n\n` +
     `--- Konec příspěvků ---`
 

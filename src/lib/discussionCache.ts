@@ -1,5 +1,5 @@
 export const DISCUSSION_CACHE_LIMIT_DEFAULT = 30
-export const DISCUSSION_CACHE_LIMIT_MAX = 200
+export const DISCUSSION_CACHE_LIMIT_MAX = 1000
 
 export type CachedImageLayout = {
   src: string

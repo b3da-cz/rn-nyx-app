@@ -27,8 +27,9 @@ const AGENT_RULE_RE = new RegExp(
 )
 const IGNORE_RE = /\[agents:ignore\]/i
 const NICK_RE = '[A-Za-z0-9_]{3,15}'
-const TOKEN_RE = /USER_[A-Z0-9]{4}/gi
 const TOKEN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+// A short Czech case ending glued to the code (PUQAa, G9N9ovi). Longer endings first.
+const CASE_ENDING = '(?:ovi|ova|em|ou|a|e|u|y|i)'
 
 export const LLM_ANONYMITY_INSTRUCTION =
   'Jména uživatelů jsou anonymizována pomocí identifikátorů ve formátu USER_XXXX. V souhrnu používej přesně tyto identifikátory v základním tvaru (neskloňuj je), aby mohly být následně strojově nahrazeny zpět.'
@@ -266,18 +267,44 @@ export function collectNicknames(posts: any[] = [], extraTexts: string[] = []): 
   return [...found.values()]
 }
 
-function mintToken(used: Set<string>): string {
-  for (let attempt = 0; attempt < 50; attempt++) {
-    let token = 'USER_'
-    for (let i = 0; i < 4; i++) {
-      token += TOKEN_ALPHABET[Math.floor(Math.random() * TOKEN_ALPHABET.length)]
+function randomCode(): string {
+  let code = ''
+  for (let i = 0; i < 4; i++) {
+    code += TOKEN_ALPHABET[Math.floor(Math.random() * TOKEN_ALPHABET.length)]
+  }
+  return code
+}
+
+// A letter and a digit, so the bare code is not a normal word and not a year.
+function isOpaqueCode(code: string): boolean {
+  return /[A-Z]/.test(code) && /[0-9]/.test(code)
+}
+
+function mintCode(used: Set<string>, blocked: Set<string>): string {
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const code = randomCode()
+    if (!isOpaqueCode(code) || used.has(code) || blocked.has(code)) {
+      continue
     }
-    if (!used.has(token)) {
-      used.add(token)
-      return token
-    }
+    used.add(code)
+    return code
   }
   throw new Error('LLM nickname token space exhausted')
+}
+
+function blockedCodes(names: string[]): Set<string> {
+  const blocked = new Set<string>()
+  for (const name of names) {
+    const key = name.trim().toUpperCase()
+    if (/^[A-Z0-9]{4}$/.test(key)) {
+      blocked.add(key)
+    }
+    const prefixed = key.match(/^USER_([A-Z0-9]{4})$/)
+    if (prefixed && isOpaqueCode(prefixed[1])) {
+      blocked.add(prefixed[1])
+    }
+  }
+  return blocked
 }
 
 export type NicknameScrubber = {
@@ -287,21 +314,34 @@ export type NicknameScrubber = {
 
 export function createNicknameScrubber(names: string[]): NicknameScrubber {
   const tokens = new Map<string, string>()
-  const reverse = new Map<string, string>()
+  const byCode = new Map<string, string>()
   const used = new Set<string>()
+  const blocked = blockedCodes(names)
   const unique: string[] = []
   for (const name of names) {
     const key = name.toUpperCase()
     if (tokens.has(key)) {
       continue
     }
-    const token = mintToken(used)
+    const code = mintCode(used, blocked)
+    const token = `USER_${code}`
     tokens.set(key, token)
-    reverse.set(token, name)
+    byCode.set(code, name)
     unique.push(name)
   }
   unique.sort((a, b) => b.length - a.length)
   const source = unique.length > 0 ? `(^|[^A-Za-z0-9_])(${unique.map(escapeRegExp).join('|')})(?=$|[^A-Za-z0-9_])` : ''
+  const codeSource = [...byCode.keys()].map(escapeRegExp).join('|')
+  const wordEdge = '(?=$|[^A-Za-z0-9_])'
+  // Italic markers are underscores, so the whole token may be wrapped as _USER_CODE_.
+  const tokenEdge = '(?=$|[^A-Za-z0-9])'
+  // Fresh regexes each call. A global regex keeps lastIndex between replaces.
+  const fullPattern = codeSource
+    ? `(^|[^A-Za-z0-9])USER(?:\\\\_|_|-| )(${codeSource})${CASE_ENDING}?${tokenEdge}`
+    : ''
+  const barePattern = codeSource ? `(^|[^A-Za-z0-9_])(${codeSource})${CASE_ENDING}?${wordEdge}` : ''
+
+  const nameFor = (code: string) => byCode.get(code.toUpperCase())
 
   return {
     apply(text: string) {
@@ -314,10 +354,18 @@ export function createNicknameScrubber(names: string[]): NicknameScrubber {
       })
     },
     restore(text: string) {
-      if (!text) {
+      if (!text || !fullPattern || !barePattern) {
         return text
       }
-      return text.replace(new RegExp(TOKEN_RE.source, 'gi'), token => reverse.get(token.toUpperCase()) || token)
+      // Models drop USER_, escape the underscore, swap it for a hyphen or space, or glue on a Czech ending.
+      const withPrefix = text.replace(new RegExp(fullPattern, 'gi'), (match, prefix: string, code: string) => {
+        const name = nameFor(code)
+        return name ? `${prefix}${name}` : match
+      })
+      return withPrefix.replace(new RegExp(barePattern, 'gi'), (match, prefix: string, code: string) => {
+        const name = nameFor(code)
+        return name ? `${prefix}${name}` : match
+      })
     },
   }
 }

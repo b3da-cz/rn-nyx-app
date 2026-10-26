@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.1
+- přezdívky v odpovědi asistenta se vrátí i když model zahodí předponu USER_
+- v nastavení jde v cache držet až 1000 posledních klubů
+
 ## 0.34.0
 - asistent umí vedle OpenRouteru vlastní OpenAI endpoint a klíč
 - po zadání adresy a klíče se model vybírá stejně jako u OpenRouteru
