@@ -39,6 +39,8 @@ export type OpenRouterChatParams = {
   dateFrom?: string
   dateTo?: string
   systemPrompt?: string
+  provider?: LlmProviderId
+  baseUrl?: string
   onProgress?: (message: string) => void
 }
 
@@ -60,6 +62,186 @@ export const RECOMMENDED_MODEL_IDS = [
   'meta-llama/llama-3.3-70b-instruct',
   'openai/gpt-4o-mini',
 ]
+
+export type LlmProviderId = 'openrouter' | 'openai'
+
+export type LlmSavedModel = {
+  id: string
+  name: string
+}
+
+export type LlmSavedModels = Partial<Record<LlmProviderId, LlmSavedModel>>
+
+export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+
+export function normalizeLlmProvider(value: unknown): LlmProviderId {
+  return value === 'openai' ? 'openai' : 'openrouter'
+}
+
+// http is allowed so a model running on the local network can be used.
+// A bare host still gets https, because that is the public API default.
+export function normalizeOpenAiBaseUrl(input: string): string {
+  let url = (input || '').trim()
+  if (!url) {
+    return ''
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`
+  }
+  url = url.replace(/\/+$/, '')
+  url = url.replace(/\/chat\/completions$/i, '')
+  url = url.replace(/\/completions$/i, '')
+  url = url.replace(/\/models$/i, '')
+  url = url.replace(/\/+$/, '')
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return ''
+  }
+  if ((parsed.protocol !== 'https:' && parsed.protocol !== 'http:') || parsed.username || parsed.password) {
+    return ''
+  }
+  // Do not read URL.pathname. React Native's URL adds a trailing slash, so
+  // origin + pathname became /v1/ and the next segment turned into /v1//models.
+  const host = `${parsed.protocol}//${parsed.host}`
+  if (!url.startsWith(host)) {
+    return ''
+  }
+  const path = url.slice(host.length).replace(/\/+$/, '')
+  if (!path || path === '/') {
+    return `${host}/v1`
+  }
+  return `${host}${path.startsWith('/') ? path : `/${path}`}`
+}
+
+export function llmApiUrl(base: string, path: 'models' | 'chat/completions'): string {
+  return `${base.replace(/\/+$/, '')}/${path}`
+}
+
+function llmAuthHeaders(apiKey: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  }
+}
+
+export function openAiBaseUrlError(input: string): string | null {
+  const trimmed = (input || '').trim()
+  if (!trimmed) {
+    return t('profile.llm.endpointRequired') || 'Nejprve zadejte endpoint.'
+  }
+  if (!normalizeOpenAiBaseUrl(trimmed)) {
+    return t('profile.llm.endpointInvalid') || 'Endpoint není platná adresa.'
+  }
+  return null
+}
+
+export type LlmConnectionConfig = {
+  llmProvider?: string
+  openRouterApiKey?: string
+  openaiApiKey?: string
+  openaiBaseUrl?: string
+  isLlmEnabled?: boolean
+  selectedLlmModel?: string
+}
+
+export type LlmConnection = {
+  provider: LlmProviderId
+  apiKey: string
+  baseUrl: string
+}
+
+export function llmConnectionFromConfig(config?: LlmConnectionConfig | null): LlmConnection {
+  const provider = normalizeLlmProvider(config?.llmProvider)
+  if (provider === 'openai') {
+    return {
+      provider,
+      apiKey: (config?.openaiApiKey || '').trim(),
+      baseUrl: normalizeOpenAiBaseUrl(config?.openaiBaseUrl || ''),
+    }
+  }
+  return {
+    provider: 'openrouter',
+    apiKey: (config?.openRouterApiKey || '').trim(),
+    baseUrl: OPENROUTER_BASE_URL,
+  }
+}
+
+export function isLlmAssistantAvailable(config?: LlmConnectionConfig | null): boolean {
+  if (!config?.isLlmEnabled || !(config.selectedLlmModel || '').trim()) {
+    return false
+  }
+  const connection = llmConnectionFromConfig(config)
+  if (!connection.apiKey) {
+    return false
+  }
+  return connection.provider === 'openrouter' || !!connection.baseUrl
+}
+
+export function sortLlmModels(models: OpenRouterModel[]): OpenRouterModel[] {
+  return [...models].sort((a, b) => {
+    const aRec = RECOMMENDED_MODEL_IDS.indexOf(a.id)
+    const bRec = RECOMMENDED_MODEL_IDS.indexOf(b.id)
+    if (aRec !== -1 && bRec !== -1) {
+      return aRec - bRec
+    }
+    if (aRec !== -1) {
+      return -1
+    }
+    if (bRec !== -1) {
+      return 1
+    }
+    return (a.name || a.id).localeCompare(b.name || b.id)
+  })
+}
+
+export function modelsFromApiPayload(json: any): OpenRouterModel[] {
+  const raw = Array.isArray(json)
+    ? json
+    : Array.isArray(json?.data)
+      ? json.data
+      : Array.isArray(json?.models)
+        ? json.models
+        : []
+  const models: OpenRouterModel[] = []
+  for (const item of raw) {
+    if (typeof item === 'string' && item.trim()) {
+      const id = item.trim()
+      models.push({ id, name: id })
+      continue
+    }
+    if (!item || typeof item !== 'object') {
+      continue
+    }
+    const id = String(item.id || '').trim()
+    if (!id) {
+      continue
+    }
+    const name = String(item.name || item.display_name || id).trim() || id
+    models.push({
+      id,
+      name,
+      description: typeof item.description === 'string' ? item.description : undefined,
+      context_length: typeof item.context_length === 'number' ? item.context_length : undefined,
+      pricing: item.pricing && typeof item.pricing === 'object' ? item.pricing : undefined,
+    })
+  }
+  return sortLlmModels(models)
+}
+
+function llmApiErrorMessage(json: any, status: number, fallback: string): string {
+  if (json?.error && typeof json.error === 'object' && json.error.message) {
+    return String(json.error.message)
+  }
+  if (typeof json?.error === 'string' && json.error.trim()) {
+    return json.error.trim()
+  }
+  if (typeof json?.message === 'string' && json.message.trim()) {
+    return json.message.trim()
+  }
+  return `${fallback} (${status}).`
+}
 
 /**
  * Format per-token pricing to human-friendly USD per 1M tokens.
@@ -95,45 +277,50 @@ export function formatPricing(pricing?: OpenRouterPricing): string {
 }
 
 /**
- * Fetch available models from OpenRouter API.
+ * Fetch models from OpenRouter or from an OpenAI-compatible /models endpoint.
  */
-export async function fetchOpenRouterModels(apiKey: string): Promise<OpenRouterModel[]> {
-  const trimmedKey = apiKey.trim()
+export async function fetchLlmModels({
+  provider: providerInput,
+  apiKey,
+  baseUrl,
+}: {
+  provider?: LlmProviderId
+  apiKey: string
+  baseUrl?: string
+}): Promise<OpenRouterModel[]> {
+  const provider = normalizeLlmProvider(providerInput)
+  const trimmedKey = (apiKey || '').trim()
   if (!trimmedKey) {
-    throw new Error(t('profile.llm.apiKeyRequired') || 'API klíč nesmí být prázdný.')
+    throw new Error(
+      provider === 'openai'
+        ? t('profile.llm.apiKeyRequiredOpenai') || 'Nejprve zadejte API klíč.'
+        : t('profile.llm.apiKeyRequired') || 'API klíč nesmí být prázdný.',
+    )
   }
 
-  const res = await fetch('https://openrouter.ai/api/v1/models', {
+  const resolvedBase = provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
+  if (provider === 'openai' && !resolvedBase) {
+    throw new Error(openAiBaseUrlError(baseUrl || '') || t('profile.llm.endpointRequired') || 'Nejprve zadejte endpoint.')
+  }
+
+  const res = await fetch(llmApiUrl(resolvedBase, 'models'), {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${trimmedKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers: llmAuthHeaders(trimmedKey),
   })
 
   const json = await res.json()
   if (!res.ok || json.error) {
-    const errorMsg = json.error?.message || `Chyba při stahování modelů (${res.status}).`
-    throw new Error(errorMsg)
+    throw new Error(llmApiErrorMessage(json, res.status, 'Chyba při stahování modelů'))
   }
 
-  const data: OpenRouterModel[] = json.data || []
+  return modelsFromApiPayload(json)
+}
 
-  // Sort: recommended models first, then alphabetical by name
-  return data.sort((a, b) => {
-    const aRec = RECOMMENDED_MODEL_IDS.indexOf(a.id)
-    const bRec = RECOMMENDED_MODEL_IDS.indexOf(b.id)
-    if (aRec !== -1 && bRec !== -1) {
-      return aRec - bRec
-    }
-    if (aRec !== -1) {
-      return -1
-    }
-    if (bRec !== -1) {
-      return 1
-    }
-    return a.name.localeCompare(b.name)
-  })
+/**
+ * Fetch available models from OpenRouter API.
+ */
+export async function fetchOpenRouterModels(apiKey: string): Promise<OpenRouterModel[]> {
+  return fetchLlmModels({ provider: 'openrouter', apiKey })
 }
 
 /**
@@ -216,11 +403,18 @@ export async function sendOpenRouterChat({
   dateFrom,
   dateTo,
   systemPrompt,
+  provider: providerInput,
+  baseUrl,
   onProgress,
 }: OpenRouterChatParams): Promise<OpenRouterChatResult> {
+  const provider = normalizeLlmProvider(providerInput)
+  const resolvedBase = provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
   const trimmedKey = apiKey.trim()
   if (!trimmedKey) {
-    throw new Error('Chybí OpenRouter API klíč.')
+    throw new Error(provider === 'openai' ? 'Chybí API klíč.' : 'Chybí OpenRouter API klíč.')
+  }
+  if (provider === 'openai' && !resolvedBase) {
+    throw new Error(openAiBaseUrlError(baseUrl || '') || 'Nejprve zadejte endpoint.')
   }
   if (!model) {
     throw new Error('Není vybrán žádný model.')
@@ -287,16 +481,21 @@ export async function sendOpenRouterChat({
     `${anonPosts}\n\n` +
     `--- Konec příspěvků ---`
 
-  onProgress?.(`Odesílám HTTP požadavek na OpenRouter (${model})...`)
+  onProgress?.(
+    provider === 'openai'
+      ? `Odesílám HTTP požadavek (${model})...`
+      : `Odesílám HTTP požadavek na OpenRouter (${model})...`,
+  )
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const headers = llmAuthHeaders(trimmedKey)
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://nyx.cz'
+    headers['X-Title'] = 'Nyx NNN'
+  }
+
+  const res = await fetch(llmApiUrl(resolvedBase, 'chat/completions'), {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${trimmedKey}`,
-      'HTTP-Referer': 'https://nyx.cz',
-      'X-Title': 'Nyx NNN',
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       model,
       messages: [
@@ -310,8 +509,8 @@ export async function sendOpenRouterChat({
 
   const json = await res.json()
   if (!res.ok || json.error) {
-    const errorMsg = json.error?.message || `Chyba OpenRouter API (${res.status}).`
-    throw new Error(errorMsg)
+    const fallback = provider === 'openai' ? 'Chyba API' : 'Chyba OpenRouter API'
+    throw new Error(llmApiErrorMessage(json, res.status, fallback))
   }
 
   onProgress?.('Odpověď přijata, zpracovávám výsledek...')

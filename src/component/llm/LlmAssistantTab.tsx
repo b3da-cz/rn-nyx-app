@@ -1,7 +1,7 @@
 import React from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import { Button, Text } from 'react-native-paper'
-import { isSummaryCopyLocked, LlmQueue, Styling, t, useTheme } from '../../lib'
+import { isSummaryCopyLocked, LlmProviderId, LlmQueue, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
@@ -16,6 +16,8 @@ type Props = {
   discussionTitle: string
   posts: any[]
   apiKey: string
+  provider?: LlmProviderId
+  baseUrl?: string
   defaultModelId: string
   defaultModelName?: string
   systemPrompt?: string
@@ -44,6 +46,8 @@ export const LlmAssistantTab: React.FC<Props> = props => {
     <View style={{ paddingBottom: blocks.xlarge }}>
       <LlmModelBar
         apiKey={props.apiKey}
+        provider={props.provider}
+        baseUrl={props.baseUrl}
         currentModelId={model.modelId}
         currentModelName={model.modelName}
         isGlobalModel={model.isGlobalModel}

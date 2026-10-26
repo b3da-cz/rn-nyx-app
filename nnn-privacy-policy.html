@@ -92,7 +92,7 @@
     <p class="meta"><strong>Zásady ochrany soukromí aplikace Nnn</strong><br>
       Vývojář: b3da.net<br>
       Android balíček: <code>net.b3da.nnn</code><br>
-      Platné od 6. října 2026</p>
+      Platné od 26. října 2026</p>
   </header>
 
   <section>
@@ -121,7 +121,7 @@
         <li><strong>Token oznámení (FCM) a identifikátor zařízení pro doručování push zpráv</strong> Po přihlášení aplikace požádá o oprávnění k oznámením, získá token Firebase Cloud Messaging a předá ho API nyx.cz, aby server mohl posílat upozornění na nové příspěvky a zprávy.</li>
         <li><strong>Údaje o zařízení v požadavcích na nyx.cz</strong> Verze aplikace, systém (Android a jeho verze) a model zařízení se posílají v identifikaci klienta. Díky tomu lze požadavky obsloužit a chyby přiřadit ke konkrétní verzi.</li>
         <li><strong>Záznamy pádů a diagnostika</strong> Při chybě aplikace odešle technický záznam (stack trace) a uživatelské jméno na Nyxu službě Bugfender. Záznam slouží k opravě chyb. Není určen k přenosu hesla ani autorizačního tokenu. V aplikaci ho nelze vypnout.</li>
-        <li><strong>Volitelný požadavek na jazykový model</strong> Když uživatel v aplikaci použije funkci s OpenRouter, odešle se tam text, který k tomu sám vybral, a jeho vlastní API klíč. Klíč je uložený jen v zařízení a vývojář aplikace ho na svůj server nedostává. Dokud se funkce nepoužije, na OpenRouter nejde nic.</li>
+        <li><strong>Volitelný požadavek na jazykový model</strong> Když uživatel funkci spustí, aplikace odešle text, který k tomu sám vybral, a jeho API klíč na OpenRouter, nebo na adresu, kterou v nastavení zadal (OpenAI a další služby se stejným rozhraním, včetně adresy v místní síti). Klíč i adresa jsou jen v zařízení. Vývojář aplikace je na svůj server nedostává. Dokud se funkce nepoužije, nikam se nic neodešle.</li>
       </ul>
       <p>V zařízení zůstává nastavení aplikace (vzhled, filtry, blokovaní uživatelé, historie požadavků na jazykový model). Tyto údaje samy od sebe nikam neodcházejí.</p>
     </div>
@@ -134,7 +134,7 @@
         <li><strong>nyx.cz</strong> Účet, token, příspěvky, zprávy, nahrané soubory, token oznámení a identifikace klienta. Účet a obsah zpracovává provozovatel serveru podle svých podmínek (<a href="https://nyx.cz/terms">nyx.cz/terms</a>).</li>
         <li><strong>Google Firebase Cloud Messaging</strong> Doručování oznámení. Zásady Googlu: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</li>
         <li><strong>Bugfender</strong> (bugfender.com) Záznamy pádů a diagnostika, včetně uživatelského jména na Nyxu, které slouží jako označení zařízení. Zásady: <a href="https://bugfender.com/privacy-policy/">bugfender.com/privacy-policy</a>.</li>
-        <li><strong>OpenRouter</strong> (openrouter.ai) Jen když uživatel funkci sám spustí. Zásady: <a href="https://openrouter.ai/privacy">openrouter.ai/privacy</a>.</li>
+        <li><strong>Jazykový model</strong> OpenRouter (<a href="https://openrouter.ai">openrouter.ai</a>), nebo adresa, kterou uživatel sám zadá. Jen když uživatel funkci spustí. U OpenRouter platí <a href="https://openrouter.ai/privacy">openrouter.ai/privacy</a>. U vlastní adresy platí zásady jejího provozovatele.</li>
       </ul>
       <p>Vývojář aplikace údaje nepředává za účelem reklamy. Aplikace neobsahuje žádné reklamní SDK. Reklama, která se případně objeví v obsahu fóra, pochází ze serveru nyx.cz.</p>
     </div>
@@ -154,7 +154,7 @@
         <li><strong>V aplikaci</strong> Odhlášení smaže místní údaje aplikace (účet, token, nastavení, historii jazykového modelu). Odinstalace smaže data aplikace z úložiště zařízení.</li>
         <li><strong>Účet a obsah na nyx.cz</strong> Aplikace účet nevytváří ani neruší. Zrušení účtu a smazání příspěvků vyřizuje provozovatel nyx.cz na <a href="https://nyx.cz">nyx.cz</a>. Dokud účet na serveru existuje, server obsah uchovává podle svých pravidel.</li>
         <li><strong>Bugfender a Firebase</strong> Diagnostické záznamy a token oznámení uchovávají tito zpracovatelé podle vlastních zásad. Žádost o výmaz záznamů v Bugfenderu označených uživatelským jménem můžete poslat vývojáři na kontakty uvedené výše.</li>
-        <li><strong>OpenRouter</strong> Vývojář aplikace kopii odeslaného textu neuchovává. Co si ponechává OpenRouter, popisují jeho zásady.</li>
+        <li><strong>Jazykový model</strong> Vývojář aplikace kopii odeslaného textu neuchovává. Co si ponechá OpenRouter nebo provozovatel zadané adresy, popisují jejich zásady.</li>
       </ul>
     </div>
   </section>
@@ -162,7 +162,7 @@
   <section>
     <h2>Zabezpečení</h2>
     <div class="body">
-      <p>Spojení s nyx.cz, Firebase, Bugfenderem a OpenRouterem probíhá přes HTTPS. Autorizační token je v soukromém úložišti aplikace. Zálohování aplikace systémem Android je vypnuté (<code>allowBackup=false</code>). Systém se na oprávnění k oznámením zeptá až za běhu aplikace, před registrací tokenu.</p>
+      <p>Spojení s nyx.cz, Firebase, Bugfenderem a OpenRouterem probíhá přes HTTPS. Vlastní endpoint jazykového modelu používá adresu, kterou uživatel zadal. Začíná-li na http://, spojení není šifrované. Autorizační token je v soukromém úložišti aplikace. Zálohování aplikace systémem Android je vypnuté (<code>allowBackup=false</code>). Systém se na oprávnění k oznámením zeptá až za běhu aplikace, před registrací tokenu.</p>
     </div>
   </section>
 

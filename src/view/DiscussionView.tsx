@@ -44,6 +44,7 @@ import {
   applyMyAttendance,
   EventDetailData,
   isDiscussionPermitted,
+  isLlmAssistantAvailable,
   isListingDiscussion,
   MyAttendance,
   MainContext,
@@ -1181,7 +1182,7 @@ export class DiscussionView extends Component<Props> {
       onPress: () => this.bookmarkDiscussion(),
     })
 
-    if (this.config?.isLlmEnabled && this.config?.openRouterApiKey && this.config?.selectedLlmModel) {
+    if (isLlmAssistantAvailable(this.context?.config || this.config)) {
       actions.push({
         key: 'llm',
         icon: 'chip',

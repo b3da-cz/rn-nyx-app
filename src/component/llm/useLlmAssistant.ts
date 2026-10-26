@@ -6,8 +6,10 @@ import {
   filterAndFormatPostsForLlm,
   getLlmHistory,
   LlmPendingTask,
+  LlmProviderId,
   LlmQueue,
   MainContext,
+  normalizeLlmProvider,
   Storage,
   t,
 } from '../../lib'
@@ -19,6 +21,8 @@ type Params = {
   discussionTitle: string
   posts: any[]
   apiKey: string
+  provider?: LlmProviderId
+  baseUrl?: string
   defaultModelId: string
   defaultModelName?: string
   systemPrompt?: string
@@ -124,9 +128,14 @@ export function useLlmAssistant(p: Params) {
     setModelName(applied.model.name)
     setIsGlobalModel(saveAsGlobal)
     if (applied.globalModel) {
+      const provider = normalizeLlmProvider(p.provider)
       return persistLlmConfig({
         selectedLlmModel: applied.globalModel.id,
         selectedLlmModelName: applied.globalModel.name,
+        llmModels: {
+          ...(context?.config?.llmModels || {}),
+          [provider]: applied.globalModel,
+        },
       })
     }
     return Promise.resolve()
@@ -190,6 +199,8 @@ export function useLlmAssistant(p: Params) {
       const model = modelRef.current
       lastSentTaskIdRef.current = await LlmQueue.enqueueTask({
         apiKey: p.apiKey,
+        provider: normalizeLlmProvider(p.provider),
+        baseUrl: p.baseUrl,
         modelId: model.id,
         modelName: model.name,
         userPrompt: p.prompt,

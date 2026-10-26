@@ -9,6 +9,7 @@ type Props = {
   isVisible: boolean
   models: OpenRouterModel[]
   selectedModelId: string
+  catalog?: 'openrouter' | 'openai'
   isLoading?: boolean
   isGlobal?: boolean
   showGlobalToggle?: boolean
@@ -23,6 +24,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   isVisible,
   models,
   selectedModelId,
+  catalog = 'openrouter',
   isLoading = false,
   isGlobal,
   showGlobalToggle,
@@ -36,9 +38,11 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     metrics: { blocks, fontSizes },
   } = theme
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<FilterCategory>('recommended')
+  const [category, setCategory] = useState<FilterCategory>(catalog === 'openai' ? 'all' : 'recommended')
   const [favoriteModelIds, setFavoriteModelIds] = useState<string[]>([])
   const [saveAsGlobal, setSaveAsGlobal] = useState(!!isGlobal)
+  const shownCategory: FilterCategory =
+    catalog === 'openai' && category !== 'favorites' && category !== 'all' ? 'all' : category
 
   React.useEffect(() => {
     if (isVisible) {
@@ -62,23 +66,23 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   const filteredModels = useMemo(() => {
     let list = models
 
-    if (category === 'favorites') {
+    if (shownCategory === 'favorites') {
       list = list.filter(m => favoriteModelIds.includes(m.id))
-    } else if (category === 'recommended') {
+    } else if (shownCategory === 'recommended') {
       list = list.filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
-    } else if (category === 'free') {
+    } else if (shownCategory === 'free') {
       list = list.filter(m => {
         const p = parseFloat(m.pricing?.prompt || '0')
         const c = parseFloat(m.pricing?.completion || '0')
         return p === 0 && c === 0
       })
-    } else if (category === 'google') {
+    } else if (shownCategory === 'google') {
       list = list.filter(m => m.id.startsWith('google/'))
-    } else if (category === 'anthropic') {
+    } else if (shownCategory === 'anthropic') {
       list = list.filter(m => m.id.startsWith('anthropic/'))
-    } else if (category === 'meta') {
+    } else if (shownCategory === 'meta') {
       list = list.filter(m => m.id.startsWith('meta-llama/'))
-    } else if (category === 'deepseek') {
+    } else if (shownCategory === 'deepseek') {
       list = list.filter(m => m.id.startsWith('deepseek/'))
     }
 
@@ -88,22 +92,28 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     }
 
     return list
-  }, [models, category, search, favoriteModelIds])
+  }, [models, shownCategory, search, favoriteModelIds])
 
   if (!isVisible) {
     return null
   }
 
-  const categoryOptions: { value: FilterCategory; label: string }[] = [
-    { value: 'recommended', label: t('llm.categoryRecommended') || 'Doporučené' },
-    { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
-    { value: 'free', label: t('llm.categoryFree') || 'Zdarma' },
-    { value: 'all', label: t('llm.categoryAll') || 'Vše' },
-    { value: 'google', label: 'Google' },
-    { value: 'anthropic', label: 'Anthropic' },
-    { value: 'deepseek', label: 'DeepSeek' },
-    { value: 'meta', label: 'Meta Llama' },
-  ]
+  const categoryOptions: { value: FilterCategory; label: string }[] =
+    catalog === 'openai'
+      ? [
+          { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
+          { value: 'all', label: t('llm.categoryAll') || 'Vše' },
+        ]
+      : [
+          { value: 'recommended', label: t('llm.categoryRecommended') || 'Doporučené' },
+          { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
+          { value: 'free', label: t('llm.categoryFree') || 'Zdarma' },
+          { value: 'all', label: t('llm.categoryAll') || 'Vše' },
+          { value: 'google', label: 'Google' },
+          { value: 'anthropic', label: 'Anthropic' },
+          { value: 'deepseek', label: 'DeepSeek' },
+          { value: 'meta', label: 'Meta Llama' },
+        ]
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false} onRequestClose={onCancel}>
@@ -161,7 +171,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
               paddingHorizontal: blocks.medium,
             }}>
             {categoryOptions.map(option => {
-              const isSelected = category === option.value
+              const isSelected = shownCategory === option.value
               return (
                 <TouchableRipple
                   key={option.value}

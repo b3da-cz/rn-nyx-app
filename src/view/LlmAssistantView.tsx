@@ -8,6 +8,7 @@ import {
   defaultAgentRule,
   emptyViewerRights,
   formatAgentTtlLabel,
+  llmConnectionFromConfig,
   MainContext,
   notifySecureLayout,
   parseAgentRule,
@@ -46,6 +47,7 @@ export const LlmAssistantView: React.FC<Props> = ({
   } = useTheme()
   const context = useContext(MainContext)
   const config = context?.config || {}
+  const llmConnection = llmConnectionFromConfig(config)
   const nyx = context?.nyx
 
   const [activeTab, setActiveTab] = useState<TabType>(discussionId ? 'assistant' : 'library')
@@ -233,7 +235,9 @@ export const LlmAssistantView: React.FC<Props> = ({
               discussionId={discussionId}
               discussionTitle={discussionTitle || ''}
               posts={posts}
-              apiKey={config.openRouterApiKey || ''}
+              apiKey={llmConnection.apiKey}
+              provider={llmConnection.provider}
+              baseUrl={llmConnection.baseUrl}
               defaultModelId={config.selectedLlmModel || ''}
               defaultModelName={config.selectedLlmModelName}
               systemPrompt={config.llmSystemPrompt}

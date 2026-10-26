@@ -52,7 +52,11 @@ export type MainContextConfig = {
   isFCMSubscribed: boolean
   isLlmEnabled?: boolean
   isLlmUserAvatarsEnabled?: boolean
+  llmProvider?: 'openrouter' | 'openai'
   openRouterApiKey?: string
+  openaiApiKey?: string
+  openaiBaseUrl?: string
+  llmModels?: Partial<Record<'openrouter' | 'openai', { id: string; name: string }>>
   selectedLlmModel?: string
   selectedLlmModelName?: string
   llmSystemPrompt?: string
@@ -109,7 +113,11 @@ export const initialConfig: MainContextConfig = {
   isFCMSubscribed: false,
   isLlmEnabled: false,
   isLlmUserAvatarsEnabled: true,
+  llmProvider: 'openrouter',
   openRouterApiKey: '',
+  openaiApiKey: '',
+  openaiBaseUrl: '',
+  llmModels: {},
   selectedLlmModel: '',
   selectedLlmModelName: '',
   llmSystemPrompt: '',

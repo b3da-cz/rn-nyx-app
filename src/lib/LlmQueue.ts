@@ -18,6 +18,8 @@ export type LlmPendingTask = {
   status: 'pending' | 'error'
   error?: string
   apiKey: string
+  provider?: 'openrouter' | 'openai'
+  baseUrl?: string
   systemPrompt?: string
   posts?: any[]
   ttlMs?: number
@@ -117,6 +119,8 @@ class LlmQueueService {
     postCount: number
     systemPrompt?: string
     ttlMs?: number
+    provider?: 'openrouter' | 'openai'
+    baseUrl?: string
   }): Promise<string> {
     await this.init()
 
@@ -132,6 +136,8 @@ class LlmQueueService {
       postCount: params.postCount,
       prompt: params.userPrompt.trim(),
       apiKey: params.apiKey,
+      provider: params.provider === 'openai' ? 'openai' : 'openrouter',
+      baseUrl: params.baseUrl,
       systemPrompt: params.systemPrompt,
       posts: params.posts,
       ttlMs: params.ttlMs && params.ttlMs > 0 ? params.ttlMs : undefined,
@@ -160,6 +166,8 @@ class LlmQueueService {
         dateFrom: task.dateFrom,
         dateTo: task.dateTo,
         systemPrompt: task.systemPrompt,
+        provider: task.provider,
+        baseUrl: task.baseUrl,
       })
 
       const durationMs = Date.now() - task.startedAt

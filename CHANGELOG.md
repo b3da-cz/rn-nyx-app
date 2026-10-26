@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.0
+- asistent umí vedle OpenRouteru vlastní OpenAI endpoint a klíč
+- po zadání adresy a klíče se model vybírá stejně jako u OpenRouteru
+- adresa může být i http, třeba model v místní síti
+- při psaní adresy a klíče v nastavení pole nezůstane pod klávesnicí
+
 ## 0.33.4
 - rozbalená navigace nechá pod poslední položkou místo, aby nezůstala pod systémovou lištou
 

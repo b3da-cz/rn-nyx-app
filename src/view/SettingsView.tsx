@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList, LayoutAnimation, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Dimensions, FlatList, Keyboard, LayoutAnimation, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
@@ -14,8 +14,13 @@ import {
   LlmSystemPromptDialog,
 } from '../component'
 import {
-  fetchOpenRouterModels,
+  fetchLlmModels,
   formatPricing,
+  LlmProviderId,
+  LlmSavedModels,
+  normalizeLlmProvider,
+  normalizeOpenAiBaseUrl,
+  openAiBaseUrlError,
   IMAGE_DOWNLOAD_LIMITS_KB,
   IMAGE_DOWNLOAD_OFF,
   MainContext,
@@ -179,10 +184,15 @@ type State = {
   initialRouteName: string
   isLlmEnabled: boolean
   isLlmUserAvatarsEnabled: boolean
+  llmProvider: LlmProviderId
   openRouterApiKey: string
+  openaiApiKey: string
+  openaiBaseUrl: string
+  llmModels: LlmSavedModels
   selectedLlmModel: string
   selectedLlmModelName: string
   isFetchingModels: boolean
+  keyboardPad: number
   models: OpenRouterModel[]
   isModelPickerVisible: boolean
   isSystemPromptDialogVisible: boolean
@@ -197,6 +207,17 @@ export class SettingsView extends Component<Props> {
   nyx?: Nyx
   unsubscribeFocus?: () => void
   cacheClubTimer?: ReturnType<typeof setTimeout>
+  llmListProvider: LlmProviderId = 'openrouter'
+  llmIgnoreStoredModel = false
+  settingsScroll: ScrollView | null = null
+  settingsScrollY = 0
+  settingsContentHeight = 0
+  endpointField: View | null = null
+  apiKeyField: View | null = null
+  focusedField: View | null = null
+  keyboardFrame?: { screenY?: number; height?: number }
+  keyboardShowSub?: { remove: () => void }
+  keyboardHideSub?: { remove: () => void }
   state: Readonly<Partial<State>> = {}
   constructor(props) {
     super(props)
@@ -207,6 +228,17 @@ export class SettingsView extends Component<Props> {
     this.nyx = this.context.nyx
     this.setTheme()
     this.loadCachedModels()
+    this.keyboardShowSub = Keyboard.addListener('keyboardDidShow', e => {
+      this.keyboardFrame = e?.endCoordinates
+      setTimeout(() => this.scrollFocusedFieldIntoView(), 60)
+    })
+    this.keyboardHideSub = Keyboard.addListener('keyboardDidHide', () => {
+      this.keyboardFrame = undefined
+      this.focusedField = null
+      if (this.state.keyboardPad) {
+        this.setState({ keyboardPad: 0 })
+      }
+    })
     hasFingerprintSensor().then(hasFingerprint => this.setState({ hasFingerprint }))
     this.loadDiscussionCacheReport()
     this.unsubscribeFocus = this.props.navigation?.addListener('focus', () => {
@@ -216,10 +248,21 @@ export class SettingsView extends Component<Props> {
     })
   }
 
+  llmProvider(): LlmProviderId {
+    return normalizeLlmProvider(this.state.llmProvider)
+  }
+
   async loadCachedModels() {
+    const provider = this.llmProvider()
+    this.llmListProvider = provider
     try {
-      const cached = await Storage.getCachedLlmModels()
-      if (Array.isArray(cached) && cached.length > 0 && this.state.models.length === 0) {
+      const cached = await Storage.getCachedLlmModels(provider)
+      if (
+        this.llmListProvider === provider &&
+        Array.isArray(cached) &&
+        cached.length > 0 &&
+        (this.state.models || []).length === 0
+      ) {
         this.setState({ models: cached })
       }
     } catch (e) {
@@ -229,9 +272,63 @@ export class SettingsView extends Component<Props> {
 
   componentWillUnmount() {
     this.unsubscribeFocus?.()
+    this.keyboardShowSub?.remove()
+    this.keyboardHideSub?.remove()
     if (this.cacheClubTimer) {
       clearTimeout(this.cacheClubTimer)
     }
+  }
+
+  focusLlmField(field: View | null) {
+    this.focusedField = field
+    setTimeout(() => this.scrollFocusedFieldIntoView(), 60)
+  }
+
+  // The LLM endpoint and key sit at the bottom of settings. Scroll that row
+  // above the keyboard, and add only the padding the scroll range still lacks.
+  scrollFocusedFieldIntoView() {
+    const field = this.focusedField
+    const scroll = this.settingsScroll
+    if (!field?.measureInWindow || !scroll?.measureInWindow) {
+      return
+    }
+    field.measureInWindow((_x, y, _w, h) => {
+      if (!h) {
+        return
+      }
+      scroll.measureInWindow((_sx, sy, _sw, sh) => {
+        const frame = this.keyboardFrame
+        const windowHeight = Dimensions.get('window').height
+        const screenHeight = Dimensions.get('screen').height
+        const shrunkBy = Math.max(0, screenHeight - windowHeight)
+        let visibleBottom = sy + sh - 12
+        if (typeof frame?.screenY === 'number' && frame.screenY > 0 && frame.screenY < visibleBottom) {
+          visibleBottom = frame.screenY - 12
+        } else if ((frame?.height || 0) > 80 && shrunkBy < 80) {
+          visibleBottom -= Math.min(frame?.height || 0, sh * 0.55)
+        }
+        const delta = y + h - visibleBottom
+        if (delta <= 8) {
+          return
+        }
+        const maxScroll = Math.max(0, this.settingsContentHeight - sh)
+        const room = maxScroll - this.settingsScrollY
+        if (room + 8 >= delta) {
+          scroll.scrollTo({ y: this.settingsScrollY + delta, animated: true })
+          return
+        }
+        const missing = Math.ceil(delta - Math.max(0, room) + 24)
+        if ((this.state.keyboardPad || 0) >= missing) {
+          scroll.scrollTo({ y: this.settingsScrollY + delta, animated: true })
+          return
+        }
+        this.setState({ keyboardPad: missing }, () => {
+          setTimeout(() => {
+            this.settingsScroll?.scrollTo({ y: this.settingsScrollY + delta + 24, animated: true })
+          }, 50)
+        })
+      })
+    })
   }
 
   async writeDiscussionCache(mutate) {
@@ -366,10 +463,15 @@ export class SettingsView extends Component<Props> {
       isLlmEnabled: !!config?.isLlmEnabled,
       isLlmUserAvatarsEnabled:
         config?.isLlmUserAvatarsEnabled !== undefined ? !!config.isLlmUserAvatarsEnabled : true,
+      llmProvider: normalizeLlmProvider(config?.llmProvider),
       openRouterApiKey: config?.openRouterApiKey || '',
+      openaiApiKey: config?.openaiApiKey || '',
+      openaiBaseUrl: config?.openaiBaseUrl || '',
+      llmModels: this.llmModelsFromConfig(config),
       selectedLlmModel: config?.selectedLlmModel || '',
       selectedLlmModelName: config?.selectedLlmModelName || '',
       isFetchingModels: false,
+      keyboardPad: 0,
       models: [],
       isModelPickerVisible: false,
       isSystemPromptDialogVisible: false,
@@ -380,32 +482,148 @@ export class SettingsView extends Component<Props> {
     }
   }
 
-  async fetchModels(keyToUse?: string) {
-    const key = (keyToUse !== undefined ? keyToUse : this.state.openRouterApiKey) || ''
-    if (!key.trim()) {
-      this.setState({ llmError: t('profile.llm.apiKeyRequired') || 'Nejprve zadejte OpenRouter API klíč.' })
-      return
+  llmModelsFromConfig(config?: any): LlmSavedModels {
+    const stored: LlmSavedModels =
+      config?.llmModels && typeof config.llmModels === 'object' ? { ...config.llmModels } : {}
+    const provider = normalizeLlmProvider(config?.llmProvider)
+    if (!stored[provider] && config?.selectedLlmModel) {
+      stored[provider] = {
+        id: config.selectedLlmModel,
+        name: config.selectedLlmModelName || config.selectedLlmModel,
+      }
+    }
+    return stored
+  }
+
+  async fetchModels(): Promise<OpenRouterModel[] | null> {
+    const provider = this.llmProvider()
+    this.llmListProvider = provider
+    const apiKey = provider === 'openai' ? this.state.openaiApiKey || '' : this.state.openRouterApiKey || ''
+    const baseUrl = this.state.openaiBaseUrl || ''
+    if (provider === 'openai') {
+      const endpointError = openAiBaseUrlError(baseUrl)
+      if (endpointError) {
+        this.setState({ llmError: endpointError })
+        return null
+      }
+    }
+    if (!apiKey.trim()) {
+      this.setState({
+        llmError:
+          provider === 'openai'
+            ? t('profile.llm.apiKeyRequiredOpenai') || 'Nejprve zadejte API klíč.'
+            : t('profile.llm.apiKeyRequired') || 'Nejprve zadejte OpenRouter API klíč.',
+      })
+      return null
     }
     this.setState({ isFetchingModels: true, llmError: null })
     try {
-      const models = await fetchOpenRouterModels(key)
+      const models = await fetchLlmModels({ provider, apiKey, baseUrl })
+      if (this.llmListProvider !== provider) {
+        return null
+      }
+      if (models.length === 0) {
+        this.setState({
+          models: [],
+          isFetchingModels: false,
+          llmError: t('profile.llm.noModels') || 'Server nevrátil žádné modely.',
+        })
+        return null
+      }
+      const ignoreStored = this.llmIgnoreStoredModel
+      this.llmIgnoreStoredModel = false
       this.setState({ models, isFetchingModels: false })
-      await Storage.setCachedLlmModels(models)
-      if (!this.state.selectedLlmModel && models.length > 0) {
+      await Storage.setCachedLlmModels(models, provider)
+      if (this.llmListProvider === provider && (ignoreStored || !this.state.selectedLlmModel)) {
         await this.onSelectModel(models[0])
       }
+      return models
     } catch (e: any) {
+      if (this.llmListProvider !== provider) {
+        return null
+      }
       this.setState({
         isFetchingModels: false,
         llmError: e?.message || t('profile.llm.errorFetchingModels') || 'Chyba při stahování modelů.',
       })
+      return null
     }
   }
 
   async onSelectModel(model: OpenRouterModel) {
-    await this.setOption('selectedLlmModel', model.id)
-    await this.setOption('selectedLlmModelName', model.name)
+    const provider = this.llmProvider()
+    const llmModels: LlmSavedModels = {
+      ...(this.state.llmModels || {}),
+      [provider]: { id: model.id, name: model.name || model.id },
+    }
+    await this.setOptions({
+      selectedLlmModel: model.id,
+      selectedLlmModelName: model.name || model.id,
+      llmModels,
+    })
     this.setState({ isModelPickerVisible: false })
+  }
+
+  async persistOpenAiCredentials() {
+    const nextUrl = this.state.openaiBaseUrl || ''
+    const nextKey = this.state.openaiApiKey || ''
+    const conf = (await Storage.getConfig()) || {}
+    const urlChanged = normalizeOpenAiBaseUrl(nextUrl) !== normalizeOpenAiBaseUrl(conf.openaiBaseUrl || '')
+    const patch: Record<string, any> = {
+      openaiBaseUrl: nextUrl,
+      openaiApiKey: nextKey,
+    }
+    if (urlChanged) {
+      await Storage.setCachedLlmModels([], 'openai')
+      const llmModels: LlmSavedModels = { ...(this.state.llmModels || conf.llmModels || {}) }
+      delete llmModels.openai
+      patch.llmModels = llmModels
+      if (this.llmProvider() === 'openai') {
+        patch.selectedLlmModel = ''
+        patch.selectedLlmModelName = ''
+      }
+    }
+    if (urlChanged && this.llmProvider() === 'openai') {
+      this.llmIgnoreStoredModel = true
+      this.llmListProvider = 'openai'
+    }
+    await this.setOptions(patch)
+    if (urlChanged && this.llmProvider() === 'openai') {
+      this.setState({ models: [], llmError: null, isModelPickerVisible: false })
+    }
+  }
+
+  async onChangeLlmProvider(nextValue: string) {
+    const next = normalizeLlmProvider(nextValue)
+    const current = this.llmProvider()
+    if (next === current) {
+      return
+    }
+    this.llmListProvider = next
+    this.llmIgnoreStoredModel = false
+    const llmModels: LlmSavedModels = { ...(this.state.llmModels || {}) }
+    if (this.state.selectedLlmModel) {
+      llmModels[current] = {
+        id: this.state.selectedLlmModel,
+        name: this.state.selectedLlmModelName || this.state.selectedLlmModel,
+      }
+    }
+    const restored = llmModels[next]
+    await this.setOptions({
+      llmProvider: next,
+      llmModels,
+      selectedLlmModel: restored?.id || '',
+      selectedLlmModelName: restored?.name || '',
+    })
+    this.setState({ models: [], llmError: null, isModelPickerVisible: false })
+    try {
+      const cached = await Storage.getCachedLlmModels(next)
+      if (this.llmListProvider === next && Array.isArray(cached)) {
+        this.setState({ models: cached })
+      }
+    } catch (e) {
+      console.warn('Failed to load cached LLM models', e)
+    }
   }
 
   settingsSectionOpen(id: string) {
@@ -417,6 +635,14 @@ export class SettingsView extends Component<Props> {
     const next = { ...current, [id]: current[id] === false }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     this.setOption('settingsSectionsOpen', next)
+  }
+
+  async setOptions(patch: Record<string, any>) {
+    const conf = (await Storage.getConfig()) || {}
+    this.setState(patch)
+    Object.assign(conf, patch)
+    await Storage.setConfig(conf)
+    this.props.onConfigChange()
   }
 
   async setOption(name, val) {
@@ -591,8 +817,21 @@ export class SettingsView extends Component<Props> {
     return (
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView
+          ref={ref => {
+            this.settingsScroll = ref
+          }}
           style={{ backgroundColor: theme.colors.background }}
-          contentContainerStyle={{ paddingBottom: 150 + androidStackBottomInset }}>
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={e => {
+            this.settingsScrollY = e.nativeEvent.contentOffset.y
+          }}
+          onContentSizeChange={(_w, h) => {
+            this.settingsContentHeight = h
+          }}
+          contentContainerStyle={{
+            paddingBottom: 150 + androidStackBottomInset + (this.state.keyboardPad || 0),
+          }}>
           <SettingsSection
             title={t('profile.general')}
             open={this.settingsSectionOpen('general')}
@@ -962,8 +1201,58 @@ export class SettingsView extends Component<Props> {
                 value={this.state.isLlmUserAvatarsEnabled !== undefined ? !!this.state.isLlmUserAvatarsEnabled : true}
                 onChange={val => this.setOption('isLlmUserAvatarsEnabled', val)}
               />
-              {/* API Key Row */}
+              <SettingsSelectRow
+                rowHeight={rowHeight}
+                label={t('profile.llm.provider') || 'Připojení'}
+                value={
+                  this.llmProvider() === 'openai'
+                    ? t('profile.llm.providerOpenai') || 'OpenAI'
+                    : t('profile.llm.providerOpenRouter') || 'OpenRouter'
+                }
+                onSelect={next => this.onChangeLlmProvider(next)}
+                options={[
+                  { value: 'openrouter', label: t('profile.llm.providerOpenRouter') || 'OpenRouter' },
+                  { value: 'openai', label: t('profile.llm.providerOpenai') || 'OpenAI' },
+                ]}
+              />
+              {this.llmProvider() === 'openai' && (
+                <View
+                  ref={ref => {
+                    this.endpointField = ref
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    height: rowHeight,
+                    overflow: 'hidden',
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: 0,
+                    marginBottom: theme.metrics.blocks.small,
+                    paddingHorizontal: theme.metrics.blocks.medium,
+                  }}>
+                  <TextInput
+                    value={this.state.openaiBaseUrl}
+                    onChangeText={val => this.setState({ openaiBaseUrl: val })}
+                    onFocus={() => this.focusLlmField(this.endpointField)}
+                    onBlur={() => this.persistOpenAiCredentials()}
+                    placeholder={t('profile.llm.endpointPlaceholder') || 'https://api.openai.com/v1'}
+                    placeholderTextColor={theme.colors.faded}
+                    style={{
+                      flex: 1,
+                      color: theme.colors.text,
+                      fontSize: theme.metrics.fontSizes.p,
+                      paddingVertical: 8,
+                    }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="url"
+                  />
+                </View>
+              )}
               <View
+                ref={ref => {
+                  this.apiKeyField = ref
+                }}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -975,10 +1264,21 @@ export class SettingsView extends Component<Props> {
                   paddingHorizontal: theme.metrics.blocks.medium,
                 }}>
                 <TextInput
-                  value={this.state.openRouterApiKey}
-                  onChangeText={val => this.setState({ openRouterApiKey: val })}
-                  onBlur={() => this.setOption('openRouterApiKey', this.state.openRouterApiKey)}
-                  placeholder={t('profile.llm.apiKeyPlaceholder') || 'OpenRouter API klíč'}
+                  value={this.llmProvider() === 'openai' ? this.state.openaiApiKey : this.state.openRouterApiKey}
+                  onChangeText={val =>
+                    this.setState(this.llmProvider() === 'openai' ? { openaiApiKey: val } : { openRouterApiKey: val })
+                  }
+                  onFocus={() => this.focusLlmField(this.apiKeyField)}
+                  onBlur={() =>
+                    this.llmProvider() === 'openai'
+                      ? this.setOption('openaiApiKey', this.state.openaiApiKey)
+                      : this.setOption('openRouterApiKey', this.state.openRouterApiKey)
+                  }
+                  placeholder={
+                    this.llmProvider() === 'openai'
+                      ? t('profile.llm.openaiApiKeyPlaceholder') || 'sk-...'
+                      : t('profile.llm.apiKeyPlaceholder') || 'sk-or-v1-...'
+                  }
                   placeholderTextColor={theme.colors.faded}
                   secureTextEntry={true}
                   style={{
@@ -992,8 +1292,12 @@ export class SettingsView extends Component<Props> {
                 />
                 <TouchableOpacity
                   onPress={async () => {
-                    await this.setOption('openRouterApiKey', this.state.openRouterApiKey)
-                    await this.fetchModels(this.state.openRouterApiKey)
+                    if (this.llmProvider() === 'openai') {
+                      await this.persistOpenAiCredentials()
+                    } else {
+                      await this.setOption('openRouterApiKey', this.state.openRouterApiKey)
+                    }
+                    await this.fetchModels()
                   }}
                   disabled={this.state.isFetchingModels}
                   style={{
@@ -1050,14 +1354,16 @@ export class SettingsView extends Component<Props> {
                 </View>
               ) : null}
 
-              {/* Model Picker Row */}
+              {(this.llmProvider() !== 'openai' ||
+                (!!(this.state.openaiBaseUrl || '').trim() && !!(this.state.openaiApiKey || '').trim())) && (
               <TouchableOpacity
                 onPress={async () => {
-                  if (!this.state.models || this.state.models.length === 0) {
-                    await this.fetchModels()
+                  let models = this.state.models || []
+                  if (models.length === 0) {
+                    models = (await this.fetchModels()) || []
                   }
-                  if (this.state.models && this.state.models.length > 0) {
-                    this.setState({ isModelPickerVisible: true })
+                  if (models.length > 0) {
+                    this.setState({ models, isModelPickerVisible: true })
                   }
                 }}
                 style={{
@@ -1095,6 +1401,7 @@ export class SettingsView extends Component<Props> {
                 </View>
                 <Icon name="chevron-right" size={20} color={theme.colors.faded} />
               </TouchableOpacity>
+              )}
 
               {/* System Prompt Row */}
               <TouchableOpacity
@@ -1139,6 +1446,7 @@ export class SettingsView extends Component<Props> {
         <LlmModelPickerDialog
           isVisible={!!this.state.isModelPickerVisible}
           models={this.state.models || []}
+          catalog={this.llmProvider()}
           selectedModelId={this.state.selectedLlmModel || ''}
           onSelect={model => this.onSelectModel(model)}
           onCancel={() => this.setState({ isModelPickerVisible: false })}

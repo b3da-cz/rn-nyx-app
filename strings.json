@@ -669,6 +669,46 @@
         "cs": "sk-or-v1-...",
         "en": "sk-or-v1-..."
       },
+      "provider": {
+        "cs": "Připojení",
+        "en": "Connection"
+      },
+      "providerOpenRouter": {
+        "cs": "OpenRouter",
+        "en": "OpenRouter"
+      },
+      "providerOpenai": {
+        "cs": "OpenAI",
+        "en": "OpenAI"
+      },
+      "endpointPlaceholder": {
+        "cs": "https://api.openai.com/v1",
+        "en": "https://api.openai.com/v1"
+      },
+      "endpointRequired": {
+        "cs": "Nejprve zadejte endpoint.",
+        "en": "Enter the endpoint first."
+      },
+      "endpointHttps": {
+        "cs": "Endpoint musí používat https://.",
+        "en": "The endpoint must use https://."
+      },
+      "endpointInvalid": {
+        "cs": "Endpoint není platná adresa.",
+        "en": "The endpoint is not a valid address."
+      },
+      "openaiApiKeyPlaceholder": {
+        "cs": "sk-...",
+        "en": "sk-..."
+      },
+      "apiKeyRequiredOpenai": {
+        "cs": "Nejprve zadejte API klíč.",
+        "en": "Enter the API key first."
+      },
+      "noModels": {
+        "cs": "Server nevrátil žádné modely.",
+        "en": "The server returned no models."
+      },
       "apiKeySave": {
         "cs": "Uložit klíč",
         "en": "Save key"
