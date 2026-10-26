@@ -1,6 +1,6 @@
 {
   "name": "nnn",
-  "version": "0.33.3",
+  "version": "0.33.3-a",
   "buildVersion": 130,
   "description": "Mobile app for Nyx.cz",
   "private": true,
@@ -23,6 +23,7 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "release-apk": "react-native run-android --mode=release",
+    "release-dev": "react-native run-android --mode=release --appIdSuffix=dev",
     "release-aab": "cd android && ./gradlew bundleRelease && cd ..",
     "release-run": "npx react-native run-android --mode=release --no-packager",
     "clean": "cd android && ./gradlew clean && cd ..",

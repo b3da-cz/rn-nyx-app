@@ -42,6 +42,8 @@ Taky bude treba:
 
 * release APK: `npm run release-apk`
 
+* release dev APK (suffix `.dev`): `npm run release-dev`
+
 * App Bundle pro Google Play: `npm run release-aab` (vysledek v _./android/app/build/outputs/bundle/release/_)
 
 * verze appky se bere z `package.json`: `version` (versionName) a `buildVersion` (versionCode - pred uploadem na Play je treba zvednout)

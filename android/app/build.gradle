@@ -64,6 +64,9 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
+            if (project.hasProperty('dev') || project.hasProperty('devSuffix') || project.findProperty('appIdSuffix') == 'dev' || System.getenv('npm_lifecycle_event') == 'release-dev') {
+                applicationIdSuffix ".dev"
+            }
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
