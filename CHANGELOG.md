@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.33.4
+- rozbalená navigace nechá pod poslední položkou místo, aby nezůstala pod systémovou lištou
+
 ## 0.33.3
 - v O aplikaci jde seznam doscrollovat až na poslední jméno
 

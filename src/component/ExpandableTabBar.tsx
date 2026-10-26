@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Animated,
   BackHandler,
+  Dimensions,
   Easing,
+  PixelRatio,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +15,14 @@ import {
 import { overlay, Portal, Text, TouchableRipple } from 'react-native-paper'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { MaterialTopTabBar } from '@react-navigation/material-top-tabs'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { Theme } from '../lib'
+import {
+  ANDROID_NAV_BAR_FALLBACK,
+  navSheetRowMetrics,
+  navSheetScrollMax,
+  sheetBottomCover,
+} from '../lib/navSheet'
 
 const ANIM_DURATION = 220
 const OPEN_VELOCITY = 650
@@ -37,23 +47,39 @@ type Props = {
  * the opened card can be pulled back towards its edge to dismiss it.
  * Only the card navigates: tapping a row switches the tab (including the
  * refresh when it is already focused), tapping outside or a row closes the card.
+ *
+ * The card is portaled inside SafeAreaView, but on Android the bottom inset is
+ * often 0 while the gesture indicator or the 3-button bar still paints over
+ * the window. The last row always keeps a gap under it, and the scrollport is
+ * bounded so a large system font can still reach that row.
  */
 export const ExpandableTabBar = (props: Props) => {
   const { config, theme, ...tabBarProps } = props as any
   const { state, navigation, descriptors, jumpTo } = tabBarProps
   const isBottom = config?.isBottomTabs !== false
   const { height: windowHeight } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const anim = useRef(new Animated.Value(0)).current
   const [cardHeight, setCardHeight] = useState(0)
   const [contentHeight, setContentHeight] = useState(0)
+  const [portalHeight, setPortalHeight] = useState(windowHeight)
   const [isOpen, setIsOpen] = useState(false)
+  const { labelSize, labelLine, rowHeight } = navSheetRowMetrics(PixelRatio.getFontScale() || 1)
+  const bottomCover = isBottom
+    ? sheetBottomCover({
+        windowHeight,
+        screenHeight: Dimensions.get('screen').height,
+        insetBottom: insets.bottom,
+        fallbackBar: Platform.OS === 'android' ? ANDROID_NAV_BAR_FALLBACK : 0,
+      })
+    : 0
+  const scrollMax = navSheetScrollMax(portalHeight || windowHeight, bottomCover)
+  const needsScroll = contentHeight > scrollMax + 1
 
   // px the finger has to travel to fully reveal the card
   const openDistance = Math.max(1, cardHeight || Math.round(windowHeight * 0.4))
   // px the card has to move to be hidden behind its screen edge
   const hideOffset = cardHeight || windowHeight
-  // when the content fits there is nothing to scroll, so the whole card can be dragged
-  const isScrollable = cardHeight > 0 && contentHeight > cardHeight - 28
 
   const getToward = (v: number) => (isBottom ? -v : v)
 
@@ -182,83 +208,103 @@ export const ExpandableTabBar = (props: Props) => {
         </Animated.View>
       </GestureDetector>
       <Portal>
-        <View style={StyleSheet.absoluteFill} pointerEvents={isOpen ? 'auto' : 'none'}>
+        <View
+          style={StyleSheet.absoluteFill}
+          pointerEvents={isOpen ? 'auto' : 'none'}
+          onLayout={e => {
+            const next = e.nativeEvent.layout.height
+            if (next > 0) setPortalHeight(next)
+          }}>
           <Animated.View
             pointerEvents={'none'}
             style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: backdropOpacity }]}
           />
-          <Pressable
-            style={[styles.pressArea, isBottom ? styles.alignBottom : styles.alignTop]}
-            onPress={close}>
-              <Animated.View
-                onLayout={e => setCardHeight(e.nativeEvent.layout.height)}
+          <View
+            pointerEvents={'box-none'}
+            style={[styles.pressArea, isBottom ? styles.alignBottom : styles.alignTop]}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+            <Animated.View
+              onLayout={e => setCardHeight(e.nativeEvent.layout.height)}
+              style={[
+                styles.card,
+                isBottom ? styles.cardBottom : styles.cardTop,
+                { backgroundColor: cardBackground, opacity: cardOpacity },
+                { transform: [{ translateY: cardTranslateY }] },
+              ]}>
+              <View
                 style={[
-                  styles.card,
-                  isBottom ? styles.cardBottom : styles.cardTop,
-                  { backgroundColor: cardBackground, opacity: cardOpacity },
-                  { transform: [{ translateY: cardTranslateY }] },
+                  styles.cardInner,
+                  isBottom ? styles.cardInnerBottom : styles.cardInnerTop,
+                  { backgroundColor: cardBackground },
+                  isBottom && bottomCover > 0 ? { paddingBottom: bottomCover } : null,
                 ]}>
-                <View
-                  onStartShouldSetResponder={() => true}
-                  style={[
-                    styles.cardInner,
-                    isBottom ? styles.cardInnerBottom : styles.cardInnerTop,
-                    { backgroundColor: cardBackground },
-                  ]}>
-                  {isBottom && (
-                    <GestureDetector gesture={cardGesture}>
-                      <View style={styles.handleArea}>
-                        <View style={styles.grabber} />
-                      </View>
-                    </GestureDetector>
-                  )}
-                  <ScrollView
-                    bounces={false}
-                    nestedScrollEnabled
-                    scrollEnabled={isScrollable}
-                    onContentSizeChange={(_w, h) => setContentHeight(h)}
-                    style={styles.cardScroll}
-                    contentContainerStyle={styles.cardContent}>
-                    {state.routes.map((route, index) => {
-                      const options = descriptors[route.key]?.options || {}
-                      const focused = state.index === index
-                      const icon =
-                        typeof options.tabBarLabel === 'function'
-                          ? options.tabBarLabel({ focused, color: theme.colors.text })
-                          : null
-                      const title = options.title || route.name
-                      return (
-                        <TouchableRipple
-                          key={route.key}
-                          rippleColor={theme.colors.ripple}
-                          onPress={() => onPressRow(route)}
-                          style={[
-                            styles.row,
-                            {
-                              backgroundColor: focused ? theme.colors.row : theme.colors.transparent,
-                              borderColor: focused ? theme.colors.primary : theme.colors.transparent,
-                            },
-                          ]}>
-                          <View style={styles.rowInner}>
-                            <View style={styles.rowIcon}>{icon}</View>
-                            <Text numberOfLines={1} style={[styles.rowLabel, { color: theme.colors.text }]}>
-                              {title}
-                            </Text>
-                          </View>
-                        </TouchableRipple>
-                      )
-                    })}
-                  </ScrollView>
-                  {!isBottom && (
-                    <GestureDetector gesture={cardGesture}>
-                      <View style={styles.handleArea}>
-                        <View style={styles.grabber} />
-                      </View>
-                    </GestureDetector>
-                  )}
-                </View>
-              </Animated.View>
-          </Pressable>
+                {isBottom && (
+                  <GestureDetector gesture={cardGesture}>
+                    <View style={styles.handleArea}>
+                      <View style={styles.grabber} />
+                    </View>
+                  </GestureDetector>
+                )}
+                <ScrollView
+                  bounces={false}
+                  nestedScrollEnabled
+                  scrollEnabled
+                  showsVerticalScrollIndicator={needsScroll}
+                  onContentSizeChange={(_w, h) => setContentHeight(h)}
+                  style={[styles.cardScroll, { maxHeight: scrollMax }]}
+                  contentContainerStyle={styles.cardContent}>
+                  {state.routes.map((route, index) => {
+                    const options = descriptors[route.key]?.options || {}
+                    const focused = state.index === index
+                    const icon =
+                      typeof options.tabBarLabel === 'function'
+                        ? options.tabBarLabel({ focused, color: theme.colors.text })
+                        : null
+                    const title = options.title || route.name
+                    return (
+                      <TouchableRipple
+                        key={route.key}
+                        rippleColor={theme.colors.ripple}
+                        onPress={() => onPressRow(route)}
+                        style={[
+                          styles.row,
+                          {
+                            height: rowHeight,
+                            backgroundColor: focused ? theme.colors.row : theme.colors.transparent,
+                            borderColor: focused ? theme.colors.primary : theme.colors.transparent,
+                          },
+                        ]}>
+                        <View style={styles.rowInner}>
+                          <View style={styles.rowIcon}>{icon}</View>
+                          <Text
+                            allowFontScaling={false}
+                            numberOfLines={1}
+                            style={[
+                              styles.rowLabel,
+                              {
+                                color: theme.colors.text,
+                                fontSize: labelSize,
+                                lineHeight: labelLine,
+                                includeFontPadding: false,
+                              },
+                            ]}>
+                            {title}
+                          </Text>
+                        </View>
+                      </TouchableRipple>
+                    )
+                  })}
+                </ScrollView>
+                {!isBottom && (
+                  <GestureDetector gesture={cardGesture}>
+                    <View style={styles.handleArea}>
+                      <View style={styles.grabber} />
+                    </View>
+                  </GestureDetector>
+                )}
+              </View>
+            </Animated.View>
+          </View>
         </View>
       </Portal>
     </>
@@ -273,6 +319,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxHeight: '82%',
+    zIndex: 1,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
@@ -298,11 +345,10 @@ const styles = StyleSheet.create({
   cardScroll: { flexGrow: 0, flexShrink: 1 },
   cardContent: { paddingVertical: 6 },
   row: {
-    height: 52,
     justifyContent: 'center',
     borderLeftWidth: 3,
   },
   rowInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
   rowIcon: { width: 34, alignItems: 'flex-start', justifyContent: 'center' },
-  rowLabel: { flex: 1, fontSize: 15, marginLeft: 2 },
+  rowLabel: { flex: 1, marginLeft: 2 },
 })
