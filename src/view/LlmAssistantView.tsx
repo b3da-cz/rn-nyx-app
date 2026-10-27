@@ -21,6 +21,7 @@ import {
   viewerRightsFromDiscussion,
 } from '../lib'
 import { LlmAssistantTab, LlmLibraryTab, LlmSegmentedRow } from '../component/llm'
+import { useLlmAnswerScroll } from '../component/llm/useLlmAnswerScroll'
 
 type Props = {
   navigation: any
@@ -65,11 +66,14 @@ export const LlmAssistantView: React.FC<Props> = ({
   const isPromptFocusedRef = useRef(false)
   const promptLayoutYRef = useRef(0)
   const scrollRef = useRef<ScrollView>(null)
+  const answerScroll = useLlmAnswerScroll(scrollRef)
 
-  const scrollToPrompt = () =>
+  const scrollToPrompt = () => {
+    answerScroll.markIntentionalScroll()
     setTimeout(() => {
       scrollRef.current?.scrollTo({ y: Math.max(0, promptLayoutYRef.current - 8), animated: true })
     }, 50)
+  }
 
   useEffect(() => {
     notifySecureLayout()
@@ -229,8 +233,16 @@ export const LlmAssistantView: React.FC<Props> = ({
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
             keyboardShouldPersistTaps="handled"
-            onScroll={notifySecureLayout}
-            scrollEventThrottle={32}>
+            scrollEventThrottle={16}
+            onScroll={event => {
+              notifySecureLayout()
+              answerScroll.onScroll(event)
+            }}
+            onContentSizeChange={answerScroll.onContentSizeChange}
+            onScrollBeginDrag={answerScroll.onScrollBeginDrag}
+            onScrollEndDrag={answerScroll.onScrollEndDrag}
+            onMomentumScrollBegin={answerScroll.onMomentumScrollBegin}
+            onMomentumScrollEnd={answerScroll.onMomentumScrollEnd}>
             <LlmAssistantTab
               discussionId={discussionId}
               discussionTitle={discussionTitle || ''}
@@ -256,6 +268,7 @@ export const LlmAssistantView: React.FC<Props> = ({
               ttlMs={rule.found ? rule.ttlMs : 0}
               blockMessage={blockMessage}
               shown={activeTab === 'assistant'}
+              onAnswerPhase={answerScroll.onAnswerPhase}
             />
           </ScrollView>
         </View>

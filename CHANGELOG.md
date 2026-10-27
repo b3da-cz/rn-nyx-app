@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.1
+- během odpovědi asistenta se pohled drží na konci, dokud uživatel nevyjede kousek nahoru
+- po dopsání odpovědi pohled zůstane tam, kde uživatel čte
+
 ## 0.35.0
 - odpověď asistenta přichází po částech a formátuje se až po uzavření tagu
 - úvaha modelu je zvlášť, otevře se kartou zespoda

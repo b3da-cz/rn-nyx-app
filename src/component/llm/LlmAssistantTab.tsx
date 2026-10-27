@@ -1,5 +1,5 @@
-import React from 'react'
-import { ActivityIndicator, View } from 'react-native'
+import React, { useLayoutEffect, useRef, useState } from 'react'
+import { ActivityIndicator, Keyboard, View } from 'react-native'
 import { Button, Text } from 'react-native-paper'
 import { isSummaryCopyLocked, LlmProviderId, LlmQueue, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
@@ -9,6 +9,7 @@ import { LlmPendingItemCard } from './LlmPendingItemCard'
 import { LlmPromptInput } from './LlmPromptInput'
 import { LlmResultSection } from './LlmResultSection'
 import { LlmSystemPromptBar } from './LlmSystemPromptBar'
+import { LlmAnswerPhase } from './llmAnswerScroll'
 import { useLlmAssistant } from './useLlmAssistant'
 
 type Props = {
@@ -32,6 +33,7 @@ type Props = {
   ttlMs?: number
   blockMessage?: string
   shown?: boolean
+  onAnswerPhase?: (phase: LlmAnswerPhase) => void
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -42,6 +44,32 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   const a = useLlmAssistant(props)
   const { dateFilter, model, system } = a
   const live = a.activeTask?.status === 'pending' ? a.activeTask.stream : undefined
+  const holdRef = useRef<{ content: string; reasoning: string } | null>(null)
+  const [holdEpoch, setHoldEpoch] = useState(0)
+  // Keep the streamed text mounted until the saved answer replaces it. Dropping
+  // it for that gap collapses the list and the scroll offset clamps to the top.
+  if (a.activeTask?.status === 'pending' && !live) {
+    holdRef.current = null
+  } else if (live) {
+    holdRef.current = live
+  } else if (a.result) {
+    holdRef.current = null
+  }
+  const held = holdEpoch >= 0 && !live && !a.result ? holdRef.current : null
+  const phase: LlmAnswerPhase = live ? 'streaming' : held?.content ? 'holding' : 'idle'
+  const answer = live?.content ?? held?.content ?? a.result?.text ?? ''
+  const reasoning = live?.reasoning || held?.reasoning || a.result?.reasoning
+  const answerPending = !!live || !!held?.content
+
+  useLayoutEffect(() => {
+    props.onAnswerPhase?.(phase)
+  }, [phase, props.onAnswerPhase])
+
+  const dismissAnswer = () => {
+    holdRef.current = null
+    setHoldEpoch(epoch => epoch + 1)
+    a.clearResult()
+  }
 
   return (
     <View style={{ paddingBottom: blocks.xlarge }}>
@@ -116,7 +144,10 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           isDisabled={!a.canSend}
           fontSize={fontSizes.p}
           width={'50%'}
-          onPress={a.send}
+          onPress={() => {
+            Keyboard.dismiss()
+            void a.send()
+          }}
         />
       </View>
 
@@ -144,16 +175,16 @@ export const LlmAssistantTab: React.FC<Props> = props => {
         </Text>
       )}
 
-      {(!!live || !!a.result) && (
+      {(answerPending || !!a.result) && (
         <LlmResultSection
-          result={live?.content ?? a.result?.text ?? ''}
-          reasoning={live?.reasoning || a.result?.reasoning}
+          result={answer}
+          reasoning={reasoning}
           streaming={!!live}
-          usage={live ? undefined : a.result?.usage}
-          durationMs={live ? undefined : a.result?.durationMs}
-          expiresAt={live ? undefined : a.result?.expiresAt}
+          usage={answerPending ? undefined : a.result?.usage}
+          durationMs={answerPending ? undefined : a.result?.durationMs}
+          expiresAt={answerPending ? undefined : a.result?.expiresAt}
           onExpired={a.expireResult}
-          onNewQuery={a.clearResult}
+          onNewQuery={dismissAnswer}
           onNavigateToPost={props.onNavigateToPost}
           copyLocked={isSummaryCopyLocked({
             clubTtlMs: props.ttlMs,
