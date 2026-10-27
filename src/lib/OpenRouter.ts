@@ -5,6 +5,7 @@ import {
   postOptsOutOfAgents,
   withAnonymityInstruction,
 } from './llmAgents'
+import { consumeLlmStreamBody, createLlmStreamState, finishLlmStreamBody, LlmStreamState } from './llmStream'
 import { t } from './Strings'
 
 export type OpenRouterPricing = {
@@ -42,10 +43,12 @@ export type OpenRouterChatParams = {
   provider?: LlmProviderId
   baseUrl?: string
   onProgress?: (message: string) => void
+  onDelta?: (snapshot: { content: string; reasoning: string }) => void
 }
 
 export type OpenRouterChatResult = {
   content: string
+  reasoning?: string
   usage?: {
     prompt_tokens?: number
     completion_tokens?: number
@@ -390,6 +393,64 @@ export function filterAndFormatPostsForLlm(
   }
 }
 
+function postChatStream(
+  url: string,
+  headers: Record<string, string>,
+  body: string,
+  onState: (state: LlmStreamState) => void,
+): Promise<LlmStreamState> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    let seen = 0
+    let pending = ''
+    let jsonMode = false
+    let state = createLlmStreamState()
+    const pump = () => {
+      const text = xhr.responseText || ''
+      if (text.length < seen) {
+        return
+      }
+      const chunk = text.slice(seen)
+      seen = text.length
+      const consumed = consumeLlmStreamBody(state, pending, chunk)
+      state = consumed.state
+      pending = consumed.pending
+      jsonMode = jsonMode || consumed.jsonMode
+      if (!jsonMode) {
+        onState(state)
+      }
+    }
+    xhr.onprogress = pump
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 3) {
+        pump()
+      }
+      if (xhr.readyState !== 4) {
+        return
+      }
+      pump()
+      if (xhr.status < 200 || xhr.status >= 300) {
+        let parsed: any = { error: xhr.responseText }
+        try {
+          parsed = JSON.parse(xhr.responseText || '')
+        } catch {
+          // keep the text error
+        }
+        reject(Object.assign(new Error('llm stream'), { status: xhr.status, body: parsed }))
+        return
+      }
+      const asJson = jsonMode || (xhr.responseText || '').trimStart().startsWith('{')
+      state = finishLlmStreamBody(state, pending, asJson)
+      onState(state)
+      resolve(state)
+    }
+    xhr.onerror = () => reject(new Error('Chyba spojení.'))
+    xhr.open('POST', url)
+    Object.entries(headers).forEach(([key, value]) => xhr.setRequestHeader(key, value))
+    xhr.send(body)
+  })
+}
+
 /**
  * Send request to OpenRouter Chat Completions endpoint.
  */
@@ -406,6 +467,7 @@ export async function sendOpenRouterChat({
   provider: providerInput,
   baseUrl,
   onProgress,
+  onDelta,
 }: OpenRouterChatParams): Promise<OpenRouterChatResult> {
   const provider = normalizeLlmProvider(providerInput)
   const resolvedBase = provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
@@ -493,16 +555,43 @@ export async function sendOpenRouterChat({
     headers['X-Title'] = 'Nyx NNN'
   }
 
-  const res = await fetch(llmApiUrl(resolvedBase, 'chat/completions'), {
+  const messages = [
+    { role: 'system', content: anonSystemPrompt },
+    { role: 'user', content: userMessage },
+  ]
+  const completionUrl = llmApiUrl(resolvedBase, 'chat/completions')
+
+  if (onDelta) {
+    onProgress?.('Čekám na první token...')
+    const publish = (snap: LlmStreamState) => {
+      onDelta({
+        content: scrubber.restore(snap.content),
+        reasoning: scrubber.restore(snap.reasoning),
+      })
+    }
+    let streamed: LlmStreamState
+    try {
+      streamed = await postChatStream(completionUrl, headers, JSON.stringify({ model, messages, stream: true }), publish)
+    } catch (err: any) {
+      if (err?.body) {
+        const fallback = provider === 'openai' ? 'Chyba API' : 'Chyba OpenRouter API'
+        throw new Error(llmApiErrorMessage(err.body, err.status || 0, fallback))
+      }
+      throw err
+    }
+    onProgress?.('Odpověď přijata, zpracovávám výsledek...')
+    return {
+      content: scrubber.restore(streamed.content),
+      reasoning: scrubber.restore(streamed.reasoning),
+      usage: streamed.usage,
+      model: streamed.model || model,
+    }
+  }
+
+  const res = await fetch(completionUrl, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: anonSystemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-    }),
+    body: JSON.stringify({ model, messages }),
   })
 
   onProgress?.(`HTTP status ${res.status}: Čekám na dokončení generování...`)

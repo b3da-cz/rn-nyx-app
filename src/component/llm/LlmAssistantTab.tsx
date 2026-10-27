@@ -41,6 +41,7 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   } = useTheme()
   const a = useLlmAssistant(props)
   const { dateFilter, model, system } = a
+  const live = a.activeTask?.status === 'pending' ? a.activeTask.stream : undefined
 
   return (
     <View style={{ paddingBottom: blocks.xlarge }}>
@@ -143,19 +144,21 @@ export const LlmAssistantTab: React.FC<Props> = props => {
         </Text>
       )}
 
-      {!!a.result && (
+      {(!!live || !!a.result) && (
         <LlmResultSection
-          result={a.result.text}
-          usage={a.result.usage}
-          durationMs={a.result.durationMs}
-          expiresAt={a.result.expiresAt}
+          result={live?.content ?? a.result?.text ?? ''}
+          reasoning={live?.reasoning || a.result?.reasoning}
+          streaming={!!live}
+          usage={live ? undefined : a.result?.usage}
+          durationMs={live ? undefined : a.result?.durationMs}
+          expiresAt={live ? undefined : a.result?.expiresAt}
           onExpired={a.expireResult}
           onNewQuery={a.clearResult}
           onNavigateToPost={props.onNavigateToPost}
           copyLocked={isSummaryCopyLocked({
             clubTtlMs: props.ttlMs,
             sameClub: true,
-            expiresAt: a.result.expiresAt,
+            expiresAt: live ? null : a.result?.expiresAt,
           })}
           shown={props.shown !== false}
         />

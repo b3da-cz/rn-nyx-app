@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.0
+- odpověď asistenta přichází po částech a formátuje se až po uzavření tagu
+- úvaha modelu je zvlášť, otevře se kartou zespoda
+
 ## 0.34.3
 - dev build se na ploše jmenuje Nnn [dev]
 

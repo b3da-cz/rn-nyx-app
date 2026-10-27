@@ -53,6 +53,7 @@ export function useLlmAssistant(p: Params) {
   const [result, setResult] = useState<{
     id: string
     text: string
+    reasoning?: string
     usage: any
     durationMs: number | null
     expiresAt: string | null
@@ -74,6 +75,7 @@ export function useLlmAssistant(p: Params) {
             setResult({
               id: latest.id,
               text: latest.response,
+              reasoning: latest.reasoning,
               usage: latest.usage,
               durationMs: latest.durationMs ?? null,
               expiresAt: latest.expiresAt ?? null,

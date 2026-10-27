@@ -23,6 +23,7 @@ export type LlmPendingTask = {
   systemPrompt?: string
   posts?: any[]
   ttlMs?: number
+  stream?: { content: string; reasoning: string }
 }
 
 type LlmQueueListener = (tasks: LlmPendingTask[]) => void
@@ -32,6 +33,7 @@ class LlmQueueService {
   private listeners: Set<LlmQueueListener> = new Set()
   private completionListeners: Set<(task: LlmPendingTask) => void> = new Set()
   private isInitialized = false
+  private streamNotifiedAt = 0
 
   async init(): Promise<void> {
     if (this.isInitialized) return
@@ -96,10 +98,21 @@ class LlmQueueService {
 
   private async persist() {
     try {
-      await Storage.setLlmPendingTasks(this.tasks)
+      const stored = this.tasks.map(({ stream, ...task }) => task)
+      await Storage.setLlmPendingTasks(stored)
     } catch (e) {
       console.warn('Failed to persist LlmQueue', e)
     }
+  }
+
+  private publishStream(taskId: string, content: string, reasoning: string, force = false) {
+    this.tasks = this.tasks.map(task => (task.id === taskId ? { ...task, stream: { content, reasoning } } : task))
+    const now = Date.now()
+    if (!force && now - this.streamNotifiedAt < 80) {
+      return
+    }
+    this.streamNotifiedAt = now
+    this.notify()
   }
 
   private generateId(): string {
@@ -168,7 +181,9 @@ class LlmQueueService {
         systemPrompt: task.systemPrompt,
         provider: task.provider,
         baseUrl: task.baseUrl,
+        onDelta: snapshot => this.publishStream(task.id, snapshot.content, snapshot.reasoning),
       })
+      this.publishStream(task.id, res.content, res.reasoning || '', true)
 
       const durationMs = Date.now() - task.startedAt
 
@@ -182,6 +197,7 @@ class LlmQueueService {
         postCount: task.postCount,
         prompt: task.prompt,
         response: res.content,
+        reasoning: res.reasoning || undefined,
         durationMs,
         usage: res.usage,
         expiresAt: task.ttlMs && task.ttlMs > 0 ? new Date(Date.now() + task.ttlMs).toISOString() : undefined,

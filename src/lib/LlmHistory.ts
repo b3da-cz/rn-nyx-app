@@ -13,6 +13,7 @@ export type LlmHistoryItem = {
   postCount: number
   prompt: string
   response: string
+  reasoning?: string
   durationMs?: number
   usage?: {
     prompt_tokens?: number

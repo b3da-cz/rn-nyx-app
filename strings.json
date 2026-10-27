@@ -1324,6 +1324,10 @@
       "cs": "Odpověď",
       "en": "Answer"
     },
+    "reasoning": {
+      "cs": "Úvaha",
+      "en": "Reasoning"
+    },
     "tokens": {
       "cs": "tokenů",
       "en": "tokens"

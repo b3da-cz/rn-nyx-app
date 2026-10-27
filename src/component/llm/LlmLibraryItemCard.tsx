@@ -8,6 +8,7 @@ import { ButtonComponent } from '../ButtonComponent'
 import { DoubleTapDeleteButton } from '../DoubleTapDeleteButton'
 import { SearchHighlight } from '../SearchHighlight'
 import { LlmAnswerBody } from './LlmAnswerBody'
+import { LlmReasoningSheet } from './LlmReasoningSheet'
 import { LlmTtlBadge } from './LlmTtlBadge'
 import { formatLlmDate, formatLlmDateRange, formatPostCount, joinMeta } from './llmFormat'
 import { useHoldScreenSecure } from './useHoldScreenSecure'
@@ -38,6 +39,7 @@ export const LlmLibraryItemCard: React.FC<Props> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   const [isRaw, setIsRaw] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [reasoningOpen, setReasoningOpen] = useState(false)
   const copyLocked = isSummaryCopyLocked({
     clubTtlMs,
     sameClub: activeDiscussionId != null && `${item.discussionId}` === `${activeDiscussionId}`,
@@ -117,6 +119,22 @@ export const LlmLibraryItemCard: React.FC<Props> = ({
               onNavigateToPost={onNavigateToPost}
             />
           </View>
+          {!!item.reasoning && (
+            <ButtonComponent
+              label={t('llm.reasoning')}
+              color={colors.faded}
+              fontSize={fontSizes.p}
+              width={'100%'}
+              onPress={() => setReasoningOpen(true)}
+            />
+          )}
+          <LlmReasoningSheet
+            visible={reasoningOpen && !!item.reasoning}
+            text={item.reasoning || ''}
+            copyLocked={copyLocked}
+            onClose={() => setReasoningOpen(false)}
+            onNavigateToPost={onNavigateToPost}
+          />
           <View style={[Styling.groups.flexRowCentered, { paddingRight: blocks.medium }]}>
             <View style={{ flex: 1, flexDirection: 'row' }}>
               <ButtonComponent

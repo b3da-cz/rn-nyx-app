@@ -1,11 +1,12 @@
 import React, { useContext } from 'react'
-import { View } from 'react-native'
+import { Text, View } from 'react-native'
 import { isTextSelectionEnabled, MainContext, useTheme } from '../../lib'
 import { MarkdownViewComponent } from '../MarkdownViewComponent'
 import { SearchHighlight } from '../SearchHighlight'
 
 type Props = {
   content: string
+  pending?: string
   isRaw?: boolean
   query?: string
   copyLocked?: boolean
@@ -13,7 +14,7 @@ type Props = {
 }
 
 // Answer text laid out like post content (plain background, side padding).
-export const LlmAnswerBody = ({ content, isRaw, query, copyLocked, onNavigateToPost }: Props) => {
+export const LlmAnswerBody = ({ content, pending, isRaw, query, copyLocked, onNavigateToPost }: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -26,18 +27,27 @@ export const LlmAnswerBody = ({ content, isRaw, query, copyLocked, onNavigateToP
       {isRaw ? (
         <SearchHighlight
           selectable={selectable}
-          text={content}
+          text={`${content}${pending || ''}`}
           query={query}
           style={{ color: colors.text, fontSize: fontSizes.p }}
         />
       ) : (
-        <MarkdownViewComponent
-          content={content}
-          query={query}
-          selectable={selectable}
-          showUserAvatars={showUserAvatars}
-          onNavigateToPost={onNavigateToPost}
-        />
+        <>
+          {!!content && (
+            <MarkdownViewComponent
+              content={content}
+              query={query}
+              selectable={selectable}
+              showUserAvatars={showUserAvatars}
+              onNavigateToPost={onNavigateToPost}
+            />
+          )}
+          {!!pending && (
+            <Text selectable={selectable} style={{ color: colors.text, fontSize: fontSizes.p }}>
+              {pending}
+            </Text>
+          )}
+        </>
       )}
     </View>
   )
