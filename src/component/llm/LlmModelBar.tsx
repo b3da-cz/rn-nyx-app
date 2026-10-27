@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { fetchLlmModels, LlmProviderId, normalizeLlmProvider, OpenRouterModel, Storage, t } from '../../lib'
 import { LlmModelPickerDialog } from '../LlmModelPickerDialog'
 import { LlmFormRow } from './LlmFormRow'
@@ -26,10 +26,44 @@ export const LlmModelBar: React.FC<Props> = ({
   const [isPickerVisible, setIsPickerVisible] = useState(false)
   const [models, setModels] = useState<OpenRouterModel[]>([])
   const [isFetching, setIsFetching] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const fetchSeq = useRef(0)
 
   useEffect(() => {
+    fetchSeq.current += 1
     setModels([])
+    setIsFetching(false)
+    setLoadError(null)
   }, [resolvedProvider, apiKey, baseUrl])
+
+  const reloadModels = async () => {
+    const seq = ++fetchSeq.current
+    setLoadError(null)
+    setIsFetching(true)
+    try {
+      const fetched = await fetchLlmModels({ provider: resolvedProvider, apiKey, baseUrl })
+      if (seq !== fetchSeq.current) {
+        return
+      }
+      if (fetched.length === 0) {
+        setModels([])
+        setLoadError(t('profile.llm.noModels') || 'Server nevrátil žádné modely.')
+        return
+      }
+      setModels(fetched)
+      await Storage.setCachedLlmModels(fetched, resolvedProvider)
+    } catch (e: any) {
+      if (seq !== fetchSeq.current) {
+        return
+      }
+      console.warn('Failed to fetch models', e)
+      setLoadError(e?.message || t('profile.llm.errorFetchingModels') || 'Chyba při stahování modelů.')
+    } finally {
+      if (seq === fetchSeq.current) {
+        setIsFetching(false)
+      }
+    }
+  }
 
   const handleOpenPicker = async () => {
     setIsPickerVisible(true)
@@ -38,22 +72,14 @@ export const LlmModelBar: React.FC<Props> = ({
       cached = (await Storage.getCachedLlmModels(resolvedProvider)) || []
       if (Array.isArray(cached) && cached.length > 0) {
         setModels(cached)
+        setLoadError(null)
       }
     } catch (e) {
       console.warn('Failed to load cached models', e)
     }
 
     if (cached.length === 0 && apiKey) {
-      setIsFetching(true)
-      try {
-        const fetched = await fetchLlmModels({ provider: resolvedProvider, apiKey, baseUrl })
-        setModels(fetched)
-        await Storage.setCachedLlmModels(fetched, resolvedProvider)
-      } catch (e) {
-        console.warn('Failed to fetch models', e)
-      } finally {
-        setIsFetching(false)
-      }
+      await reloadModels()
     }
   }
 
@@ -68,10 +94,14 @@ export const LlmModelBar: React.FC<Props> = ({
         isVisible={isPickerVisible}
         models={models}
         isLoading={isFetching}
+        loadError={loadError}
         catalog={resolvedProvider}
         selectedModelId={currentModelId}
         isGlobal={isGlobalModel}
         showGlobalToggle
+        onReload={() => {
+          void reloadModels()
+        }}
         onSelect={(model, saveAsGlobal) => {
           setIsPickerVisible(false)
           onModelSelected(model, !!saveAsGlobal)

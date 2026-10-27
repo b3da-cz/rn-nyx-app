@@ -495,7 +495,7 @@ export class SettingsView extends Component<Props> {
     return stored
   }
 
-  async fetchModels(): Promise<OpenRouterModel[] | null> {
+  async fetchModels(options?: { keepSelection?: boolean }): Promise<OpenRouterModel[] | null> {
     const provider = this.llmProvider()
     this.llmListProvider = provider
     const apiKey = provider === 'openai' ? this.state.openaiApiKey || '' : this.state.openRouterApiKey || ''
@@ -534,7 +534,11 @@ export class SettingsView extends Component<Props> {
       this.llmIgnoreStoredModel = false
       this.setState({ models, isFetchingModels: false })
       await Storage.setCachedLlmModels(models, provider)
-      if (this.llmListProvider === provider && (ignoreStored || !this.state.selectedLlmModel)) {
+      if (
+        !options?.keepSelection &&
+        this.llmListProvider === provider &&
+        (ignoreStored || !this.state.selectedLlmModel)
+      ) {
         await this.onSelectModel(models[0])
       }
       return models
@@ -1447,7 +1451,12 @@ export class SettingsView extends Component<Props> {
           isVisible={!!this.state.isModelPickerVisible}
           models={this.state.models || []}
           catalog={this.llmProvider()}
+          isLoading={!!this.state.isFetchingModels}
+          loadError={this.state.llmError}
           selectedModelId={this.state.selectedLlmModel || ''}
+          onReload={() => {
+            void this.fetchModels({ keepSelection: true })
+          }}
           onSelect={model => this.onSelectModel(model)}
           onCancel={() => this.setState({ isModelPickerVisible: false })}
         />

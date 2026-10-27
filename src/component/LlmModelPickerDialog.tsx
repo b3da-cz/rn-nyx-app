@@ -11,9 +11,11 @@ type Props = {
   selectedModelId: string
   catalog?: 'openrouter' | 'openai'
   isLoading?: boolean
+  loadError?: string | null
   isGlobal?: boolean
   showGlobalToggle?: boolean
   onToggleGlobal?: (val: boolean) => void
+  onReload?: () => void
   onSelect: (model: OpenRouterModel, saveAsGlobal?: boolean) => void
   onCancel: () => void
 }
@@ -26,9 +28,11 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   selectedModelId,
   catalog = 'openrouter',
   isLoading = false,
+  loadError,
   isGlobal,
   showGlobalToggle,
   onToggleGlobal,
+  onReload,
   onSelect,
   onCancel,
 }) => {
@@ -118,7 +122,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false} onRequestClose={onCancel}>
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={[Styling.groups.flexRowCentered, { height: 50, paddingRight: blocks.medium }]}>
+        <View style={[Styling.groups.flexRowCentered, { height: 50, paddingRight: onReload ? 0 : blocks.medium }]}>
           <IconButton
             icon={'arrow-left'}
             size={25}
@@ -133,7 +137,33 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>
             {`${filteredModels.length} / ${models.length}`}
           </Text>
+          {onReload ? (
+            isLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} style={{ width: 48 }} />
+            ) : (
+              <IconButton
+                icon={'refresh'}
+                size={22}
+                color={colors.primary}
+                rippleColor={colors.ripple}
+                accessibilityLabel={t('profile.llm.refreshModels') || 'Aktualizovat modely'}
+                onPress={onReload}
+              />
+            )
+          ) : null}
         </View>
+        {!!loadError && (
+          <Text
+            selectable
+            style={{
+              color: colors.accent,
+              fontSize: fontSizes.small,
+              paddingHorizontal: blocks.medium,
+              paddingBottom: blocks.small,
+            }}>
+            {loadError}
+          </Text>
+        )}
 
         <View
           style={{

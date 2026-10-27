@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.6
+- ve výběru modelu je v hlavičce tlačítko pro znovunačtení seznamu z API
+
 ## 0.35.5
 - v anketě se vykreslí HTML, takže obrázek v instrukcích nebo odpovědi je vidět
 - delší odpověď se neořízne a řádek vyroste
