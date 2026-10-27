@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Keyboard, ScrollView, View } from 'react-native'
 import { IconButton, Text } from 'react-native-paper'
 import {
@@ -21,7 +21,10 @@ import {
   viewerRightsFromDiscussion,
 } from '../lib'
 import { LlmAssistantTab, LlmLibraryTab, LlmSegmentedRow } from '../component/llm'
+import { LlmAnswerDock } from '../component/llm/LlmResultSection'
 import { useLlmAnswerScroll } from '../component/llm/useLlmAnswerScroll'
+
+const ANSWER_DOCK_MARGIN = 8
 
 type Props = {
   navigation: any
@@ -66,7 +69,12 @@ export const LlmAssistantView: React.FC<Props> = ({
   const isPromptFocusedRef = useRef(false)
   const promptLayoutYRef = useRef(0)
   const scrollRef = useRef<ScrollView>(null)
-  const answerScroll = useLlmAnswerScroll(scrollRef)
+  const [followAnswer, setFollowAnswer] = useState(false)
+  const [answerDock, setAnswerDock] = useState<LlmAnswerDock | null>(null)
+  const answerScroll = useLlmAnswerScroll(scrollRef, setFollowAnswer)
+  const onStickActions = useCallback((dock: LlmAnswerDock | null) => {
+    setAnswerDock(dock)
+  }, [])
 
   const scrollToPrompt = () => {
     answerScroll.markIntentionalScroll()
@@ -231,7 +239,13 @@ export const LlmAssistantView: React.FC<Props> = ({
           <ScrollView
             ref={scrollRef}
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 40 : 12 }}
+            contentContainerStyle={{
+              paddingBottom: answerDock
+                ? keyboardHeight + answerDock.height + ANSWER_DOCK_MARGIN * 2
+                : keyboardHeight > 0
+                  ? keyboardHeight + 40
+                  : 12,
+            }}
             keyboardShouldPersistTaps="handled"
             scrollEventThrottle={16}
             onScroll={event => {
@@ -269,8 +283,24 @@ export const LlmAssistantView: React.FC<Props> = ({
               blockMessage={blockMessage}
               shown={activeTab === 'assistant'}
               onAnswerPhase={answerScroll.onAnswerPhase}
+              followAnswer={followAnswer}
+              onStickActions={onStickActions}
             />
           </ScrollView>
+          {!!answerDock && activeTab === 'assistant' && (
+            <View
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: keyboardHeight,
+                paddingBottom: ANSWER_DOCK_MARGIN,
+                backgroundColor: colors.background,
+                zIndex: 2,
+              }}>
+              {answerDock.node}
+            </View>
+          )}
         </View>
       )}
       {activeTab !== 'assistant' && (

@@ -7,7 +7,7 @@ import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
 import { LlmPendingItemCard } from './LlmPendingItemCard'
 import { LlmPromptInput } from './LlmPromptInput'
-import { LlmResultSection } from './LlmResultSection'
+import { LlmAnswerDock, LlmResultSection } from './LlmResultSection'
 import { LlmSystemPromptBar } from './LlmSystemPromptBar'
 import { LlmAnswerPhase } from './llmAnswerScroll'
 import { useLlmAssistant } from './useLlmAssistant'
@@ -34,6 +34,8 @@ type Props = {
   blockMessage?: string
   shown?: boolean
   onAnswerPhase?: (phase: LlmAnswerPhase) => void
+  followAnswer?: boolean
+  onStickActions?: (dock: LlmAnswerDock | null) => void
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -60,6 +62,7 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   const answer = live?.content ?? held?.content ?? a.result?.text ?? ''
   const reasoning = live?.reasoning || held?.reasoning || a.result?.reasoning
   const answerPending = !!live || !!held?.content
+  const stickActions = !!props.followAnswer && (answerPending || !!a.result)
 
   useLayoutEffect(() => {
     props.onAnswerPhase?.(phase)
@@ -72,7 +75,7 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   }
 
   return (
-    <View style={{ paddingBottom: blocks.xlarge }}>
+    <View style={{ paddingBottom: stickActions ? 0 : blocks.xlarge }}>
       <LlmModelBar
         apiKey={props.apiKey}
         provider={props.provider}
@@ -192,6 +195,8 @@ export const LlmAssistantTab: React.FC<Props> = props => {
             expiresAt: live ? null : a.result?.expiresAt,
           })}
           shown={props.shown !== false}
+          stickActions={stickActions}
+          onStickActions={props.onStickActions}
         />
       )}
     </View>

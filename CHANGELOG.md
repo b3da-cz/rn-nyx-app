@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.2
+- při automatickém scrollování odpovědi raw, kopírovat a nový dotaz sedí nad spodním okrajem
+
 ## 0.35.1
 - během odpovědi asistenta se pohled drží na konci, dokud uživatel nevyjede kousek nahoru
 - po dopsání odpovědi pohled zůstane tam, kde uživatel čte

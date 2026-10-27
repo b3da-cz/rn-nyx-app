@@ -6,8 +6,13 @@ type Metrics = { offsetY: number; viewport: number; contentHeight: number }
 
 const SETTLE_DELAYS = [0, 80, 250, 700]
 
-export function useLlmAnswerScroll(scrollRef: { current: ScrollView | null }) {
+export function useLlmAnswerScroll(
+  scrollRef: { current: ScrollView | null },
+  onFollowChange?: (follow: boolean) => void,
+) {
   const followRef = useRef(false)
+  const onFollowChangeRef = useRef(onFollowChange)
+  onFollowChangeRef.current = onFollowChange
   const phaseRef = useRef<LlmAnswerPhase>('idle')
   const gestureRef = useRef(false)
   const pinnedOffset = useRef(0)
@@ -33,6 +38,14 @@ export function useLlmAnswerScroll(scrollRef: { current: ScrollView | null }) {
       }
     }
   }, [clearSettle])
+
+  const publishFollow = useCallback((next: boolean) => {
+    if (followRef.current === next) {
+      return
+    }
+    followRef.current = next
+    onFollowChangeRef.current?.(next)
+  }, [])
 
   const scrollToEnd = useCallback(() => {
     if (!followRef.current || gestureRef.current) {
@@ -78,7 +91,7 @@ export function useLlmAnswerScroll(scrollRef: { current: ScrollView | null }) {
       const prev = phaseRef.current
       phaseRef.current = phase
       if (phase === 'streaming' && prev !== 'streaming') {
-        followRef.current = true
+        publishFollow(true)
         clearSettle()
         requestAnimationFrame(() => scrollToEnd())
       }
@@ -86,7 +99,7 @@ export function useLlmAnswerScroll(scrollRef: { current: ScrollView | null }) {
         scheduleSettle()
       }
     },
-    [clearSettle, scheduleSettle, scrollToEnd],
+    [clearSettle, publishFollow, scheduleSettle, scrollToEnd],
   )
 
   const onContentSizeChange = useCallback(
@@ -132,15 +145,16 @@ export function useLlmAnswerScroll(scrollRef: { current: ScrollView | null }) {
       }
 
       metrics.current = { offsetY, viewport, contentHeight }
-      followRef.current = followAfterUserScroll(offsetY, viewport, contentHeight, userGesture, followRef.current)
+      const nextFollow = followAfterUserScroll(offsetY, viewport, contentHeight, userGesture, followRef.current)
       if (userGesture) {
         pinnedOffset.current = offsetY
-        if (!followRef.current) {
+        if (!nextFollow) {
           clearSettle()
         }
       }
+      publishFollow(nextFollow)
     },
-    [clearSettle, restoreReadingOffset],
+    [clearSettle, publishFollow, restoreReadingOffset],
   )
 
   const beginGesture = useCallback(() => {
