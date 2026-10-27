@@ -16,6 +16,7 @@ import {
   shouldSkipImageDownload,
 } from './imageDownload'
 import { discussionRequestBlockHeight, discussionRequestFromPost } from './discussionRequest'
+import { attachPollMedia, pollContentHeight, pollLayoutModel } from './poll'
 import { FetchProgressEvent, settleWithin } from './fetchProgress'
 
 const IMAGE_CACHE_QUERY_TIMEOUT_MS = 4000
@@ -407,22 +408,44 @@ export const getBlockSizes = async (
               post.content_raw?.data?.rolls?.length * 40) *
             fontScale
           : 0
-      const pollTextHeights =
-        post.content_raw?.type === 'poll'
+      let pollHeight = 0
+      if (post.content_raw?.type === 'poll') {
+        attachPollMedia(post)
+        const model = pollLayoutModel(post)
+        const width = Dimensions.get('window').width - 48
+        const questionHeights = await rnTextSize.flatHeights({
+          text: [model.question || ' '],
+          width,
+          fontSize: effectiveFontSize * 1.25,
+          allowFontScaling: true,
+        })
+        const bodyTexts = [model.instructions, ...model.answers]
+        const bodyHeights = await rnTextSize.flatHeights({
+          text: bodyTexts.map(text => text || ' '),
+          width: width - 28,
+          fontSize: effectiveFontSize,
+          allowFontScaling: true,
+        })
+        const statsHeights = model.showStats
           ? await rnTextSize.flatHeights({
-              text: [post.content_raw?.data?.question, post.content_raw?.data?.instructions, '\nrespondents\nvotes'],
-              width: Dimensions.get('window').width - 40,
+              text: ['votes\nrespondents'],
+              width,
               fontSize: effectiveFontSize,
               allowFontScaling: true,
             })
-          : []
-      const pollHeight =
-        pollTextHeights.length > 0
-          ? ((post.content_raw?.data?.computed_values?.user_did_vote ? 60 : 115) +
-              Object.keys(post.content_raw?.data?.answers || {}).length * 56) *
-              fontScale +
-            pollTextHeights.reduce((a, b) => a + b)
-          : 0
+          : [0]
+        // Image pixels are reserved by computeImagesHeight via parsed.images.
+        pollHeight = pollContentHeight({
+          questionHeight: model.question ? questionHeights[0] || 0 : 0,
+          instructionsHeight: model.instructions ? bodyHeights[0] || 0 : 0,
+          answerHeights: model.answers.map((text, index) => (text ? bodyHeights[index + 1] || 0 : 0)),
+          statsHeight: model.showStats ? statsHeights[0] || 0 : 0,
+          canVote: model.showVoteButton,
+          voteRows: model.voteRows,
+          resultRows: model.resultRows,
+          fontScale,
+        })
+      }
       const adTextHeights =
         post.content_raw?.type === 'advertisement'
           ? await rnTextSize.flatHeights({

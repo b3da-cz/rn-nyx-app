@@ -2,6 +2,7 @@ import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
 import { applyCachedLayouts } from './discussionCache'
+import { attachPollMedia } from './poll'
 import { FetchProgressEvent } from './fetchProgress'
 import { applyImageDownloadPolicy, assignPostOffsets, getBlockSizes, postsNeedingLayout } from './LayoutHelper'
 import { uniqueVideoTags } from './compose'
@@ -401,6 +402,7 @@ export const parsePostsContent = posts => {
       if (!post.parsed) {
         const parser = new Parser(post.content, post.post_type)
         post.parsed = parser.parse()
+        attachPollMedia(post)
       }
     }
   } catch (e) {

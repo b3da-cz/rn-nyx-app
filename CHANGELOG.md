@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.35.5
+- v anketě se vykreslí HTML, takže obrázek v instrukcích nebo odpovědi je vidět
+- delší odpověď se neořízne a řádek vyroste
+- rámečky hlasování a odpovědí jsou hranaté
+- po skončení ankety je tlačítko hlasování vypnuté
+
 ## 0.35.4
 - karta úvahy drží za úchyt pod prstem a je o kousek vyšší
 

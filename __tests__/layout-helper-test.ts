@@ -100,4 +100,40 @@ describe('LayoutHelper getBlockSizes', () => {
     const scaled = await getBlockSizes(scaledEmptyPost, 15, 1.5)
     expect(scaled[0].parsed.height).toBe(Math.round(75 * 1.5))
   })
+
+  it('reserves poll image height and wrapping answers instead of the raw html tag', async () => {
+    const poll = (instructions: string, answer: string, image?: { width: number; height: number }) => ({
+      id: 1,
+      content_raw: {
+        type: 'poll',
+        data: {
+          question: 'Jak je to správně?',
+          instructions,
+          answers: { '1': { answer: 'Vlevo' }, '2': { answer } },
+          computed_values: { user_did_vote: false, total_votes: 0, total_respondents: 0 },
+        },
+      },
+      parsed: {
+        clearText: '',
+        images: image
+          ? [
+              {
+                id: 'poll-1-0',
+                src: 'https://nyx.cz/files/a.jpg',
+                width: image.width,
+                height: image.height,
+              },
+            ]
+          : [],
+      },
+    })
+    const tag =
+      '<img src="https://nyx.cz/files/a.jpg?name=IMG-20261027-WA0000.jpg">'
+    const plain = await getBlockSizes([poll('', 'Vpravo')], 15, 1)
+    const pictured = await getBlockSizes([poll(tag, 'Vpravo', { width: 300, height: 300 })], 15, 1)
+    const wrapped = await getBlockSizes([poll('', 'Vpravo '.repeat(80))], 15, 1)
+    expect(pictured[0].parsed.pollPlain.instructions).toBe('')
+    expect(pictured[0].parsed.height).toBeGreaterThan(plain[0].parsed.height + 100)
+    expect(wrapped[0].parsed.height).toBeGreaterThan(plain[0].parsed.height + 100)
+  })
 })

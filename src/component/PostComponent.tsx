@@ -25,6 +25,7 @@ import {
   generateUuidV4,
   isTextSelectionEnabled,
   MainContext,
+  pollIsClosed,
   promptTextFile,
   searchMatchRanges,
 } from '../lib'
@@ -71,6 +72,7 @@ export class PostComponent extends Component<Props> {
     return (
       this.props.post.rating !== nextProps.post.rating ||
       this.props.post.reminder !== nextProps.post.reminder ||
+      this.props.post.content_raw !== nextProps.post.content_raw ||
       this.props.post.parsed?.height !== nextProps.post.parsed?.height ||
       this.props.post.parsed?.layoutEpoch !== nextProps.post.parsed?.layoutEpoch ||
       this.props.post.parsed?.images?.some(
@@ -132,6 +134,7 @@ export class PostComponent extends Component<Props> {
   }
 
   renderImage(img) {
+    // Poll images are drawn inside PollComponent. They still sit on parsed.images so layout can size them.
     if (!img?.src || this.props.post?.content_raw?.type === 'dice' || this.props.post?.content_raw?.type === 'poll') {
       return
     }
@@ -235,6 +238,11 @@ export class PostComponent extends Component<Props> {
         allowedAnswers={post?.content_raw?.data?.allowed_votes}
         votes={post?.content_raw?.data?.votes}
         canVote={!post?.content_raw?.data?.computed_values?.user_did_vote}
+        ended={pollIsClosed(post?.content_raw?.data)}
+        images={post?.parsed?.images}
+        nyx={this.props.nyx}
+        onImage={(image, list) => this.props.onImage(image, list)}
+        onOpenPost={(discussionId, postId) => this.props.onDiscussionDetailShow(discussionId, postId)}
         onVote={answer => this.voteInPoll(answer)}
       />
     )
