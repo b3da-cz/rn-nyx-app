@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.3
+- karta úvahy jde scrollovat a za horní úchyt zvětšit, zmenšit nebo stáhnout pryč
+- dokud úvaha v asistentu přibývá a karta je zavřená, tlačítko za názvem pulzuje tečkami
+
 ## 0.35.2
 - při automatickém scrollování odpovědi raw, kopírovat a nový dotaz sedí nad spodním okrajem
 

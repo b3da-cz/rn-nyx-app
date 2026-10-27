@@ -1,8 +1,12 @@
-import React from 'react'
-import { Modal, Pressable, ScrollView, View } from 'react-native'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { Animated, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { Gesture, GestureDetector, GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler'
 import { Text } from 'react-native-paper'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { splitStreamMarkdown, t, useTheme } from '../../lib'
+import { androidStackBottomInset } from '../FabComponent'
 import { LlmAnswerBody } from './LlmAnswerBody'
+import { REASONING_SHEET_OPEN_RATIO, reasoningSheetDrag, reasoningSheetRelease } from './reasoningSheet'
 
 type Props = {
   visible: boolean
@@ -25,48 +29,142 @@ export const LlmReasoningSheet = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
+  const { height: windowHeight } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+  const max = Math.max(240, windowHeight - insets.top - 8)
+  const rest = Math.min(max, Math.round(windowHeight * REASONING_SHEET_OPEN_RATIO))
+  const height = useRef(new Animated.Value(0)).current
+  const heightRef = useRef(0)
+  const dragStart = useRef(0)
+  const session = useRef(0)
+  const onCloseRef = useRef(onClose)
+  const metrics = useRef({ max, rest, windowHeight })
+  onCloseRef.current = onClose
+  metrics.current = { max, rest, windowHeight }
   const parts = streaming ? splitStreamMarkdown(text) : { stable: text, pending: '' }
+  const bottomPad = Math.max(insets.bottom, androidStackBottomInset, blocks.medium)
+
+  useEffect(() => {
+    const id = height.addListener(({ value }) => {
+      heightRef.current = value
+    })
+    return () => height.removeListener(id)
+  }, [height])
+
+  useEffect(() => {
+    if (!visible) {
+      return
+    }
+    session.current += 1
+    height.stopAnimation()
+    height.setValue(0)
+    Animated.timing(height, {
+      toValue: rest,
+      duration: 220,
+      useNativeDriver: false,
+    }).start()
+    return () => height.stopAnimation()
+  }, [visible, rest, height])
+
+  const requestClose = () => {
+    const id = session.current
+    height.stopAnimation()
+    Animated.timing(height, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished && id === session.current) {
+        onCloseRef.current()
+      }
+    })
+  }
+
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .onStart(() => {
+          height.stopAnimation()
+          dragStart.current = heightRef.current
+        })
+        .onUpdate(event => {
+          height.setValue(reasoningSheetDrag(dragStart.current, event.translationY, metrics.current.max))
+        })
+        .onEnd(event => {
+          const { max: cap, rest: open, windowHeight: screen } = metrics.current
+          const next = reasoningSheetDrag(dragStart.current, event.translationY, cap)
+          const released = reasoningSheetRelease(next, event.velocityY, screen, cap, open)
+          if (released.dismiss) {
+            const id = session.current
+            height.stopAnimation()
+            Animated.timing(height, {
+              toValue: 0,
+              duration: 180,
+              useNativeDriver: false,
+            }).start(({ finished }) => {
+              if (finished && id === session.current) {
+                onCloseRef.current()
+              }
+            })
+            return
+          }
+          Animated.timing(height, {
+            toValue: released.height,
+            duration: 140,
+            useNativeDriver: false,
+          }).start()
+        }),
+    [height],
+  )
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#00000066' }}>
-        <Pressable
-          onPress={() => {}}
-          style={{
-            maxHeight: '75%',
-            backgroundColor: colors.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            paddingBottom: blocks.large,
-          }}>
-          <View
+    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={requestClose}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable onPress={requestClose} style={[StyleSheet.absoluteFill, { backgroundColor: '#00000066' }]} />
+          <Animated.View
             style={{
-              alignItems: 'center',
-              paddingTop: blocks.small,
-              paddingBottom: blocks.small,
+              height,
+              width: '100%',
+              backgroundColor: colors.background,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              overflow: 'hidden',
+              zIndex: 2,
+              elevation: 8,
             }}>
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.disabled }} />
-          </View>
-          <Text
-            style={{
-              color: colors.text,
-              fontSize: fontSizes.h2,
-              paddingHorizontal: blocks.medium,
-              paddingBottom: blocks.small,
-            }}>
-            {t('llm.reasoning')}
-          </Text>
-          <ScrollView>
-            <LlmAnswerBody
-              content={parts.stable}
-              pending={parts.pending}
-              copyLocked={copyLocked}
-              onNavigateToPost={onNavigateToPost}
-            />
-          </ScrollView>
-        </Pressable>
-      </Pressable>
+            <GestureDetector gesture={pan}>
+              <View>
+                <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 8 }}>
+                  <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.disabled }} />
+                </View>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: fontSizes.h2,
+                    paddingHorizontal: blocks.medium,
+                    paddingBottom: blocks.small,
+                  }}>
+                  {t('llm.reasoning')}
+                </Text>
+              </View>
+            </GestureDetector>
+            <ScrollView
+              style={{ flex: 1, minHeight: 0 }}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: bottomPad }}>
+              <LlmAnswerBody
+                content={parts.stable}
+                pending={parts.pending}
+                copyLocked={copyLocked}
+                onNavigateToPost={onNavigateToPost}
+              />
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   )
 }

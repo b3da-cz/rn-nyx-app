@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { formatDuration, splitStreamMarkdown, t, useTheme } from '../../lib'
@@ -8,7 +8,21 @@ import { LlmAnswerBody } from './LlmAnswerBody'
 import { LlmTtlBadge } from './LlmTtlBadge'
 import { joinMeta } from './llmFormat'
 import { LlmReasoningSheet } from './LlmReasoningSheet'
+import { nextReasoningDot, reasoningActivityLabel } from './reasoningSheet'
 import { useHoldScreenSecure } from './useHoldScreenSecure'
+
+function useReasoningDots(active: boolean) {
+  const [step, setStep] = useState(1)
+  useEffect(() => {
+    if (!active) {
+      return
+    }
+    setStep(1)
+    const timer = setInterval(() => setStep(nextReasoningDot), 1000)
+    return () => clearInterval(timer)
+  }, [active])
+  return active ? step : 0
+}
 
 const ACTION_ROW_HEIGHT = 50
 
@@ -26,6 +40,7 @@ type ActionBarProps = {
   onToggleRaw: () => void
   onCopy: () => void
   onNewQuery: () => void
+  reasoningPending?: boolean
 }
 
 const LlmAnswerActionBar = ({
@@ -37,16 +52,18 @@ const LlmAnswerActionBar = ({
   onToggleRaw,
   onCopy,
   onNewQuery,
+  reasoningPending = false,
 }: ActionBarProps) => {
   const {
     colors,
     metrics: { fontSizes },
   } = useTheme()
+  const dots = useReasoningDots(reasoningPending && hasReasoning)
   return (
     <View>
       {hasReasoning && (
         <ButtonComponent
-          label={t('llm.reasoning')}
+          label={reasoningActivityLabel(t('llm.reasoning'), dots)}
           color={colors.faded}
           fontSize={fontSizes.p}
           width={'100%'}
@@ -132,6 +149,7 @@ export const LlmResultSection: React.FC<Props> = ({
   const onStickActionsRef = useRef(onStickActions)
   onStickActionsRef.current = onStickActions
   const hasReasoning = !!reasoning
+  const reasoningPending = !!streaming && hasReasoning && !reasoningOpen
 
   const handleCopy = useCallback(() => {
     if (copyLocked) {
@@ -163,10 +181,11 @@ export const LlmResultSection: React.FC<Props> = ({
           onToggleRaw={() => setIsRaw(value => !value)}
           onCopy={handleCopy}
           onNewQuery={() => onNewQueryRef.current()}
+          reasoningPending={reasoningPending}
         />
       ),
     })
-  }, [stickActions, hasReasoning, isRaw, copied, copyLocked, handleCopy])
+  }, [stickActions, hasReasoning, isRaw, copied, copyLocked, handleCopy, reasoningPending])
 
   useLayoutEffect(() => {
     return () => onStickActionsRef.current?.(null)
@@ -205,6 +224,7 @@ export const LlmResultSection: React.FC<Props> = ({
           onToggleRaw={() => setIsRaw(value => !value)}
           onCopy={handleCopy}
           onNewQuery={() => onNewQueryRef.current()}
+          reasoningPending={reasoningPending}
         />
       )}
       <LlmReasoningSheet
