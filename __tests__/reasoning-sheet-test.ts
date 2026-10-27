@@ -1,7 +1,8 @@
 import {
   nextReasoningDot,
   reasoningActivityLabel,
-  reasoningSheetDrag,
+  reasoningSheetHeightFromFinger,
+  reasoningSheetOpenRatio,
   reasoningSheetRelease,
   REASONING_SHEET_DISMISS_VELOCITY,
 } from '../src/component/llm/reasoningSheet'
@@ -25,20 +26,30 @@ describe('reasoning button dots', () => {
 })
 
 describe('reasoning sheet drag', () => {
-  it('follows the handle up and down and stays within the screen', () => {
-    expect(reasoningSheetDrag(rest, -120, max)).toBe(600)
-    expect(reasoningSheetDrag(rest, 200, max)).toBe(280)
-    expect(reasoningSheetDrag(rest, -999, max)).toBe(max)
-    expect(reasoningSheetDrag(100, 400, max)).toBe(0)
+  it('opens a bit into the free space above the old height', () => {
+    expect(reasoningSheetOpenRatio()).toBeCloseTo(0.68)
   })
 
-  it('keeps a mid height, closes when pulled down, and reopens on an upward flick', () => {
+  it('keeps the handle under the finger instead of jumping to the bottom edge', () => {
+    const height = 544
+    const grabOffset = 12
+    const finger = screen - height + grabOffset
+    expect(reasoningSheetHeightFromFinger(finger, grabOffset, screen, max)).toBe(height)
+    expect(reasoningSheetHeightFromFinger(finger + 8, grabOffset, screen, max)).toBe(height - 8)
+    expect(reasoningSheetHeightFromFinger(finger - 40, grabOffset, screen, max)).toBe(height + 40)
+  })
+
+  it('keeps a mid height, closes when pulled down, and ignores a tiny flick at the top', () => {
     expect(reasoningSheetRelease(500, 0, screen, max, rest)).toEqual({ height: 500, dismiss: false })
-    expect(reasoningSheetRelease(80, 0, screen, max, rest)).toEqual({ height: 0, dismiss: true })
     expect(reasoningSheetRelease(500, REASONING_SHEET_DISMISS_VELOCITY + 1, screen, max, rest)).toEqual({
+      height: 500,
+      dismiss: false,
+    })
+    expect(reasoningSheetRelease(200, REASONING_SHEET_DISMISS_VELOCITY + 1, screen, max, rest)).toEqual({
       height: 0,
       dismiss: true,
     })
+    expect(reasoningSheetRelease(80, 0, screen, max, rest)).toEqual({ height: 0, dismiss: true })
     expect(reasoningSheetRelease(80, -400, screen, max, rest)).toEqual({ height: rest, dismiss: false })
   })
 })

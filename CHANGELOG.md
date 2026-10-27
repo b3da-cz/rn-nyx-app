@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.4
+- karta úvahy drží za úchyt pod prstem a je o kousek vyšší
+
 ## 0.35.3
 - karta úvahy jde scrollovat a za horní úchyt zvětšit, zmenšit nebo stáhnout pryč
 - dokud úvaha v asistentu přibývá a karta je zavřená, tlačítko za názvem pulzuje tečkami

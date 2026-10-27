@@ -12,11 +12,18 @@ export function reasoningActivityLabel(title: string, step: number) {
 }
 
 export const REASONING_SHEET_OPEN_RATIO = 0.6
+// Extra height taken from the empty band above the opened sheet.
+export const REASONING_SHEET_EXTRA_FREE = 0.2
 export const REASONING_SHEET_DISMISS_RATIO = 0.18
 export const REASONING_SHEET_DISMISS_VELOCITY = 900
 
-export function reasoningSheetDrag(start: number, translationY: number, max: number) {
-  return Math.max(0, Math.min(max, start - translationY))
+export function reasoningSheetOpenRatio() {
+  return REASONING_SHEET_OPEN_RATIO + (1 - REASONING_SHEET_OPEN_RATIO) * REASONING_SHEET_EXTRA_FREE
+}
+
+// absoluteY is the finger. grabOffset is how far below the sheet top the finger grabbed the handle.
+export function reasoningSheetHeightFromFinger(absoluteY: number, grabOffset: number, windowHeight: number, max: number) {
+  return Math.max(0, Math.min(max, windowHeight - (absoluteY - grabOffset)))
 }
 
 // Pulling down shrinks the sheet. A low release or a downward flick closes it.
@@ -29,7 +36,8 @@ export function reasoningSheetRelease(
   rest: number,
 ) {
   const dismissBelow = screen * REASONING_SHEET_DISMISS_RATIO
-  if (velocityY > REASONING_SHEET_DISMISS_VELOCITY) {
+  const pulledDown = height < rest * 0.55
+  if (velocityY > REASONING_SHEET_DISMISS_VELOCITY && pulledDown) {
     return { height: 0, dismiss: true }
   }
   if (height < dismissBelow) {

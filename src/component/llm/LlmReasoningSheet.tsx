@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { splitStreamMarkdown, t, useTheme } from '../../lib'
 import { androidStackBottomInset } from '../FabComponent'
 import { LlmAnswerBody } from './LlmAnswerBody'
-import { REASONING_SHEET_OPEN_RATIO, reasoningSheetDrag, reasoningSheetRelease } from './reasoningSheet'
+import { reasoningSheetHeightFromFinger, reasoningSheetOpenRatio, reasoningSheetRelease } from './reasoningSheet'
 
 type Props = {
   visible: boolean
@@ -32,10 +32,10 @@ export const LlmReasoningSheet = ({
   const { height: windowHeight } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const max = Math.max(240, windowHeight - insets.top - 8)
-  const rest = Math.min(max, Math.round(windowHeight * REASONING_SHEET_OPEN_RATIO))
+  const rest = Math.min(max, Math.round(windowHeight * reasoningSheetOpenRatio()))
   const height = useRef(new Animated.Value(0)).current
   const heightRef = useRef(0)
-  const dragStart = useRef(0)
+  const grabOffset = useRef<number | null>(null)
   const session = useRef(0)
   const onCloseRef = useRef(onClose)
   const metrics = useRef({ max, rest, windowHeight })
@@ -84,16 +84,30 @@ export const LlmReasoningSheet = ({
     () =>
       Gesture.Pan()
         .runOnJS(true)
-        .onStart(() => {
-          height.stopAnimation()
-          dragStart.current = heightRef.current
+        .onStart(event => {
+          height.stopAnimation(value => {
+            const current = value > 1 ? value : metrics.current.rest
+            heightRef.current = current
+            grabOffset.current = event.absoluteY - (metrics.current.windowHeight - current)
+          })
         })
         .onUpdate(event => {
-          height.setValue(reasoningSheetDrag(dragStart.current, event.translationY, metrics.current.max))
+          if (grabOffset.current == null) {
+            return
+          }
+          const next = reasoningSheetHeightFromFinger(
+            event.absoluteY,
+            grabOffset.current,
+            metrics.current.windowHeight,
+            metrics.current.max,
+          )
+          heightRef.current = next
+          height.setValue(next)
         })
         .onEnd(event => {
+          grabOffset.current = null
           const { max: cap, rest: open, windowHeight: screen } = metrics.current
-          const next = reasoningSheetDrag(dragStart.current, event.translationY, cap)
+          const next = heightRef.current
           const released = reasoningSheetRelease(next, event.velocityY, screen, cap, open)
           if (released.dismiss) {
             const id = session.current
@@ -114,6 +128,9 @@ export const LlmReasoningSheet = ({
             duration: 140,
             useNativeDriver: false,
           }).start()
+        })
+        .onFinalize(() => {
+          grabOffset.current = null
         }),
     [height],
   )
