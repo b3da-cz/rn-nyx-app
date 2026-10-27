@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.34.3
+- dev build se na ploše jmenuje Nnn [dev]
+
 ## 0.34.2
 - Google Play tester po zadání jména uvidí pole pro token a přihlásí se až tím zadaným tokenem
 - pole pro token se ukáže jen u přesného testovacího jména

@@ -41,6 +41,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode nodeBuildVersion
         versionName nodePackageVersion
+        resValue "string", "app_name", "Nnn"
         missingDimensionStrategy 'store', 'play'
     }
     signingConfigs {
@@ -66,6 +67,7 @@ android {
         release {
             if (project.hasProperty('dev') || project.hasProperty('devSuffix') || project.findProperty('appIdSuffix') == 'dev' || System.getenv('npm_lifecycle_event') == 'release-dev') {
                 applicationIdSuffix ".dev"
+                resValue "string", "app_name", "Nnn [dev]"
             }
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
