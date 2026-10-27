@@ -5,7 +5,12 @@ import { t, showNotificationBanner, Storage } from '../lib'
 import { resetMessageDraftMemory } from './messageDrafts'
 import { NyxEventsApi } from './NyxEventsApi'
 // @ts-ignore
-import { gplayTestId, gplayTestToken } from '../../keys.json'
+import { gplayTestId } from '../../keys.json'
+
+export const isGplayTestUsername = (username?: string) => {
+  const expected = typeof gplayTestId === 'string' ? gplayTestId.trim().toLowerCase() : ''
+  return !!expected && !!username && username.trim().toLowerCase() === expected
+}
 
 export class Nyx {
   api: NyxEventsApi
@@ -30,7 +35,7 @@ export class Nyx {
     })
   }
 
-  async init(username?) {
+  async init(username?, testToken?) {
     if (username) {
       this.username = username
     }
@@ -43,10 +48,35 @@ export class Nyx {
         isConfirmed: false,
       }
     }
-    if (username?.toLowerCase() === gplayTestId.toLowerCase()) {
-      auth.token = gplayTestToken
-      auth.isConfirmed = true
-      await Storage.setAuth(auth)
+    if (isGplayTestUsername(username)) {
+      const provided = typeof testToken === 'string' ? testToken.trim() : ''
+      if (provided) {
+        auth = {
+          username: this.username?.trim(),
+          token: provided,
+          confirmationCode: null,
+          isConfirmed: true,
+        }
+        await Storage.setAuth(auth)
+        this.api.setAuth(auth)
+        return { ...auth, isGplayTester: true }
+      }
+      const storedToken = typeof auth?.token === 'string' ? auth.token : ''
+      const hasStoredToken =
+        isGplayTestUsername(auth?.username) && storedToken.length > 9 && storedToken !== 'undefined'
+      // App start passes no token. A saved tester session can resume only then.
+      if (typeof testToken !== 'string' && hasStoredToken) {
+        this.api.setAuth(auth)
+        return { ...auth, isGplayTester: true }
+      }
+      return {
+        username: this.username,
+        token: null,
+        confirmationCode: null,
+        isConfirmed: false,
+        needsTestToken: true,
+        isGplayTester: true,
+      }
     }
 
     if ((!auth.token || auth.token === 'undefined') && this.username) {

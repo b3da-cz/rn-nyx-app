@@ -422,6 +422,10 @@
       "message": {
         "cs": "Otevři nyx.cz -> osobní nastavení -> autorizace (klikni zde) -> zadej potvrzovací kód:",
         "en": "Open nyx.cz -> user settings -> authorization (tap here) -> enter confirmation code:"
+      },
+      "token": {
+        "cs": "Token",
+        "en": "Token"
       }
     },
     "logout": {

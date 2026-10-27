@@ -45,9 +45,6 @@ import {
 } from './src/lib'
 import { Router } from './src/Router'
 import { LoginView } from './src/view'
-// @ts-ignore
-import { gplayTestId } from './keys.json'
-
 
 
 LogBox.ignoreLogs([
@@ -186,7 +183,7 @@ const App: () => ReactNode = () => {
     }
   }
 
-  const initNyx = async (username?: string, isAutologin = true) => {
+  const initNyx = async (username?: string, isAutologin = true, testToken?: string) => {
     if (!username) {
       const auth = await Storage.getAuth()
       if (!auth || (auth && !auth.username)) {
@@ -195,7 +192,13 @@ const App: () => ReactNode = () => {
       }
       username = auth.username
     }
-    const res: any = await nyx.init(username)
+    let res: any
+    try {
+      res = await nyx.init(username, testToken)
+    } catch {
+      setConfirmationCode(undefined)
+      return false
+    }
     nyx.api.onLogout.subscribe().then(() => {
       setConfirmationCode(undefined)
       setIsAuthenticated(false)
@@ -203,7 +206,11 @@ const App: () => ReactNode = () => {
     Bugfender.setDeviceKey('@username', username || '')
     Bugfender.log('INFO', 'App: Nyx initialized')
     setNyx(nyx)
-    if (username?.toLowerCase() === gplayTestId.toLowerCase()) {
+    if (res?.needsTestToken) {
+      setConfirmationCode(undefined)
+      return false
+    }
+    if (res?.isGplayTester) {
       await onLogin()
       return true
     }
@@ -395,7 +402,7 @@ const App: () => ReactNode = () => {
             <LoginView
               theme={theme}
               confirmationCode={confirmationCode}
-              onUsername={username => initNyx(username, false)}
+              onUsername={(username, testToken) => initNyx(username, false, testToken)}
               onLogin={() => onLogin()}
             />
           )}

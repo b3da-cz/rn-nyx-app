@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.2
+- Google Play tester po zadání jména uvidí pole pro token a přihlásí se až tím zadaným tokenem
+- pole pro token se ukáže jen u přesného testovacího jména
+
 ## 0.34.1
 - přezdívky v odpovědi asistenta se vrátí i když model zahodí předponu USER_
 - v nastavení jde v cache držet až 1000 posledních klubů

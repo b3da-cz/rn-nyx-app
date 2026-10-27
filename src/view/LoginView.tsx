@@ -4,7 +4,7 @@ import { Text, TextInput, TouchableRipple } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 import DeviceInfo from 'react-native-device-info'
 import { ButtonComponent, TOSComponent, TutorialComponent } from '../component'
-import { t, Theme } from '../lib'
+import { isGplayTestUsername, t, Theme } from '../lib'
 
 type Props = {
   theme: Theme
@@ -14,6 +14,9 @@ type Props = {
 }
 type State = {
   username: string
+  submittedUsername: string
+  token: string
+  askTestToken: boolean
   areTOSConfirmed: boolean
   isTutorialDone: boolean
 }
@@ -23,6 +26,9 @@ export class LoginView extends Component<Props> {
     super(props)
     this.state = {
       username: '',
+      submittedUsername: '',
+      token: '',
+      askTestToken: false,
       areTOSConfirmed: false,
       isTutorialDone: false,
     }
@@ -34,13 +40,28 @@ export class LoginView extends Component<Props> {
   }
 
   confirmUsername() {
-    this.props.onUsername(this.state.username)
+    const username = this.state.username
+    if (isGplayTestUsername(username)) {
+      this.setState({ submittedUsername: username, askTestToken: true })
+      return
+    }
+    this.setState({ submittedUsername: username, askTestToken: false, token: '' })
+    this.props.onUsername(username)
+  }
+
+  loginWithTestToken() {
+    this.props.onUsername(this.state.username, this.state.token.trim())
   }
 
   render() {
-    const { username, areTOSConfirmed, isTutorialDone } = this.state
+    const { username, submittedUsername, token, askTestToken, areTOSConfirmed, isTutorialDone } = this.state
     const { confirmationCode, theme } = this.props
     const isUsernameFilledIn = username && username.length > 0
+    const showTestToken =
+      askTestToken &&
+      isGplayTestUsername(username) &&
+      submittedUsername.trim().toLowerCase() === username.trim().toLowerCase()
+    const canSubmit = showTestToken ? token.trim().length > 0 : !!isUsernameFilledIn
     if (!theme) {
       return null
     }
@@ -162,20 +183,34 @@ export class LoginView extends Component<Props> {
               onChangeText={val => this.setState({ username: val })}
               value={`${username}`}
             />
+            {showTestToken && (
+              <TextInput
+                style={{
+                  color: theme.colors.text,
+                  marginTop: theme.metrics.blocks.medium,
+                  marginHorizontal: theme.metrics.blocks.medium,
+                }}
+                placeholder={t('profile.login.token')}
+                autoCapitalize={'none'}
+                autoCorrect={false}
+                onChangeText={val => this.setState({ token: val })}
+                value={`${token}`}
+              />
+            )}
             <ButtonComponent
-              isDisabled={!isUsernameFilledIn}
+              isDisabled={!canSubmit}
               label={t('profile.login.do')}
               textAlign={'center'}
               borderWidth={1}
               theme={theme}
-              borderColor={isUsernameFilledIn ? theme.colors.primary : theme.colors.background}
+              borderColor={canSubmit ? theme.colors.primary : theme.colors.background}
               backgroundColor={theme.colors.background}
-              color={isUsernameFilledIn ? theme.colors.primary : theme.colors.disabled}
+              color={canSubmit ? theme.colors.primary : theme.colors.disabled}
               fontSize={theme.metrics.fontSizes.h1}
               marginTop={theme.metrics.blocks.medium}
               marginHorizontal={theme.metrics.blocks.medium}
               width={theme.metrics.screen.width - theme.metrics.blocks.medium * 2}
-              onPress={() => this.confirmUsername()}
+              onPress={() => (showTestToken ? this.loginWithTestToken() : this.confirmUsername())}
             />
           </View>
         )}
