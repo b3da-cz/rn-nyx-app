@@ -209,7 +209,7 @@ export const LlmPostPicker: React.FC<Props> = ({
       <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 50 }}>
         <IconButton icon="arrow-left" size={25} color={colors.primary} rippleColor={colors.ripple} onPress={onBack} />
         <Text style={{ flex: 1, textAlign: 'center', fontSize: fontSizes.p + 2, color: colors.text }}>
-          {`${selection.order.length} / ${selection.picked.length}`}
+          {`${selection.picked.length} / ${selection.order.length}`}
         </Text>
         <IconButton icon="check" size={25} color={colors.primary} rippleColor={colors.ripple} onPress={onConfirm} />
       </View>

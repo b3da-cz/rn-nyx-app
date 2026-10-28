@@ -1156,6 +1156,30 @@
       "cs": "Týden",
       "en": "Week"
     },
+    "last2Weeks": {
+      "cs": "2 týdny",
+      "en": "2 weeks"
+    },
+    "last3Weeks": {
+      "cs": "3 týdny",
+      "en": "3 weeks"
+    },
+    "lastMonth": {
+      "cs": "1 měsíc",
+      "en": "1 month"
+    },
+    "last3Months": {
+      "cs": "3 měsíce",
+      "en": "3 months"
+    },
+    "last6Months": {
+      "cs": "6 měsíců",
+      "en": "6 months"
+    },
+    "lastYear": {
+      "cs": "1 rok",
+      "en": "1 year"
+    },
     "allLoaded": {
       "cs": "Vše načtené",
       "en": "All loaded"

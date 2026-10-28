@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.35.12
+- v hlavičce výběru příspěvků pro asistenta se zobrazuje poměr vybraných ku všem
+- do výběru období přibyly další volby (2 a 3 týdny, 1, 3 a 6 měsíců, 1 rok)
+- rozbalovací nabídka výběru období je při větším počtu položek scrollovatelná
+
 ## 0.35.11
 - u Proton Lumo ukazuje řádek modelu vyčerpání RPD v závorkách a spodní border progress bar
 

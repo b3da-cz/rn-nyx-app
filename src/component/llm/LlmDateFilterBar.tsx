@@ -7,7 +7,19 @@ import { FormRowSelectComponent } from '../FormRowSelectComponent'
 import { LlmFormRow } from './LlmFormRow'
 import { formatLlmDate } from './llmFormat'
 
-export type DatePreset = 'today' | 'yesterday' | '3days' | 'week' | 'all' | 'custom'
+export type DatePreset =
+  | 'today'
+  | 'yesterday'
+  | '3days'
+  | 'week'
+  | '2weeks'
+  | '3weeks'
+  | 'month'
+  | '3months'
+  | '6months'
+  | 'year'
+  | 'all'
+  | 'custom'
 
 type Props = {
   datePreset: DatePreset
@@ -61,6 +73,12 @@ export const LlmDateFilterBar: React.FC<Props> = ({
     { value: 'yesterday', label: t('llm.yesterdayAndToday') },
     { value: '3days', label: t('llm.last3Days') },
     { value: 'week', label: t('llm.lastWeek') },
+    { value: '2weeks', label: t('llm.last2Weeks') },
+    { value: '3weeks', label: t('llm.last3Weeks') },
+    { value: 'month', label: t('llm.lastMonth') },
+    { value: '3months', label: t('llm.last3Months') },
+    { value: '6months', label: t('llm.last6Months') },
+    { value: 'year', label: t('llm.lastYear') },
     { value: 'all', label: t('llm.allLoaded') },
   ]
   const presetLabel =
