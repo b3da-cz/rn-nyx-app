@@ -13,13 +13,17 @@ import {
   LlmModelPickerDialog,
   LlmSystemPromptDialog,
 } from '../component'
+import { LlmLumoQuota } from '../component/llm/LlmLumoQuota'
 import {
   fetchLlmModels,
   formatPricing,
+  LUMO_MODEL_ID,
+  LUMO_MODEL_NAME,
   LlmProviderId,
   LlmSavedModels,
   normalizeLlmProvider,
   normalizeOpenAiBaseUrl,
+  resolveStoredLlmProvider,
   openAiBaseUrlError,
   IMAGE_DOWNLOAD_LIMITS_KB,
   IMAGE_DOWNLOAD_OFF,
@@ -463,13 +467,14 @@ export class SettingsView extends Component<Props> {
       isLlmEnabled: !!config?.isLlmEnabled,
       isLlmUserAvatarsEnabled:
         config?.isLlmUserAvatarsEnabled !== undefined ? !!config.isLlmUserAvatarsEnabled : true,
-      llmProvider: normalizeLlmProvider(config?.llmProvider),
+      llmProvider: resolveStoredLlmProvider(config),
       openRouterApiKey: config?.openRouterApiKey || '',
       openaiApiKey: config?.openaiApiKey || '',
       openaiBaseUrl: config?.openaiBaseUrl || '',
       llmModels: this.llmModelsFromConfig(config),
-      selectedLlmModel: config?.selectedLlmModel || '',
-      selectedLlmModelName: config?.selectedLlmModelName || '',
+      selectedLlmModel: resolveStoredLlmProvider(config) === 'lumo' ? LUMO_MODEL_ID : config?.selectedLlmModel || '',
+      selectedLlmModelName:
+        resolveStoredLlmProvider(config) === 'lumo' ? LUMO_MODEL_NAME : config?.selectedLlmModelName || '',
       isFetchingModels: false,
       keyboardPad: 0,
       models: [],
@@ -485,7 +490,11 @@ export class SettingsView extends Component<Props> {
   llmModelsFromConfig(config?: any): LlmSavedModels {
     const stored: LlmSavedModels =
       config?.llmModels && typeof config.llmModels === 'object' ? { ...config.llmModels } : {}
-    const provider = normalizeLlmProvider(config?.llmProvider)
+    const provider = resolveStoredLlmProvider(config)
+    if (provider === 'lumo') {
+      stored.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+      return stored
+    }
     if (!stored[provider] && config?.selectedLlmModel) {
       stored[provider] = {
         id: config.selectedLlmModel,
@@ -493,6 +502,16 @@ export class SettingsView extends Component<Props> {
       }
     }
     return stored
+  }
+
+  llmProviderLabel(provider: LlmProviderId = this.llmProvider()): string {
+    if (provider === 'lumo') {
+      return t('profile.llm.providerLumo') || 'Proton Lumo'
+    }
+    if (provider === 'openai') {
+      return t('profile.llm.providerOpenai') || 'OpenAI'
+    }
+    return t('profile.llm.providerOpenRouter') || 'OpenRouter'
   }
 
   async fetchModels(options?: { keepSelection?: boolean }): Promise<OpenRouterModel[] | null> {
@@ -612,9 +631,13 @@ export class SettingsView extends Component<Props> {
         name: this.state.selectedLlmModelName || this.state.selectedLlmModel,
       }
     }
-    const restored = llmModels[next]
+    if (next === 'lumo') {
+      llmModels.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+    }
+    const restored = next === 'lumo' ? llmModels.lumo : llmModels[next]
     await this.setOptions({
       llmProvider: next,
+      llmProviderChosen: true,
       llmModels,
       selectedLlmModel: restored?.id || '',
       selectedLlmModelName: restored?.name || '',
@@ -1208,15 +1231,12 @@ export class SettingsView extends Component<Props> {
               <SettingsSelectRow
                 rowHeight={rowHeight}
                 label={t('profile.llm.provider') || 'Připojení'}
-                value={
-                  this.llmProvider() === 'openai'
-                    ? t('profile.llm.providerOpenai') || 'OpenAI'
-                    : t('profile.llm.providerOpenRouter') || 'OpenRouter'
-                }
+                value={this.llmProviderLabel()}
                 onSelect={next => this.onChangeLlmProvider(next)}
                 options={[
-                  { value: 'openrouter', label: t('profile.llm.providerOpenRouter') || 'OpenRouter' },
-                  { value: 'openai', label: t('profile.llm.providerOpenai') || 'OpenAI' },
+                  { value: 'lumo', label: this.llmProviderLabel('lumo') },
+                  { value: 'openrouter', label: this.llmProviderLabel('openrouter') },
+                  { value: 'openai', label: this.llmProviderLabel('openai') },
                 ]}
               />
               {this.llmProvider() === 'openai' && (
@@ -1253,6 +1273,7 @@ export class SettingsView extends Component<Props> {
                   />
                 </View>
               )}
+              {this.llmProvider() !== 'lumo' && (
               <View
                 ref={ref => {
                   this.apiKeyField = ref
@@ -1326,6 +1347,7 @@ export class SettingsView extends Component<Props> {
                   )}
                 </TouchableOpacity>
               </View>
+              )}
 
               {/* Error banner */}
               {this.state.llmError ? (
@@ -1358,7 +1380,43 @@ export class SettingsView extends Component<Props> {
                 </View>
               ) : null}
 
-              {(this.llmProvider() !== 'openai' ||
+              {this.llmProvider() === 'lumo' ? (
+                <>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      height: rowHeight,
+                      overflow: 'hidden',
+                      backgroundColor: theme.colors.surface,
+                      borderRadius: 0,
+                      marginBottom: theme.metrics.blocks.small,
+                      paddingHorizontal: theme.metrics.blocks.medium,
+                    }}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text
+                        style={{
+                          color: theme.colors.faded,
+                          fontSize: theme.metrics.fontSizes.small - 1,
+                        }}>
+                        {t('profile.llm.selectedModel') || 'Model'}:
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          color: theme.colors.faded,
+                          fontSize: theme.metrics.fontSizes.p,
+                          fontWeight: '600',
+                          marginTop: 2,
+                        }}>
+                        {LUMO_MODEL_NAME}
+                      </Text>
+                    </View>
+                  </View>
+                  <LlmLumoQuota />
+                </>
+              ) : (this.llmProvider() !== 'openai' ||
                 (!!(this.state.openaiBaseUrl || '').trim() && !!(this.state.openaiApiKey || '').trim())) && (
               <TouchableOpacity
                 onPress={async () => {
@@ -1450,7 +1508,7 @@ export class SettingsView extends Component<Props> {
         <LlmModelPickerDialog
           isVisible={!!this.state.isModelPickerVisible}
           models={this.state.models || []}
-          catalog={this.llmProvider()}
+          catalog={this.llmProvider() === 'openai' ? 'openai' : 'openrouter'}
           isLoading={!!this.state.isFetchingModels}
           loadError={this.state.llmError}
           selectedModelId={this.state.selectedLlmModel || ''}

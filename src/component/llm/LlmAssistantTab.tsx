@@ -1,11 +1,14 @@
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Keyboard, View } from 'react-native'
-import { Button, Text } from 'react-native-paper'
+import { Button, Text, TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
+import { LlmRangeSelection } from '../../lib'
 import { isSummaryCopyLocked, LlmProviderId, LlmQueue, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 import { LlmDateFilterBar } from './LlmDateFilterBar'
 import { LlmModelBar } from './LlmModelBar'
 import { LlmPendingItemCard } from './LlmPendingItemCard'
+import { LlmPostPicker } from './LlmPostPicker'
 import { LlmPromptInput } from './LlmPromptInput'
 import { LlmAnswerDock, LlmResultSection } from './LlmResultSection'
 import { LlmSystemPromptBar } from './LlmSystemPromptBar'
@@ -36,6 +39,7 @@ type Props = {
   onAnswerPhase?: (phase: LlmAnswerPhase) => void
   followAnswer?: boolean
   onStickActions?: (dock: LlmAnswerDock | null) => void
+  onPostPicker?: (picker: React.ReactNode) => void
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -45,6 +49,9 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   } = useTheme()
   const a = useLlmAssistant(props)
   const { dateFilter, model, system } = a
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [draft, setDraft] = useState<LlmRangeSelection | null>(null)
+  const canPick = a.matchedPosts.length > 0
   const live = a.activeTask?.status === 'pending' ? a.activeTask.stream : undefined
   const holdRef = useRef<{ content: string; reasoning: string } | null>(null)
   const [holdEpoch, setHoldEpoch] = useState(0)
@@ -67,6 +74,29 @@ export const LlmAssistantTab: React.FC<Props> = props => {
   useLayoutEffect(() => {
     props.onAnswerPhase?.(phase)
   }, [phase, props.onAnswerPhase])
+
+  const { onPostPicker } = props
+  const { matchedPosts, setSelection } = a
+  useEffect(() => {
+    if (!pickerOpen || !draft) {
+      onPostPicker?.(null)
+      return
+    }
+    onPostPicker?.(
+      <LlmPostPicker
+        posts={matchedPosts}
+        selection={draft}
+        onChange={setDraft}
+        onBack={() => setPickerOpen(false)}
+        onConfirm={() => {
+          setSelection(draft)
+          setPickerOpen(false)
+        }}
+      />,
+    )
+  }, [pickerOpen, draft, matchedPosts, setSelection, onPostPicker])
+
+  useEffect(() => () => onPostPicker?.(null), [onPostPicker])
 
   const dismissAnswer = () => {
     holdRef.current = null
@@ -103,17 +133,31 @@ export const LlmAssistantTab: React.FC<Props> = props => {
         onDateToChange={dateFilter.setDateTo}
       />
 
-      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: 40, paddingLeft: blocks.medium }]}>
-        <Text style={{ flex: 1, color: colors.faded, fontSize: fontSizes.small }}>
-          {a.postCount > 0
-            ? `${t('llm.postsCount')}`.replace('%s', `${a.postCount}`).replace('%s', `${a.wordCount}`)
-            : t('llm.noPosts')}
-          {a.ignoredCount > 0 ? (
-            <Text style={{ color: colors.error }}>
-              {`  ${`${t('llm.ignoredPosts')}`.replace('%s', `${a.ignoredCount}`)}`}
+      <View style={[Styling.groups.flexRowSpbCentered, { minHeight: 40 }]}>
+        <TouchableRipple
+          style={{ flex: 1 }}
+          rippleColor={colors.ripple}
+          disabled={!canPick}
+          onPress={() => {
+            setDraft(a.selection)
+            setPickerOpen(true)
+          }}>
+          <View style={[Styling.groups.flexRowCentered, { minHeight: 40, paddingLeft: blocks.medium }]}>
+            <Text style={{ flex: 1, color: colors.faded, fontSize: fontSizes.small }}>
+              {canPick
+                ? `${t('llm.postsCount')}`.replace('%s', `${a.postCount}`).replace('%s', `${a.wordCount}`)
+                : t('llm.noPosts')}
+              {a.ignoredCount > 0 ? (
+                <Text style={{ color: colors.error }}>
+                  {`  ${`${t('llm.ignoredPosts')}`.replace('%s', `${a.ignoredCount}`)}`}
+                </Text>
+              ) : null}
             </Text>
-          ) : null}
-        </Text>
+            {canPick && (
+              <Icon name="list" size={fontSizes.p} color={colors.text} style={{ marginRight: blocks.medium }} />
+            )}
+          </View>
+        </TouchableRipple>
         {a.canLoadOlder &&
           (a.isLoadingOlder ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginHorizontal: blocks.large }} />
@@ -157,7 +201,9 @@ export const LlmAssistantTab: React.FC<Props> = props => {
       {!!a.activeTask && (
         <LlmPendingItemCard
           task={a.activeTask}
-          onRetry={taskId => LlmQueue.retryTask(taskId)}
+          onRetry={taskId => {
+            void a.retry(taskId)
+          }}
           onDismiss={taskId => LlmQueue.dismissTask(taskId)}
         />
       )}

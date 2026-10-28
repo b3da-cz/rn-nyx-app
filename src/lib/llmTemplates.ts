@@ -8,6 +8,7 @@ export type LlmPromptTemplate = {
 export type LlmPromptTemplateStore = {
   templates: LlmPromptTemplate[]
   hiddenIds: string[]
+  order?: string[]
 }
 
 export function normalizeLlmPromptTemplateStore(raw: any): LlmPromptTemplateStore {
@@ -18,6 +19,7 @@ export function normalizeLlmPromptTemplateStore(raw: any): LlmPromptTemplateStor
     return {
       templates: Array.isArray(raw.templates) ? raw.templates.filter(isTemplate) : [],
       hiddenIds: Array.isArray(raw.hiddenIds) ? raw.hiddenIds.filter(id => typeof id === 'string') : [],
+      order: Array.isArray(raw.order) ? raw.order.filter(id => typeof id === 'string') : undefined,
     }
   }
   return { templates: [], hiddenIds: [] }
@@ -36,7 +38,20 @@ export function resolveLlmPromptTemplates(
       return saved ? { ...item, ...saved, name: saved.name || item.name, builtin: true } : item
     })
   const custom = store.templates.filter(item => !builtins.some(builtin => builtin.id === item.id))
-  return [...defaults, ...custom]
+  const byId = new Map<string, LlmPromptTemplate>()
+  defaults.forEach(item => byId.set(item.id, item))
+  custom.forEach(item => byId.set(item.id, item))
+  const fallback = [...defaults.map(item => item.id), ...custom.map(item => item.id)]
+  const preferred = (store.order || []).filter(id => byId.has(id))
+  const seen = new Set(preferred)
+  const ids = preferred.slice()
+  fallback.forEach(id => {
+    if (!seen.has(id)) {
+      ids.push(id)
+      seen.add(id)
+    }
+  })
+  return ids.map(id => byId.get(id)!)
 }
 
 export function createLlmPromptTemplate(
@@ -50,7 +65,15 @@ export function createLlmPromptTemplate(
   if (!trimmedName || !body) {
     return null
   }
-  return { ...store, templates: [{ id, name: trimmedName, text: body }, ...store.templates] }
+  return {
+    ...store,
+    templates: [{ id, name: trimmedName, text: body }, ...store.templates.filter(item => item.id !== id)],
+    order: [id, ...(store.order || []).filter(item => item !== id)],
+  }
+}
+
+export function reorderLlmPromptTemplates(store: LlmPromptTemplateStore, ids: string[]): LlmPromptTemplateStore {
+  return { ...store, order: ids.filter(id => typeof id === 'string') }
 }
 
 export function overwriteLlmPromptTemplate(
@@ -82,7 +105,11 @@ export function deleteLlmPromptTemplate(
     template.builtin && !store.hiddenIds.includes(template.id)
       ? [...store.hiddenIds, template.id]
       : store.hiddenIds
-  return { templates, hiddenIds }
+  return {
+    templates,
+    hiddenIds,
+    ...(store.order ? { order: store.order.filter(id => id !== template.id) } : {}),
+  }
 }
 
 function isTemplate(item: any): item is LlmPromptTemplate {

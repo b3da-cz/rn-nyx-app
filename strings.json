@@ -685,6 +685,26 @@
         "cs": "OpenAI",
         "en": "OpenAI"
       },
+      "providerLumo": {
+        "cs": "Proton Lumo",
+        "en": "Proton Lumo"
+      },
+      "lumoRpd": {
+        "cs": "Požadavky za den",
+        "en": "Requests per day"
+      },
+      "lumoRpm": {
+        "cs": "Požadavky za minutu",
+        "en": "Requests per minute"
+      },
+      "lumoRpdReached": {
+        "cs": "Denní limit Proton Lumo je vyčerpaný (%s/%s). Obnoví se o půlnoci.",
+        "en": "The Proton Lumo daily limit is used up (%s/%s). It resets at midnight."
+      },
+      "lumoRpmReached": {
+        "cs": "Proton Lumo dovoluje %s požadavků za minutu. Zkuste to za chvíli.",
+        "en": "Proton Lumo allows %s requests per minute. Try again in a moment."
+      },
       "endpointPlaceholder": {
         "cs": "https://api.openai.com/v1",
         "en": "https://api.openai.com/v1"

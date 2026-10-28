@@ -1,5 +1,5 @@
 import { addLlmHistoryEntry } from './LlmHistory'
-import { sendOpenRouterChat } from './OpenRouter'
+import { LlmProviderId, normalizeLlmProvider, sendOpenRouterChat } from './OpenRouter'
 import { Storage } from './Storage'
 import { t } from './Strings'
 import { showNotificationBanner } from './Util'
@@ -18,7 +18,7 @@ export type LlmPendingTask = {
   status: 'pending' | 'error'
   error?: string
   apiKey: string
-  provider?: 'openrouter' | 'openai'
+  provider?: LlmProviderId
   baseUrl?: string
   systemPrompt?: string
   posts?: any[]
@@ -132,7 +132,7 @@ class LlmQueueService {
     postCount: number
     systemPrompt?: string
     ttlMs?: number
-    provider?: 'openrouter' | 'openai'
+    provider?: LlmProviderId
     baseUrl?: string
   }): Promise<string> {
     await this.init()
@@ -149,7 +149,7 @@ class LlmQueueService {
       postCount: params.postCount,
       prompt: params.userPrompt.trim(),
       apiKey: params.apiKey,
-      provider: params.provider === 'openai' ? 'openai' : 'openrouter',
+      provider: params.provider ? normalizeLlmProvider(params.provider) : 'openrouter',
       baseUrl: params.baseUrl,
       systemPrompt: params.systemPrompt,
       posts: params.posts,
@@ -157,7 +157,8 @@ class LlmQueueService {
       status: 'pending',
     }
 
-    this.tasks = [task, ...this.tasks]
+    const discussionId = `${params.discussionId}`
+    this.tasks = [task, ...this.tasks.filter(item => `${item.discussionId}` !== discussionId || item.status !== 'error')]
     await this.persist()
     this.notify()
 
@@ -239,13 +240,22 @@ class LlmQueueService {
     }
   }
 
-  async retryTask(taskId: string): Promise<void> {
-    const task = this.tasks.find(t => t.id === taskId)
-    if (!task) return
+  async retryTask(
+    taskId: string,
+    patch?: { posts?: any[]; dateFrom?: string; dateTo?: string; postCount?: number },
+  ): Promise<void> {
+    const current = this.tasks.find(t => t.id === taskId)
+    if (!current) return
 
-    task.status = 'pending'
-    task.error = undefined
-    task.startedAt = Date.now()
+    const task: LlmPendingTask = {
+      ...current,
+      ...(patch || {}),
+      status: 'pending',
+      error: undefined,
+      stream: undefined,
+      startedAt: Date.now(),
+    }
+    this.tasks = this.tasks.map(item => (item.id === taskId ? task : item))
     await this.persist()
     this.notify()
 

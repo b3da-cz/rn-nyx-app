@@ -11,6 +11,7 @@ const StorageKeys = {
   favoriteLlmModels: 'favoriteLlmModels',
   llmPendingTasks: 'llmPendingTasks',
   llmPromptTemplates: 'llmPromptTemplates',
+  lumoQuota: 'lumoQuota',
   ratingPrompt: 'ratingPrompt',
   supportPurchases: 'supportPurchases',
   lastPurchaseSync: 'lastPurchaseSync',
@@ -91,6 +92,10 @@ const setFavoriteLlmModels = async (models: string[]) => set(StorageKeys.favorit
 const getLlmPendingTasks = async (): Promise<any[]> => (await get(StorageKeys.llmPendingTasks)) || []
 
 const setLlmPendingTasks = async (tasks: any[]) => set(StorageKeys.llmPendingTasks, tasks)
+
+const getLumoQuota = async () => get(StorageKeys.lumoQuota)
+
+const setLumoQuota = async quota => set(StorageKeys.lumoQuota, quota)
 
 const getLlmPromptTemplates = async () => (await get(StorageKeys.llmPromptTemplates)) || []
 
@@ -270,6 +275,8 @@ export const Storage = {
   setLlmPendingTasks,
   getLlmPromptTemplates,
   setLlmPromptTemplates,
+  getLumoQuota,
+  setLumoQuota,
   getRatingPrompt,
   setRatingPrompt,
   getSupportPurchases,

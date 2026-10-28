@@ -5,6 +5,7 @@ import {
   LlmPromptTemplateStore,
   normalizeLlmPromptTemplateStore,
   overwriteLlmPromptTemplate,
+  reorderLlmPromptTemplates,
   resolveLlmPromptTemplates,
 } from '../src/lib/llmTemplates'
 
@@ -26,6 +27,7 @@ describe('llm prompt templates', () => {
     expect(createLlmPromptTemplate(store, '  Nová  ', '  aktuální prompt  ', 'tpl-2')).toEqual({
       templates: [{ id: 'tpl-2', name: 'Nová', text: 'aktuální prompt' }, store.templates[0]],
       hiddenIds: [],
+      order: ['tpl-2'],
     })
     expect(createLlmPromptTemplate(store, '   ', 'text')).toBeNull()
   })
@@ -56,5 +58,27 @@ describe('llm prompt templates', () => {
     const hidden = deleteLlmPromptTemplate(store, builtins[0])
     expect(hidden.hiddenIds).toEqual(['builtin-summary'])
     expect(resolveLlmPromptTemplates(hidden, builtins)).toEqual(store.templates)
+  })
+
+  it('puts a new template ahead of defaults and keeps a dragged order', () => {
+    const created = createLlmPromptTemplate(store, 'Nová', 'text', 'tpl-2')
+    expect(resolveLlmPromptTemplates(created!, builtins).map(item => item.id)).toEqual([
+      'tpl-2',
+      'builtin-summary',
+      'tpl-1',
+    ])
+    const dragged = reorderLlmPromptTemplates(created!, ['tpl-1', 'builtin-summary', 'tpl-2'])
+    expect(resolveLlmPromptTemplates(dragged, builtins).map(item => item.id)).toEqual([
+      'tpl-1',
+      'builtin-summary',
+      'tpl-2',
+    ])
+    const again = createLlmPromptTemplate(dragged, 'Další', 'text', 'tpl-3')
+    expect(resolveLlmPromptTemplates(again!, builtins).map(item => item.id)).toEqual([
+      'tpl-3',
+      'tpl-1',
+      'builtin-summary',
+      'tpl-2',
+    ])
   })
 })

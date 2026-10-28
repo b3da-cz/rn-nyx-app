@@ -37,6 +37,9 @@ import {
   openLocalTextFile,
   setAppLanguage,
   SharedData,
+  LUMO_MODEL_ID,
+  LUMO_MODEL_NAME,
+  resolveStoredLlmProvider,
   Storage,
   subscribeShareReceived,
   t,
@@ -235,8 +238,35 @@ const App: () => ReactNode = () => {
   }
 
   const loadConfig = async () => {
-    const conf = (await Storage.getConfig()) || initialConfig
+    const stored = await Storage.getConfig()
+    let conf = stored || initialConfig
     setAppLanguage(conf.language || 'auto')
+    const resolvedProvider = resolveStoredLlmProvider(conf)
+    if (
+      stored &&
+      (stored.llmProvider !== resolvedProvider ||
+        !stored.llmProviderChosen ||
+        (resolvedProvider === 'lumo' && stored.selectedLlmModel !== LUMO_MODEL_ID))
+    ) {
+      const llmModels = stored.llmModels && typeof stored.llmModels === 'object' ? { ...stored.llmModels } : {}
+      if (resolvedProvider === 'lumo') {
+        llmModels.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+      }
+      const nextStored = {
+        ...stored,
+        llmProvider: resolvedProvider,
+        llmProviderChosen: true,
+        ...(resolvedProvider === 'lumo'
+          ? {
+              selectedLlmModel: LUMO_MODEL_ID,
+              selectedLlmModelName: LUMO_MODEL_NAME,
+              llmModels,
+            }
+          : {}),
+      }
+      await Storage.setConfig(nextStored)
+      conf = nextStored
+    }
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
@@ -281,13 +311,14 @@ const App: () => ReactNode = () => {
       isFCMSubscribed: conf.isFCMSubscribed === undefined ? false : !!conf.isFCMSubscribed,
       isLlmEnabled: conf.isLlmEnabled === undefined ? false : !!conf.isLlmEnabled,
       isLlmUserAvatarsEnabled: conf.isLlmUserAvatarsEnabled === undefined ? true : !!conf.isLlmUserAvatarsEnabled,
-      llmProvider: conf.llmProvider === 'openai' ? 'openai' : 'openrouter',
+      llmProvider: resolvedProvider,
+      llmProviderChosen: true,
       openRouterApiKey: conf.openRouterApiKey || '',
       openaiApiKey: conf.openaiApiKey || '',
       openaiBaseUrl: conf.openaiBaseUrl || '',
       llmModels: conf.llmModels && typeof conf.llmModels === 'object' ? conf.llmModels : {},
-      selectedLlmModel: conf.selectedLlmModel || '',
-      selectedLlmModelName: conf.selectedLlmModelName || '',
+      selectedLlmModel: resolvedProvider === 'lumo' ? LUMO_MODEL_ID : conf.selectedLlmModel || '',
+      selectedLlmModelName: resolvedProvider === 'lumo' ? LUMO_MODEL_NAME : conf.selectedLlmModelName || '',
       llmSystemPrompt: conf.llmSystemPrompt || '',
       theme: conf.theme === undefined ? 'system' : conf.theme,
       themeOptions: conf.themeOptions === undefined ? { ...defaultThemeOptions } : conf.themeOptions,

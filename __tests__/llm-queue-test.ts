@@ -126,6 +126,47 @@ describe('LlmQueue tests', () => {
     await LlmQueue.dismissTask('old-task-1')
   })
 
+  it('retries with the current posts and dates instead of the failed payload', async () => {
+    const { sendOpenRouterChat } = require('../src/lib/OpenRouter')
+    sendOpenRouterChat.mockImplementationOnce(async () => {
+      throw new Error('context limit 12000')
+    })
+    const wide = [{ id: 1, inserted_at: '2026-10-01 12:00:00', content: 'starý text', username: 'a' }]
+    const narrow = [{ id: 2, inserted_at: '2026-10-04 12:00:00', content: 'nový text', username: 'b' }]
+    const taskId = await LlmQueue.enqueueTask({
+      apiKey: 'test-key',
+      modelId: 'google/gemini-2.5-flash',
+      userPrompt: 'Shrň',
+      discussionId: 321,
+      discussionTitle: 'Rozsah',
+      posts: wide,
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-04',
+      postCount: 1,
+    })
+    await new Promise(resolve => setTimeout(resolve, 50))
+    sendOpenRouterChat.mockClear()
+    sendOpenRouterChat.mockResolvedValueOnce({
+      content: 'ok',
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      model: 'google/gemini-2.5-flash',
+    })
+    await LlmQueue.retryTask(taskId, {
+      posts: narrow,
+      dateFrom: '2026-10-04',
+      dateTo: '2026-10-04',
+      postCount: 1,
+    })
+    await new Promise(resolve => setTimeout(resolve, 50))
+    expect(sendOpenRouterChat).toHaveBeenCalledWith(
+      expect.objectContaining({
+        posts: narrow,
+        dateFrom: '2026-10-04',
+        dateTo: '2026-10-04',
+      }),
+    )
+  })
+
   it('notifies onTaskCompleted listener when task finishes', async () => {
     let completedTask: any = null
     const unsubscribe = LlmQueue.onTaskCompleted(task => {

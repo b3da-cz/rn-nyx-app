@@ -12,6 +12,7 @@ import {
 import { DISCUSSION_CACHE_LIMIT_DEFAULT } from './discussionCache'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
+import { LUMO_MODEL_ID, LUMO_MODEL_NAME } from './lumo'
 
 export type MainContextConfig = {
   isLoaded: boolean
@@ -52,11 +53,12 @@ export type MainContextConfig = {
   isFCMSubscribed: boolean
   isLlmEnabled?: boolean
   isLlmUserAvatarsEnabled?: boolean
-  llmProvider?: 'openrouter' | 'openai'
+  llmProvider?: 'lumo' | 'openrouter' | 'openai'
+  llmProviderChosen?: boolean
   openRouterApiKey?: string
   openaiApiKey?: string
   openaiBaseUrl?: string
-  llmModels?: Partial<Record<'openrouter' | 'openai', { id: string; name: string }>>
+  llmModels?: Partial<Record<'lumo' | 'openrouter' | 'openai', { id: string; name: string }>>
   selectedLlmModel?: string
   selectedLlmModelName?: string
   llmSystemPrompt?: string
@@ -113,13 +115,14 @@ export const initialConfig: MainContextConfig = {
   isFCMSubscribed: false,
   isLlmEnabled: false,
   isLlmUserAvatarsEnabled: true,
-  llmProvider: 'openrouter',
+  llmProvider: 'lumo',
+  llmProviderChosen: true,
   openRouterApiKey: '',
   openaiApiKey: '',
   openaiBaseUrl: '',
-  llmModels: {},
-  selectedLlmModel: '',
-  selectedLlmModelName: '',
+  llmModels: { lumo: { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME } },
+  selectedLlmModel: LUMO_MODEL_ID,
+  selectedLlmModelName: LUMO_MODEL_NAME,
   llmSystemPrompt: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },

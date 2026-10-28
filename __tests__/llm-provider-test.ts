@@ -1,9 +1,17 @@
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+)
+
+import { Storage } from '../src/lib/Storage'
+import { LUMO_MAX_RPM, resetLumoQuotaForTests } from '../src/lib/lumo'
 import {
   fetchLlmModels,
   isLlmAssistantAvailable,
   llmApiUrl,
   modelsFromApiPayload,
+  normalizeLlmProvider,
   normalizeOpenAiBaseUrl,
+  resolveStoredLlmProvider,
   sendOpenRouterChat,
 } from '../src/lib/OpenRouter'
 
@@ -118,6 +126,92 @@ describe('OpenAI-compatible endpoint', () => {
     expect(init.headers.Authorization).toBe('Bearer sk-test')
     expect(init.headers['HTTP-Referer']).toBeUndefined()
     expect(JSON.parse(init.body).model).toBe('gpt-4o-mini')
+  })
+
+  it('uses Proton Lumo without a key and keeps a configured OpenRouter connection', () => {
+    expect(normalizeLlmProvider(undefined)).toBe('openrouter')
+    expect(normalizeLlmProvider('lumo')).toBe('lumo')
+    expect(resolveStoredLlmProvider(undefined)).toBe('lumo')
+    expect(resolveStoredLlmProvider({ llmProvider: 'openrouter' })).toBe('lumo')
+    expect(
+      resolveStoredLlmProvider({
+        llmProvider: 'openrouter',
+        openRouterApiKey: 'sk-or',
+        selectedLlmModel: 'openai/gpt-4o-mini',
+      }),
+    ).toBe('openrouter')
+    expect(
+      resolveStoredLlmProvider({ llmProvider: 'openrouter', llmProviderChosen: true }),
+    ).toBe('openrouter')
+    expect(isLlmAssistantAvailable({ isLlmEnabled: true })).toBe(true)
+    expect(isLlmAssistantAvailable({ isLlmEnabled: false })).toBe(false)
+  })
+
+  it('posts chat to Proton Lumo with the fixed model and no authorization header', async () => {
+    resetLumoQuotaForTests()
+    await Storage.setLumoQuota(null)
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { content: 'Shrnutí.' } }],
+        usage: { total_tokens: 4 },
+      }),
+    })) as any
+
+    const result = await sendOpenRouterChat({
+      provider: 'lumo',
+      apiKey: '',
+      model: 'other',
+      userPrompt: 'Shrň to',
+      discussionId: 7,
+      posts: [
+        {
+          id: 1,
+          username: 'pepa',
+          inserted_at: '2026-10-04 12:00:00',
+          parsed: { clearText: 'Dneska prší.' },
+        },
+      ],
+    })
+
+    expect(result.content).toBe('Shrnutí.')
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0]
+    expect(url).toBe('https://lumo-api.proton.me/ai/v1/chat/completions')
+    expect(init.headers.Authorization).toBeUndefined()
+    expect(init.headers['Content-Type']).toBe('application/json')
+    expect(JSON.parse(init.body).model).toBe('lumo')
+  })
+
+  it('does not call Proton Lumo after the minute limit', async () => {
+    resetLumoQuotaForTests()
+    await Storage.setLumoQuota(null)
+    const now = new Date()
+    await Storage.setLumoQuota({
+      day: `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, '0')}-${`${now.getDate()}`.padStart(2, '0')}`,
+      dayCount: LUMO_MAX_RPM,
+      stamps: Array.from({ length: LUMO_MAX_RPM }, () => now.getTime()),
+    })
+    global.fetch = jest.fn() as any
+
+    await expect(
+      sendOpenRouterChat({
+        provider: 'lumo',
+        apiKey: '',
+        model: 'lumo',
+        userPrompt: 'Shrň to',
+        discussionId: 7,
+        posts: [
+          {
+            id: 1,
+            username: 'pepa',
+            inserted_at: '2026-10-04 12:00:00',
+            parsed: { clearText: 'Dneska prší.' },
+          },
+        ],
+      }),
+    ).rejects.toThrow(/20/)
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 
   it('shows the assistant only when the active connection is complete', () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { fetchLlmModels, LlmProviderId, normalizeLlmProvider, OpenRouterModel, Storage, t } from '../../lib'
+import { fetchLlmModels, LlmProviderId, LUMO_MODEL_NAME, normalizeLlmProvider, OpenRouterModel, Storage, t } from '../../lib'
 import { LlmModelPickerDialog } from '../LlmModelPickerDialog'
 import { LlmFormRow } from './LlmFormRow'
 
@@ -81,6 +81,10 @@ export const LlmModelBar: React.FC<Props> = ({
     if (cached.length === 0 && apiKey) {
       await reloadModels()
     }
+  }
+
+  if (resolvedProvider === 'lumo') {
+    return <LlmFormRow label={t('llm.model')} value={LUMO_MODEL_NAME} />
   }
 
   return (

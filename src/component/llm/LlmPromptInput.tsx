@@ -8,6 +8,7 @@ import {
   LlmPromptTemplateStore,
   normalizeLlmPromptTemplateStore,
   overwriteLlmPromptTemplate,
+  reorderLlmPromptTemplates,
   resolveLlmPromptTemplates,
   Storage,
   t,
@@ -132,6 +133,7 @@ export const LlmPromptInput: React.FC<Props> = ({ prompt, onChangePrompt, onFocu
           setMode(null)
         }}
         onDelete={template => persist(deleteLlmPromptTemplate(store, template))}
+        onReorder={ids => persist(reorderLlmPromptTemplates(store, ids))}
       />
     </>
   )

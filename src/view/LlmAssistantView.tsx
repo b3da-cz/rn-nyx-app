@@ -8,6 +8,7 @@ import {
   defaultAgentRule,
   emptyViewerRights,
   formatAgentTtlLabel,
+  activeLlmModel,
   llmConnectionFromConfig,
   MainContext,
   notifySecureLayout,
@@ -52,6 +53,7 @@ export const LlmAssistantView: React.FC<Props> = ({
   const context = useContext(MainContext)
   const config = context?.config || {}
   const llmConnection = llmConnectionFromConfig(config)
+  const activeModel = activeLlmModel(config)
   const nyx = context?.nyx
 
   const [activeTab, setActiveTab] = useState<TabType>(discussionId ? 'assistant' : 'library')
@@ -69,6 +71,10 @@ export const LlmAssistantView: React.FC<Props> = ({
   const isPromptFocusedRef = useRef(false)
   const promptLayoutYRef = useRef(0)
   const scrollRef = useRef<ScrollView>(null)
+  const [postPicker, setPostPicker] = useState<React.ReactNode>(null)
+  const onPostPicker = useCallback((node: React.ReactNode) => {
+    setPostPicker(node)
+  }, [])
   const [followAnswer, setFollowAnswer] = useState(false)
   const [answerDock, setAnswerDock] = useState<LlmAnswerDock | null>(null)
   const answerScroll = useLlmAnswerScroll(scrollRef, setFollowAnswer)
@@ -264,8 +270,8 @@ export const LlmAssistantView: React.FC<Props> = ({
               apiKey={llmConnection.apiKey}
               provider={llmConnection.provider}
               baseUrl={llmConnection.baseUrl}
-              defaultModelId={config.selectedLlmModel || ''}
-              defaultModelName={config.selectedLlmModelName}
+              defaultModelId={activeModel.id}
+              defaultModelName={activeModel.name}
               systemPrompt={config.llmSystemPrompt}
               prompt={prompt}
               onChangePrompt={setPrompt}
@@ -285,6 +291,7 @@ export const LlmAssistantView: React.FC<Props> = ({
               onAnswerPhase={answerScroll.onAnswerPhase}
               followAnswer={followAnswer}
               onStickActions={onStickActions}
+              onPostPicker={onPostPicker}
             />
           </ScrollView>
           {!!answerDock && activeTab === 'assistant' && (
@@ -301,6 +308,20 @@ export const LlmAssistantView: React.FC<Props> = ({
               {answerDock.node}
             </View>
           )}
+        </View>
+      )}
+      {!!postPicker && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 5,
+            backgroundColor: colors.background,
+          }}>
+          {postPicker}
         </View>
       )}
       {activeTab !== 'assistant' && (

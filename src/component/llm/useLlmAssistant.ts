@@ -5,12 +5,17 @@ import {
   deleteLlmHistoryEntry,
   filterAndFormatPostsForLlm,
   getLlmHistory,
+  initialLlmRangeSelection,
+  llmPostKey,
+  llmPostOrder,
   LlmPendingTask,
   LlmProviderId,
   LlmQueue,
+  LlmRangeSelection,
   MainContext,
   normalizeLlmProvider,
   Storage,
+  syncLlmSelection,
   t,
 } from '../../lib'
 import type { MainContextConfig } from '../../lib'
@@ -161,10 +166,29 @@ export function useLlmAssistant(p: Params) {
   )
   const isSending = activeTask?.status === 'pending'
 
-  const { count: postCount, wordCount, ignoredCount } = useMemo(
-    () => filterAndFormatPostsForLlm(p.posts, dateFrom, dateTo, p.discussionTitle),
+  const formatted = useMemo(
+    () => filterAndFormatPostsForLlm(p.posts, dateFrom || undefined, dateTo || undefined, p.discussionTitle),
     [p.posts, dateFrom, dateTo, p.discussionTitle],
   )
+  const order = useMemo(() => llmPostOrder(formatted.matchedPosts), [formatted.matchedPosts])
+  const orderKey = order.join('\n')
+  const [trackedKey, setTrackedKey] = useState('')
+  const [selection, setSelection] = useState<LlmRangeSelection>(() => initialLlmRangeSelection([]))
+  const activeSelection = trackedKey === orderKey ? selection : syncLlmSelection(selection, order)
+  if (trackedKey !== orderKey) {
+    setTrackedKey(orderKey)
+    setSelection(activeSelection)
+  }
+  const picked = useMemo(() => new Set(activeSelection.picked), [activeSelection])
+  const selectedPosts = useMemo(
+    () => formatted.matchedPosts.filter(post => picked.has(llmPostKey(post))),
+    [formatted.matchedPosts, picked],
+  )
+  const { count: postCount, wordCount } = useMemo(
+    () => filterAndFormatPostsForLlm(selectedPosts, dateFrom || undefined, dateTo || undefined, p.discussionTitle),
+    [selectedPosts, dateFrom, dateTo, p.discussionTitle],
+  )
+  const ignoredCount = formatted.ignoredCount
 
   const canLoadOlder = useMemo(() => {
     if (!p.onLoadMorePosts || !dateFrom) {
@@ -191,6 +215,13 @@ export function useLlmAssistant(p: Params) {
   const agentAllowed = p.agentAllowed !== false
   const canSend = agentAllowed && !isSending && !!p.prompt.trim() && postCount > 0 && !!modelRef.current.id
 
+  const taskPosts = () => ({
+    posts: selectedPosts,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    postCount,
+  })
+
   const send = async () => {
     if (!canSend || p.agentAllowed === false) {
       return
@@ -208,14 +239,25 @@ export function useLlmAssistant(p: Params) {
         userPrompt: p.prompt,
         discussionId,
         discussionTitle: p.discussionTitle,
-        posts: p.posts,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        postCount,
         systemPrompt: systemPromptRef.current,
         ttlMs: p.ttlMs,
+        ...taskPosts(),
       })
       p.onChangePrompt('')
+    } catch (e: any) {
+      setErrorMessage(e?.message || t('llm.errorStartingQuery') || 'Chyba při zahájení dotazu.')
+    }
+  }
+
+  const retry = async (taskId: string) => {
+    if (selectedPosts.length === 0) {
+      setErrorMessage(t('llm.noPosts'))
+      return
+    }
+    setErrorMessage(null)
+    setResult(null)
+    try {
+      await LlmQueue.retryTask(taskId, taskPosts())
     } catch (e: any) {
       setErrorMessage(e?.message || t('llm.errorStartingQuery') || 'Chyba při zahájení dotazu.')
     }
@@ -227,6 +269,9 @@ export function useLlmAssistant(p: Params) {
     system: { systemPrompt, isGlobalSystemPrompt, saveSystemPrompt },
     activeTask,
     isSending,
+    matchedPosts: formatted.matchedPosts,
+    selection: activeSelection,
+    setSelection,
     postCount,
     wordCount,
     ignoredCount,
@@ -235,6 +280,7 @@ export function useLlmAssistant(p: Params) {
     loadOlder,
     canSend,
     send,
+    retry,
     result,
     clearResult: () => setResult(null),
     expireResult: async () => {

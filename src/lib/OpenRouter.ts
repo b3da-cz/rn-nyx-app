@@ -5,7 +5,9 @@ import {
   postOptsOutOfAgents,
   withAnonymityInstruction,
 } from './llmAgents'
+import { llmPostDay } from './llmPostSelection'
 import { consumeLlmStreamBody, createLlmStreamState, finishLlmStreamBody, LlmStreamState } from './llmStream'
+import { assertLumoQuota, LUMO_BASE_URL, LUMO_CONTEXT_TOKENS, LUMO_MODEL_ID, LUMO_MODEL_NAME } from './lumo'
 import { t } from './Strings'
 
 export type OpenRouterPricing = {
@@ -66,7 +68,7 @@ export const RECOMMENDED_MODEL_IDS = [
   'openai/gpt-4o-mini',
 ]
 
-export type LlmProviderId = 'openrouter' | 'openai'
+export type LlmProviderId = 'lumo' | 'openrouter' | 'openai'
 
 export type LlmSavedModel = {
   id: string
@@ -78,7 +80,36 @@ export type LlmSavedModels = Partial<Record<LlmProviderId, LlmSavedModel>>
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
 export function normalizeLlmProvider(value: unknown): LlmProviderId {
-  return value === 'openai' ? 'openai' : 'openrouter'
+  if (value === 'lumo' || value === 'openai' || value === 'openrouter') {
+    return value
+  }
+  // Queued tasks saved before a provider field still belong to OpenRouter.
+  return 'openrouter'
+}
+
+export function resolveStoredLlmProvider(
+  config?: {
+    llmProvider?: string
+    llmProviderChosen?: boolean
+    openRouterApiKey?: string
+    selectedLlmModel?: string
+  } | null,
+): LlmProviderId {
+  const raw = config?.llmProvider
+  if (config?.llmProviderChosen) {
+    if (raw === 'lumo' || raw === 'openai' || raw === 'openrouter') {
+      return raw
+    }
+    return 'lumo'
+  }
+  if (raw === 'openai' || raw === 'lumo') {
+    return raw
+  }
+  const hasOpenRouterSetup = !!(config?.openRouterApiKey || '').trim() || !!(config?.selectedLlmModel || '').trim()
+  if (raw === 'openrouter' || raw == null || raw === '') {
+    return hasOpenRouterSetup ? 'openrouter' : 'lumo'
+  }
+  return 'lumo'
 }
 
 // http is allowed so a model running on the local network can be used.
@@ -129,6 +160,25 @@ function llmAuthHeaders(apiKey: string): Record<string, string> {
   }
 }
 
+function llmChatHeaders(provider: LlmProviderId, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (provider !== 'lumo') {
+    headers.Authorization = `Bearer ${apiKey}`
+  }
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://nyx.cz'
+    headers['X-Title'] = 'Nyx NNN'
+  }
+  return headers
+}
+
+function llmChatErrorFallback(provider: LlmProviderId): string {
+  if (provider === 'lumo') {
+    return 'Chyba Proton Lumo'
+  }
+  return provider === 'openai' ? 'Chyba API' : 'Chyba OpenRouter API'
+}
+
 export function openAiBaseUrlError(input: string): string | null {
   const trimmed = (input || '').trim()
   if (!trimmed) {
@@ -142,11 +192,13 @@ export function openAiBaseUrlError(input: string): string | null {
 
 export type LlmConnectionConfig = {
   llmProvider?: string
+  llmProviderChosen?: boolean
   openRouterApiKey?: string
   openaiApiKey?: string
   openaiBaseUrl?: string
   isLlmEnabled?: boolean
   selectedLlmModel?: string
+  selectedLlmModelName?: string
 }
 
 export type LlmConnection = {
@@ -156,7 +208,10 @@ export type LlmConnection = {
 }
 
 export function llmConnectionFromConfig(config?: LlmConnectionConfig | null): LlmConnection {
-  const provider = normalizeLlmProvider(config?.llmProvider)
+  const provider = resolveStoredLlmProvider(config)
+  if (provider === 'lumo') {
+    return { provider, apiKey: '', baseUrl: LUMO_BASE_URL }
+  }
   if (provider === 'openai') {
     return {
       provider,
@@ -171,12 +226,23 @@ export function llmConnectionFromConfig(config?: LlmConnectionConfig | null): Ll
   }
 }
 
+export function activeLlmModel(config?: LlmConnectionConfig | null): { id: string; name: string } {
+  if (resolveStoredLlmProvider(config) === 'lumo') {
+    return { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+  }
+  const id = (config?.selectedLlmModel || '').trim()
+  return { id, name: (config?.selectedLlmModelName || id).trim() }
+}
+
 export function isLlmAssistantAvailable(config?: LlmConnectionConfig | null): boolean {
-  if (!config?.isLlmEnabled || !(config.selectedLlmModel || '').trim()) {
+  if (!config?.isLlmEnabled) {
     return false
   }
   const connection = llmConnectionFromConfig(config)
-  if (!connection.apiKey) {
+  if (connection.provider === 'lumo') {
+    return true
+  }
+  if (!activeLlmModel(config).id || !connection.apiKey) {
     return false
   }
   return connection.provider === 'openrouter' || !!connection.baseUrl
@@ -292,6 +358,9 @@ export async function fetchLlmModels({
   baseUrl?: string
 }): Promise<OpenRouterModel[]> {
   const provider = normalizeLlmProvider(providerInput)
+  if (provider === 'lumo') {
+    return [{ id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME, context_length: LUMO_CONTEXT_TOKENS }]
+  }
   const trimmedKey = (apiKey || '').trim()
   if (!trimmedKey) {
     throw new Error(
@@ -337,16 +406,19 @@ export function filterAndFormatPostsForLlm(
   discussionTitle = '',
 ): { formattedText: string; count: number; wordCount: number; matchedPosts: any[]; ignoredCount: number } {
   const inRange = posts.filter(post => {
-    if (!post || post.location === 'header' || post.location === 'home') {
+    if (!post || post.location === 'header' || post.location === 'home' || post.isClubStart) {
       return false
     }
-    const insertedAt = post.inserted_at || ''
-    const postDay = insertedAt.length >= 10 ? insertedAt.substring(0, 10) : ''
-
-    if (dateFrom && postDay && postDay < dateFrom) {
+    const postDay = llmPostDay(post)
+    // A bounded range only keeps posts whose day is inside it. Loaded posts with
+    // no date used to stay in the payload after the range was narrowed.
+    if ((dateFrom || dateTo) && !postDay) {
       return false
     }
-    if (dateTo && postDay && postDay > dateTo) {
+    if (dateFrom && postDay < dateFrom) {
+      return false
+    }
+    if (dateTo && postDay > dateTo) {
       return false
     }
     return true
@@ -470,15 +542,17 @@ export async function sendOpenRouterChat({
   onDelta,
 }: OpenRouterChatParams): Promise<OpenRouterChatResult> {
   const provider = normalizeLlmProvider(providerInput)
-  const resolvedBase = provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
-  const trimmedKey = apiKey.trim()
-  if (!trimmedKey) {
+  const resolvedBase =
+    provider === 'lumo' ? LUMO_BASE_URL : provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
+  const resolvedModel = provider === 'lumo' ? LUMO_MODEL_ID : model
+  const trimmedKey = (apiKey || '').trim()
+  if (provider !== 'lumo' && !trimmedKey) {
     throw new Error(provider === 'openai' ? 'Chybí API klíč.' : 'Chybí OpenRouter API klíč.')
   }
   if (provider === 'openai' && !resolvedBase) {
     throw new Error(openAiBaseUrlError(baseUrl || '') || 'Nejprve zadejte endpoint.')
   }
-  if (!model) {
+  if (!resolvedModel) {
     throw new Error('Není vybrán žádný model.')
   }
   if (!userPrompt || !userPrompt.trim()) {
@@ -543,17 +617,19 @@ export async function sendOpenRouterChat({
     `${anonPosts}\n\n` +
     `--- Konec příspěvků ---`
 
+  if (provider === 'lumo') {
+    await assertLumoQuota()
+  }
+
   onProgress?.(
-    provider === 'openai'
-      ? `Odesílám HTTP požadavek (${model})...`
-      : `Odesílám HTTP požadavek na OpenRouter (${model})...`,
+    provider === 'lumo'
+      ? `Odesílám HTTP požadavek na Proton Lumo (${resolvedModel})...`
+      : provider === 'openai'
+        ? `Odesílám HTTP požadavek (${resolvedModel})...`
+        : `Odesílám HTTP požadavek na OpenRouter (${resolvedModel})...`,
   )
 
-  const headers = llmAuthHeaders(trimmedKey)
-  if (provider === 'openrouter') {
-    headers['HTTP-Referer'] = 'https://nyx.cz'
-    headers['X-Title'] = 'Nyx NNN'
-  }
+  const headers = llmChatHeaders(provider, trimmedKey)
 
   const messages = [
     { role: 'system', content: anonSystemPrompt },
@@ -571,11 +647,15 @@ export async function sendOpenRouterChat({
     }
     let streamed: LlmStreamState
     try {
-      streamed = await postChatStream(completionUrl, headers, JSON.stringify({ model, messages, stream: true }), publish)
+      streamed = await postChatStream(
+        completionUrl,
+        headers,
+        JSON.stringify({ model: resolvedModel, messages, stream: true }),
+        publish,
+      )
     } catch (err: any) {
       if (err?.body) {
-        const fallback = provider === 'openai' ? 'Chyba API' : 'Chyba OpenRouter API'
-        throw new Error(llmApiErrorMessage(err.body, err.status || 0, fallback))
+        throw new Error(llmApiErrorMessage(err.body, err.status || 0, llmChatErrorFallback(provider)))
       }
       throw err
     }
@@ -584,22 +664,21 @@ export async function sendOpenRouterChat({
       content: scrubber.restore(streamed.content),
       reasoning: scrubber.restore(streamed.reasoning),
       usage: streamed.usage,
-      model: streamed.model || model,
+      model: streamed.model || resolvedModel,
     }
   }
 
   const res = await fetch(completionUrl, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({ model: resolvedModel, messages }),
   })
 
   onProgress?.(`HTTP status ${res.status}: Čekám na dokončení generování...`)
 
   const json = await res.json()
   if (!res.ok || json.error) {
-    const fallback = provider === 'openai' ? 'Chyba API' : 'Chyba OpenRouter API'
-    throw new Error(llmApiErrorMessage(json, res.status, fallback))
+    throw new Error(llmApiErrorMessage(json, res.status, llmChatErrorFallback(provider)))
   }
 
   onProgress?.('Odpověď přijata, zpracovávám výsledek...')
@@ -609,6 +688,6 @@ export async function sendOpenRouterChat({
   return {
     content,
     usage: json.usage,
-    model: json.model || model,
+    model: json.model || resolvedModel,
   }
 }

@@ -1,3 +1,7 @@
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+)
+
 import {
   DEFAULT_LLM_SYSTEM_PROMPT,
   filterAndFormatPostsForLlm,
@@ -93,6 +97,22 @@ describe('OpenRouter helper tests', () => {
       const res = filterAndFormatPostsForLlm(samplePosts, '2026-09-01', '2026-09-02', 'Test Klub')
       expect(res.count).toBe(0)
       expect(res.wordCount).toBe(0)
+    })
+
+    it('drops already loaded posts that fall outside a narrower range', () => {
+      const loaded = [
+        ...samplePosts,
+        { id: 99, content: 'bez data', username: 'ghost' },
+        { id: 0, isClubStart: true, content: 'začátek klubu', username: '' },
+      ]
+      const wide = filterAndFormatPostsForLlm(loaded, '2026-10-01', '2026-10-04', 'Test Klub')
+      expect(wide.matchedPosts.map(post => post.id)).toEqual([101, 102, 103])
+      expect(wide.formattedText).not.toContain('bez data')
+      const narrow = filterAndFormatPostsForLlm(loaded, '2026-10-04', '2026-10-04', 'Test Klub')
+      expect(narrow.matchedPosts.map(post => post.id)).toEqual([103])
+      expect(narrow.formattedText).not.toContain('starý')
+      expect(narrow.formattedText).not.toContain('včerejška')
+      expect(narrow.wordCount).toBeLessThan(wide.wordCount)
     })
 
     it('drops posts that opt out with [agents:ignore]', () => {

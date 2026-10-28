@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.35.8
+- šablony asistenta jdou seřadit tažením a nová šablona je vždy první
+- nalezené příspěvky jdou vybrat po dnech a odesílá se jen ten výběr
+- zúžení období už nepošle dřív načtené příspěvky mimo rozsah
+
+## 0.35.7
+- připojení Proton Lumo je výchozí a asistent jede bez API klíče, model je pevně Lumo
+- v nastavení jsou limity 500 požadavků za den a 20 za minutu, denní počítadlo se nuluje o půlnoci
+
 ## 0.35.6
 - ve výběru modelu je v hlavičce tlačítko pro znovunačtení seznamu z API
 
