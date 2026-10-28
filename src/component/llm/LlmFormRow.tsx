@@ -11,15 +11,29 @@ type Props = {
   onToggle?: (val: boolean) => void
   onPress?: () => void
   children?: React.ReactNode
+  progressRatio?: number
+  progressColor?: string
 }
 
 // Same look as the events filter rows: surface strip, faded label on the left, value / control on the right.
-export const LlmFormRow = ({ label, value, valueColor, toggle, onToggle, onPress, children }: Props) => {
+export const LlmFormRow = ({
+  label,
+  value,
+  valueColor,
+  toggle,
+  onToggle,
+  onPress,
+  children,
+  progressRatio,
+  progressColor,
+}: Props) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
   const isToggle = typeof onToggle === 'function'
+  const hasProgress = progressRatio != null && Number.isFinite(progressRatio)
+  const clampedRatio = hasProgress ? Math.min(1, Math.max(0, progressRatio!)) : 0
   return (
     <View
       style={{
@@ -31,6 +45,8 @@ export const LlmFormRow = ({ label, value, valueColor, toggle, onToggle, onPress
         marginBottom: blocks.small,
         paddingLeft: blocks.medium,
         paddingRight: isToggle ? blocks.medium : 0,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
       <Text
         numberOfLines={1}
@@ -55,6 +71,25 @@ export const LlmFormRow = ({ label, value, valueColor, toggle, onToggle, onPress
           style={{ flexShrink: 1 }}>
           {`${value ?? ''}`}
         </Button>
+      )}
+      {hasProgress && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 2,
+            backgroundColor: colors.border,
+          }}>
+          <View
+            style={{
+              height: 2,
+              width: `${clampedRatio * 100}%`,
+              backgroundColor: progressColor || colors.primary,
+            }}
+          />
+        </View>
       )}
     </View>
   )

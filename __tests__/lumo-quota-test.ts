@@ -8,6 +8,7 @@ import {
   emptyLumoQuota,
   LUMO_MAX_RPD,
   LUMO_MAX_RPM,
+  lumoQuotaBarRatio,
   lumoQuotaPercentLabel,
   lumoQuotaSnapshot,
   normalizeLumoQuota,
@@ -91,5 +92,13 @@ describe('Proton Lumo quota', () => {
       rpdMax: LUMO_MAX_RPD,
       rpmMax: LUMO_MAX_RPM,
     })
+  })
+
+  it('computes bar ratio with minimum notch above zero', () => {
+    expect(lumoQuotaBarRatio(0, 500)).toBe(0)
+    expect(lumoQuotaBarRatio(1, 500)).toBe(0.02)
+    expect(lumoQuotaBarRatio(250, 500)).toBe(0.5)
+    expect(lumoQuotaBarRatio(500, 500)).toBe(1)
+    expect(lumoQuotaBarRatio(600, 500)).toBe(1)
   })
 })

@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { fetchLlmModels, LlmProviderId, LUMO_MODEL_NAME, normalizeLlmProvider, OpenRouterModel, Storage, t } from '../../lib'
+import {
+  fetchLlmModels,
+  LlmProviderId,
+  LUMO_MODEL_NAME,
+  lumoQuotaBarRatio,
+  normalizeLlmProvider,
+  OpenRouterModel,
+  Storage,
+  t,
+} from '../../lib'
 import { LlmModelPickerDialog } from '../LlmModelPickerDialog'
 import { LlmFormRow } from './LlmFormRow'
+import { useLumoQuota } from './useLumoQuota'
 
 type Props = {
   apiKey: string
@@ -23,6 +33,8 @@ export const LlmModelBar: React.FC<Props> = ({
   onModelSelected,
 }) => {
   const resolvedProvider = normalizeLlmProvider(provider)
+  const isLumo = resolvedProvider === 'lumo'
+  const lumoQuota = useLumoQuota(isLumo)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
   const [models, setModels] = useState<OpenRouterModel[]>([])
   const [isFetching, setIsFetching] = useState(false)
@@ -83,8 +95,15 @@ export const LlmModelBar: React.FC<Props> = ({
     }
   }
 
-  if (resolvedProvider === 'lumo') {
-    return <LlmFormRow label={t('llm.model')} value={LUMO_MODEL_NAME} />
+  if (isLumo) {
+    const ratio = lumoQuotaBarRatio(lumoQuota.rpdUsed, lumoQuota.rpdMax)
+    return (
+      <LlmFormRow
+        label={t('llm.model')}
+        value={`${LUMO_MODEL_NAME} [${lumoQuota.rpdUsed}/${lumoQuota.rpdMax}]`}
+        progressRatio={ratio}
+      />
+    )
   }
 
   return (

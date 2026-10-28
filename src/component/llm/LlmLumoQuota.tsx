@@ -1,49 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { View } from 'react-native'
 import { Text } from 'react-native-paper'
-import {
-  lumoQuotaBarRatio,
-  lumoQuotaPercentLabel,
-  LumoQuotaSnapshot,
-  readLumoQuota,
-  subscribeLumoQuota,
-  t,
-  useTheme,
-} from '../../lib'
-
-const emptySnapshot = (): LumoQuotaSnapshot => ({ rpdUsed: 0, rpmUsed: 0, rpdMax: 500, rpmMax: 20 })
+import { lumoQuotaBarRatio, lumoQuotaPercentLabel, t, useTheme } from '../../lib'
+import { useLumoQuota } from './useLumoQuota'
 
 export const LlmLumoQuota: React.FC = () => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
-  const [snapshot, setSnapshot] = useState<LumoQuotaSnapshot>(emptySnapshot)
-
-  useEffect(() => {
-    let alive = true
-    const pull = () => {
-      readLumoQuota()
-        .then(next => {
-          if (alive) {
-            setSnapshot(next)
-          }
-        })
-        .catch(() => undefined)
-    }
-    pull()
-    const unsubscribe = subscribeLumoQuota(next => {
-      if (alive) {
-        setSnapshot(next)
-      }
-    })
-    const timer = setInterval(pull, 1000)
-    return () => {
-      alive = false
-      unsubscribe()
-      clearInterval(timer)
-    }
-  }, [])
+  const snapshot = useLumoQuota(true)
 
   const rows = [
     {

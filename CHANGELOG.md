@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.11
+- u Proton Lumo ukazuje řádek modelu vyčerpání RPD v závorkách a spodní border progress bar
+
 ## 0.35.10
 - náhled příspěvku v asistentovi se otevře z paměti nebo načte přes stránkování diskuze
 
