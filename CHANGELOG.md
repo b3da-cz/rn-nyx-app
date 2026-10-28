@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.35.9
+- ve výběru příspěvků checkbox přepne jen ten řádek a neposune okno
+- za jménem je začátek textu, čas zůstává u checkboxu a svislítko před časem je jen když text doběhne až k němu
+- klepnutí na avatar nebo jméno otevře vycentrovaný náhled toho příspěvku
+
 ## 0.35.8
 - šablony asistenta jdou seřadit tažením a nová šablona je vždy první
 - nalezené příspěvky jdou vybrat po dnech a odesílá se jen ten výběr

@@ -40,6 +40,8 @@ type Props = {
   followAnswer?: boolean
   onStickActions?: (dock: LlmAnswerDock | null) => void
   onPostPicker?: (picker: React.ReactNode) => void
+  onOpenPost?: (discussionId: number | string, postId?: number | string) => void
+  onOpenImages?: (images: any[], imgIndex: number) => void
 }
 
 export const LlmAssistantTab: React.FC<Props> = props => {
@@ -75,7 +77,7 @@ export const LlmAssistantTab: React.FC<Props> = props => {
     props.onAnswerPhase?.(phase)
   }, [phase, props.onAnswerPhase])
 
-  const { onPostPicker } = props
+  const { onPostPicker, onOpenPost, onOpenImages, discussionId } = props
   const { matchedPosts, setSelection } = a
   useEffect(() => {
     if (!pickerOpen || !draft) {
@@ -84,6 +86,7 @@ export const LlmAssistantTab: React.FC<Props> = props => {
     }
     onPostPicker?.(
       <LlmPostPicker
+        discussionId={discussionId}
         posts={matchedPosts}
         selection={draft}
         onChange={setDraft}
@@ -92,9 +95,11 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           setSelection(draft)
           setPickerOpen(false)
         }}
+        onOpenPost={(nextDiscussionId, nextPostId) => onOpenPost?.(nextDiscussionId, nextPostId)}
+        onOpenImages={(images, imgIndex) => onOpenImages?.(images, imgIndex)}
       />,
     )
-  }, [pickerOpen, draft, matchedPosts, setSelection, onPostPicker])
+  }, [pickerOpen, draft, matchedPosts, setSelection, onPostPicker, discussionId, onOpenPost, onOpenImages])
 
   useEffect(() => () => onPostPicker?.(null), [onPostPicker])
 

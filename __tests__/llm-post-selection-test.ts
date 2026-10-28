@@ -45,6 +45,19 @@ describe('llm post selection', () => {
     expect(widened.picked).toEqual(['a', 'b', 'c', 'e', 'f'])
   })
 
+  it('checkbox outside the range selects only that post', () => {
+    let selection = pressLlmRange(initialLlmRangeSelection(order), 4)
+    selection = pressLlmRange(selection, 2)
+    const checked = toggleLlmRangePost(selection, 0)
+    expect(checked.start).toBe(2)
+    expect(checked.end).toBe(4)
+    expect(checked.picked).toEqual(['a', 'c', 'd', 'e'])
+    const expanded = pressLlmRange(checked, 5)
+    expect(expanded.end).toBe(5)
+    expect(expanded.picked).toEqual(['a', 'c', 'd', 'e', 'f'])
+    expect(toggleLlmRangePost(checked, 0).picked).toEqual(['c', 'd', 'e'])
+  })
+
   it('drops posts that leave the date range and keeps a full selection on the rest', () => {
     const all = initialLlmRangeSelection(order)
     const narrowed = syncLlmSelection(all, ['e', 'f'])

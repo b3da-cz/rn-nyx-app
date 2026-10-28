@@ -78,11 +78,18 @@ function applyLlmRange(prev: LlmRangeSelection, order: string[], start: number, 
   const prevIndex = new Map(prev.order.map((id, index) => [id, index]))
   const prevPicked = new Set(prev.picked)
   const picked: string[] = []
-  for (let index = start; index <= end; index++) {
+  for (let index = 0; index < order.length; index++) {
     const id = order[index]
+    const inNext = index >= start && index <= end
     const old = prevIndex.get(id)
     const wasInside = old != null && old >= prev.start && old <= prev.end
-    if (!wasInside || prevPicked.has(id)) {
+    if (inNext) {
+      if (!wasInside || prevPicked.has(id)) {
+        picked.push(id)
+      }
+      continue
+    }
+    if (prevPicked.has(id) && !wasInside) {
       picked.push(id)
     }
   }
@@ -111,7 +118,7 @@ export function pressLlmRange(selection: LlmRangeSelection, index: number): LlmR
 }
 
 export function toggleLlmRangePost(selection: LlmRangeSelection, index: number): LlmRangeSelection {
-  if (index < selection.start || index > selection.end) {
+  if (index < 0 || index >= selection.order.length) {
     return selection
   }
   const id = selection.order[index]
@@ -123,6 +130,20 @@ export function toggleLlmRangePost(selection: LlmRangeSelection, index: number):
   }
   return {
     ...selection,
-    picked: selection.order.filter((item, itemIndex) => itemIndex >= selection.start && itemIndex <= selection.end && picked.has(item)),
+    picked: selection.order.filter(item => picked.has(item)),
   }
+}
+
+export function llmPostExcerpt(post: any, limit = 42): string {
+  const raw = String(post?.parsed?.clearText || post?.content || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!raw) {
+    return ''
+  }
+  if (raw.length <= limit) {
+    return raw
+  }
+  return `${raw.slice(0, limit).trimEnd()}..`
 }

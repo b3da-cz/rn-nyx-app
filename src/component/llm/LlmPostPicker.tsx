@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo } from 'react'
-import { BackHandler, SectionList, View } from 'react-native'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { BackHandler, NativeSyntheticEvent, Pressable, SectionList, TextLayoutEventData, View } from 'react-native'
 import { IconButton, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import {
   llmPostClock,
   llmPostDay,
+  llmPostExcerpt,
   llmPostKey,
   LlmRangeSelection,
   pressLlmRange,
@@ -13,27 +14,150 @@ import {
 } from '../../lib'
 import { UserIconComponent } from '../UserIconComponent'
 import { formatLlmDate } from './llmFormat'
+import { LlmPostPreview } from './LlmPostPreview'
 
 type Row = { key: string; index: number }
 
 type Props = {
+  discussionId: number | string
   posts: any[]
   selection: LlmRangeSelection
   onChange: (selection: LlmRangeSelection) => void
   onBack: () => void
   onConfirm: () => void
+  onOpenPost: (discussionId: number | string, postId?: number | string) => void
+  onOpenImages: (images: any[], imgIndex: number) => void
 }
 
 const ROW_HEIGHT = 32
 const ICON_W = 18
 const ICON_H = 22
 
-export const LlmPostPicker: React.FC<Props> = ({ posts, selection, onChange, onBack, onConfirm }) => {
+const textReachesEnd = (excerpt: string, shown: string, lineWidth: number, boxWidth: number) => {
+  if (!excerpt) {
+    return false
+  }
+  const visible = shown.replace(/\u2026$/, '').replace(/\.\.\.$/, '')
+  const clipped = shown !== excerpt && visible !== excerpt
+  const filled = boxWidth > 0 && lineWidth >= boxWidth - 1
+  return clipped || filled
+}
+
+const PostPickRow = ({
+  post,
+  selected,
+  discussionId,
+  postKey,
+  colors,
+  blocks,
+  fontSizes,
+  onPreview,
+  onRange,
+  onToggle,
+}: {
+  post: any
+  selected: boolean
+  discussionId: number | string
+  postKey: string
+  colors: { primary: string; background: string; border: string; text: string; faded: string; ripple: string }
+  blocks: { medium: number; small: number }
+  fontSizes: { small: number; p: number }
+  onPreview: (target: { discussionId: number | string; postId: string }) => void
+  onRange: () => void
+  onToggle: () => void
+}) => {
+  const excerpt = llmPostExcerpt(post)
+  const clock = llmPostClock(post)
+  const username = post?.username || '—'
+  const boxWidth = useRef(0)
+  const lineRef = useRef<{ text: string; width: number } | null>(null)
+  const [pipeBeforeTime, setPipeBeforeTime] = useState(false)
+  const syncPipe = (box: number, line: { text: string; width: number } | null) => {
+    const next = line ? textReachesEnd(excerpt, line.text, line.width, box) : false
+    setPipeBeforeTime(prev => (prev === next ? prev : next))
+  }
+  const onExcerptLayout = (width: number) => {
+    boxWidth.current = width
+    syncPipe(width, lineRef.current)
+  }
+  const onExcerptText = (event: NativeSyntheticEvent<TextLayoutEventData>) => {
+    const line = event.nativeEvent.lines?.[0]
+    lineRef.current = line ? { text: line.text || '', width: line.width || 0 } : null
+    syncPipe(boxWidth.current, lineRef.current)
+  }
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: ROW_HEIGHT,
+        backgroundColor: selected ? colors.primary : colors.background,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      }}>
+      <TouchableRipple
+        style={{ flexShrink: 1, maxWidth: '55%', height: ROW_HEIGHT, justifyContent: 'center' }}
+        rippleColor={colors.ripple}
+        onPress={() => onPreview({ discussionId: post?.discussion_id || discussionId, postId: postKey })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: blocks.medium }}>
+          {post?.username ? (
+            <UserIconComponent username={post.username} width={ICON_W} height={ICON_H} marginRight={8} />
+          ) : (
+            <View style={{ width: ICON_W, height: ICON_H, marginRight: 8 }} />
+          )}
+          <Text numberOfLines={1} style={{ flexShrink: 1, color: colors.text, fontSize: fontSizes.small }}>
+            {username}
+          </Text>
+        </View>
+      </TouchableRipple>
+      {!!excerpt && (
+        <Text style={{ color: selected ? colors.text : colors.faded, fontSize: fontSizes.small }}>{' | '}</Text>
+      )}
+      <TouchableRipple
+        style={{ flex: 1, minWidth: 0, height: ROW_HEIGHT, justifyContent: 'center' }}
+        rippleColor={colors.ripple}
+        onPress={onRange}>
+        <View onLayout={event => onExcerptLayout(event.nativeEvent.layout.width)}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            onTextLayout={onExcerptText}
+            style={{ color: selected ? colors.text : colors.faded, fontSize: fontSizes.small }}>
+            {excerpt}
+          </Text>
+        </View>
+      </TouchableRipple>
+      <TouchableRipple style={{ flexShrink: 0, height: ROW_HEIGHT, justifyContent: 'center' }} rippleColor={colors.ripple} onPress={onRange}>
+        <Text style={{ color: selected ? colors.text : colors.faded, fontSize: fontSizes.small, marginRight: blocks.small }}>
+          {`${pipeBeforeTime ? ' | ' : ''}${clock}`}
+        </Text>
+      </TouchableRipple>
+      <Pressable
+        style={{ width: 36, height: ROW_HEIGHT, alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
+        hitSlop={4}
+        onPress={onToggle}>
+        <Icon name={selected ? 'check-square' : 'square'} size={fontSizes.p} color={colors.text} />
+      </Pressable>
+    </View>
+  )
+}
+
+export const LlmPostPicker: React.FC<Props> = ({
+  discussionId,
+  posts,
+  selection,
+  onChange,
+  onBack,
+  onConfirm,
+  onOpenPost,
+  onOpenImages,
+}) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
   const picked = useMemo(() => new Set(selection.picked), [selection.picked])
+  const [preview, setPreview] = useState<{ discussionId: number | string; postId: string } | null>(null)
   const byKey = useMemo(() => {
     const map = new Map<string, any>()
     posts.forEach(post => {
@@ -66,11 +190,15 @@ export const LlmPostPicker: React.FC<Props> = ({ posts, selection, onChange, onB
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (preview) {
+        setPreview(null)
+        return true
+      }
       onBack()
       return true
     })
     return () => sub.remove()
-  }, [onBack])
+  }, [onBack, preview])
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -92,51 +220,33 @@ export const LlmPostPicker: React.FC<Props> = ({ posts, selection, onChange, onB
             <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>{section.title}</Text>
           </View>
         )}
-        renderItem={({ item }) => {
-          const post = byKey.get(item.key)
-          const selected = picked.has(item.key)
-          const username = post?.username || '—'
-          return (
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                height: ROW_HEIGHT,
-                backgroundColor: selected ? colors.primary : colors.background,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border,
-              }}>
-              <TouchableRipple
-                style={{ flex: 1, height: ROW_HEIGHT, justifyContent: 'center' }}
-                rippleColor={colors.ripple}
-                onPress={() => onChange(pressLlmRange(selection, item.index))}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: blocks.medium }}>
-                  {post?.username ? (
-                    <UserIconComponent username={post.username} width={ICON_W} height={ICON_H} marginRight={8} />
-                  ) : (
-                    <View style={{ width: ICON_W, height: ICON_H, marginRight: 8 }} />
-                  )}
-                  <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: fontSizes.small }}>
-                    {username}
-                  </Text>
-                  <Text style={{ color: selected ? colors.text : colors.faded, fontSize: fontSizes.small, marginRight: blocks.small }}>
-                    {llmPostClock(post)}
-                  </Text>
-                </View>
-              </TouchableRipple>
-              <TouchableRipple
-                style={{ width: 36, height: ROW_HEIGHT, alignItems: 'center', justifyContent: 'center' }}
-                rippleColor={colors.ripple}
-                onPress={() => {
-                  const inside = item.index >= selection.start && item.index <= selection.end
-                  onChange(inside ? toggleLlmRangePost(selection, item.index) : pressLlmRange(selection, item.index))
-                }}>
-                <Icon name={selected ? 'check-square' : 'square'} size={fontSizes.p} color={colors.text} />
-              </TouchableRipple>
-            </View>
-          )
-        }}
+        renderItem={({ item }) => (
+          <PostPickRow
+            post={byKey.get(item.key)}
+            selected={picked.has(item.key)}
+            discussionId={discussionId}
+            postKey={item.key}
+            colors={colors}
+            blocks={blocks}
+            fontSizes={fontSizes}
+            onPreview={setPreview}
+            onRange={() => onChange(pressLlmRange(selection, item.index))}
+            onToggle={() => onChange(toggleLlmRangePost(selection, item.index))}
+          />
+        )}
       />
+      {!!preview && (
+        <LlmPostPreview
+          discussionId={preview.discussionId}
+          postId={preview.postId}
+          onClose={() => setPreview(null)}
+          onShowReplies={(nextDiscussionId, nextPostId) =>
+            setPreview({ discussionId: nextDiscussionId, postId: nextPostId })
+          }
+          onOpenPost={onOpenPost}
+          onOpenImages={onOpenImages}
+        />
+      )}
     </View>
   )
 }

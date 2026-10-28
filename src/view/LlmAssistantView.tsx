@@ -75,6 +75,15 @@ export const LlmAssistantView: React.FC<Props> = ({
   const onPostPicker = useCallback((node: React.ReactNode) => {
     setPostPicker(node)
   }, [])
+  const openDiscussionPost = useCallback((id: number | string, postId?: number | string) => {
+    navigation.push('discussion', {
+      discussionId: Number(id),
+      postId: postId ? Number(postId) : undefined,
+    })
+  }, [navigation])
+  const openImages = useCallback((images: any[], imgIndex: number) => {
+    navigation.navigate('gallery', { images, imgIndex })
+  }, [navigation])
   const [followAnswer, setFollowAnswer] = useState(false)
   const [answerDock, setAnswerDock] = useState<LlmAnswerDock | null>(null)
   const answerScroll = useLlmAnswerScroll(scrollRef, setFollowAnswer)
@@ -292,6 +301,8 @@ export const LlmAssistantView: React.FC<Props> = ({
               followAnswer={followAnswer}
               onStickActions={onStickActions}
               onPostPicker={onPostPicker}
+              onOpenPost={openDiscussionPost}
+              onOpenImages={openImages}
             />
           </ScrollView>
           {!!answerDock && activeTab === 'assistant' && (

@@ -1176,6 +1176,10 @@
       "cs": "V tomto období nebyly nalezeny žádné příspěvky",
       "en": "No posts found for this period"
     },
+    "postPreviewEmpty": {
+      "cs": "Příspěvek nenalezen",
+      "en": "Post not found"
+    },
     "loadOlderPosts": {
       "cs": "Načíst starší příspěvky z diskuze",
       "en": "Load older posts from discussion"
