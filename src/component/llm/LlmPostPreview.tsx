@@ -16,6 +16,7 @@ import {
 type Props = {
   discussionId: number | string
   postId: string
+  initialPost?: any
   onClose: () => void
   onShowReplies: (discussionId: number | string, postId: string) => void
   onOpenPost: (discussionId: number | string, postId?: number | string) => void
@@ -30,6 +31,7 @@ const postsForPreview = (res: any, postId: string): any[] => {
 export const LlmPostPreview: React.FC<Props> = ({
   discussionId,
   postId,
+  initialPost,
   onClose,
   onShowReplies,
   onOpenPost,
@@ -41,22 +43,38 @@ export const LlmPostPreview: React.FC<Props> = ({
     metrics: { blocks, fontSizes },
   } = useTheme()
   const { height } = useWindowDimensions()
-  const [posts, setPosts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const hasLocal = !!(initialPost && `${initialPost.id}` === `${postId}`)
+  const [posts, setPosts] = useState<any[]>(() => (hasLocal ? [initialPost] : []))
+  const [loading, setLoading] = useState(() => !hasLocal)
   const [error, setError] = useState<string | null>(null)
   const nyx = context?.nyx
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      setLoading(true)
+      const isLocal = initialPost && `${initialPost.id}` === `${postId}`
+      if (!isLocal) {
+        setPosts([])
+        setLoading(true)
+      }
       setError(null)
       try {
-        const res = await nyx?.api.getDiscussion(`${discussionId}/id/${postId}`)
-        const replies = getDistinctPosts(postsForPreview(res, postId), [])
+        let baseList: any[] = []
+        if (isLocal) {
+          baseList = [initialPost]
+        } else {
+          const parsedId = Number(postId)
+          const fromId = Number.isFinite(parsedId) ? parsedId + 1 : postId
+          const res = await nyx?.api.getDiscussion(`${discussionId}?order=older_than&from_id=${fromId}`)
+          if (res?.error) {
+            throw new Error(typeof res.error === 'string' ? res.error : res.message || 'Error loading post')
+          }
+          baseList = postsForPreview(res, postId)
+        }
+        const distinct = getDistinctPosts(baseList, [])
         const fontSize = context?.theme?.metrics?.fontSizes?.p
         const prepared = await preparePosts(
-          replies,
+          distinct,
           [],
           true,
           fontSize,
@@ -79,7 +97,7 @@ export const LlmPostPreview: React.FC<Props> = ({
     return () => {
       cancelled = true
     }
-  }, [discussionId, postId])
+  }, [discussionId, postId, initialPost, context?.theme?.metrics?.fontSizes?.p, context?.config?.imageDownloadMaxKb, nyx])
 
   const openImage = async (image: any, list?: any[]) => {
     const next = await revealImageInPosts(posts.slice(), image, context?.theme?.metrics?.fontSizes?.p)

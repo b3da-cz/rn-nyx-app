@@ -1,7 +1,7 @@
 {
   "name": "nnn",
-  "version": "0.35.9",
-  "buildVersion": 145,
+  "version": "0.35.10",
+  "buildVersion": 146,
   "description": "Mobile app for Nyx.cz",
   "private": true,
   "repository": {

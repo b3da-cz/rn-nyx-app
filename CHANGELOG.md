@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.10
+- náhled příspěvku v asistentovi se otevře z paměti nebo načte přes stránkování diskuze
+
 ## 0.35.9
 - ve výběru příspěvků checkbox přepne jen ten řádek a neposune okno
 - za jménem je začátek textu, čas zůstává u checkboxu a svislítko před časem je jen když text doběhne až k němu

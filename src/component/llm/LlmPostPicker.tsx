@@ -62,7 +62,7 @@ const PostPickRow = ({
   colors: { primary: string; background: string; border: string; text: string; faded: string; ripple: string }
   blocks: { medium: number; small: number }
   fontSizes: { small: number; p: number }
-  onPreview: (target: { discussionId: number | string; postId: string }) => void
+  onPreview: (target: { discussionId: number | string; postId: string; initialPost?: any }) => void
   onRange: () => void
   onToggle: () => void
 }) => {
@@ -98,7 +98,7 @@ const PostPickRow = ({
       <TouchableRipple
         style={{ flexShrink: 1, maxWidth: '55%', height: ROW_HEIGHT, justifyContent: 'center' }}
         rippleColor={colors.ripple}
-        onPress={() => onPreview({ discussionId: post?.discussion_id || discussionId, postId: postKey })}>
+        onPress={() => onPreview({ discussionId: post?.discussion_id || discussionId, postId: postKey, initialPost: post })}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: blocks.medium }}>
           {post?.username ? (
             <UserIconComponent username={post.username} width={ICON_W} height={ICON_H} marginRight={8} />
@@ -157,7 +157,11 @@ export const LlmPostPicker: React.FC<Props> = ({
     metrics: { blocks, fontSizes },
   } = useTheme()
   const picked = useMemo(() => new Set(selection.picked), [selection.picked])
-  const [preview, setPreview] = useState<{ discussionId: number | string; postId: string } | null>(null)
+  const [preview, setPreview] = useState<{
+    discussionId: number | string
+    postId: string
+    initialPost?: any
+  } | null>(null)
   const byKey = useMemo(() => {
     const map = new Map<string, any>()
     posts.forEach(post => {
@@ -237,11 +241,17 @@ export const LlmPostPicker: React.FC<Props> = ({
       />
       {!!preview && (
         <LlmPostPreview
+          key={`${preview.discussionId}-${preview.postId}`}
           discussionId={preview.discussionId}
           postId={preview.postId}
+          initialPost={preview.initialPost || byKey.get(preview.postId)}
           onClose={() => setPreview(null)}
           onShowReplies={(nextDiscussionId, nextPostId) =>
-            setPreview({ discussionId: nextDiscussionId, postId: nextPostId })
+            setPreview({
+              discussionId: nextDiscussionId,
+              postId: `${nextPostId}`,
+              initialPost: byKey.get(String(nextPostId)),
+            })
           }
           onOpenPost={onOpenPost}
           onOpenImages={onOpenImages}
