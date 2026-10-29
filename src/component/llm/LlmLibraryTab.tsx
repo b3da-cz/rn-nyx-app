@@ -138,6 +138,7 @@ export const LlmLibraryTab: React.FC<Props> = ({
                   key={task.id}
                   task={task}
                   onRetry={taskId => LlmQueue.retryTask(taskId)}
+                  onRetryPart={taskId => LlmQueue.retryTaskTrimmed(taskId)}
                   onDismiss={taskId => LlmQueue.dismissTask(taskId)}
                 />
               ))}

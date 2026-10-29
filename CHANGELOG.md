@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.13
+- ve výběru příspěvků pro asistenta se novější příspěvky zobrazují nahoře
+- při chybě překročení kontextového okna modelu se místo tlačítka opakovat nabídne ořezání starších příspěvků pro vejití do kontextu
+
 ## 0.35.12
 - v hlavičce výběru příspěvků pro asistenta se zobrazuje poměr vybraných ku všem
 - do výběru období přibyly další volby (2 a 3 týdny, 1, 3 a 6 měsíců, 1 rok)

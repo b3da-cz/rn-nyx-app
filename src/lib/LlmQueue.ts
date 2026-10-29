@@ -1,3 +1,4 @@
+import { isContextLengthError, trimPostsToContext } from './llmPostSelection'
 import { addLlmHistoryEntry } from './LlmHistory'
 import { LlmProviderId, normalizeLlmProvider, sendOpenRouterChat } from './OpenRouter'
 import { Storage } from './Storage'
@@ -242,14 +243,32 @@ class LlmQueueService {
 
   async retryTask(
     taskId: string,
-    patch?: { posts?: any[]; dateFrom?: string; dateTo?: string; postCount?: number },
+    patch?: { posts?: any[]; dateFrom?: string; dateTo?: string; postCount?: number; trimToContext?: boolean },
   ): Promise<void> {
     const current = this.tasks.find(t => t.id === taskId)
     if (!current) return
 
+    let effectivePatch = patch
+    if (patch?.trimToContext || (!patch && isContextLengthError(current.error))) {
+      const trimmed = trimPostsToContext({
+        posts: patch?.posts || current.posts || [],
+        error: current.error,
+        prompt: current.prompt,
+        systemPrompt: current.systemPrompt,
+        discussionTitle: current.discussionTitle,
+        modelId: current.modelId,
+      })
+      effectivePatch = {
+        posts: trimmed.posts,
+        postCount: trimmed.posts.length,
+        dateFrom: trimmed.dateFrom || current.dateFrom,
+        dateTo: trimmed.dateTo || current.dateTo,
+      }
+    }
+
     const task: LlmPendingTask = {
       ...current,
-      ...(patch || {}),
+      ...(effectivePatch || {}),
       status: 'pending',
       error: undefined,
       stream: undefined,
@@ -260,6 +279,10 @@ class LlmQueueService {
     this.notify()
 
     this.executeTask(task)
+  }
+
+  async retryTaskTrimmed(taskId: string): Promise<void> {
+    return this.retryTask(taskId, { trimToContext: true })
   }
 
   async dismissTask(taskId: string): Promise<void> {

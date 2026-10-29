@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import { Text } from 'react-native-paper'
-import { LlmPendingTask, Styling, t, useTheme } from '../../lib'
+import { isContextLengthError, LlmPendingTask, Styling, t, useTheme } from '../../lib'
 import { ButtonComponent } from '../ButtonComponent'
 
 type Props = {
   task: LlmPendingTask
   onRetry?: (taskId: string) => void
+  onRetryPart?: (taskId: string) => void
   onDismiss?: (taskId: string) => void
 }
 
-export const LlmPendingItemCard: React.FC<Props> = ({ task, onRetry, onDismiss }) => {
+export const LlmPendingItemCard: React.FC<Props> = ({ task, onRetry, onRetryPart, onDismiss }) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
@@ -28,10 +29,29 @@ export const LlmPendingItemCard: React.FC<Props> = ({ task, onRetry, onDismiss }
   }, [task.startedAt, task.status])
 
   const isError = task.status === 'error'
+  const isContextError = isError && isContextLengthError(task.error)
+  const canRetry = isError && (onRetry || onRetryPart)
+  const retryAction = canRetry
+    ? isContextError
+      ? {
+          key: 'retryPart',
+          label: t('llm.retryPart') || 'Zkusit část',
+          color: colors.accent,
+          onPress: () => (onRetryPart ? onRetryPart(task.id) : onRetry?.(task.id)),
+        }
+      : onRetry
+      ? {
+          key: 'retry',
+          label: t('llm.retry'),
+          color: colors.accent,
+          onPress: () => onRetry(task.id),
+        }
+      : null
+    : null
+
   const actions = [
     onDismiss && { key: 'dismiss', label: t('llm.cancel'), color: colors.faded, onPress: () => onDismiss(task.id) },
-    isError &&
-      onRetry && { key: 'retry', label: t('llm.retry'), color: colors.accent, onPress: () => onRetry(task.id) },
+    retryAction,
   ].filter(Boolean) as { key: string; label: string; color: string; onPress: () => void }[]
 
   return (

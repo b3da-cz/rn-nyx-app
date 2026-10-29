@@ -6,6 +6,7 @@ import {
   filterAndFormatPostsForLlm,
   getLlmHistory,
   initialLlmRangeSelection,
+  isContextLengthError,
   llmPostKey,
   llmPostOrder,
   LlmPendingTask,
@@ -17,6 +18,7 @@ import {
   Storage,
   syncLlmSelection,
   t,
+  trimPostsToContext,
 } from '../../lib'
 import type { MainContextConfig } from '../../lib'
 import { useLlmDateFilter } from './useLlmDateFilter'
@@ -249,7 +251,45 @@ export function useLlmAssistant(p: Params) {
     }
   }
 
+  const retryPart = async (taskId: string) => {
+    setErrorMessage(null)
+    setResult(null)
+    try {
+      const task = pendingTasks.find(t => t.id === taskId)
+      const postsToTrim = task?.posts && task.posts.length > 0 ? task.posts : selectedPosts
+      const trimmed = trimPostsToContext({
+        posts: postsToTrim,
+        error: task?.error,
+        prompt: task?.prompt || p.prompt,
+        systemPrompt: task?.systemPrompt || systemPromptRef.current,
+        discussionTitle: p.discussionTitle,
+        modelId: task?.modelId || modelRef.current.id,
+      })
+      if (trimmed.posts.length === 0) {
+        setErrorMessage(t('llm.noPosts'))
+        return
+      }
+      const trimmedKeys = new Set(trimmed.posts.map(post => llmPostKey(post)))
+      setSelection(prev => ({
+        ...prev,
+        picked: prev.order.filter(key => trimmedKeys.has(key)),
+      }))
+      await LlmQueue.retryTask(taskId, {
+        posts: trimmed.posts,
+        postCount: trimmed.posts.length,
+        dateFrom: trimmed.dateFrom || task?.dateFrom,
+        dateTo: trimmed.dateTo || task?.dateTo,
+      })
+    } catch (e: any) {
+      setErrorMessage(e?.message || t('llm.errorStartingQuery') || 'Chyba při zahájení dotazu.')
+    }
+  }
+
   const retry = async (taskId: string) => {
+    const task = pendingTasks.find(t => t.id === taskId)
+    if (task && isContextLengthError(task.error)) {
+      return retryPart(taskId)
+    }
     if (selectedPosts.length === 0) {
       setErrorMessage(t('llm.noPosts'))
       return
@@ -281,6 +321,7 @@ export function useLlmAssistant(p: Params) {
     canSend,
     send,
     retry,
+    retryPart,
     result,
     clearResult: () => setResult(null),
     expireResult: async () => {

@@ -1364,6 +1364,10 @@
       "cs": "Zkusit znovu",
       "en": "Retry"
     },
+    "retryPart": {
+      "cs": "Zkusit část",
+      "en": "Retry part"
+    },
     "error": {
       "cs": "Chyba",
       "en": "Error"

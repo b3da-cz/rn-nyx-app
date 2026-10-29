@@ -25,9 +25,25 @@ export function llmPostClock(post: any): string {
 }
 
 export function llmPostOrder(posts: any[] = []): string[] {
+  const sorted = [...posts].sort((a, b) => {
+    if (a?.id != null && b?.id != null) {
+      const numA = Number(a.id)
+      const numB = Number(b.id)
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numB - numA
+      }
+    }
+    const aTime = a?.inserted_at || ''
+    const bTime = b?.inserted_at || ''
+    const timeCmp = bTime.localeCompare(aTime)
+    if (timeCmp !== 0) {
+      return timeCmp
+    }
+    return String(b?.id || '').localeCompare(String(a?.id || ''))
+  })
   const seen = new Set<string>()
   const order: string[] = []
-  for (const post of posts) {
+  for (const post of sorted) {
     const key = llmPostKey(post)
     if (!key || seen.has(key)) {
       continue
@@ -147,3 +163,172 @@ export function llmPostExcerpt(post: any, limit = 42): string {
   }
   return `${raw.slice(0, limit).trimEnd()}..`
 }
+
+export function isContextLengthError(error?: string): boolean {
+  if (!error || typeof error !== 'string') {
+    return false
+  }
+  const lower = error.toLowerCase()
+  return (
+    lower.includes('maximum context length') ||
+    lower.includes('context_length_exceeded') ||
+    lower.includes('context length exceeded') ||
+    lower.includes('reduce the length of the input prompt') ||
+    (lower.includes('context length') && (lower.includes('exceed') || lower.includes('limit') || lower.includes('reduce'))) ||
+    (lower.includes('context window') &&
+      (lower.includes('exceed') || lower.includes('too large') || lower.includes('too long') || lower.includes('limit') || lower.includes('reduce'))) ||
+    (lower.includes('input tokens') && (lower.includes('maximum') || lower.includes('exceed') || lower.includes('too large')))
+  )
+}
+
+export type ContextErrorLimits = {
+  maxContext?: number
+  outputTokens?: number
+  inputTokens?: number
+  totalTokens?: number
+}
+
+export function parseContextErrorLimits(error?: string): ContextErrorLimits {
+  if (!error || typeof error !== 'string') {
+    return {}
+  }
+  const res: ContextErrorLimits = {}
+
+  const maxMatch = error.match(/(?:maximum context length is|context length of|context window of|context length:)\s*(\d+)/i)
+  if (maxMatch) {
+    res.maxContext = parseInt(maxMatch[1], 10)
+  }
+
+  const outMatch = error.match(/requested\s*(\d+)\s*(?:output tokens|tokens in the completion)/i)
+  if (outMatch) {
+    res.outputTokens = parseInt(outMatch[1], 10)
+  }
+
+  const inMatch =
+    error.match(/(?:prompt contains at least|value=)\s*(\d+)(?:\s*input tokens)?/i) ||
+    error.match(/(\d+)\s*input tokens/i) ||
+    error.match(/prompt length \((\d+)\s*tokens\)/i)
+  if (inMatch) {
+    res.inputTokens = parseInt(inMatch[1], 10)
+  }
+
+  const totMatch = error.match(/total of (?:at least\s*)?(\d+)\s*tokens/i)
+  if (totMatch) {
+    res.totalTokens = parseInt(totMatch[1], 10)
+  }
+
+  return res
+}
+
+export function llmPostLineLength(post: any): number {
+  if (!post) {
+    return 0
+  }
+  const idStr = post.id != null ? `[ID:${post.id}] ` : ''
+  const dateStr = post.inserted_at ? `[${post.inserted_at}] ` : ''
+  const author = post.username ? `@${post.username}: ` : ''
+  const rawContent = String(post.parsed?.clearText || post.content || '').trim()
+  const content = rawContent.replace(/\s+/g, ' ')
+  return content.length > 0 ? idStr.length + dateStr.length + author.length + content.length : 0
+}
+
+export type TrimPostsParams = {
+  posts: any[]
+  error?: string
+  prompt?: string
+  systemPrompt?: string
+  discussionTitle?: string
+  modelId?: string
+}
+
+export type TrimmedPostsResult = {
+  posts: any[]
+  postCount: number
+  dateFrom?: string
+  dateTo?: string
+  trimmedCount: number
+}
+
+export function trimPostsToContext(params: TrimPostsParams): TrimmedPostsResult {
+  const { posts = [], error, prompt = '', systemPrompt = '', discussionTitle = '' } = params
+  if (posts.length === 0) {
+    return { posts: [], postCount: 0, trimmedCount: 0 }
+  }
+
+  // Chronological order: oldest first (smaller id / earlier timestamp)
+  const chronological = [...posts].sort((a, b) => {
+    if (a?.id != null && b?.id != null) {
+      const numA = Number(a.id)
+      const numB = Number(b.id)
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB
+      }
+    }
+    const aTime = a?.inserted_at || ''
+    const bTime = b?.inserted_at || ''
+    const timeCmp = aTime.localeCompare(bTime)
+    if (timeCmp !== 0) {
+      return timeCmp
+    }
+    return String(a?.id || '').localeCompare(String(b?.id || ''))
+  })
+
+  const limits = parseContextErrorLimits(error)
+  const maxContext = limits.maxContext || 32768
+  const outputTokens = limits.outputTokens || Math.min(4096, Math.floor(maxContext * 0.2))
+  const availableInput = Math.max(1000, maxContext - outputTokens)
+  // Target 85% of available input tokens for safety margin
+  const targetInputTokens = Math.floor(availableInput * 0.85)
+
+  let totalPostChars = 0
+  for (const post of chronological) {
+    totalPostChars += llmPostLineLength(post)
+  }
+
+  const fixedChars = prompt.length + (systemPrompt.length || 500) + discussionTitle.length + 1200
+  const totalChars = totalPostChars + fixedChars
+
+  let tokenRatio = 0.45
+  if (limits.inputTokens && totalChars > 0) {
+    const observed = limits.inputTokens / totalChars
+    tokenRatio = Math.max(0.35, Math.min(1.2, observed))
+  }
+
+  const fixedTokens = Math.ceil(fixedChars * tokenRatio)
+  const budgetForPosts = Math.max(200, targetInputTokens - fixedTokens)
+
+  // Accumulate posts from newest (end of chronological) to oldest
+  let kept: any[] = []
+  let accumulatedTokens = 0
+
+  for (let i = chronological.length - 1; i >= 0; i--) {
+    const post = chronological[i]
+    const postLen = llmPostLineLength(post)
+    const postTokens = Math.max(5, Math.ceil(postLen * tokenRatio) + 4)
+    if (kept.length > 0 && accumulatedTokens + postTokens > budgetForPosts) {
+      break
+    }
+    kept.unshift(post)
+    accumulatedTokens += postTokens
+  }
+
+  // Ensure that we strictly trimmed older posts:
+  if (kept.length >= chronological.length && chronological.length > 1) {
+    const dropCount = Math.max(1, Math.ceil(chronological.length * 0.2))
+    kept = chronological.slice(dropCount)
+  }
+
+  const oldestKept = kept[0]
+  const newestKept = kept[kept.length - 1]
+  const dateFrom = oldestKept ? llmPostDay(oldestKept) || undefined : undefined
+  const dateTo = newestKept ? llmPostDay(newestKept) || undefined : undefined
+
+  return {
+    posts: kept,
+    postCount: kept.length,
+    dateFrom,
+    dateTo,
+    trimmedCount: chronological.length - kept.length,
+  }
+}
+

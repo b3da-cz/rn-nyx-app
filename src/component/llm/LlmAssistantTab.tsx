@@ -209,6 +209,9 @@ export const LlmAssistantTab: React.FC<Props> = props => {
           onRetry={taskId => {
             void a.retry(taskId)
           }}
+          onRetryPart={taskId => {
+            void a.retryPart(taskId)
+          }}
           onDismiss={taskId => LlmQueue.dismissTask(taskId)}
         />
       )}
