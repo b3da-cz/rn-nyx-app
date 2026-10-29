@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.14
+- výběr příspěvků pro asistenta načte při otevření obsah jen pro prvních 100 řádků a zbytek jako prázdné skořápky, data do nich doplňuje až při scrollu
+- seznam má předem fixní výšku řádků (getItemLayout) a při načítání neposkakuje ani nezasekává telefon
+
 ## 0.35.13
 - ve výběru příspěvků pro asistenta se novější příspěvky zobrazují nahoře
 - při chybě překročení kontextového okna modelu se místo tlačítka opakovat nabídne ořezání starších příspěvků pro vejití do kontextu
