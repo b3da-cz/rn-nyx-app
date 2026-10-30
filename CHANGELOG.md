@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.21
+- při vypnutém posouvání hlavičky má řádek tlačítek stejnou výšku jako hlavička, takže se text příspěvku po kliknutí neposune
+
 ## 0.35.20
 - cache diskuze si nechává příspěvky ze starších návštěv a při novém stažení stránky odebere jen ty, které v ní už nejsou
 

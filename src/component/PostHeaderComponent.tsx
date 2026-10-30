@@ -31,6 +31,7 @@ type State = {
   }
   ratingWidth: number
   ratingHeight: number
+  headerHeight: number
 }
 export class PostHeaderComponent extends Component<Props> {
   state: Readonly<State>
@@ -46,6 +47,7 @@ export class PostHeaderComponent extends Component<Props> {
       },
       ratingWidth: 20,
       ratingHeight: 25,
+      headerHeight: 0,
     }
   }
 
@@ -160,6 +162,12 @@ export class PostHeaderComponent extends Component<Props> {
     this.setState({ areButtonsVisible: show })
   }
 
+  onHeaderLayout(height: number) {
+    if (height > 0 && Math.abs(height - this.state.headerHeight) > 0.5) {
+      this.setState({ headerHeight: height })
+    }
+  }
+
   render() {
     const {
       post,
@@ -182,10 +190,16 @@ export class PostHeaderComponent extends Component<Props> {
       visibleBtns += 2
     }
     const btnWidth = `${100 / visibleBtns}%`
+    const buttonHeight = this.state.headerHeight > 0 ? this.state.headerHeight : undefined
     return (
       <View>
-        {!this.state.areButtonsVisible && (
-          <View>
+        <View>
+          <View
+            collapsable={false}
+            pointerEvents={this.state.areButtonsVisible ? 'none' : 'auto'}
+            importantForAccessibility={this.state.areButtonsVisible ? 'no-hide-descendants' : 'auto'}
+            style={{ opacity: this.state.areButtonsVisible ? 0 : 1 }}
+            onLayout={event => this.onHeaderLayout(event.nativeEvent.layout.height)}>
             <TouchableRipple
               style={{ backgroundColor: this.props.isUnread ? colors.tertiary : colors.card }}
               onPress={() => this.toggleButtons(!this.state.areButtonsVisible)}
@@ -204,7 +218,99 @@ export class PostHeaderComponent extends Component<Props> {
               />
             </TouchableRipple>
           </View>
-        )}
+          {this.state.areButtonsVisible && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                flexDirection: 'row',
+                overflow: 'hidden',
+              }}>
+              <ButtonSquareComponent
+                key={`${post.id}_btn_report`}
+                width={btnWidth}
+                height={buttonHeight}
+                icon={'alert-triangle'}
+                color={'red'}
+                onPress={() => this.reportPost(post)}
+              />
+              {post.can_be_deleted && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_delete`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'trash-2'}
+                  color={'red'}
+                  onPress={() => this.deletePost(post)}
+                />
+              )}
+              <ButtonSquareComponent
+                key={`${post.id}_btn_share_content`}
+                width={btnWidth}
+                height={buttonHeight}
+                icon={'copy'}
+                onPress={() => this.onShare(true)}
+              />
+              <ButtonSquareComponent
+                key={`${post.id}_btn_share`}
+                width={btnWidth}
+                height={buttonHeight}
+                icon={'share'}
+                onPress={() => this.onShare()}
+              />
+              {post.can_be_reminded && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_remind`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'bell'}
+                  color={post.reminder ? colors.primary : undefined}
+                  onPress={() => this.setReminder(post)}
+                />
+              )}
+              {!post.parsed?.advertisement && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_reply`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'corner-down-right'}
+                  onPress={() => this.onReply()}
+                />
+              )}
+              {post.can_be_rated && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_thumbs_up`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'thumbs-up'}
+                  color={'green'}
+                  onPress={() => this.ratePost(post, 'positive')}
+                />
+              )}
+              {post.can_be_rated && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_thumbs_down`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'thumbs-down'}
+                  color={'red'}
+                  onPress={() => this.ratePost(post, 'negative')}
+                />
+              )}
+              <ButtonSquareComponent
+                key={`${post.id}_btn_hide_btns`}
+                width={btnWidth}
+                height={buttonHeight}
+                icon={'x'}
+                color={colors.primary}
+                onPress={() => this.setState({ areButtonsVisible: false })}
+              />
+            </View>
+          )}
+        </View>
         {this.state.isRatingRowVisible && this.state.ratings?.positive?.length > 0 && (
           <RatingDetailComponent
             ratings={this.state.ratings.positive}
@@ -220,80 +326,6 @@ export class PostHeaderComponent extends Component<Props> {
             ratingHeight={this.state.ratingHeight}
             isPositive={false}
           />
-        )}
-        {this.state.areButtonsVisible && (
-          <View style={{ height: 47, display: 'flex', flexDirection: 'row' }}>
-            <ButtonSquareComponent
-              key={`${post.id}_btn_report`}
-              width={btnWidth}
-              icon={'alert-triangle'}
-              color={'red'}
-              onPress={() => this.reportPost(post)}
-            />
-            {post.can_be_deleted && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_delete`}
-                width={btnWidth}
-                icon={'trash-2'}
-                color={'red'}
-                onPress={() => this.deletePost(post)}
-              />
-            )}
-            <ButtonSquareComponent
-              key={`${post.id}_btn_share_content`}
-              width={btnWidth}
-              icon={'copy'}
-              onPress={() => this.onShare(true)}
-            />
-            <ButtonSquareComponent
-              key={`${post.id}_btn_share`}
-              width={btnWidth}
-              icon={'share'}
-              onPress={() => this.onShare()}
-            />
-            {post.can_be_reminded && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_remind`}
-                width={btnWidth}
-                icon={'bell'}
-                color={post.reminder ? colors.primary : undefined}
-                onPress={() => this.setReminder(post)}
-              />
-            )}
-            {!post.parsed?.advertisement && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_reply`}
-                width={btnWidth}
-                icon={'corner-down-right'}
-                onPress={() => this.onReply()}
-              />
-            )}
-            {post.can_be_rated && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_thumbs_up`}
-                width={btnWidth}
-                icon={'thumbs-up'}
-                color={'green'}
-                onPress={() => this.ratePost(post, 'positive')}
-              />
-            )}
-            {post.can_be_rated && (
-              <ButtonSquareComponent
-                key={`${post.id}_btn_thumbs_down`}
-                width={btnWidth}
-                icon={'thumbs-down'}
-                color={'red'}
-                onPress={() => this.ratePost(post, 'negative')}
-              />
-            )}
-            <ButtonSquareComponent
-              key={`${post.id}_btn_hide_btns`}
-              width={btnWidth}
-              icon={'x'}
-              color={colors.primary}
-              onPress={() => this.setState({ areButtonsVisible: false })}
-            />
-          </View>
         )}
       </View>
     )
