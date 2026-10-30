@@ -16,9 +16,9 @@ describe('OpenRouter helper tests', () => {
       expect(formatPricing(undefined)).toBe('')
     })
 
-    it('returns Zdarma / Free for zero prices', () => {
-      expect(formatPricing({ prompt: '0', completion: '0' })).toBe('Zdarma / Free')
-      expect(formatPricing({ prompt: '0.0', completion: '0.00' })).toBe('Zdarma / Free')
+    it('returns Zdarma for zero prices', () => {
+      expect(formatPricing({ prompt: '0', completion: '0' })).toBe('Zdarma')
+      expect(formatPricing({ prompt: '0.0', completion: '0.00' })).toBe('Zdarma')
     })
 
     it('formats per 1M tokens accurately', () => {
@@ -151,6 +151,9 @@ describe('OpenRouter helper tests', () => {
       expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('{discussion_id}')
       expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('{post_id}')
       expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('Markdown')
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('datum ve formátu dd.mm.yyyy')
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('na začátku přidej nadpis')
+      expect(DEFAULT_LLM_SYSTEM_PROMPT).toContain('range id postu')
     })
   })
 })

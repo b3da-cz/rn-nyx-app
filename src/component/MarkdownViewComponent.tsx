@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef } from 'react'
+import React, { useContext, useMemo, useRef } from 'react'
 import {
   Image,
   Linking,
@@ -137,25 +137,42 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   const avatarHeight = Math.min(18, Math.max(14, Math.round(metrics.fontSizes.p * 1.15)))
   const avatarWidth = Math.round(avatarHeight * 0.8)
 
-  const blockPos = useRef<{ y: number; start: number; count: number; ready: boolean }[]>([])
-  const scrollToActive = () => {
-    if (activeIndex == null) {
-      return
+  const hosts = useRef<Record<string, View | null>>({})
+  const wideRefs = useRef<Record<string, ScrollView | null>>({})
+  const onMatchLayoutRef = useRef(onMatchLayout)
+  const revealGeneration = useRef(0)
+  onMatchLayoutRef.current = onMatchLayout
+  const revealHostLine = (hostId: string, line: number, lineHeight: number) => {
+    const generation = ++revealGeneration.current
+    const measure = () => {
+      if (generation !== revealGeneration.current) {
+        return
+      }
+      const node = hosts.current[hostId]
+      if (!node || typeof node.measureInWindow !== 'function') {
+        return
+      }
+      node.measureInWindow((_x, y, _w, h) => {
+        if (generation !== revealGeneration.current || h <= 0) {
+          return
+        }
+        onMatchLayoutRef.current?.(y + line * lineHeight)
+      })
     }
-    const block = blockPos.current.find(
-      item => item && item.ready && activeIndex >= item.start && activeIndex < item.start + item.count,
-    )
-    if (block) {
-      onMatchLayout?.(block.y)
-    }
+    measure()
+    requestAnimationFrame(measure)
   }
-  useEffect(() => {
-    scrollToActive()
-  }, [activeIndex, query, content])
   let seenMatches = 0
-  const showText = (value: string, extraStyle?: any, key?: React.Key) => {
+  const showText = (
+    value: string,
+    extraStyle?: any,
+    key?: React.Key,
+    hostId?: string,
+    onLine?: (line: number) => void,
+  ) => {
     const offset = seenMatches
     seenMatches += searchMatchRanges(value, query).length
+    const lineHeight = styleLineHeight(extraStyle)
     return (
       <SearchHighlight
         key={key}
@@ -164,10 +181,18 @@ export const MarkdownViewComponent: React.FC<Props> = ({
         matchOffset={offset}
         activeIndex={activeIndex}
         style={extraStyle}
+        onActiveLine={
+          onLine || (hostId ? line => revealHostLine(hostId, line, lineHeight) : undefined)
+        }
       />
     )
   }
-  const renderInlines = (rawText: string, extraStyle?: any) => {
+  const renderInlines = (
+    rawText: string,
+    extraStyle?: any,
+    hostId?: string,
+    onLine?: (line: number) => void,
+  ) => {
     const tokens = tokenizeInlineMarkdown(rawText)
     return tokens.map((token, idx) => {
       switch (token.type) {
@@ -193,13 +218,19 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   resizeMethod={'scale'}
                   resizeMode={'contain'}
                 />
-                {showText(` ${uname}`, [
-                  styles.link,
-                  { color: colors.link || colors.secondary },
-                  token.bold && styles.bold,
-                  token.italic && styles.italic,
-                  extraStyle,
-                ])}
+                {showText(
+                  ` ${uname}`,
+                  [
+                    styles.link,
+                    { color: colors.link || colors.secondary },
+                    token.bold && styles.bold,
+                    token.italic && styles.italic,
+                    extraStyle,
+                  ],
+                  undefined,
+                  hostId,
+                  onLine,
+                )}
               </Text>
             )
           }
@@ -215,14 +246,14 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 token.italic && styles.italic,
                 extraStyle,
               ]}>
-              {showText(token.text)}
+              {showText(token.text, undefined, undefined, hostId, onLine)}
             </Text>
           )
         }
         case 'bold':
-          return showText(token.text, [styles.bold, extraStyle], idx)
+          return showText(token.text, [styles.bold, extraStyle], idx, hostId, onLine)
         case 'italic':
-          return showText(token.text, [styles.italic, extraStyle], idx)
+          return showText(token.text, [styles.italic, extraStyle], idx, hostId, onLine)
         case 'code':
           return showText(` ${token.text} `, [
             styles.inlineCode,
@@ -232,10 +263,10 @@ export const MarkdownViewComponent: React.FC<Props> = ({
               borderColor: colors.disabled,
             },
             extraStyle,
-          ], idx)
+          ], idx, hostId, onLine)
         case 'text':
         default:
-          return showText(token.content, [token.bold && styles.bold, token.italic && styles.italic, extraStyle], idx)
+          return showText(token.content, [token.bold && styles.bold, token.italic && styles.italic, extraStyle], idx, hostId, onLine)
       }
     })
   }
@@ -243,7 +274,6 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   return (
     <View style={[styles.container, style]}>
       {blocks.map((block, idx) => {
-        const matchStart = seenMatches
         const inner = (() => {
         switch (block.type) {
           case 'header': {
@@ -261,7 +291,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   styles.header,
                   { color: colors.text, fontSize, marginTop: idx === 0 ? 0 : 10 },
                 ]}>
-                {renderInlines(block.content, { fontWeight: 'bold' })}
+                {renderInlines(block.content, { fontWeight: 'bold' }, `b${idx}`)}
               </Text>
             )
           }
@@ -282,7 +312,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                     styles.listItemText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
                   ]}>
-                  {renderInlines(block.content)}
+                  {renderInlines(block.content, undefined, `b${idx}`)}
                 </Text>
               </View>
             )
@@ -305,7 +335,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                     styles.blockquoteText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
                   ]}>
-                  {renderInlines(block.content, { fontStyle: 'italic' })}
+                  {renderInlines(block.content, { fontStyle: 'italic' }, `b${idx}`)}
                 </Text>
               </View>
             )
@@ -327,7 +357,13 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                     {block.lang}
                   </Text>
                 ) : null}
-                {showText(block.content, [styles.codeBlockText, { color: colors.text }])}
+                <View
+                  ref={node => {
+                    hosts.current[`code-${idx}`] = node
+                  }}
+                  collapsable={false}>
+                  {showText(block.content, [styles.codeBlockText, { color: colors.text }], undefined, `code-${idx}`)}
+                </View>
               </View>
             )
           }
@@ -335,39 +371,57 @@ export const MarkdownViewComponent: React.FC<Props> = ({
           case 'table': {
             const cols = Math.max(block.header.length, ...block.rows.map(row => row.length), 1)
             const width = Math.max(96, Math.floor((metrics.screen.width - 24) / Math.min(cols, 3)))
-            const renderRow = (cells: string[], headerRow: boolean) => (
+            const renderRow = (cells: string[], headerRow: boolean, rowKey: string) => (
               <View style={{ flexDirection: 'row' }}>
-                {Array.from({ length: cols }, (_, col) => (
-                  <View
-                    key={col}
-                    style={{
-                      width,
-                      borderWidth: StyleSheet.hairlineWidth,
-                      borderColor: colors.border,
-                      borderRadius: 0,
-                      paddingHorizontal: 8,
-                      paddingVertical: 6,
-                      backgroundColor: headerRow ? colors.row : 'transparent',
-                    }}>
-                    <Text
-                      selectable={isSelectable}
+                {Array.from({ length: cols }, (_, col) => {
+                  const hostId = `cell-${idx}-${rowKey}-${col}`
+                  const cellStyle = {
+                    color: colors.text,
+                    fontSize: metrics.fontSizes.p,
+                    fontWeight: headerRow ? ('bold' as const) : ('normal' as const),
+                  }
+                  return (
+                    <View
+                      key={col}
+                      ref={node => {
+                        hosts.current[hostId] = node
+                      }}
+                      collapsable={false}
                       style={{
-                        color: colors.text,
-                        fontSize: metrics.fontSizes.p,
-                        fontWeight: headerRow ? 'bold' : 'normal',
+                        width,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderColor: colors.border,
+                        borderRadius: 0,
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
+                        backgroundColor: headerRow ? colors.row : 'transparent',
                       }}>
-                      {renderInlines(cells[col] || '')}
-                    </Text>
-                  </View>
-                ))}
+                      <Text selectable={isSelectable} style={cellStyle}>
+                        {renderInlines(cells[col] || '', undefined, hostId, line => {
+                          wideRefs.current[String(idx)]?.scrollTo({
+                            x: Math.max(0, col * width - 8),
+                            animated: true,
+                          })
+                          revealHostLine(hostId, line, styleLineHeight(cellStyle))
+                        })}
+                      </Text>
+                    </View>
+                  )
+                })}
               </View>
             )
             return (
-              <ScrollView horizontal style={{ marginBottom: 8 }} contentContainerStyle={{ flexGrow: 1 }}>
+              <ScrollView
+                horizontal
+                ref={node => {
+                  wideRefs.current[String(idx)] = node
+                }}
+                style={{ marginBottom: 8 }}
+                contentContainerStyle={{ flexGrow: 1 }}>
                 <View style={{ borderLeftWidth: 3, borderLeftColor: colors.primary, borderRadius: 0 }}>
-                  {renderRow(block.header, true)}
+                  {renderRow(block.header, true, 'h')}
                   {block.rows.map((row, rowIndex) => (
-                    <View key={rowIndex}>{renderRow(row, false)}</View>
+                    <View key={rowIndex}>{renderRow(row, false, String(rowIndex))}</View>
                   ))}
                 </View>
               </ScrollView>
@@ -393,35 +447,36 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                   styles.paragraph,
                   { color: colors.text, fontSize: metrics.fontSizes.p },
                 ]}>
-                {renderInlines(block.content)}
+                {renderInlines(block.content, undefined, `b${idx}`)}
               </Text>
             )
           }
         }
         })()
-        const matchCount = seenMatches - matchStart
-        blockPos.current[idx] = {
-          y: blockPos.current[idx]?.y || 0,
-          start: matchStart,
-          count: matchCount,
-          ready: !!blockPos.current[idx]?.ready,
-        }
         return (
           <View
             key={idx}
-            onLayout={event => {
-              const y = event.nativeEvent.layout.y
-              blockPos.current[idx] = { y, start: matchStart, count: matchCount, ready: true }
-              if (activeIndex != null && matchCount > 0 && activeIndex >= matchStart && activeIndex < matchStart + matchCount) {
-                onMatchLayout?.(y)
-              }
-            }}>
+            ref={node => {
+              hosts.current[`b${idx}`] = node
+            }}
+            collapsable={false}>
             {inner}
           </View>
         )
       })}
     </View>
   )
+}
+
+function styleLineHeight(style: any): number {
+  const flat = StyleSheet.flatten(style) || {}
+  if (typeof flat.lineHeight === 'number') {
+    return flat.lineHeight
+  }
+  if (typeof flat.fontSize === 'number') {
+    return Math.round(flat.fontSize * 1.45)
+  }
+  return 22
 }
 
 const styles = StyleSheet.create({

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.17
+- ve formátovaném náhledu markdownu a kódu se při přepínání hledání pohled posune na aktivní výskyt
+- výchozí prompt asistenta chce datum dd.mm.yyyy, čas 24h a na začátku nadpis s klubem, id a rozsahem příspěvků
+
 ## 0.35.16
 - v markdownu se odkazy, tučné písmo, kurzíva a kód v buňkách tabulky vykreslí stejně jako v textu
 

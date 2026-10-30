@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Text, TextStyle } from 'react-native'
 import { searchMatchRanges, useTheme, withAlpha } from '../lib'
+import { activeMatchLine } from '../lib/fileSearchScroll'
 
 type Props = {
   text: string
@@ -11,7 +12,7 @@ type Props = {
   matchOffset?: number
   activeIndex?: number | null
   emphasized?: boolean
-  onActiveLayout?: (y: number) => void
+  onActiveLine?: (line: number) => void
 }
 
 export const SearchHighlight = ({
@@ -23,10 +24,23 @@ export const SearchHighlight = ({
   matchOffset = 0,
   activeIndex = null,
   emphasized = false,
-  onActiveLayout,
+  onActiveLine,
 }: Props) => {
   const { colors } = useTheme()
   const ranges = searchMatchRanges(text, query || '')
+  const onActiveLineRef = useRef(onActiveLine)
+  onActiveLineRef.current = onActiveLine
+  useEffect(() => {
+    const report = onActiveLineRef.current
+    if (!report) {
+      return
+    }
+    const line = activeMatchLine(text, query || '', matchOffset, activeIndex)
+    if (line < 0) {
+      return
+    }
+    report(line)
+  }, [activeIndex, matchOffset, query, text])
   if (ranges.length === 0) {
     return (
       <Text numberOfLines={numberOfLines} selectable={selectable} style={style}>
@@ -44,11 +58,6 @@ export const SearchHighlight = ({
     parts.push(
       <Text
         key={key}
-        onLayout={
-          active && onActiveLayout
-            ? event => onActiveLayout(event.nativeEvent.layout.y)
-            : undefined
-        }
         style={{ backgroundColor: withAlpha(active || emphasized ? colors.primary : colors.tertiary, 0.75) }}>
         {text.slice(start, end)}
       </Text>,

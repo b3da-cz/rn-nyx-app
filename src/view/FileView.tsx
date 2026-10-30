@@ -9,6 +9,7 @@ import { countMarkdownSearchHits, MarkdownViewComponent } from '../component/Mar
 import { SearchHighlight } from '../component/SearchHighlight'
 import { SourceCodeView } from '../component/SourceCodeView'
 import { MainContext, readCachedText, searchMatchRanges, sourceLangFor, t, textFileExtOf, useTheme } from '../lib'
+import { scrollOffsetForWindowTarget } from '../lib/fileSearchScroll'
 
 type Props = {
   path?: string
@@ -32,6 +33,8 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
   const avatars = useContext(MainContext).config?.isLlmUserAvatarsEnabled !== false
   const [failed, setFailed] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
+  const frameRef = useRef<View>(null)
+  const scrollY = useRef(0)
   const mono = Platform.OS === 'ios' ? 'Menlo' : 'monospace'
   const fontSize = Math.max(12, fontSizes.small)
 
@@ -75,6 +78,23 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
     setActiveParsed(0)
   }, [query, path])
 
+  useEffect(() => {
+    scrollY.current = 0
+  }, [mode, text])
+
+  const revealWindowY = (targetTop: number) => {
+    const frame = frameRef.current
+    const scroll = scrollRef.current
+    if (!frame || !scroll) {
+      return
+    }
+    frame.measureInWindow((_x, top) => {
+      const y = scrollOffsetForWindowTarget(scrollY.current, top, targetTop, 24)
+      scrollY.current = y
+      scroll.scrollTo({ y, animated: true })
+    })
+  }
+
   const step = (delta: number) => {
     if (!total) {
       return
@@ -104,7 +124,14 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
         <LoaderComponent />
       )
     ) : mode === 'raw' ? (
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: blocks.small, paddingTop: blocks.small }}>
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        scrollEventThrottle={16}
+        onScroll={event => {
+          scrollY.current = event.nativeEvent.contentOffset.y
+        }}
+        contentContainerStyle={{ paddingHorizontal: blocks.small, paddingTop: blocks.small }}>
         <SearchHighlight
           selectable
           text={text}
@@ -114,13 +141,20 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
         />
       </ScrollView>
     ) : ext === 'md' ? (
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: blocks.small, paddingTop: blocks.small }}>
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        scrollEventThrottle={16}
+        onScroll={event => {
+          scrollY.current = event.nativeEvent.contentOffset.y
+        }}
+        contentContainerStyle={{ paddingHorizontal: blocks.small, paddingTop: blocks.small }}>
         <MarkdownViewComponent
           content={text}
           alwaysSelectable={inline}
           query={query}
           activeIndex={parsedTotal ? Math.min(activeParsed, parsedTotal - 1) : 0}
-          onMatchLayout={y => scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: false })}
+          onMatchLayout={revealWindowY}
         />
       </ScrollView>
     ) : (
@@ -177,7 +211,9 @@ export const FileView = ({ path = '', name, source, inline = false }: Props) => 
           )
         }
       />
-      <View style={{ flex: 1 }}>{body}</View>
+      <View ref={frameRef} collapsable={false} style={{ flex: 1 }}>
+        {body}
+      </View>
     </View>
   )
 }

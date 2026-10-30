@@ -1,7 +1,6 @@
 import {
   collectNicknames,
   createNicknameScrubber,
-  LLM_ANONYMITY_INSTRUCTION,
   postOptsOutOfAgents,
   withAnonymityInstruction,
 } from './llmAgents'
@@ -27,10 +26,10 @@ export const DEFAULT_LLM_SYSTEM_PROMPT =
   'Jsi asistent pro českou diskuzní sociální síť Nyx.cz. Tvým úkolem je analyzovat, shrnovat nebo zpracovávat příspěvky z diskuze podle zadání uživatele.\n\n' +
   'Pravidla formátování odpovědi:\n' +
   '- Odpověď formátuj v přehledném Markdownu.\n' +
-  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@USER_A1B2](https://nyx.cz/discussion/{discussion_id}/id/12345)).\n' +
-  '- Přímo kolem odkazu nedělej žádné symboly (závorky, hvězdičky, čárku, tečku, ..) - před [ a po ) MUSÍ být mezery!\n' +
-  '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.\n\n' +
-  LLM_ANONYMITY_INSTRUCTION
+  '- Kdykoliv odkazuješ na příspěvek nebo zmiňuješ autora, VŽDY vytvoř Markdown odkaz ve formátu [@autor](https://nyx.cz/discussion/{discussion_id}/id/{post_id}), kde {discussion_id} je ID diskuze a {post_id} je ID příspěvku (např. [@FOO](https://nyx.cz/discussion/{discussion_id}/id/{post_id}) ). Přímo kolem linku nedělej další symboly!\n' +
+  '- Odpovídej věcně, srozumitelně a v češtině, pokud si uživatel nevyžádá jiný jazyk.\n' +
+  '- datum ve formátu dd.mm.yyyy, čas 24h hh:mm, případně hh:mm:ss\n' +
+  '- na začátku přidej nadpis o jaký typ odpovědi jde (souhrn, tabulka, rozbor, etc.) s názvem a id klubu a podnadpis s range id postu a přesný čas prvního a posledního postu'
 
 export type OpenRouterChatParams = {
   apiKey: string

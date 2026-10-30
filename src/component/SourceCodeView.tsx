@@ -10,6 +10,7 @@ import {
   useTheme,
   withAlpha,
 } from '../lib'
+import { horizontalShiftForColumn, lineScrollOffset, matchLineIndex } from '../lib/fileSearchScroll'
 
 type Props = {
   text: string
@@ -86,13 +87,38 @@ export const SourceCodeView = ({ text, lang, query, activeIndex = null, selectab
     if (activeIndex == null) {
       return
     }
-    const line = lineMatches.findIndex(
-      item => activeIndex >= item.start && activeIndex < item.start + item.ranges.length,
+    const line = matchLineIndex(
+      lineMatches.map(item => ({ start: item.start, count: item.ranges.length })),
+      activeIndex,
     )
-    if (line >= 0) {
-      listRef.current?.scrollToIndex({ index: line, viewPosition: 0.3 })
+    if (line < 0) {
+      return
     }
-  }, [activeIndex, lineMatches])
+    const local = activeIndex - lineMatches[line].start
+    const column = lineMatches[line].ranges[local]?.[0] ?? 0
+    const matchX = column * charWidth
+    const left = -shiftValue.current
+    if (matchX < left + 8 || matchX + 8 > left + viewport) {
+      const next = horizontalShiftForColumn(column, charWidth, minShift.current)
+      shiftValue.current = next
+      shift.setValue(next)
+    }
+    const offset = lineScrollOffset(line, lineHeight)
+    let alive = true
+    const run = () => {
+      if (alive) {
+        listRef.current?.scrollToOffset({ offset, animated: false })
+      }
+    }
+    run()
+    const frame = requestAnimationFrame(run)
+    const timer = setTimeout(run, 60)
+    return () => {
+      alive = false
+      cancelAnimationFrame(frame)
+      clearTimeout(timer)
+    }
+  }, [activeIndex, lineMatches, lineHeight, charWidth, viewport, shift])
 
   const rowStyle = (on: boolean) => ({
     height: lineHeight,
@@ -105,6 +131,7 @@ export const SourceCodeView = ({ text, lang, query, activeIndex = null, selectab
       <FlatList
         ref={listRef}
         data={lines}
+        extraData={activeIndex}
         keyExtractor={(_, index) => String(index)}
         style={{ flex: 1 }}
         initialNumToRender={40}
