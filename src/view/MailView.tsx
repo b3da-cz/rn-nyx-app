@@ -8,6 +8,11 @@ import {
   FetchProgressEvent,
   FetchProgressState,
   preparePosts,
+  readFeedCache,
+  reconcileMailMessages,
+  mailCacheKey,
+  rememberMailPage,
+  updateFeedCache,
   reduceFetchProgress,
   resolveFetchProgressMode,
   revealImageInPosts,
@@ -175,38 +180,120 @@ export class MailView extends Component<Props> {
     this.setState({ theme: this.context.theme })
   }
 
-  async getLatestMessages() {
-    const isFocused = this.props.navigation.isFocused()
-    const request = this.beginMailLoad({
-      isSubmenuVisible: isFocused,
-      isMsgBtnVisible: isFocused,
-    })
-    const res = await this.nyx?.api.getMail()
-    this.trackLoad({ ...request, done: 1 })
-    const parsedMessages = await preparePosts(
-      res?.posts || [],
+  cacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
+  async cachedMailPage(recipient: string) {
+    if (!this.cacheOn()) {
+      return null
+    }
+    const store = await readFeedCache()
+    return store.mail?.pages?.[mailCacheKey(recipient)] || null
+  }
+
+  saveMail(recipient: string, conversations, messages) {
+    if (!this.cacheOn()) {
+      return
+    }
+    updateFeedCache(store => rememberMailPage(store, mailCacheKey(recipient), conversations, messages)).catch(e =>
+      console.warn(e),
+    )
+  }
+
+  async prepareMissing(posts) {
+    const pending = (posts || []).filter(post => post && !post.parsed)
+    if (!pending.length) {
+      return posts || []
+    }
+    const prepared = await preparePosts(
+      pending,
       [],
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
       this.trackLoad,
     )
-    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
-    this.setState({
-      conversations: res?.conversations,
-      messages: parsedMessages,
-      isFetching: false,
-    })
+    const byId = new Map(prepared.map(post => [String(post.id), post]))
+    return (posts || []).map(post => (post?.id != null && byId.get(String(post.id))) || post)
+  }
+
+  async loadMail(recipient: string, visibleMessages: any[] = []) {
+    const queryString = !recipient || recipient === 'all' ? '' : `?user=${recipient}`
+    const res = await this.nyx?.api.getMail(queryString)
+    if (!res || res.error || !Array.isArray(res.posts)) {
+      return null
+    }
+    const merged = reconcileMailMessages(visibleMessages, res.posts || [])
+    const messages = await this.prepareMissing(merged.items)
+    return { conversations: res.conversations || [], messages }
+  }
+
+  async getLatestMessages() {
+    const isFocused = this.props.navigation.isFocused()
+    const recipient = 'all'
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    let visible = this.state.activeRecipient === recipient ? this.state.messages || [] : []
+    try {
+      if (!visible.length) {
+        const cached = await this.cachedMailPage(recipient)
+        if (cached?.messages?.length) {
+          visible = cached.messages
+          servedFromCache = true
+          this.setState({
+            conversations: cached.conversations,
+            messages: cached.messages,
+            isSubmenuVisible: isFocused,
+            isMsgBtnVisible: isFocused,
+            isFetching: true,
+          })
+        }
+      }
+      const request = this.beginMailLoad({
+        isSubmenuVisible: isFocused,
+        isMsgBtnVisible: isFocused,
+      })
+      const loaded = await this.loadMail(recipient, visible)
+      this.trackLoad({ ...request, done: 1 })
+      if (!loaded) {
+        servedFromCache = servedFromCache || visible.length > 0
+        this.setState({ isFetching: false })
+        return
+      }
+      servedFromCache = false
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+      this.setState({
+        conversations: loaded.conversations,
+        messages: loaded.messages,
+        isFetching: false,
+      })
+      this.saveMail(recipient, loaded.conversations, loaded.messages)
+    } catch (e) {
+      console.warn(e)
+      servedFromCache = servedFromCache || visible.length > 0
+      this.setState({ isFetching: false })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
+    }
   }
 
   async getOlderMessages() {
     const request = this.beginMailLoad()
     const { activeRecipient, messages } = this.state
+    if (!messages?.length) {
+      this.setState({ isFetching: false })
+      return
+    }
     const queryString = `?${activeRecipient === 'all' ? '' : `user=${activeRecipient}&`}order=older_than&from_id=${
       messages[messages.length - 1].id
     }`
     const res = await this.nyx?.api.getMail(queryString)
     this.trackLoad({ ...request, done: 1 })
+    if (!res || res.error || !Array.isArray(res.posts)) {
+      this.setState({ isFetching: false })
+      return
+    }
     const parsedMessages = await preparePosts(
       res?.posts || [],
       messages,
@@ -217,32 +304,53 @@ export class MailView extends Component<Props> {
     )
     LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
-      conversations: res?.conversations,
+      conversations: res?.conversations || this.state.conversations,
       messages: parsedMessages,
       isFetching: false,
     })
+    this.saveMail(activeRecipient, res?.conversations || this.state.conversations, parsedMessages)
   }
 
   async onConversationSelected(username) {
-    const request = this.beginMailLoad({ messages: [] })
-    const queryString = username === 'all' ? '' : `?user=${username}`
-    const res = await this.nyx?.api.getMail(queryString)
-    this.trackLoad({ ...request, done: 1 })
-    const parsedMessages = await preparePosts(
-      res?.posts || [],
-      [],
-      true,
-      this.context?.theme?.metrics?.fontSizes?.p,
-      this.context?.config?.imageDownloadMaxKb,
-      this.trackLoad,
-    )
-    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
-    this.setState({
-      activeRecipient: username,
-      conversations: res?.conversations,
-      messages: parsedMessages,
-      isFetching: false,
-    })
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    let visible: any[] = []
+    try {
+      const cached = await this.cachedMailPage(username)
+      if (cached?.messages?.length) {
+        visible = cached.messages
+        servedFromCache = true
+        this.setState({
+          activeRecipient: username,
+          conversations: cached.conversations,
+          messages: cached.messages,
+          isFetching: true,
+        })
+      }
+      const request = this.beginMailLoad(cached?.messages?.length ? {} : { messages: [] })
+      const loaded = await this.loadMail(username, visible)
+      this.trackLoad({ ...request, done: 1 })
+      if (!loaded) {
+        servedFromCache = servedFromCache || visible.length > 0
+        this.setState({ activeRecipient: username, isFetching: false })
+        return
+      }
+      servedFromCache = false
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+      this.setState({
+        activeRecipient: username,
+        conversations: loaded.conversations,
+        messages: loaded.messages,
+        isFetching: false,
+      })
+      this.saveMail(username, loaded.conversations, loaded.messages)
+    } catch (e) {
+      console.warn(e)
+      servedFromCache = servedFromCache || visible.length > 0
+      this.setState({ activeRecipient: username, isFetching: false })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
+    }
   }
 
   showImages(image) {

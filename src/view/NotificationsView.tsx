@@ -12,6 +12,11 @@ import {
   FetchProgressState,
   prepareNotifications,
   notificationPosts,
+  notificationNeedsPrepare,
+  readFeedCache,
+  reconcileNotifications,
+  rememberNotifications,
+  updateFeedCache,
   reduceFetchProgress,
   resolveFetchProgressMode,
   revealImageInPosts,
@@ -81,22 +86,68 @@ export class NotificationsView extends Component<Props> {
     this.setState(state => ({ fetchProgress: reduceFetchProgress(state.fetchProgress, event) }))
   }
 
+  cacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
   async getNotifications() {
     const request = { id: 'request', label: t('notifications'), done: 0, total: 1 }
-    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
-    const res = await this.nyx?.api.getNotifications()
-    this.trackLoad({ ...request, done: 1 })
-    const parsedNotifications = await prepareNotifications(
-      res?.notifications || [],
-      this.context?.theme?.metrics?.fontSizes?.p,
-      this.context?.config?.imageDownloadMaxKb,
-      this.trackLoad,
-    )
-    this.setState({
-      unreadCount: res?.context?.user?.notifications_unread,
-      posts: parsedNotifications,
-      isFetching: false,
-    })
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    let visible = this.state.posts || []
+    try {
+      if (this.cacheOn() && !visible.length) {
+        const store = await readFeedCache()
+        if (store.notifications?.posts?.length) {
+          visible = store.notifications.posts
+          servedFromCache = true
+          this.setState({
+            unreadCount: store.notifications.unreadCount,
+            posts: visible,
+            isFetching: true,
+            fetchProgress: reduceFetchProgress(emptyFetchProgress(), request),
+          })
+        }
+      }
+      this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+      const res = await this.nyx?.api.getNotifications()
+      this.trackLoad({ ...request, done: 1 })
+      if (!res || res.error || !Array.isArray(res.notifications)) {
+        servedFromCache = servedFromCache || visible.length > 0
+        this.setState({ isFetching: false })
+        return
+      }
+      const merged = reconcileNotifications(visible, res.notifications || [])
+      let posts = merged.items
+      const pending = posts.filter(notificationNeedsPrepare)
+      if (pending.length) {
+        const prepared = await prepareNotifications(
+          pending,
+          this.context?.theme?.metrics?.fontSizes?.p,
+          this.context?.config?.imageDownloadMaxKb,
+          this.trackLoad,
+        )
+        const byId = new Map(prepared.map(item => [String(item?.data?.id), item]))
+        posts = posts.map(item => byId.get(String(item?.data?.id)) || item)
+      }
+      servedFromCache = false
+      const postsChanged = merged.changed || pending.length > 0
+      this.setState({
+        unreadCount: res?.context?.user?.notifications_unread,
+        ...(postsChanged ? { posts } : {}),
+        isFetching: false,
+      })
+      if (this.cacheOn()) {
+        const unreadCount = res?.context?.user?.notifications_unread
+        updateFeedCache(store => rememberNotifications(store, posts, unreadCount)).catch(e => console.warn(e))
+      }
+    } catch (e) {
+      console.warn(e)
+      servedFromCache = servedFromCache || visible.length > 0
+      this.setState({ isFetching: false })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
+    }
   }
 
   showImages(image) {

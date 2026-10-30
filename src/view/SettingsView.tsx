@@ -46,8 +46,14 @@ import {
   forgetCachedDiscussion,
   readDiscussionCache,
   readDiscussionListCache,
+  readFeedCache,
   updateDiscussionCache,
   updateDiscussionListCache,
+  updateFeedCache,
+  emptyFeedCache,
+  forgetFeed,
+  withFeedCacheReport,
+  FeedCacheKind,
   normalizeDiscussionCacheLimit,
   normalizeFetchProgressMode,
   resolveFetchProgressGlobal,
@@ -177,6 +183,10 @@ type State = {
     clubs: Array<{ id: string; name: string; posts: number; from: string; to: string }>
     historyCount: number
     bookmarkCount: number
+    remindersCount?: number
+    mailCount?: number
+    eventsCount?: number
+    notificationsCount?: number
   } | null
   isDiscussionCacheClubsVisible: boolean
   confirmingCacheClubId?: string | null
@@ -336,10 +346,25 @@ export class SettingsView extends Component<Props> {
     })
   }
 
+  async cacheReport() {
+    const [clubs, lists, feeds] = await Promise.all([readDiscussionCache(), readDiscussionListCache(), readFeedCache()])
+    return withFeedCacheReport(
+      discussionCacheReport({ ...clubs, history: lists.history, bookmarks: lists.bookmarks }),
+      feeds,
+    )
+  }
+
   async writeDiscussionCache(mutate) {
-    const [next, lists] = await Promise.all([updateDiscussionCache(mutate), readDiscussionListCache()])
+    const [next, lists, feeds] = await Promise.all([
+      updateDiscussionCache(mutate),
+      readDiscussionListCache(),
+      readFeedCache(),
+    ])
     this.setState({
-      discussionCacheReport: discussionCacheReport({ ...next, history: lists.history, bookmarks: lists.bookmarks }),
+      discussionCacheReport: withFeedCacheReport(
+        discussionCacheReport({ ...next, history: lists.history, bookmarks: lists.bookmarks }),
+        feeds,
+      ),
       confirmingCacheClubId: null,
     })
   }
@@ -348,8 +373,15 @@ export class SettingsView extends Component<Props> {
     await this.writeDiscussionCache(store => forgetCachedDiscussion(store, id))
   }
 
+  async deleteFeedCache(kind: FeedCacheKind) {
+    await updateFeedCache(store => forgetFeed(store, kind))
+    const discussionCacheReport = await this.cacheReport()
+    this.setState({ discussionCacheReport })
+  }
+
   async deleteDiscussionCache() {
     await updateDiscussionListCache(() => ({ history: null, bookmarks: null }))
+    await updateFeedCache(() => emptyFeedCache())
     await this.writeDiscussionCache(() => emptyDiscussionCache())
     this.setState({ isDiscussionCacheClubsVisible: false })
   }
@@ -372,16 +404,49 @@ export class SettingsView extends Component<Props> {
 
   async loadDiscussionCacheReport() {
     try {
-      const [clubs, lists] = await Promise.all([readDiscussionCache(), readDiscussionListCache()])
-      this.setState({
-        discussionCacheReport: discussionCacheReport({ ...clubs, history: lists.history, bookmarks: lists.bookmarks }),
-      })
+      this.setState({ discussionCacheReport: await this.cacheReport() })
     } catch (e) {
       console.warn(e)
       this.setState({
-        discussionCacheReport: discussionCacheReport({ discussions: [], history: null, bookmarks: null }),
+        discussionCacheReport: withFeedCacheReport(
+          discussionCacheReport({ discussions: [], history: null, bookmarks: null }),
+          null,
+        ),
       })
     }
+  }
+
+  renderFeedCacheRow(label: string, count: number | undefined, kind: FeedCacheKind) {
+    if (!count) {
+      return null
+    }
+    const liveTheme = (this.context as any)?.theme
+    const theme = liveTheme?.colors ? liveTheme : this.state.theme
+    if (!theme?.colors) {
+      return null
+    }
+    const rowHeight = Math.max(48, Math.round(theme.metrics.blocks.rowDiscussion + theme.metrics.blocks.large))
+    return (
+      <View
+        key={kind}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.colors.surface,
+          borderRadius: 0,
+          marginBottom: theme.metrics.blocks.small,
+          minHeight: rowHeight,
+          paddingHorizontal: theme.metrics.blocks.medium,
+        }}>
+        <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>{label}</Text>
+        <Text style={{ color: theme.colors.faded, fontSize: theme.metrics.fontSizes.small, marginRight: 8 }}>{count}</Text>
+        <DoubleTapDeleteButton
+          iconSize={theme.metrics.fontSizes.p}
+          onDelete={() => this.deleteFeedCache(kind)}
+          style={{ borderRadius: 0, alignSelf: 'center' }}
+        />
+      </View>
+    )
   }
 
   discussionCacheContentLabel(report: { clubs: any[]; historyCount: number; bookmarkCount: number }) {
@@ -1112,6 +1177,14 @@ export class SettingsView extends Component<Props> {
                     style={{ borderRadius: 0, alignSelf: 'center' }}
                   />
                 </View>
+                {this.renderFeedCacheRow(t('events.title'), this.state.discussionCacheReport.eventsCount, 'events')}
+                {this.renderFeedCacheRow(t('reminders.title'), this.state.discussionCacheReport.remindersCount, 'reminders')}
+                {this.renderFeedCacheRow(t('mail'), this.state.discussionCacheReport.mailCount, 'mail')}
+                {this.renderFeedCacheRow(
+                  t('notifications'),
+                  this.state.discussionCacheReport.notificationsCount,
+                  'notifications',
+                )}
                 <TouchableRipple
                   rippleColor={theme.colors.ripple}
                   onPress={() => this.setState({ isDiscussionCacheClubsVisible: true })}

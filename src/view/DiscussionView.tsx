@@ -21,6 +21,8 @@ import {
   cachedPageResponse,
   CLUB_START_POST_ID,
   discussionQueryParts,
+  eventDetailContentKey,
+  exactCachedPosts,
   findCachedDiscussion,
   forgetCachedPost,
   normalizeDiscussionCacheLimit,
@@ -711,7 +713,7 @@ export class DiscussionView extends Component<Props> {
         header,
         lastSeenPostId: this._lastSeenPostId,
         posts: postsForList,
-        advertisementOP: advertisementOP || this.state.advertisementOP,
+        advertisementOP: fromCache ? advertisementOP || this.state.advertisementOP : advertisementOP,
         eventDetail,
         isFetching: opts.holdLock ? true : false,
         imgPrefetchProgress: { length: 0, done: 0 },
@@ -760,34 +762,79 @@ export class DiscussionView extends Component<Props> {
   async fetchDiscussionBoard() {
     const request = { id: 'request', label: t('load.board'), done: 0, total: 1 }
     this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+    const discussionId = this.props.id
+    const cacheOn = this.discussionCacheOn()
+    const cacheEntryPromise = cacheOn
+      ? readDiscussionCache()
+          .then(store => findCachedDiscussion(store, discussionId) || null)
+          .catch(() => null)
+      : Promise.resolve(null)
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    let visible = this.state.isBoardVisible ? this._posts || [] : []
     try {
-    const res = await this.nyx?.api.getDiscussionBoard(this.props.id)
-    this.trackLoad({ ...request, done: 1 })
-    if (!res || res?.error || !res.items || !res.discussion_common) {
-      console.warn(res)
-      this.setState({ isFetching: false })
-      return
-    }
-    const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
-    const board = await preparePosts(res.items, [], true, themeBaseFontSize, this.imageDownloadMaxKb(), this.trackLoad)
-    const title = `${res.discussion_common.discussion.name_static}${
-      res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
-    }`
-    const isBooked = res?.discussion_common?.bookmark?.bookmark
-    const images = galleryImagesFromPosts(board)
-    this._posts = board
-    this.setState({
-      title,
-      images,
-      isBooked,
-      posts: board,
-      isFetching: false,
-      isListing: this.state.isListing || isListingDiscussion(title, res.items),
-    })
-    this.onDiscussionFetched(title)
+      const cacheEntry = await cacheEntryPromise
+      const cachedPosts = exactCachedPosts(cacheEntry, 'board')
+      if (!visible.length && cachedPosts.length) {
+        const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
+        visible = await preparePosts(
+          cachedPosts,
+          [],
+          true,
+          themeBaseFontSize,
+          this.imageDownloadMaxKb(),
+          this.trackLoad,
+          cacheEntry,
+        )
+        servedFromCache = true
+        this._posts = visible
+        this.setState({
+          posts: visible,
+          images: galleryImagesFromPosts(visible),
+          isFetching: true,
+        })
+      }
+      const res = await this.nyx?.api.getDiscussionBoard(discussionId)
+      this.trackLoad({ ...request, done: 1 })
+      if (!res || res?.error || !res.items || !res.discussion_common) {
+        servedFromCache = servedFromCache || visible.length > 0
+        console.warn(res)
+        this.setState({ isFetching: false })
+        return
+      }
+      const themeBaseFontSize = this.state.theme!.metrics.fontSizes.p
+      const board = await preparePosts(
+        res.items,
+        visible,
+        true,
+        themeBaseFontSize,
+        this.imageDownloadMaxKb(),
+        this.trackLoad,
+        cacheEntry,
+      )
+      const title = `${res.discussion_common.discussion.name_static}${
+        res.discussion_common.discussion.name_dynamic ? ' ' + res.discussion_common.discussion.name_dynamic : ''
+      }`
+      const isBooked = res?.discussion_common?.bookmark?.bookmark
+      const images = galleryImagesFromPosts(board)
+      this._posts = board
+      servedFromCache = false
+      this.setState({
+        title,
+        images,
+        isBooked,
+        posts: board,
+        isFetching: false,
+        isListing: this.state.isListing || isListingDiscussion(title, res.items),
+      })
+      this.onDiscussionFetched(title)
+      this.saveDiscussionPage(discussionId, 'board', res, board).catch(e => console.warn(e))
     } catch (e) {
       console.warn(e)
+      servedFromCache = servedFromCache || visible.length > 0
       this.setState({ isFetching: false })
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
     }
   }
 
@@ -1049,6 +1096,13 @@ export class DiscussionView extends Component<Props> {
   eventDetailFromResponse(loaded: EventDetailData | null) {
     if (this._attendanceSaving) {
       return this._freshEventDetail || this.state.eventDetail || loaded
+    }
+    if (
+      loaded &&
+      this.state.eventDetail &&
+      eventDetailContentKey(loaded) === eventDetailContentKey(this.state.eventDetail)
+    ) {
+      return this.state.eventDetail
     }
     return loaded
   }

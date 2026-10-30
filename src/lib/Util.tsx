@@ -5,6 +5,7 @@ import ImageResizer, { Response as RNIRResponse } from '@bam.tech/react-native-i
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import Icon from 'react-native-vector-icons/Feather'
 import { clampJpegQuality, isResizableImageUpload, jpegUploadName, JPEG_QUALITY_DEFAULT } from './compose'
+import { parsedForFreshPost } from './feedCache'
 import { rgbToHex } from './Palette'
 
 // ImageViewer treats IImageInfo width/height as the display size and never
@@ -64,23 +65,32 @@ export const generateUuidV4 = () =>
   })
 
 export const getDistinctPosts = (posts: any[], oldPosts: any[]) => {
-  let newPosts: any[] = []
+  const newPosts: any[] = []
   const map = new Map()
-  for (const item of [...posts, ...oldPosts]) {
-    if (!map.has(item.id)) {
-      map.set(item.id, true)
-      if (!item.uuid) {
-        item.uuid = generateUuidV4()
-      }
-      if (!item.parsed) {
-        const oldParsedPost = oldPosts.filter(p => p.id === item.id)
-        item.parsed = oldParsedPost.length ? oldParsedPost[0].parsed : null
-      }
-      newPosts.push(item)
+  const oldById = new Map<any, any>()
+  for (const old of oldPosts || []) {
+    if (old && old.id != null && !oldById.has(old.id)) {
+      oldById.set(old.id, old)
     }
   }
+  for (const item of [...(posts || []), ...(oldPosts || [])]) {
+    if (!item || map.has(item.id)) {
+      continue
+    }
+    map.set(item.id, true)
+    const previous = oldById.get(item.id)
+    if (!item.uuid) {
+      item.uuid = previous?.uuid || generateUuidV4()
+    }
+    if (!item.parsed) {
+      const reused = parsedForFreshPost(item, previous)
+      if (reused) {
+        item.parsed = reused
+      }
+    }
+    newPosts.push(item)
+  }
   newPosts.sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0))
-  // console.warn('posts len', newPosts.length); // TODO: remove
   return newPosts
 }
 

@@ -5,6 +5,7 @@ import {
   normalizeDiscussionCache,
   normalizeListCache,
 } from './discussionCache'
+import { FeedCacheStore, normalizeFeedCache } from './feedCache'
 import { Storage } from './Storage'
 
 const clubs = createDiscussionCacheQueue(
@@ -49,3 +50,13 @@ export const readDiscussionListCache = () => lists.read()
 
 export const updateDiscussionListCache = (mutate: (store: DiscussionListCache) => DiscussionListCache) =>
   lists.update(mutate)
+
+const feeds = createDiscussionCacheQueue(
+  () => Storage.getFeedCache(),
+  store => Storage.setFeedCache(store),
+  normalizeFeedCache,
+)
+
+export const readFeedCache = () => feeds.read()
+
+export const updateFeedCache = (mutate: (store: FeedCacheStore) => FeedCacheStore) => feeds.update(mutate)

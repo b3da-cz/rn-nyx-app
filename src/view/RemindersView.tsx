@@ -14,6 +14,10 @@ import {
   galleryImagesFromPosts,
   toGalleryImages,
   preparePosts,
+  readFeedCache,
+  reconcilePosts,
+  rememberReminders,
+  updateFeedCache,
   reduceFetchProgress,
   resolveFetchProgressMode,
   revealImageInPosts,
@@ -94,43 +98,93 @@ export class RemindersView extends Component<Props> {
     })
   }
 
-  async getReminders() {
-    const request = { id: 'request', label: t('reminders.title'), done: 0, total: 2 }
-    this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
-    const bookmarks = await this.fetchReminders('bookmarks', this.trackScoped('bookmarks', t('reminders.inDiscussions')))
-    this.trackLoad({ ...request, done: 1 })
-    const mail = await this.fetchReminders('mail', this.trackScoped('mail', t('reminders.inMail')))
-    this.trackLoad({ ...request, done: 2 })
-    const sectionedReminders = [
-      { title: t('reminders.inMail'), data: mail.reminders },
-      { title: t('reminders.inDiscussions'), data: bookmarks.reminders },
-    ]
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)
+  cacheOn() {
+    return this.context?.config?.isDiscussionCacheEnabled !== false
+  }
+
+  showReminders(bookmarks, mail, isFetching = false) {
     this.setState({
-      images: [...mail.images, ...bookmarks.images],
-      bookmarks: bookmarks.reminders,
-      mail: mail.reminders,
-      sectionedReminders,
-      isFetching: false,
+      images: galleryImagesFromPosts([...(mail || []), ...(bookmarks || [])]),
+      bookmarks: bookmarks || [],
+      mail: mail || [],
+      sectionedReminders: [
+        { title: t('reminders.inMail'), data: mail || [] },
+        { title: t('reminders.inDiscussions'), data: bookmarks || [] },
+      ],
+      isFetching,
     })
   }
 
-  async fetchReminders(type, onProgress?: (event: FetchProgressEvent) => void) {
-    const res = await this.nyx?.api.getReminders(type)
-    // const newPosts = getDistinctPosts(res.posts, this.state[type])
-    const filteredPosts = filterPostsByContent(filterDiscussions(res?.posts || [], this.filters), this.filters)
-    const parsedPosts = await preparePosts(
-      filteredPosts,
+  async prepareMissing(posts, onProgress?: (event: FetchProgressEvent) => void) {
+    const pending = (posts || []).filter(post => post && !post.parsed)
+    if (!pending.length) {
+      return posts || []
+    }
+    const prepared = await preparePosts(
+      pending,
       [],
       true,
       this.context?.theme?.metrics?.fontSizes?.p,
       this.context?.config?.imageDownloadMaxKb,
       onProgress,
     )
-    const images = galleryImagesFromPosts(parsedPosts)
-    return {
-      reminders: parsedPosts,
-      images,
+    const byId = new Map(prepared.map(post => [String(post.id), post]))
+    return (posts || []).map(post => (post?.id != null && byId.get(String(post.id))) || post)
+  }
+
+  async getReminders() {
+    const request = { id: 'request', label: t('reminders.title'), done: 0, total: 2 }
+    this.nyx?.holdErrors()
+    let servedFromCache = false
+    let visibleBookmarks = this.state.bookmarks || []
+    let visibleMail = this.state.mail || []
+    try {
+      if (this.cacheOn() && !visibleBookmarks.length && !visibleMail.length) {
+        const store = await readFeedCache()
+        if (store.reminders && (store.reminders.bookmarks.length || store.reminders.mail.length)) {
+          visibleBookmarks = store.reminders.bookmarks
+          visibleMail = store.reminders.mail
+          this.showReminders(visibleBookmarks, visibleMail, true)
+          servedFromCache = true
+        }
+      }
+      this.setState({ isFetching: true, fetchProgress: reduceFetchProgress(emptyFetchProgress(), request) })
+      const bookmarks = await this.fetchReminders(
+        'bookmarks',
+        visibleBookmarks,
+        this.trackScoped('bookmarks', t('reminders.inDiscussions')),
+      )
+      this.trackLoad({ ...request, done: 1 })
+      const mail = await this.fetchReminders('mail', visibleMail, this.trackScoped('mail', t('reminders.inMail')))
+      this.trackLoad({ ...request, done: 2 })
+      const failed = !bookmarks.ok || !mail.ok
+      if (bookmarks.ok && mail.ok) {
+        servedFromCache = false
+      } else {
+        servedFromCache = servedFromCache || visibleBookmarks.length > 0 || visibleMail.length > 0
+      }
+      this.showReminders(bookmarks.posts, mail.posts, false)
+      if ((bookmarks.ok || mail.ok) && this.cacheOn()) {
+        updateFeedCache(store => rememberReminders(store, bookmarks.posts, mail.posts)).catch(e => console.warn(e))
+      }
+    } finally {
+      this.nyx?.releaseErrors(servedFromCache)
+    }
+  }
+
+  async fetchReminders(type, visible, onProgress?: (event: FetchProgressEvent) => void) {
+    try {
+      const res = await this.nyx?.api.getReminders(type)
+      if (!res || res.error || !Array.isArray(res.posts)) {
+        return { ok: false, posts: visible || [] }
+      }
+      const filteredPosts = filterPostsByContent(filterDiscussions(res?.posts || [], this.filters), this.filters)
+      const merged = reconcilePosts(visible || [], filteredPosts)
+      const posts = await this.prepareMissing(merged.items, onProgress)
+      return { ok: true, posts }
+    } catch (e) {
+      console.warn(e)
+      return { ok: false, posts: visible || [] }
     }
   }
 
@@ -173,14 +227,10 @@ export class RemindersView extends Component<Props> {
     let { bookmarks, mail } = this.state
     bookmarks = bookmarks.filter(p => p.id !== post.id)
     mail = mail.filter(p => p.id !== post.id)
-    this.setState({
-      bookmarks,
-      mail,
-      sectionedReminders: [
-        { title: t('reminders.inMail'), data: mail },
-        { title: t('reminders.inDiscussions'), data: bookmarks },
-      ],
-    })
+    this.showReminders(bookmarks, mail, false)
+    if (this.cacheOn()) {
+      updateFeedCache(store => rememberReminders(store, bookmarks, mail)).catch(e => console.warn(e))
+    }
   }
 
   render() {

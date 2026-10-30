@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.36.0
+- upomínky, pošta, události a oznámení se po otevření hned zobrazí z cache a pak se doplní z nového stažení
+- smazaný příspěvek zmizí, u oznámení se navíc aktualizuje počet odpovědí a hodnocení, změněný popis události, účastníci, inzerát, nástěnka a hlavička se překreslí
+- v nastavení cache jsou nad kluby samostatné řádky pro smazání událostí, upomínek, pošty a oznámení
+
 ## 0.35.21
 - při vypnutém posouvání hlavičky má řádek tlačítek stejnou výšku jako hlavička, takže se text příspěvku po kliknutí neposune
 

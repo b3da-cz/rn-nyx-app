@@ -288,6 +288,14 @@ export const forgetCachedPost = (entry: DiscussionCacheEntry, postId: string | n
   return { ...entry, posts, pages }
 }
 
+export const exactCachedPosts = (entry: DiscussionCacheEntry | null | undefined, pageKey: string) => {
+  const ids = entry?.pages?.[pageKey]
+  if (!ids?.length || !entry?.posts) {
+    return []
+  }
+  return ids.map(id => entry.posts[id]?.post).filter(Boolean)
+}
+
 export const cachedPageResponse = (entry: DiscussionCacheEntry | null | undefined, pageKey: string) => {
   if (!entry || !entry.posts || Object.keys(entry.posts).length === 0) {
     return null

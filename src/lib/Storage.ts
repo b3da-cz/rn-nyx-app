@@ -19,6 +19,7 @@ const StorageKeys = {
   fingerprintBackgroundAt: 'fingerprintBackgroundAt',
   discussionCache: 'discussionCache',
   discussionListCache: 'discussionListCache',
+  feedCache: 'feedCache',
   messageDrafts: 'messageDrafts',
 }
 
@@ -228,6 +229,17 @@ const setDiscussionCache = async cache => {
 
 const getDiscussionListCache = async () => readStoredJson(StorageKeys.discussionListCache)
 
+const getFeedCache = async () => readStoredJson(StorageKeys.feedCache)
+
+const setFeedCache = async cache => {
+  try {
+    await AsyncStorage.setItem(StorageKeys.feedCache, JSON.stringify(cache))
+  } catch (e) {
+    console.warn('Failed to save feed cache:', e)
+    throw e
+  }
+}
+
 const setDiscussionListCache = async cache => {
   try {
     await AsyncStorage.setItem(StorageKeys.discussionListCache, JSON.stringify(cache))
@@ -291,6 +303,8 @@ export const Storage = {
   setDiscussionCache,
   getDiscussionListCache,
   setDiscussionListCache,
+  getFeedCache,
+  setFeedCache,
   getMessageDrafts,
   setMessageDrafts,
   removeAll,

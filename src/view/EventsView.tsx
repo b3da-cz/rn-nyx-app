@@ -7,10 +7,15 @@ import { EventsFilterBarComponent, EventRowComponent, FabComponent } from '../co
 import {
   defaultEventFilters,
   EventListFilters,
+  eventsCacheKey,
   filterEventsByAttendance,
   MainContext,
+  readFeedCache,
+  reconcileEvents,
+  rememberEventsQuery,
   t,
   toEventsQuery,
+  updateFeedCache,
   useTheme,
 } from '../lib'
 
@@ -31,7 +36,10 @@ export const EventsView = ({ navigation }: Props) => {
   const filtersRef = useRef(filters)
   const requestRef = useRef(0)
   const listRef = useRef<FlatList<EventListItem>>(null)
+  const unfilteredRef = useRef<EventListItem[]>([])
+  const eventsKeyRef = useRef('')
   filtersRef.current = filters
+  const cacheOn = context.config?.isDiscussionCacheEnabled !== false
 
   const load = useCallback(
     async (next = filtersRef.current, silent = false) => {
@@ -39,21 +47,83 @@ export const EventsView = ({ navigation }: Props) => {
       if (!silent) {
         setIsFetching(true)
       }
-      const res = await context.nyx?.api.getEvents(toEventsQuery(next))
-      if (requestId !== requestRef.current) {
-        return
+      const key = eventsCacheKey(next)
+      if (eventsKeyRef.current !== key) {
+        eventsKeyRef.current = key
+        unfilteredRef.current = []
+        setEvents([])
       }
-      setEvents(filterEventsByAttendance(res?.events || [], next.attendance))
-      setCalendar(res?.calendar || {})
-      if (res?.categories?.length) {
-        setCategories(res.categories)
+      let base = unfilteredRef.current
+      if (base.length) {
+        setEvents(filterEventsByAttendance(base, next.attendance))
       }
-      if (res?.areas?.length) {
-        setAreas(res.areas)
+      let showedCache = false
+      if (cacheOn && !base.length) {
+        const store = await readFeedCache()
+        const hit = store.events?.queries?.[key]
+        if (requestId !== requestRef.current) {
+          return
+        }
+        if (hit?.events?.length) {
+          base = hit.events
+          unfilteredRef.current = hit.events
+          setEvents(filterEventsByAttendance(hit.events, next.attendance))
+          setCalendar(hit.calendar || {})
+          if (hit.categories?.length) {
+            setCategories(hit.categories)
+          }
+          if (hit.areas?.length) {
+            setAreas(hit.areas)
+          }
+          showedCache = true
+          setIsFetching(true)
+        }
       }
-      setIsFetching(false)
+      context.nyx?.holdErrors()
+      let servedFromCache = false
+      try {
+        const res = await context.nyx?.api.getEvents(toEventsQuery(next))
+        if (requestId !== requestRef.current) {
+          return
+        }
+        if (!res || res.error || !Array.isArray(res.events)) {
+          servedFromCache = showedCache || base.length > 0
+          setIsFetching(false)
+          return
+        }
+        const merged = reconcileEvents(base, res.events || [])
+        unfilteredRef.current = merged.items
+        setEvents(filterEventsByAttendance(merged.items, next.attendance))
+        setCalendar(res.calendar || {})
+        if (res.categories?.length) {
+          setCategories(res.categories)
+        }
+        if (res.areas?.length) {
+          setAreas(res.areas)
+        }
+        setIsFetching(false)
+        if (cacheOn) {
+          updateFeedCache(store => {
+            const previous = store.events?.queries?.[key]
+            return rememberEventsQuery(store, key, {
+              events: merged.items,
+              calendar: res.calendar || previous?.calendar || {},
+              categories: res.categories?.length ? res.categories : previous?.categories || [],
+              areas: res.areas?.length ? res.areas : previous?.areas || [],
+            })
+          }).catch(e => console.warn(e))
+        }
+      } catch (e) {
+        console.warn(e)
+        if (requestId === requestRef.current) {
+          servedFromCache = showedCache || base.length > 0
+          setIsFetching(false)
+        }
+      } finally {
+        context.nyx?.releaseErrors(servedFromCache)
+      }
     },
-    [context.nyx],
+    [cacheOn, context.nyx],
   )
 
   useEffect(() => {
