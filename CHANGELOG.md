@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.16
+- v markdownu se odkazy, tučné písmo, kurzíva a kód v buňkách tabulky vykreslí stejně jako v textu
+
 ## 0.35.15
 - oprava zamykání otiskem prstu: odstraněn příznak ignorování po odemknutí, který občas vynechával zamknutí po návratu z webového prohlížeče
 

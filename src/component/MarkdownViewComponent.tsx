@@ -73,8 +73,8 @@ export function countMarkdownSearchHits(markdown: string, query: string, avatars
       return
     }
     if (block.type === 'table') {
-      block.header.forEach(add)
-      block.rows.forEach(row => row.forEach(add))
+      block.header.forEach(addInlines)
+      block.rows.forEach(row => row.forEach(addInlines))
       return
     }
     if (block.type === 'code_block') {
@@ -349,11 +349,15 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                       paddingVertical: 6,
                       backgroundColor: headerRow ? colors.row : 'transparent',
                     }}>
-                    {showText(cells[col] || '', {
-                      color: colors.text,
-                      fontSize: metrics.fontSizes.p,
-                      fontWeight: headerRow ? 'bold' : 'normal',
-                    })}
+                    <Text
+                      selectable={isSelectable}
+                      style={{
+                        color: colors.text,
+                        fontSize: metrics.fontSizes.p,
+                        fontWeight: headerRow ? 'bold' : 'normal',
+                      }}>
+                      {renderInlines(cells[col] || '')}
+                    </Text>
                   </View>
                 ))}
               </View>

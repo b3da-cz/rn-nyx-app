@@ -66,6 +66,30 @@ describe('MarkdownViewComponent parser tests', () => {
       ])
     })
 
+    it('keeps a markdown link whole inside a table cell', () => {
+      const md = [
+        '| # | Uživatel | Achievements |',
+        '| --- | --- | --- |',
+        '| 1 | [@2BFREE](https://nyx.cz/discussion/279582/id/55571337) | 18 |',
+      ].join('\n')
+      const blocks = parseMarkdownBlocks(md)
+      expect(blocks).toEqual([
+        {
+          type: 'table',
+          header: ['#', 'Uživatel', 'Achievements'],
+          rows: [['1', '[@2BFREE](https://nyx.cz/discussion/279582/id/55571337)', '18']],
+        },
+      ])
+      expect(tokenizeInlineMarkdown('[@2BFREE](https://nyx.cz/discussion/279582/id/55571337)')).toEqual([
+        {
+          type: 'link',
+          text: '@2BFREE',
+          url: 'https://nyx.cz/discussion/279582/id/55571337',
+          username: '2BFREE',
+        },
+      ])
+    })
+
     it('parses horizontal rules and paragraphs', () => {
       const md = 'Běžný odstavec.\n\n---\n\nDalší odstavec.'
       const blocks = parseMarkdownBlocks(md)
