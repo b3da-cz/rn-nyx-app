@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.15
+- oprava zamykání otiskem prstu: odstraněn příznak ignorování po odemknutí, který občas vynechával zamknutí po návratu z webového prohlížeče
+
 ## 0.35.14
 - výběr příspěvků pro asistenta načte při otevření obsah jen pro prvních 100 řádků a zbytek jako prázdné skořápky, data do nich doplňuje až při scrollu
 - seznam má předem fixní výšku řádků (getItemLayout) a při načítání neposkakuje ani nezasekává telefon
