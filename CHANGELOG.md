@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.18
+- příspěvek s Markdownem se zobrazí naformátovaný, v rohu textu je přepínač na zdroj
+- v nastavení čtení je přepínač Formátovat Markdown v příspěvcích, ve výchozím stavu zapnutý
+
 ## 0.35.17
 - ve formátovaném náhledu markdownu a kódu se při přepínání hledání pohled posune na aktivní výskyt
 - výchozí prompt asistenta chce datum dd.mm.yyyy, čas 24h a na začátku nadpis s klubem, id a rozsahem příspěvků

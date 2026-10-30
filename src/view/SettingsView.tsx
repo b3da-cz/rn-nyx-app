@@ -163,6 +163,7 @@ type State = {
   isBookmarkSectionReadFilterEnabled: boolean
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
+  isPostMarkdownEnabled: boolean
   isUploadVideoTagEnabled: boolean
   isFingerprintLockEnabled: boolean
   fingerprintLockMinutes: number
@@ -442,6 +443,7 @@ export class SettingsView extends Component<Props> {
         config.isBookmarkSectionReadFilterEnabled === undefined ? true : !!config.isBookmarkSectionReadFilterEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
       isTextSelectionEnabled: config.isTextSelectionEnabled === undefined ? true : !!config.isTextSelectionEnabled,
+      isPostMarkdownEnabled: config.isPostMarkdownEnabled === undefined ? true : !!config.isPostMarkdownEnabled,
       isUploadVideoTagEnabled:
         config.isUploadVideoTagEnabled === undefined ? true : !!config.isUploadVideoTagEnabled,
       isFingerprintLockEnabled: !!config?.isFingerprintLockEnabled,
@@ -973,6 +975,13 @@ export class SettingsView extends Component<Props> {
               label={t('profile.isTextSelectionEnabled')}
               value={this.state.isTextSelectionEnabled !== false}
               onChange={val => this.setOption('isTextSelectionEnabled', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.isPostMarkdownEnabled')}
+              value={this.state.isPostMarkdownEnabled !== false}
+              onChange={val => this.setOption('isPostMarkdownEnabled', val)}
             />
           </SettingsSection>
           <SettingsSection

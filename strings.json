@@ -516,6 +516,10 @@
       "cs": "Označování textu příspěvků",
       "en": "Select text in posts"
     },
+    "isPostMarkdownEnabled": {
+      "cs": "Formátovat Markdown v příspěvcích",
+      "en": "Format Markdown in posts"
+    },
     "uploadVideoTag": {
       "cs": "Video tag u nahraných videí",
       "en": "Video tag for uploaded videos"

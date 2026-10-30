@@ -286,6 +286,7 @@ const App: () => ReactNode = () => {
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,
       isTextSelectionEnabled: conf.isTextSelectionEnabled === undefined ? true : !!conf.isTextSelectionEnabled,
+      isPostMarkdownEnabled: conf.isPostMarkdownEnabled === undefined ? true : !!conf.isPostMarkdownEnabled,
       isUploadVideoTagEnabled:
         conf.isUploadVideoTagEnabled === undefined ? true : !!conf.isUploadVideoTagEnabled,
       isFingerprintLockEnabled: !!conf.isFingerprintLockEnabled,

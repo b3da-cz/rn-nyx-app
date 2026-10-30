@@ -31,6 +31,7 @@ export type MainContextConfig = {
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
   isTextSelectionEnabled: boolean
+  isPostMarkdownEnabled: boolean
   isUploadVideoTagEnabled: boolean
   isFingerprintLockEnabled: boolean
   fingerprintLockMinutes: number
@@ -93,6 +94,7 @@ export const initialConfig: MainContextConfig = {
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
   isTextSelectionEnabled: true,
+  isPostMarkdownEnabled: true,
   isUploadVideoTagEnabled: true,
   isFingerprintLockEnabled: false,
   fingerprintLockMinutes: 0,
@@ -131,6 +133,10 @@ export const initialConfig: MainContextConfig = {
 
 export function isTextSelectionEnabled(config?: { isTextSelectionEnabled?: boolean } | null) {
   return config?.isTextSelectionEnabled !== false
+}
+
+export function isPostMarkdownEnabled(config?: { isPostMarkdownEnabled?: boolean } | null) {
+  return config?.isPostMarkdownEnabled !== false
 }
 
 export const MainContext: Context<MainContext> = createContext<MainContext>({

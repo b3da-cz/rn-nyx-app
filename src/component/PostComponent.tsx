@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { Linking, View } from 'react-native'
-import { Text } from 'react-native-paper'
+import { Linking, StyleSheet, View } from 'react-native'
+import { Text, TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
 import {
   AdvertisementComponent,
   CodeBlockComponent,
@@ -17,18 +18,21 @@ import {
   DiscussionRequestComponent,
   SearchHighlight,
 } from '../component'
+import { MarkdownViewComponent } from './MarkdownViewComponent'
 import {
   discussionRequestFromPost,
   eventFromPost,
   Nyx,
   TOKEN,
   generateUuidV4,
+  isPostMarkdownEnabled,
   isTextSelectionEnabled,
   MainContext,
   pollIsClosed,
   promptTextFile,
   searchMatchRanges,
 } from '../lib'
+import { postCanFormatMarkdown, postHtmlToMarkdown } from '../lib/postMarkdown'
 
 type Props = {
   post: any
@@ -52,10 +56,12 @@ type Props = {
   onReminder?: Function
   onDiceRoll?: Function
   onPollVote?: Function
+  onPostHeight?: (postId: number | string, height: number) => void
 }
 type State = {
   isFetching: boolean
   ratings: any
+  markdownRaw: boolean
 }
 export class PostComponent extends Component<Props> {
   static contextType = MainContext
@@ -65,6 +71,13 @@ export class PostComponent extends Component<Props> {
     this.state = {
       isFetching: false,
       ratings: {},
+      markdownRaw: false,
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.post?.id !== this.props.post?.id && this.state.markdownRaw) {
+      this.setState({ markdownRaw: false })
     }
   }
 
@@ -72,8 +85,11 @@ export class PostComponent extends Component<Props> {
     return (
       this.props.post.rating !== nextProps.post.rating ||
       this.props.post.reminder !== nextProps.post.reminder ||
+      this.props.post.id !== nextProps.post.id ||
+      this.props.post.content !== nextProps.post.content ||
       this.props.post.content_raw !== nextProps.post.content_raw ||
       this.props.post.parsed?.height !== nextProps.post.parsed?.height ||
+      this.state.markdownRaw !== nextState.markdownRaw ||
       this.props.post.parsed?.layoutEpoch !== nextProps.post.parsed?.layoutEpoch ||
       this.props.post.parsed?.images?.some(
         (img, i) =>
@@ -85,7 +101,8 @@ export class PostComponent extends Component<Props> {
           img.byteLength !== nextProps.post.parsed?.images?.[i]?.byteLength,
       ) ||
       this.context.theme !== nextContext.theme ||
-      isTextSelectionEnabled(this.context.config) !== isTextSelectionEnabled(nextContext.config)
+      isTextSelectionEnabled(this.context.config) !== isTextSelectionEnabled(nextContext.config) ||
+      isPostMarkdownEnabled(this.context.config) !== isPostMarkdownEnabled(nextContext.config)
     )
   }
 
@@ -332,6 +349,44 @@ export class PostComponent extends Component<Props> {
     )
   }
 
+  renderEmbedded(contentParts, images, codeBlocks, spoilers, ytBlocks, videos) {
+    return contentParts.map(part => {
+      if (part.startsWith(TOKEN.IMG)) {
+        const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
+        return this.renderImage(img)
+      }
+      if (part.startsWith(TOKEN.YT)) {
+        const ytBlock = ytBlocks.filter(c => c.id === part.replace(TOKEN.YT, ''))[0]
+        return this.renderYtBlock(ytBlock, images)
+      }
+      if (part.startsWith(TOKEN.VIDEO)) {
+        const video = videos.filter(c => c.id === part.replace(TOKEN.VIDEO, ''))[0]
+        return this.renderVideoBlock(video)
+      }
+      if (part.startsWith(TOKEN.CODE)) {
+        const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
+        return this.renderCodeBlock(codeBlock)
+      }
+      if (part.startsWith(TOKEN.SPOILER)) {
+        const spoiler = spoilers.filter(s => s.id === part.replace(TOKEN.SPOILER, ''))[0]
+        return this.renderSpoiler(spoiler)
+      }
+      return null
+    })
+  }
+
+  renderMarkdownToggle(colors) {
+    const formatted = !this.state.markdownRaw
+    return (
+      <TouchableRipple
+        onPress={() => this.setState({ markdownRaw: formatted })}
+        rippleColor={colors.ripple}
+        style={[styles.formatToggle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Icon name={formatted ? 'code' : 'file-text'} size={16} color={colors.text} />
+      </TouchableRipple>
+    )
+  }
+
   render() {
     if (this.props.post?.content_raw?.type === 'event') {
       const eventRow = this.renderEvent()
@@ -381,8 +436,22 @@ export class PostComponent extends Component<Props> {
       })
     }
     const { isSwipeablePostHeader } = this.context.config
+    const formatMarkdown = isPostMarkdownEnabled(this.context.config) && postCanFormatMarkdown(post)
+    const showFormatted = formatMarkdown && !this.state.markdownRaw
+    const onBodyPress = this.props.onBodyPress
+    const plainPress = typeof onBodyPress === 'function' ? () => onBodyPress() : undefined
     return (
       <View
+        onLayout={
+          showFormatted
+            ? event => {
+                const height = event.nativeEvent.layout.height
+                if (post?.id != null && height > 0) {
+                  this.props.onPostHeight?.(post.id, height)
+                }
+              }
+            : undefined
+        }
         style={{
           minHeight: post?.parsed?.height,
           paddingBottom: post?.parsed?.height > 0 ? undefined : 10,
@@ -444,7 +513,19 @@ export class PostComponent extends Component<Props> {
           />
         )}
         <View style={{ height: 5 }} />
-        {post?.content_raw?.type !== 'advertisement' &&
+        <View style={{ position: 'relative', paddingRight: formatMarkdown && !showFormatted ? 36 : 0 }}>
+        {showFormatted ? (
+          <View style={{ paddingLeft: 5, paddingRight: 40 }}>
+            <MarkdownViewComponent
+              content={postHtmlToMarkdown(post.content)}
+              selectable={isTextSelectionEnabled(this.context.config)}
+              query={this.props.searchQuery}
+              onPlainPress={plainPress}
+              onNavigateToPost={(discussionId, postId) => this.props.onDiscussionDetailShow(discussionId, postId)}
+            />
+            {this.renderEmbedded(contentParts, images, codeBlocks, spoilers, ytBlocks, videos)}
+          </View>
+        ) : post?.content_raw?.type !== 'advertisement' &&
           blocks.length > 0 &&
           blocks.map(block => {
             if (block.isText) {
@@ -497,6 +578,8 @@ export class PostComponent extends Component<Props> {
               )
             }
           })}
+        {formatMarkdown ? this.renderMarkdownToggle(colors) : null}
+        </View>
         {post?.content_raw?.type === 'advertisement' && post?.parsed?.advertisement && this.renderAdvertisement()}
         {post?.content_raw?.type === 'discussion_request' &&
           post?.parsed?.discussionRequest &&
@@ -507,3 +590,17 @@ export class PostComponent extends Component<Props> {
     )
   }
 }
+
+const styles = StyleSheet.create({
+  formatToggle: {
+    position: 'absolute',
+    top: 0,
+    right: 4,
+    zIndex: 2,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+})

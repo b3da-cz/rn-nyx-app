@@ -24,6 +24,7 @@ type Props = {
   showUserAvatars?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
   onLinkPress?: (url: string) => void
+  onPlainPress?: () => void
   query?: string
   activeIndex?: number | null
   onMatchLayout?: (y: number) => void
@@ -95,6 +96,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
   showUserAvatars,
   onNavigateToPost,
   onLinkPress,
+  onPlainPress,
   query = '',
   activeIndex = null,
   onMatchLayout,
@@ -287,6 +289,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
               <Text
                 key={idx}
                 selectable={isSelectable}
+                onPress={onPlainPress}
                 style={[
                   styles.header,
                   { color: colors.text, fontSize, marginTop: idx === 0 ? 0 : 10 },
@@ -308,6 +311,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 <Text style={[styles.bullet, { color: colors.primary }]}>{bullet}</Text>
                 <Text
                   selectable={isSelectable}
+                  onPress={onPlainPress}
                   style={[
                     styles.listItemText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
@@ -331,6 +335,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 ]}>
                 <Text
                   selectable={isSelectable}
+                  onPress={onPlainPress}
                   style={[
                     styles.blockquoteText,
                     { color: colors.text, fontSize: metrics.fontSizes.p },
@@ -396,7 +401,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                         paddingVertical: 6,
                         backgroundColor: headerRow ? colors.row : 'transparent',
                       }}>
-                      <Text selectable={isSelectable} style={cellStyle}>
+                      <Text selectable={isSelectable} onPress={onPlainPress} style={cellStyle}>
                         {renderInlines(cells[col] || '', undefined, hostId, line => {
                           wideRefs.current[String(idx)]?.scrollTo({
                             x: Math.max(0, col * width - 8),
@@ -443,6 +448,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
               <Text
                 key={idx}
                 selectable={isSelectable}
+                onPress={onPlainPress}
                 style={[
                   styles.paragraph,
                   { color: colors.text, fontSize: metrics.fontSizes.p },

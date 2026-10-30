@@ -276,6 +276,9 @@ export class DiscussionView extends Component<Props> {
   }
 
   componentWillUnmount() {
+    if (this._postHeightTimer) {
+      clearTimeout(this._postHeightTimer)
+    }
     if (this.navFocusListener) {
       this.navFocusListener()
     }
@@ -811,6 +814,34 @@ export class DiscussionView extends Component<Props> {
 
   getStoredPostById(postId) {
     return this.state?.posts?.filter(p => p.id == postId)[0]
+  }
+
+  onPostHeight(postId, height) {
+    const lists = [this._posts, this.state.posts, this.state.header].filter(list => Array.isArray(list) && list.length)
+    let changed = false
+    const seen = new Set<any[]>()
+    lists.forEach(list => {
+      if (seen.has(list)) {
+        return
+      }
+      seen.add(list)
+      const post = list.find(item => item?.id == postId)
+      if (!post?.parsed || height <= post.parsed.height + 2) {
+        return
+      }
+      post.parsed.height = height
+      assignPostOffsets(list)
+      changed = true
+    })
+    if (!changed || this._postHeightTimer) {
+      return
+    }
+    this._postHeightTimer = setTimeout(() => {
+      this._postHeightTimer = null
+      if (Array.isArray(this.state.posts)) {
+        this.setState({ posts: this.state.posts.slice() })
+      }
+    }, 50)
   }
 
   getPostIndexById(postId) {
@@ -1377,6 +1408,7 @@ export class DiscussionView extends Component<Props> {
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
+              onPostHeight={(postId, height) => this.onPostHeight(postId, height)}
             />
           )}
         />
