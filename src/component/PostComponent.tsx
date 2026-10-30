@@ -32,7 +32,7 @@ import {
   promptTextFile,
   searchMatchRanges,
 } from '../lib'
-import { postCanFormatMarkdown, postHtmlToMarkdown } from '../lib/postMarkdown'
+import { postCanFormatMarkdown, splitPostFlow } from '../lib/postMarkdown'
 
 type Props = {
   post: any
@@ -349,30 +349,40 @@ export class PostComponent extends Component<Props> {
     )
   }
 
-  renderEmbedded(contentParts, images, codeBlocks, spoilers, ytBlocks, videos) {
-    return contentParts.map(part => {
-      if (part.startsWith(TOKEN.IMG)) {
-        const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]
-        return this.renderImage(img)
-      }
-      if (part.startsWith(TOKEN.YT)) {
-        const ytBlock = ytBlocks.filter(c => c.id === part.replace(TOKEN.YT, ''))[0]
-        return this.renderYtBlock(ytBlock, images)
-      }
-      if (part.startsWith(TOKEN.VIDEO)) {
-        const video = videos.filter(c => c.id === part.replace(TOKEN.VIDEO, ''))[0]
-        return this.renderVideoBlock(video)
-      }
-      if (part.startsWith(TOKEN.CODE)) {
-        const codeBlock = codeBlocks.filter(c => c.id === part.replace(TOKEN.CODE, ''))[0]
-        return this.renderCodeBlock(codeBlock)
-      }
-      if (part.startsWith(TOKEN.SPOILER)) {
-        const spoiler = spoilers.filter(s => s.id === part.replace(TOKEN.SPOILER, ''))[0]
-        return this.renderSpoiler(spoiler)
-      }
-      return null
-    })
+  renderFlowSegment(segment, images, codeBlocks, spoilers, ytBlocks, videos) {
+    if (segment.type === 'markdown') {
+      return (
+        <MarkdownViewComponent
+          key={`md-${segment.text.slice(0, 24)}`}
+          content={segment.text}
+          selectable={isTextSelectionEnabled(this.context.config)}
+          query={this.props.searchQuery}
+          onPlainPress={this.plainPress()}
+          onNavigateToPost={(discussionId, postId) => this.props.onDiscussionDetailShow(discussionId, postId)}
+        />
+      )
+    }
+    if (segment.type === 'code' && codeBlocks[segment.index]) {
+      return this.renderCodeBlock(codeBlocks[segment.index])
+    }
+    if (segment.type === 'image' && images[segment.index]) {
+      return this.renderImage(images[segment.index])
+    }
+    if (segment.type === 'video' && videos[segment.index]) {
+      return this.renderVideoBlock(videos[segment.index])
+    }
+    if (segment.type === 'embed' && ytBlocks[segment.index]) {
+      return this.renderYtBlock(ytBlocks[segment.index], images)
+    }
+    if (segment.type === 'spoiler' && spoilers[segment.index]) {
+      return this.renderSpoiler(spoilers[segment.index])
+    }
+    return null
+  }
+
+  plainPress() {
+    const onBodyPress = this.props.onBodyPress
+    return typeof onBodyPress === 'function' ? () => onBodyPress() : undefined
   }
 
   renderMarkdownToggle(colors) {
@@ -438,8 +448,6 @@ export class PostComponent extends Component<Props> {
     const { isSwipeablePostHeader } = this.context.config
     const formatMarkdown = isPostMarkdownEnabled(this.context.config) && postCanFormatMarkdown(post)
     const showFormatted = formatMarkdown && !this.state.markdownRaw
-    const onBodyPress = this.props.onBodyPress
-    const plainPress = typeof onBodyPress === 'function' ? () => onBodyPress() : undefined
     return (
       <View
         onLayout={
@@ -516,14 +524,9 @@ export class PostComponent extends Component<Props> {
         <View style={{ position: 'relative', paddingRight: formatMarkdown && !showFormatted ? 36 : 0 }}>
         {showFormatted ? (
           <View style={{ paddingLeft: 5, paddingRight: 40 }}>
-            <MarkdownViewComponent
-              content={postHtmlToMarkdown(post.content)}
-              selectable={isTextSelectionEnabled(this.context.config)}
-              query={this.props.searchQuery}
-              onPlainPress={plainPress}
-              onNavigateToPost={(discussionId, postId) => this.props.onDiscussionDetailShow(discussionId, postId)}
-            />
-            {this.renderEmbedded(contentParts, images, codeBlocks, spoilers, ytBlocks, videos)}
+            {splitPostFlow(post.content).map((segment, index) => (
+              <View key={`${segment.type}-${index}`}>{this.renderFlowSegment(segment, images, codeBlocks, spoilers, ytBlocks, videos)}</View>
+            ))}
           </View>
         ) : post?.content_raw?.type !== 'advertisement' &&
           blocks.length > 0 &&

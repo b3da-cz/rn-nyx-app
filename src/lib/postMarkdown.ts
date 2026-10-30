@@ -45,6 +45,61 @@ export function postHtmlToMarkdown(html?: string | null): string {
   return breaksToNewlines(text)
 }
 
+export type PostFlowSegment =
+  | { type: 'markdown'; text: string }
+  | { type: 'code'; index: number }
+  | { type: 'image'; index: number }
+  | { type: 'video'; index: number }
+  | { type: 'embed'; index: number }
+  | { type: 'spoiler'; index: number }
+
+const EMBEDS: Array<{ type: PostFlowSegment['type']; pattern: RegExp }> = [
+  { type: 'code', pattern: /<pre\b[\s\S]*?<\/pre>/i },
+  { type: 'image', pattern: /<img\b[^>]*\bsrc\s*=[^>]*>/i },
+  { type: 'video', pattern: /<video\b[\s\S]*?<\/video>/i },
+  { type: 'embed', pattern: /<div\b[^>]*\bembed-wrapper\b[^>]*>[\s\S]*?<\/div>/i },
+  { type: 'spoiler', pattern: /<(div|span)\b[^>]*\bspoiler\b[^>]*>[\s\S]*?<\/\1>/i },
+]
+
+// Text and embedded blocks in source order. A mermaid <pre> stays between the
+// markdown before it and the markdown after it, instead of after the whole post.
+export function splitPostFlow(html?: string | null): PostFlowSegment[] {
+  const source = `${html || ''}`
+  const segments: PostFlowSegment[] = []
+  const counts: Record<string, number> = {}
+  let from = 0
+  while (from < source.length) {
+    const slice = source.slice(from)
+    let found: { at: number; length: number; type: PostFlowSegment['type'] } | null = null
+    EMBEDS.forEach(embed => {
+      const match = embed.pattern.exec(slice)
+      if (!match) {
+        return
+      }
+      if (!found || match.index < found.at || (match.index === found.at && match[0].length > found.length)) {
+        found = { at: match.index, length: match[0].length, type: embed.type }
+      }
+    })
+    if (!found) {
+      const text = postHtmlToMarkdown(slice)
+      if (text) {
+        segments.push({ type: 'markdown', text })
+      }
+      break
+    }
+    const embed = found as { at: number; length: number; type: PostFlowSegment['type'] }
+    const text = postHtmlToMarkdown(slice.slice(0, embed.at))
+    if (text) {
+      segments.push({ type: 'markdown', text })
+    }
+    const index = counts[embed.type] || 0
+    counts[embed.type] = index + 1
+    segments.push({ type: embed.type, index } as PostFlowSegment)
+    from += embed.at + embed.length
+  }
+  return segments
+}
+
 export function isPostMarkdown(text?: string | null): boolean {
   const body = `${text || ''}`.trim()
   if (body.length < 3) {

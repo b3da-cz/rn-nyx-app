@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.19
+- ve formátovaném příspěvku zůstane blok kódu, třeba Mermaid, na svém místě mezi textem
+
 ## 0.35.18
 - příspěvek s Markdownem se zobrazí naformátovaný, v rohu textu je přepínač na zdroj
 - v nastavení čtení je přepínač Formátovat Markdown v příspěvcích, ve výchozím stavu zapnutý
