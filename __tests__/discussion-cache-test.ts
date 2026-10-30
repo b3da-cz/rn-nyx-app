@@ -15,7 +15,6 @@ import {
   rememberHistoryOnList,
   syncCachedPage,
   touchCachedDiscussion,
-  MAX_CACHED_PAGES_PER_CLUB,
   DISCUSSION_CACHE_LIMIT_MAX,
   normalizeDiscussionCacheLimit,
 } from '../src/lib/discussionCache'
@@ -211,17 +210,31 @@ describe('discussion cache', () => {
     expect(list.bookmarks?.bookmarks?.[0].bookmarks[1].discussion_id).toBe(102)
   })
 
-  it('caps the number of cached pages per club and prunes old posts', () => {
+  it('keeps posts from earlier visits when a later page is saved', () => {
     let entry: any = { id: '5', openedAt: 1, posts: {}, pages: {} }
-    for (let i = 1; i <= 20; i++) {
-      entry = syncCachedPage(entry, `older:${i}`, [post(i)])
-    }
-    const pageKeys = Object.keys(entry.pages)
-    expect(pageKeys.length).toBeLessThanOrEqual(MAX_CACHED_PAGES_PER_CLUB)
-    const remainingPostIds = new Set(Object.keys(entry.posts))
-    const referencedIds = new Set(Object.values(entry.pages).flat())
-    for (const id of remainingPostIds) {
-      expect(referencedIds.has(id)).toBe(true)
-    }
+    const older = Array.from({ length: 100 }, (_, i) => post(i + 1))
+    const newer = Array.from({ length: 100 }, (_, i) => post(i + 5000))
+    entry = syncCachedPage(entry, 'older:101', older)
+    entry = syncCachedPage(entry, 'newer:100', newer)
+    entry = syncCachedPage(entry, 'older:9001', [post(9000), post(8900)])
+    expect(Object.keys(entry.posts)).toHaveLength(202)
+    expect(entry.posts['1']?.post.id).toBe(1)
+    expect(entry.posts['5099']?.post.id).toBe(5099)
+    expect(entry.pages['older:101']).toHaveLength(100)
+    expect(entry.pages['newer:100']).toHaveLength(100)
+  })
+
+  it('drops a post that disappeared from a page already in the cache', () => {
+    let entry: any = syncCachedPage({ id: '5', openedAt: 1, posts: {}, pages: {} }, 'older:10', [
+      post(9),
+      post(8),
+      post(7),
+    ])
+    entry = syncCachedPage(entry, 'latest', [post(20)])
+    entry = syncCachedPage(entry, 'older:10', [post(9), post(7)])
+    expect(entry.posts['8']).toBeUndefined()
+    expect(entry.pages['older:10']).toEqual(['9', '7'])
+    expect(entry.posts['20']?.post.id).toBe(20)
+    expect(entry.posts['9']?.post.id).toBe(9)
   })
 })

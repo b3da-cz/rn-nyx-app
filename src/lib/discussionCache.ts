@@ -236,13 +236,11 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
   return posts
 }
 
-export const MAX_CACHED_PAGES_PER_CLUB = 12
-
 export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, posts: any[] = []): DiscussionCacheEntry => {
   const ids = posts.filter(post => post && !post.isClubStart && post.id != null).map(post => String(post.id))
   const seen = new Set(ids)
   const previous = entry.pages[pageKey] || []
-  let pages = { ...entry.pages, [pageKey]: ids }
+  const pages = { ...entry.pages, [pageKey]: ids }
 
   if (pageKey.startsWith('newer:') && ids.length > 0) {
     const prevLatest = pages.latest || []
@@ -254,38 +252,22 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
     pages.latest = sorted.slice(0, 20)
   }
 
-  const pageKeys = Object.keys(pages)
-  if (pageKeys.length > MAX_CACHED_PAGES_PER_CLUB) {
-    const essential = new Set(['header', 'latest', pageKey])
-    const others = pageKeys.filter(k => !essential.has(k))
-    const toDrop = others.slice(0, pageKeys.length - MAX_CACHED_PAGES_PER_CLUB)
-    const nextPages: Record<string, string[]> = {}
-    Object.entries(pages).forEach(([k, list]) => {
-      if (!toDrop.includes(k)) {
-        nextPages[k] = list
+  const stored = { ...entry.posts }
+  // A refreshed page no longer lists these ids, so the posts were deleted.
+  // Drop them everywhere. Posts that only live on other pages stay.
+  const removed = previous.filter(id => !seen.has(id))
+  if (removed.length > 0) {
+    const gone = new Set(removed)
+    removed.forEach(id => {
+      delete stored[id]
+    })
+    Object.keys(pages).forEach(key => {
+      const list = pages[key] || []
+      if (list.some(id => gone.has(id))) {
+        pages[key] = list.filter(id => !gone.has(id))
       }
     })
-    pages = nextPages
   }
-
-  const keptElsewhere = new Set<string>()
-  Object.entries(pages).forEach(([key, list]) => {
-    if (key === pageKey) {
-      return
-    }
-    list.forEach(id => keptElsewhere.add(id))
-  })
-  const stored = { ...entry.posts }
-  previous.forEach(id => {
-    if (!seen.has(id) && !keptElsewhere.has(id)) {
-      delete stored[id]
-    }
-  })
-  Object.keys(stored).forEach(id => {
-    if (!seen.has(id) && !keptElsewhere.has(id)) {
-      delete stored[id]
-    }
-  })
   posts.forEach(post => {
     if (!post || post.isClubStart || post.id == null) {
       return

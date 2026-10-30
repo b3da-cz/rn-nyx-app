@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.35.20
+- cache diskuze si nechává příspěvky ze starších návštěv a při novém stažení stránky odebere jen ty, které v ní už nejsou
+
 ## 0.35.19
 - ve formátovaném příspěvku zůstane blok kódu, třeba Mermaid, na svém místě mezi textem
 
