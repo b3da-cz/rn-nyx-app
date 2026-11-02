@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, RefreshControl, View } from 'react-native'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
@@ -950,8 +950,8 @@ export class DiscussionView extends Component<Props> {
   }
 
   scrollToTop(animated = false) {
-    this.refScroll.scrollToOffset({
-      index: 0,
+    this.refScroll?.scrollToOffset({
+      offset: 0,
       animated,
     })
   }
@@ -1386,6 +1386,7 @@ export class DiscussionView extends Component<Props> {
           ref={r => (this.refScroll = r)}
           data={listData}
           extraData={this.state}
+          nestedScrollEnabled={true}
           initialScrollIndex={listEmpty ? undefined : this.state.initialScrollIndex}
           keyExtractor={item => `${item.uuid}`}
           onEndReached={() => this.loadDiscussionBottom()}
@@ -1395,6 +1396,8 @@ export class DiscussionView extends Component<Props> {
               refreshing={this.state.isFetching && !showProgress}
               onRefresh={() => this.loadDiscussionTop()}
               colors={[theme.colors.primary, theme.colors.secondary, theme.colors.tertiary]}
+              enabled={!this.state.isFetching && !loadActive}
+              progressViewOffset={Platform.OS === 'android' ? 10 : 0}
             />
           }
           style={{
@@ -1439,7 +1442,7 @@ export class DiscussionView extends Component<Props> {
             const length = (data && data[index].parsed.height) || 300
             return {
               length,
-              offset: ((data && data[index].parsed.offset) || index * 300) - length,
+              offset: Math.max(0, ((data && data[index].parsed.offset) || index * 300) - length),
               index,
             }
           }}

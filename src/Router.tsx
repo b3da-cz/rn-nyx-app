@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useContext, useEffect, useRef } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
@@ -129,6 +129,37 @@ const TabContainer = ({ navigation }) => {
   if (refs) {
     refs.nav = navigation
   }
+  const swipeBlockers = useRef(new Set<string>())
+  const [navSwipeEnabled, setNavSwipeEnabledState] = useState(true)
+
+  const setNavSwipeEnabled = useCallback(
+    (enabled: boolean, key?: string) => {
+      const k = key || 'default'
+      if (!enabled) {
+        swipeBlockers.current.add(k)
+      } else {
+        swipeBlockers.current.delete(k)
+      }
+      const shouldEnable = swipeBlockers.current.size === 0
+      setNavSwipeEnabledState(shouldEnable)
+      refs?.tabNav?.setOptions?.({
+        swipeEnabled: Boolean(config.isNavGesturesEnabled && shouldEnable),
+      })
+    },
+    [refs, config.isNavGesturesEnabled],
+  )
+
+  useEffect(() => {
+    if (refs) {
+      refs.setNavSwipeEnabled = setNavSwipeEnabled
+    }
+    return () => {
+      if (refs) {
+        delete refs.setNavSwipeEnabled
+      }
+    }
+  }, [refs, setNavSwipeEnabled])
+
   const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
   const renderTabBar = props => {
     if (refs) {
@@ -162,7 +193,7 @@ const TabContainer = ({ navigation }) => {
       overScrollMode="never"
       screenOptions={{
         lazy: true,
-        swipeEnabled: config.isNavGesturesEnabled,
+        swipeEnabled: Boolean(config.isNavGesturesEnabled && navSwipeEnabled),
         ...NavOptions.tabBarOptions(theme),
       }}>
       {config.isHistoryEnabled && (

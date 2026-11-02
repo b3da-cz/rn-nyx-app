@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.36.1
+- oprava zablokování dotyků v diskuzi na pozici scrollu 0 (při otevření nebo posunutí úplně nahoru)
+- swipe na hlavičce příspěvku má přednost před přepínáním záložek ve ViewPageru navigace
+- vnořený horizontální scroll (tabulky v markdownu, kódové bloky, obrázky inzerátů) má přednost před přepínáním záložek v navigaci
+
 ## 0.36.0
 - upomínky, pošta, události a oznámení se po otevření hned zobrazí z cache a pak se doplní z nového stažení
 - smazaný příspěvek zmizí, u oznámení se navíc aktualizuje počet odpovědí a hodnocení, změněný popis události, účastníci, inzerát, nástěnka a hlavička se překreslí

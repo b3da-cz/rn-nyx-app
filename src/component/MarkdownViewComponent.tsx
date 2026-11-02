@@ -415,9 +415,17 @@ export const MarkdownViewComponent: React.FC<Props> = ({
                 })}
               </View>
             )
+            const tableKey = `md_table_${idx}`
             return (
               <ScrollView
                 horizontal
+                nestedScrollEnabled={true}
+                onTouchStart={() => mainContext?.refs?.setNavSwipeEnabled?.(false, tableKey)}
+                onTouchEnd={() => mainContext?.refs?.setNavSwipeEnabled?.(true, tableKey)}
+                onTouchCancel={() => mainContext?.refs?.setNavSwipeEnabled?.(true, tableKey)}
+                onScrollBeginDrag={() => mainContext?.refs?.setNavSwipeEnabled?.(false, tableKey)}
+                onScrollEndDrag={() => mainContext?.refs?.setNavSwipeEnabled?.(true, tableKey)}
+                onMomentumScrollEnd={() => mainContext?.refs?.setNavSwipeEnabled?.(true, tableKey)}
                 ref={node => {
                   wideRefs.current[String(idx)] = node
                 }}

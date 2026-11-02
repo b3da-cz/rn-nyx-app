@@ -38,12 +38,21 @@ export const AdvertisementComponent = ({
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
-  const selectable = isTextSelectionEnabled(useContext(MainContext).config)
+  const { config, refs } = useContext(MainContext)
+  const selectable = isTextSelectionEnabled(config)
   const imgW = isDetail ? undefined : 100
   const imgH = isDetail ? 200 : 100
   return (
     <View>
-      <ScrollView horizontal={true}>
+      <ScrollView
+        horizontal={true}
+        nestedScrollEnabled={true}
+        onTouchStart={() => refs?.setNavSwipeEnabled?.(false, 'ad_images')}
+        onTouchEnd={() => refs?.setNavSwipeEnabled?.(true, 'ad_images')}
+        onTouchCancel={() => refs?.setNavSwipeEnabled?.(true, 'ad_images')}
+        onScrollBeginDrag={() => refs?.setNavSwipeEnabled?.(false, 'ad_images')}
+        onScrollEndDrag={() => refs?.setNavSwipeEnabled?.(true, 'ad_images')}
+        onMomentumScrollEnd={() => refs?.setNavSwipeEnabled?.(true, 'ad_images')}>
         {images?.length > 0 &&
           images.map(img => (
             <ImageComponent

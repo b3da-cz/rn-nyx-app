@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import rnTextSize from 'react-native-text-size'
-import { useTheme } from '../lib'
+import { MainContext, useTheme } from '../lib'
 
 type Props = {
   html: string
@@ -10,6 +10,7 @@ type Props = {
   fontSize?: number
 }
 export const CodeBlockComponent = ({ html, height, fontSize = 11 }: Props) => {
+  const { refs } = useContext(MainContext)
   const [h, setH] = useState<number>(height)
   useEffect(() => {
     if (!height) {
@@ -25,10 +26,16 @@ export const CodeBlockComponent = ({ html, height, fontSize = 11 }: Props) => {
   const {
     metrics: { blocks, screen },
   } = useTheme()
+  const codeKey = `code_${fontSize}_${h}`
   return !h ? null : (
     <Text>
-      <View style={{ flex: 1 }}>
+      <View
+        style={{ flex: 1 }}
+        onTouchStart={() => refs?.setNavSwipeEnabled?.(false, codeKey)}
+        onTouchEnd={() => refs?.setNavSwipeEnabled?.(true, codeKey)}
+        onTouchCancel={() => refs?.setNavSwipeEnabled?.(true, codeKey)}>
         <WebView
+          nestedScrollEnabled={true}
           style={{
             height: h,
             width: screen.width - blocks.large,

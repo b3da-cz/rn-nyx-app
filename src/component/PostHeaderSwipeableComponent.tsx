@@ -6,7 +6,7 @@ import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import { ButtonSquareComponent, confirm, RatingDetailComponent } from '../component'
-import { LayoutAnimConf, Nyx, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
+import { LayoutAnimConf, MainContext, Nyx, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
 import { PostHeaderCommonComponent } from './PostHeaderCommonComponent'
 
 type Props = {
@@ -37,6 +37,10 @@ type State = {
   ratingHeight: number
 }
 export class PostHeaderSwipeableComponent extends Component<Props> {
+  static contextType = MainContext
+  get mainContext(): any {
+    return this.context
+  }
   state: Readonly<State>
   refSwipeable: any
   constructor(props) {
@@ -56,6 +60,25 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
 
   componentDidMount() {
     this.getRatingByFriends()
+  }
+
+  componentWillUnmount() {
+    this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}`)
+    this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}_open`)
+  }
+
+  handleTouchStart = () => {
+    if (!this.props.isInteractive) {
+      return
+    }
+    this.mainContext?.refs?.setNavSwipeEnabled?.(false, `post_${this.props.post?.id}`)
+  }
+
+  handleTouchEnd = () => {
+    if (!this.props.isInteractive) {
+      return
+    }
+    this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}`)
   }
 
   onReply() {
@@ -235,7 +258,10 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
       return null
     }
     return (
-      <View>
+      <View
+        onTouchStart={this.handleTouchStart}
+        onTouchEnd={this.handleTouchEnd}
+        onTouchCancel={this.handleTouchEnd}>
         <Swipeable
           ref={r => {
             this.refSwipeable = r
@@ -245,8 +271,16 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           overshootFriction={8}
           leftThreshold={40}
           rightThreshold={40}
-          dragOffsetFromLeftEdge={24}
-          dragOffsetFromRightEdge={24}
+          dragOffsetFromLeftEdge={10}
+          dragOffsetFromRightEdge={10}
+          activeOffsetX={[-10, 10]}
+          disallowInterruption={true}
+          onSwipeableWillOpen={() => {
+            this.mainContext?.refs?.setNavSwipeEnabled?.(false, `post_${post.id}_open`)
+          }}
+          onSwipeableClose={() => {
+            this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${post.id}_open`)
+          }}
           renderLeftActions={
             this.props.mailMode
               ? () => this.renderMailLeftActions()
