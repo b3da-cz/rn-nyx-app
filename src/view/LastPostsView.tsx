@@ -41,8 +41,10 @@ export class LastPostsView extends Component<Props> {
   nyx?: Nyx
   filters: string[] = []
   blockedUsers: string[] = []
+  navFocusListener?: Function
   navTabPressListener?: Function
   isUnmounted = false
+  lastFetchAt = 0
   _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
@@ -62,6 +64,9 @@ export class LastPostsView extends Component<Props> {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
+    this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.scheduleLoad()
+    })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused =
         typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
@@ -70,13 +75,25 @@ export class LastPostsView extends Component<Props> {
       }
     })
     this.setTheme()
+    this.scheduleLoad()
+  }
+
+  scheduleLoad(force = false) {
     InteractionManager.runAfterInteractions(() => {
       if (this.isUnmounted) {
         return
       }
       const isFocused =
         typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
-      if (isFocused && !this.state.isFetching) {
+      if (!isFocused) {
+        return
+      }
+      const hasPosts = this.state.posts?.length > 0
+      const now = Date.now()
+      if (!force && hasPosts && this.lastFetchAt > 0 && now - this.lastFetchAt < 60000) {
+        return
+      }
+      if (!this.state.isFetching) {
         this.getLastPosts()
       }
     })
@@ -84,6 +101,9 @@ export class LastPostsView extends Component<Props> {
 
   componentWillUnmount() {
     this.isUnmounted = true
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
@@ -122,6 +142,7 @@ export class LastPostsView extends Component<Props> {
       this.trackLoad,
     )
     const images = galleryImagesFromPosts(parsedPosts)
+    this.lastFetchAt = Date.now()
     this.setState({
       posts: parsedPosts,
       images,

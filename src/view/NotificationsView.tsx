@@ -44,6 +44,7 @@ export class NotificationsView extends Component<Props> {
   navFocusListener?: Function
   navTabPressListener?: Function
   isUnmounted = false
+  lastFetchAt = 0
   _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
@@ -55,20 +56,32 @@ export class NotificationsView extends Component<Props> {
     }
   }
 
+  scheduleLoad(force = false) {
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (!isFocused) {
+        return
+      }
+      const hasPosts = this.state.posts?.length > 0
+      const now = Date.now()
+      if (!force && hasPosts && this.lastFetchAt > 0 && now - this.lastFetchAt < 60000) {
+        return
+      }
+      if (!this.state.isFetching) {
+        this.getNotifications()
+      }
+    })
+  }
+
   componentDidMount() {
     this.isUnmounted = false
     this.nyx = this.context.nyx
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      InteractionManager.runAfterInteractions(() => {
-        if (this.isUnmounted) {
-          return
-        }
-        const isFocused =
-          typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
-        if (isFocused && !this.state.isFetching) {
-          this.getNotifications()
-        }
-      })
+      this.scheduleLoad()
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused =
@@ -78,16 +91,7 @@ export class NotificationsView extends Component<Props> {
       }
     })
     this.setTheme()
-    InteractionManager.runAfterInteractions(() => {
-      if (this.isUnmounted) {
-        return
-      }
-      const isFocused =
-        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
-      if (isFocused && !this.state.isFetching) {
-        this.getNotifications()
-      }
-    })
+    this.scheduleLoad()
   }
 
   componentWillUnmount() {
@@ -154,6 +158,7 @@ export class NotificationsView extends Component<Props> {
       }
       servedFromCache = false
       const postsChanged = merged.changed || pending.length > 0
+      this.lastFetchAt = Date.now()
       this.setState({
         unreadCount: res?.context?.user?.notifications_unread,
         ...(postsChanged ? { posts } : {}),

@@ -18,7 +18,7 @@ type Props = {
   onIconPress?: Function
   trailing?: React.ReactNode
 }
-export const SectionHeaderComponent = ({
+export const SectionHeaderComponent = React.memo(({
   title,
   icon,
   iconColor,
@@ -103,4 +103,4 @@ export const SectionHeaderComponent = ({
       </View>
     </View>
   )
-}
+})

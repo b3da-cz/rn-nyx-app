@@ -70,13 +70,28 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     return list.history
   }
 
-  async getList(isAnimated = false) {
+  hasData(): boolean {
+    return Array.isArray(this.state.discussions) && this.state.discussions.length > 0
+  }
+
+  handleDiscussionPress = (id: any, lastSeenPostId?: any) => {
+    this.showDiscussion(id, lastSeenPostId)
+  }
+
+  handleDiscussionLongPress = (id: any) => {
+    this.showDiscussionStats(id)
+  }
+
+  async getList(isAnimated = false, force = false) {
     const configShowingRead = this.context?.config?.isShowingReadOnLists
     const showingRead = typeof configShowingRead === 'boolean' ? configShowingRead : this.state.isShowingRead
     if (showingRead !== this.state.isShowingRead) {
       this.setState({ isShowingRead: showingRead })
     }
-    this.setState({ isFetching: true })
+    const hasData = this.hasData()
+    if (!hasData || force) {
+      this.setState({ isFetching: true })
+    }
     this.nyx?.holdErrors()
     let servedFromCache = false
     try {
@@ -86,7 +101,11 @@ export class HistoryView extends BaseDiscussionListView<Props> {
       } catch (e) {
         res = null
       }
+      if (this.isUnmounted) {
+        return
+      }
       if (!res?.error && Array.isArray(res?.discussions)) {
+        this.lastFetchAt = Date.now()
         this.showDiscussions(res.discussions, isAnimated)
         if (res.discussions.length > 0 || showingRead) {
           this.saveHistory(res.discussions).catch(e => console.warn(e))
@@ -100,6 +119,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
       }
       const cached = await this.cachedHistory()
       if (cached?.discussions?.length) {
+        this.lastFetchAt = Date.now()
         this.showDiscussions(cached.discussions, isAnimated)
         servedFromCache = true
         return
@@ -120,15 +140,15 @@ export class HistoryView extends BaseDiscussionListView<Props> {
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={{ backgroundColor: theme.colors.background, height: '100%' }}
-          refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getList()} />}>
+          refreshControl={<RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getList(false, true)} />}>
           <View>
             {this.state.discussions?.length > 0 &&
               this.state.discussions.map(d => (
                 <DiscussionRowComponent
                   key={d.discussion_id}
                   discussion={d}
-                  onPress={id => this.showDiscussion(id, d.last_seen_post_id)}
-                  onLongPress={id => this.showDiscussionStats(id)}
+                  onPress={this.handleDiscussionPress}
+                  onLongPress={this.handleDiscussionLongPress}
                 />
               ))}
           </View>

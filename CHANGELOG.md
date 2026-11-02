@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.38.0
+- Historie a Záložky se po návratu z diskuze obnoví hned, bez čekání na vypršení intervalu
+- globální časové razítko `lastDiscussionViewedAt` v MainContext.refs
+- řádky diskuzí a hlavičky sekcí se nepřekreslují, když se jejich data nezměnila (React.memo)
+- seznamy (Historie, Záložky, Poslední příspěvky, Pošta, Oznámení, Profil) si pamatují čas posledního načtení a při návratu na záložku do 60 sekund data znovu nenačítají
+- swipe mezi záložkami pozastaví načítání a přípravu dat až do konce přechodu (InteractionManager handle se uvolní i při přerušeném gestu)
+- v Profilu, Posledních příspěvcích a Oznámeních se odhlašovací funkce navigace uvolní při zavření obrazovky
+- akce u řádků Historie a Záložek jsou stabilní, obnovení se vynutí přes refresh, drobné úpravy hlaviček sekcí v Záložkách
+- aktualizace stavu v HistoryView a BookmarksView je chráněná proti odmountovaným komponentám
+
 ## 0.37.0
 - integrace vysoce výkonného lokálního úložiště MMKV (react-native-mmkv) s automatickou migrací z AsyncStorage a transparentním fallbackem
 - optimalizace diskové cache diskuzí: selektivní načítání konkrétního klubu bez nutnosti parsování celé databáze klubů

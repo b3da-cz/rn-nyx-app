@@ -2,7 +2,8 @@
  * @format
  * @flow
  */
-import React, { useCallback, useContext, useEffect, useRef } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { InteractionManager } from 'react-native'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
@@ -158,6 +159,44 @@ const TabContainer = ({ navigation }) => {
     }
   }, [refs, setNavSwipeEnabled])
 
+  const swipeInteractionRef = useRef<number | null>(null)
+  const swipeSafetyTimerRef = useRef<any>(null)
+
+  const clearSwipeInteraction = useCallback(() => {
+    if (swipeSafetyTimerRef.current) {
+      clearTimeout(swipeSafetyTimerRef.current)
+      swipeSafetyTimerRef.current = null
+    }
+    if (swipeInteractionRef.current != null) {
+      InteractionManager.clearInteractionHandle(swipeInteractionRef.current)
+      swipeInteractionRef.current = null
+    }
+  }, [])
+
+  const tabScreenListeners = useMemo(
+    () => ({
+      swipeStart: () => {
+        if (swipeSafetyTimerRef.current) {
+          clearTimeout(swipeSafetyTimerRef.current)
+        }
+        if (swipeInteractionRef.current == null) {
+          swipeInteractionRef.current = InteractionManager.createInteractionHandle()
+        }
+        swipeSafetyTimerRef.current = setTimeout(clearSwipeInteraction, 1500)
+      },
+      swipeEnd: () => {
+        clearSwipeInteraction()
+      },
+    }),
+    [clearSwipeInteraction],
+  )
+
+  useEffect(() => {
+    return () => {
+      clearSwipeInteraction()
+    }
+  }, [clearSwipeInteraction])
+
   const getTabIconColor = isFocused => (isFocused ? theme.colors.text : theme.colors.disabled)
   const renderTabBar = props => {
     if (refs) {
@@ -177,17 +216,7 @@ const TabContainer = ({ navigation }) => {
       tabBarPosition={config.isBottomTabs ? 'bottom' : 'top'}
       backBehavior="history"
       tabBar={renderTabBar}
-      // gestureHandlerProps={{
-      //   wip, needs more testing
-      //   maxPointers: 1,
-      //   minDist: 200,
-      //   minDeltaX: 80,
-      //   activeOffsetX: undefined,
-      //
-      //   hitSlop: {height: 60, bottom: 0},
-      //   minDeltaY: 0,
-      // }}
-      // options={{ cardStyle: NavOptions.cardStyle(theme) }}
+      screenListeners={tabScreenListeners}
       overScrollMode="never"
       screenOptions={{
         lazy: true,

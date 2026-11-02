@@ -25,7 +25,10 @@ export class ProfileView extends Component<Props> {
   static contextType = MainContext
   state: Readonly<State>
   nyx?: Nyx
+  navFocusListener?: Function
+  navTabPressListener?: Function
   isUnmounted = false
+  lastFetchAt = 0
   constructor(props) {
     super(props)
     this.state = {
@@ -43,13 +46,35 @@ export class ProfileView extends Component<Props> {
     this.nyx = (this.context as any).nyx
     this.getUsername()
     this.setTheme()
+    this.navFocusListener = this.props.navigation?.addListener?.('focus', () => {
+      this.scheduleLoad()
+    })
+    this.navTabPressListener = this.props.navigation?.getParent?.()?.addListener?.('tabPress', () => {
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getActiveFriends()
+      }
+    })
+    this.scheduleLoad()
+  }
+
+  scheduleLoad(force = false) {
     InteractionManager.runAfterInteractions(() => {
       if (this.isUnmounted) {
         return
       }
       const isFocused =
         typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
-      if (isFocused && !this.state.isFetching) {
+      if (!isFocused) {
+        return
+      }
+      const hasFriends = this.state.activeFriends?.length > 0
+      const now = Date.now()
+      if (!force && hasFriends && this.lastFetchAt > 0 && now - this.lastFetchAt < 60000) {
+        return
+      }
+      if (!this.state.isFetching) {
         this.getActiveFriends()
       }
     })
@@ -57,6 +82,12 @@ export class ProfileView extends Component<Props> {
 
   componentWillUnmount() {
     this.isUnmounted = true
+    if (this.navFocusListener) {
+      this.navFocusListener()
+    }
+    if (this.navTabPressListener) {
+      this.navTabPressListener()
+    }
   }
 
   getUsername() {
@@ -73,6 +104,7 @@ export class ProfileView extends Component<Props> {
     if (this.isUnmounted) {
       return
     }
+    this.lastFetchAt = Date.now()
     if (isAnimated) {
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     }

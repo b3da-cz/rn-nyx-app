@@ -16,8 +16,15 @@ export class BaseDiscussionListView<P> extends Component<Props> {
   navTabPressListener?: Function
   listRequest = 0
   isUnmounted = false
+  pendingDiscussionReturn = false
   constructor(props) {
     super(props)
+  }
+
+  lastFetchAt = 0
+
+  hasData(): boolean {
+    return false
   }
 
   componentDidMount() {
@@ -26,19 +33,27 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      this.scheduleList()
+      const lastDiscussionViewedAt = this.context?.refs?.lastDiscussionViewedAt || 0
+      const returnedFromDiscussion =
+        this.pendingDiscussionReturn || (lastDiscussionViewedAt > 0 && lastDiscussionViewedAt > this.lastFetchAt)
+      this.pendingDiscussionReturn = false
+      if (returnedFromDiscussion) {
+        this.getList(false, true)
+      } else {
+        this.scheduleList()
+      }
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused = typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
-        this.getList()
+        this.getList(false, true)
       }
     })
     this.init()
     this.scheduleList()
   }
 
-  scheduleList() {
+  scheduleList(force = false) {
     const request = ++this.listRequest
     InteractionManager.runAfterInteractions(() => {
       if (this.isUnmounted || request !== this.listRequest) {
@@ -48,7 +63,11 @@ export class BaseDiscussionListView<P> extends Component<Props> {
       if (!isFocused) {
         return
       }
-      this.getList()
+      const now = Date.now()
+      if (!force && this.lastFetchAt > 0 && now - this.lastFetchAt < 60000 && this.hasData()) {
+        return
+      }
+      this.getList(false, force)
     })
   }
 
@@ -71,7 +90,7 @@ export class BaseDiscussionListView<P> extends Component<Props> {
     })
   }
 
-  async getList() {}
+  async getList(isAnimated = false, force = false) {}
 
   async toggleRead(isShowingRead) {
     const next = !isShowingRead
@@ -95,6 +114,10 @@ export class BaseDiscussionListView<P> extends Component<Props> {
   }
 
   showDiscussion(discussionId, lastSeenPostId?) {
+    this.pendingDiscussionReturn = true
+    if (this.context?.refs) {
+      this.context.refs.lastDiscussionViewedAt = Date.now()
+    }
     this.props.navigation.push('discussion', { discussionId, jumpToLastSeen: true, lastSeenPostId })
   }
 

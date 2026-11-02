@@ -54,6 +54,7 @@ export class MailView extends Component<Props> {
   navBlurListener?: Function
   navTabPressListener?: Function
   isUnmounted = false
+  lastFetchAt = 0
   _revealQueue: Promise<any> = Promise.resolve()
   _lastHandledSharedText?: string
   _lastHandledSharedFile?: any
@@ -86,6 +87,27 @@ export class MailView extends Component<Props> {
     return request
   }
 
+  scheduleLoad(force = false) {
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (!isFocused) {
+        return
+      }
+      const hasMessages = this.state.messages?.length > 0
+      const now = Date.now()
+      if (!force && hasMessages && this.lastFetchAt > 0 && now - this.lastFetchAt < 60000) {
+        return
+      }
+      if (!this.state.isFetching) {
+        this.getLatestMessages()
+      }
+    })
+  }
+
   componentDidMount() {
     this.isUnmounted = false
     this.nyx = this.context.nyx
@@ -96,6 +118,7 @@ export class MailView extends Component<Props> {
       this.setState({ isSubmenuVisible: true, isMsgBtnVisible: true })
       this.handleSharedContent()
       this.handleComposeRequest()
+      this.scheduleLoad()
     })
     this.navBlurListener = this.props.navigation.addListener('blur', () => {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
@@ -108,16 +131,7 @@ export class MailView extends Component<Props> {
       }
     })
     this.setTheme()
-    InteractionManager.runAfterInteractions(() => {
-      if (this.isUnmounted) {
-        return
-      }
-      const isFocused =
-        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
-      if (isFocused && !this.state.isFetching) {
-        this.getLatestMessages()
-      }
-    })
+    this.scheduleLoad()
     this.handleSharedContent()
     this.handleComposeRequest()
   }
@@ -243,7 +257,8 @@ export class MailView extends Component<Props> {
   }
 
   async getLatestMessages() {
-    const isFocused = this.props.navigation.isFocused()
+    const isFocused =
+      typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
     const recipient = 'all'
     this.nyx?.holdErrors()
     let servedFromCache = false
@@ -276,6 +291,7 @@ export class MailView extends Component<Props> {
       }
       servedFromCache = false
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+      this.lastFetchAt = Date.now()
       this.setState({
         conversations: loaded.conversations,
         messages: loaded.messages,

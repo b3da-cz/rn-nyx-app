@@ -190,6 +190,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.markDiscussionVisited()
     this.config = this.context.config
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters]
@@ -277,7 +278,14 @@ export class DiscussionView extends Component<Props> {
     }
   }
 
+  markDiscussionVisited() {
+    if (this.context?.refs) {
+      this.context.refs.lastDiscussionViewedAt = Date.now()
+    }
+  }
+
   componentWillUnmount() {
+    this.markDiscussionVisited()
     if (this._postHeightTimer) {
       clearTimeout(this._postHeightTimer)
     }
@@ -1194,6 +1202,7 @@ export class DiscussionView extends Component<Props> {
     }
     this.setState({ isBooked: newIsBooked, isFetching: true, fetchProgress: emptyFetchProgress() })
     await this.nyx?.api.bookmarkDiscussion(this.props.id, newIsBooked, categoryId)
+    this.markDiscussionVisited()
     this.setState({ isFetching: false, isCategoryPickerVisible: false })
   }
 

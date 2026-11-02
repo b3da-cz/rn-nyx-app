@@ -147,10 +147,17 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     await updateDiscussionListCache(list => rememberBookmarksOnList(list, bookmarks, reminderCount, includeSeen))
   }
 
-  async getList(isAnimated = false) {
+  hasData(): boolean {
+    return Array.isArray(this.state.sectionedBookmarks) && this.state.sectionedBookmarks.some(s => s.data?.length > 0)
+  }
+
+  async getList(isAnimated = false, force = false) {
     this.ensureReady()
     this.syncSharedSettings()
-    this.setState({ isFetching: true })
+    const hasData = this.hasData()
+    if (!hasData || force) {
+      this.setState({ isFetching: true })
+    }
     const includeSeen = bookmarkFetchIncludesSeen(this.sectionFilterEnabled, this.showingRead, this.sectionFilters)
     this.nyx?.holdErrors()
     let servedFromCache = false
@@ -161,11 +168,15 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       } catch (e) {
         res = null
       }
+      if (this.isUnmounted) {
+        return
+      }
       const totalItems = (res?.bookmarks || []).reduce(
         (sum, s) => sum + (Array.isArray(s?.bookmarks) ? s.bookmarks.length : 0),
         0,
       )
       if (!res?.error && res?.bookmarks?.length) {
+        this.lastFetchAt = Date.now()
         this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen, isAnimated)
         if (totalItems > 0 || includeSeen) {
           this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen).catch(e => console.warn(e))
@@ -173,6 +184,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         return
       }
       if (!res?.error && Array.isArray(res?.bookmarks)) {
+        this.lastFetchAt = Date.now()
         this.setState({
           isFetching: false,
           isShowingRead: this.showingRead,
@@ -250,6 +262,42 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     })
   }
 
+  renderSectionHeader = ({ section: { title } }) => {
+    const { shownCategories, sectionReadFilters, theme } = this.state
+    const featureOn = this.featureEnabled()
+    const expanded = shownCategories.includes(title)
+    const mode = sectionReadFilters?.[title]
+    const showEye = expanded && featureOn
+    return (
+      <SectionHeaderComponent
+        title={title}
+        icon={showEye ? bookmarkSectionReadFilterIcon(mode) : expanded ? undefined : 'plus'}
+        iconFamily={showEye ? 'material-community' : 'feather'}
+        iconColor={showEye && mode === 'unread' ? theme?.colors.accent : theme?.colors.text}
+        isPressable={true}
+        onPress={() => this.toggleCategory(title)}
+        onIconPress={showEye ? () => this.cycleSectionFilter(title) : undefined}
+      />
+    )
+  }
+
+  handleDiscussionPress = (id: any, lastSeenPostId?: any) => {
+    this.showDiscussion(id, lastSeenPostId)
+  }
+
+  handleDiscussionLongPress = (id: any) => {
+    this.showDiscussionStats(id)
+  }
+
+  renderItem = ({ item }: { item: any }) => (
+    <DiscussionRowComponent
+      key={item.discussion_id}
+      discussion={item}
+      onPress={this.handleDiscussionPress}
+      onLongPress={this.handleDiscussionLongPress}
+    />
+  )
+
   render() {
     const { shownCategories, sectionedBookmarks, sectionReadFilters, isShowingRead, theme, isFetching } = this.state
     if (!theme) {
@@ -273,34 +321,14 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
             sectionReadFilters,
           )}`}
           stickySectionHeadersEnabled={true}
-          initialNumToRender={500}
+          initialNumToRender={20}
+          maxToRenderPerBatch={20}
+          windowSize={7}
           keyExtractor={item => `${item.discussion_id}`}
           refreshing={isFetching}
-          onRefresh={() => this.getList()}
-          renderSectionHeader={({ section: { title } }) => {
-            const expanded = shownCategories.includes(title)
-            const mode = sectionReadFilters?.[title]
-            const showEye = expanded && featureOn
-            return (
-              <SectionHeaderComponent
-                title={title}
-                icon={showEye ? bookmarkSectionReadFilterIcon(mode) : expanded ? undefined : 'plus'}
-                iconFamily={showEye ? 'material-community' : 'feather'}
-                iconColor={showEye && mode === 'unread' ? theme.colors.accent : theme.colors.text}
-                isPressable={true}
-                onPress={() => this.toggleCategory(title)}
-                onIconPress={showEye ? () => this.cycleSectionFilter(title) : undefined}
-              />
-            )
-          }}
-          renderItem={({ item }) => (
-            <DiscussionRowComponent
-              key={item.discussion_id}
-              discussion={item}
-              onPress={id => this.showDiscussion(id, item.last_seen_post_id)}
-              onLongPress={id => this.showDiscussionStats(id)}
-            />
-          )}
+          onRefresh={() => this.getList(false, true)}
+          renderSectionHeader={this.renderSectionHeader}
+          renderItem={this.renderItem}
         />
         {this.renderFAB()}
       </View>
