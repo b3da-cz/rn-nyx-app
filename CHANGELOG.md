@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.37.0
+- integrace vysoce výkonného lokálního úložiště MMKV (react-native-mmkv) s automatickou migrací z AsyncStorage a transparentním fallbackem
+- optimalizace diskové cache diskuzí: selektivní načítání konkrétního klubu bez nutnosti parsování celé databáze klubů
+- dirty-checking při zápisu cache diskuzí zamezuje zbytečné serializaci a zápisům nezměněných klubů
+
 ## 0.36.2
 - plynulý swipe mezi záložkami v navigaci bez záseků (odložení načítání a přípravy dat na dokončení přechodu přes InteractionManager)
 - optimalizace zobrazení záložek (Bookmarks) bez trhání rozvržení během gesta

@@ -237,4 +237,20 @@ describe('discussion cache', () => {
     expect(entry.posts['20']?.post.id).toBe(20)
     expect(entry.posts['9']?.post.id).toBe(9)
   })
+
+  it('peeks in-memory store without triggering reads', async () => {
+    let readCount = 0
+    const queue = createDiscussionCacheQueue(
+      async () => {
+        readCount++
+        return { discussions: [{ id: '42', openedAt: 1, posts: {}, pages: {} }] }
+      },
+      async () => {},
+    )
+    expect(queue.peek()).toBeNull()
+    expect(readCount).toBe(0)
+    const data = await queue.read()
+    expect(readCount).toBe(1)
+    expect(queue.peek()).toBe(data)
+  })
 })

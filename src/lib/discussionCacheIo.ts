@@ -1,7 +1,9 @@
 import {
   createDiscussionCacheQueue,
+  DiscussionCacheEntry,
   DiscussionCacheStore,
   DiscussionListCache,
+  findCachedDiscussion,
   normalizeDiscussionCache,
   normalizeListCache,
 } from './discussionCache'
@@ -42,6 +44,29 @@ const lists = createDiscussionCacheQueue(
 )
 
 export const readDiscussionCache = () => clubs.read()
+
+export const readCachedDiscussion = async (discussionId: string | number): Promise<DiscussionCacheEntry | null> => {
+  const id = String(discussionId || '')
+  if (!id) {
+    return null
+  }
+  const inMemory = clubs.peek()
+  if (inMemory) {
+    const found = findCachedDiscussion(inMemory, id)
+    if (found) {
+      return found
+    }
+  }
+  try {
+    const club = await Storage.getCachedClub(id)
+    if (club && typeof club === 'object') {
+      return club
+    }
+  } catch (e) {
+    console.warn(`Failed to read cached club "${id}":`, e)
+  }
+  return null
+}
 
 export const updateDiscussionCache = (mutate: (store: DiscussionCacheStore) => DiscussionCacheStore) =>
   clubs.update(mutate)

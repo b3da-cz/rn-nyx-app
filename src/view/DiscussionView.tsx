@@ -27,7 +27,7 @@ import {
   forgetCachedPost,
   normalizeDiscussionCacheLimit,
   putCachedDiscussion,
-  readDiscussionCache,
+  readCachedDiscussion,
   syncCachedPage,
   touchCachedDiscussion,
   updateDiscussionCache,
@@ -593,9 +593,7 @@ export class DiscussionView extends Component<Props> {
       const queryParts = discussionQueryParts(String(idOrQueryString))
       const cacheOn = this.discussionCacheOn()
       const cacheEntryPromise = cacheOn
-        ? readDiscussionCache()
-            .then(store => findCachedDiscussion(store, queryParts.discussionId) || null)
-            .catch(() => null)
+        ? readCachedDiscussion(queryParts.discussionId).catch(() => null)
         : Promise.resolve(null)
       let fromCache = false
       let res
@@ -765,9 +763,7 @@ export class DiscussionView extends Component<Props> {
     const discussionId = this.props.id
     const cacheOn = this.discussionCacheOn()
     const cacheEntryPromise = cacheOn
-      ? readDiscussionCache()
-          .then(store => findCachedDiscussion(store, discussionId) || null)
-          .catch(() => null)
+      ? readCachedDiscussion(discussionId).catch(() => null)
       : Promise.resolve(null)
     this.nyx?.holdErrors()
     let servedFromCache = false

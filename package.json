@@ -1,7 +1,7 @@
 {
   "name": "nnn",
-  "version": "0.36.2",
-  "buildVersion": 160,
+  "version": "0.37.0",
+  "buildVersion": 161,
   "description": "Mobile app for Nyx.cz",
   "private": true,
   "repository": {
@@ -59,6 +59,8 @@
     "react-native-iap": "^12.16.4",
     "react-native-image-helper": "^0.0.3",
     "react-native-image-zoom-viewer": "^3.0.1",
+    "react-native-mmkv": "^4.3.2",
+    "react-native-nitro-modules": "^0.37.1",
     "react-native-notification-banner": "file:vendor/react-native-notification-banner",
     "react-native-offline": "^6.0.2",
     "react-native-pager-view": "~6.9.1",

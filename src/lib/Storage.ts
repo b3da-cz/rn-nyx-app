@@ -1,4 +1,48 @@
+import { createMMKV, MMKV } from 'react-native-mmkv'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+
+let mmkvInstance: MMKV | null = null
+try {
+  mmkvInstance = createMMKV({ id: 'nyx-storage' })
+} catch (e) {
+  console.warn('MMKV initialization failed, falling back to AsyncStorage:', e)
+}
+
+const MIGRATION_FLAG_KEY = '__mmkv_migrated_v1__'
+let migrationPromise: Promise<void> | null = null
+
+const ensureMigrated = async (force = false): Promise<void> => {
+  if (!mmkvInstance) {
+    return
+  }
+  if (!force && mmkvInstance.getBoolean(MIGRATION_FLAG_KEY)) {
+    return
+  }
+  if (migrationPromise) {
+    return migrationPromise
+  }
+  migrationPromise = (async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys()
+      if (keys && keys.length > 0) {
+        const pairs = await AsyncStorage.multiGet(keys)
+        for (const [key, value] of pairs) {
+          if (key && value != null && (force || !mmkvInstance.contains(key))) {
+            mmkvInstance.set(key, value)
+          }
+        }
+      }
+      mmkvInstance.set(MIGRATION_FLAG_KEY, true)
+    } catch (e) {
+      console.warn('Failed to migrate AsyncStorage to MMKV:', e)
+    } finally {
+      migrationPromise = null
+    }
+  })()
+  return migrationPromise
+}
+
+ensureMigrated().catch(() => {})
 
 const StorageKeys = {
   auth: 'auth',
@@ -23,20 +67,39 @@ const StorageKeys = {
   messageDrafts: 'messageDrafts',
 }
 
-const set = async (key, value) => {
+const set = async (key: string, value: any) => {
   try {
-    await AsyncStorage.setItem(key, Array.isArray(value) || typeof value === 'object' ? JSON.stringify(value) : value)
+    const jsonValue =
+      value == null
+        ? null
+        : typeof value === 'object'
+        ? JSON.stringify(value)
+        : String(value)
+    if (mmkvInstance) {
+      if (jsonValue == null) {
+        mmkvInstance.delete(key)
+      } else {
+        mmkvInstance.set(key, jsonValue)
+      }
+    } else {
+      if (jsonValue == null) {
+        await AsyncStorage.removeItem(key)
+      } else {
+        await AsyncStorage.setItem(key, jsonValue)
+      }
+    }
   } catch (e) {
     console.warn(e)
   }
 }
 
-const get = async key => {
+const get = async (key: string) => {
   try {
-    const jsonValue = await AsyncStorage.getItem(key)
+    const jsonValue = await readRawStorageItem(key)
     return jsonValue != null ? JSON.parse(jsonValue) : null
   } catch (e) {
     console.warn(e)
+    return null
   }
 }
 
@@ -130,15 +193,32 @@ const setFingerprintBackgroundAt = async (at: number | null) =>
   set(StorageKeys.fingerprintBackgroundAt, at == null ? null : { at })
 
 const readRawStorageItem = async (key: string, retries = 1): Promise<string | null> => {
+  if (mmkvInstance) {
+    const val = mmkvInstance.getString(key)
+    if (val !== undefined) {
+      return val
+    }
+    if (!mmkvInstance.getBoolean(MIGRATION_FLAG_KEY)) {
+      await ensureMigrated()
+      const afterMigrate = mmkvInstance.getString(key)
+      if (afterMigrate !== undefined) {
+        return afterMigrate
+      }
+    }
+  }
   try {
-    return await AsyncStorage.getItem(key)
+    const legacy = await AsyncStorage.getItem(key)
+    if (legacy != null && mmkvInstance) {
+      mmkvInstance.set(key, legacy)
+    }
+    return legacy
   } catch (e) {
     if (retries > 0) {
       await new Promise(r => setTimeout(r, 60))
       return readRawStorageItem(key, retries - 1)
     }
     console.warn(`Storage.getItem error for key "${key}":`, e)
-    throw e
+    return null
   }
 }
 
@@ -156,6 +236,50 @@ const readStoredJson = async key => {
 }
 
 const clubStorageKey = (id: string | number) => `discussionCache:club:${id}`
+
+const lastSavedClubMap = new Map<string, any>()
+
+const getCachedClub = async (id: string | number) => {
+  const clubId = String(id || '')
+  if (!clubId) {
+    return null
+  }
+  const club = await readStoredJson(clubStorageKey(clubId))
+  if (club && typeof club === 'object') {
+    lastSavedClubMap.set(clubId, club)
+    return club
+  }
+  return null
+}
+
+const setCachedClub = async (id: string | number, club: any) => {
+  const clubId = String(id || '')
+  if (!clubId || !club) {
+    return
+  }
+  lastSavedClubMap.set(clubId, club)
+  const key = clubStorageKey(clubId)
+  const str = JSON.stringify(club)
+  if (mmkvInstance) {
+    mmkvInstance.set(key, str)
+  } else {
+    await AsyncStorage.setItem(key, str)
+  }
+}
+
+const removeCachedClub = async (id: string | number) => {
+  const clubId = String(id || '')
+  if (!clubId) {
+    return
+  }
+  lastSavedClubMap.delete(clubId)
+  const key = clubStorageKey(clubId)
+  if (mmkvInstance) {
+    mmkvInstance.delete(key)
+  } else {
+    await AsyncStorage.removeItem(key).catch(() => {})
+  }
+}
 
 const getDiscussionCache = async () => {
   const manifest = await readStoredJson(StorageKeys.discussionCache)
@@ -178,6 +302,7 @@ const getDiscussionCache = async () => {
     try {
       const club = await readStoredJson(clubStorageKey(id))
       if (club && typeof club === 'object') {
+        lastSavedClubMap.set(id, club)
         discussions.push(club)
       } else if (item?.openedAt) {
         discussions.push({ id, openedAt: item.openedAt, posts: {}, pages: {} })
@@ -205,12 +330,27 @@ const setDiscussionCache = async cache => {
       if (club && club.id != null) {
         const id = String(club.id)
         currentIds.add(id)
-        await AsyncStorage.setItem(clubStorageKey(id), JSON.stringify(club))
+        if (lastSavedClubMap.get(id) !== club) {
+          lastSavedClubMap.set(id, club)
+          const key = clubStorageKey(id)
+          const str = JSON.stringify(club)
+          if (mmkvInstance) {
+            mmkvInstance.set(key, str)
+          } else {
+            await AsyncStorage.setItem(key, str)
+          }
+        }
       }
     }
     for (const prevId of prevIds) {
       if (!currentIds.has(prevId)) {
-        await AsyncStorage.removeItem(clubStorageKey(prevId)).catch(() => {})
+        lastSavedClubMap.delete(prevId)
+        const key = clubStorageKey(prevId)
+        if (mmkvInstance) {
+          mmkvInstance.delete(key)
+        } else {
+          await AsyncStorage.removeItem(key).catch(() => {})
+        }
       }
     }
     const manifest = {
@@ -220,7 +360,13 @@ const setDiscussionCache = async cache => {
         openedAt: Number(club.openedAt) || 0,
       })),
     }
-    await AsyncStorage.setItem(StorageKeys.discussionCache, JSON.stringify(manifest))
+    const manifestKey = StorageKeys.discussionCache
+    const manifestStr = JSON.stringify(manifest)
+    if (mmkvInstance) {
+      mmkvInstance.set(manifestKey, manifestStr)
+    } else {
+      await AsyncStorage.setItem(manifestKey, manifestStr)
+    }
   } catch (e) {
     console.warn('Failed to save discussion cache:', e)
     throw e
@@ -233,7 +379,12 @@ const getFeedCache = async () => readStoredJson(StorageKeys.feedCache)
 
 const setFeedCache = async cache => {
   try {
-    await AsyncStorage.setItem(StorageKeys.feedCache, JSON.stringify(cache))
+    const str = JSON.stringify(cache)
+    if (mmkvInstance) {
+      mmkvInstance.set(StorageKeys.feedCache, str)
+    } else {
+      await AsyncStorage.setItem(StorageKeys.feedCache, str)
+    }
   } catch (e) {
     console.warn('Failed to save feed cache:', e)
     throw e
@@ -242,7 +393,12 @@ const setFeedCache = async cache => {
 
 const setDiscussionListCache = async cache => {
   try {
-    await AsyncStorage.setItem(StorageKeys.discussionListCache, JSON.stringify(cache))
+    const str = JSON.stringify(cache)
+    if (mmkvInstance) {
+      mmkvInstance.set(StorageKeys.discussionListCache, str)
+    } else {
+      await AsyncStorage.setItem(StorageKeys.discussionListCache, str)
+    }
   } catch (e) {
     console.warn('Failed to save discussion list cache:', e)
     throw e
@@ -253,18 +409,25 @@ const getMessageDrafts = async () => get(StorageKeys.messageDrafts)
 
 const setMessageDrafts = async drafts => set(StorageKeys.messageDrafts, drafts)
 
-const removeAll = async () =>
-  set(StorageKeys.auth, null)
-    .then(() => set(StorageKeys.blockedUsers, null))
-    .then(() => set(StorageKeys.filters, null))
-    .then(() => set(StorageKeys.config, null))
-    .then(() => set(StorageKeys.user, null))
-    .then(() => set(StorageKeys.llmHistory, null))
-    .then(() => set(StorageKeys.cachedLlmModels, null))
-    .then(() => set(StorageKeys.favoriteLlmModels, null))
-    .then(() => set(StorageKeys.llmPendingTasks, null))
-    .then(() => set(StorageKeys.llmPromptTemplates, null))
-    .then(() => set(StorageKeys.messageDrafts, null))
+const removeAll = async () => {
+  if (mmkvInstance) {
+    mmkvInstance.clearAll()
+  }
+  await Promise.all([
+    set(StorageKeys.auth, null),
+    set(StorageKeys.blockedUsers, null),
+    set(StorageKeys.filters, null),
+    set(StorageKeys.config, null),
+    set(StorageKeys.user, null),
+    set(StorageKeys.llmHistory, null),
+    set(StorageKeys.cachedLlmModels, null),
+    set(StorageKeys.favoriteLlmModels, null),
+    set(StorageKeys.llmPendingTasks, null),
+    set(StorageKeys.llmPromptTemplates, null),
+    set(StorageKeys.messageDrafts, null),
+  ])
+  await AsyncStorage.clear().catch(() => {})
+}
 
 export const Storage = {
   getAuth,
@@ -301,6 +464,9 @@ export const Storage = {
   setFingerprintBackgroundAt,
   getDiscussionCache,
   setDiscussionCache,
+  getCachedClub,
+  setCachedClub,
+  removeCachedClub,
   getDiscussionListCache,
   setDiscussionListCache,
   getFeedCache,
@@ -308,4 +474,13 @@ export const Storage = {
   getMessageDrafts,
   setMessageDrafts,
   removeAll,
+  isMmkvAvailable: () => !!mmkvInstance,
+  getMmkv: () => mmkvInstance,
+  getString: (key: string) => mmkvInstance?.getString(key),
+  setString: (key: string, val: string) => mmkvInstance?.set(key, val),
+  getBoolean: (key: string) => mmkvInstance?.getBoolean(key),
+  setBoolean: (key: string, val: boolean) => mmkvInstance?.set(key, val),
+  getNumber: (key: string) => mmkvInstance?.getNumber(key),
+  setNumber: (key: string, val: number) => mmkvInstance?.set(key, val),
+  ensureMigrated,
 }

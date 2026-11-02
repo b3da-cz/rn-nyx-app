@@ -538,6 +538,7 @@ export function createDiscussionCacheQueue<T>(
   }
 
   return {
+    peek: () => memory,
     read: () => enqueue(load),
     update: (mutate: (store: T) => T) =>
       enqueue(async () => {
