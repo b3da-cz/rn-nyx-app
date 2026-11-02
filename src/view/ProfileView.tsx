@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
+import { InteractionManager, LayoutAnimation, RefreshControl, ScrollView, View } from 'react-native'
 import { Text } from 'react-native-paper'
 import {
   ProfileActionsComponent,
@@ -25,6 +25,7 @@ export class ProfileView extends Component<Props> {
   static contextType = MainContext
   state: Readonly<State>
   nyx?: Nyx
+  isUnmounted = false
   constructor(props) {
     super(props)
     this.state = {
@@ -38,10 +39,24 @@ export class ProfileView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.nyx = (this.context as any).nyx
     this.getUsername()
     this.setTheme()
-    this.getActiveFriends()
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getActiveFriends()
+      }
+    })
+  }
+
+  componentWillUnmount() {
+    this.isUnmounted = true
   }
 
   getUsername() {
@@ -52,10 +67,15 @@ export class ProfileView extends Component<Props> {
     this.setState({ theme: (this.context as any).theme })
   }
 
-  async getActiveFriends() {
+  async getActiveFriends(isAnimated = false) {
     this.setState({ isFetching: true })
     const res = await this.nyx?.api.getContext()
-    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    if (this.isUnmounted) {
+      return
+    }
+    if (isAnimated) {
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    }
     this.setState({ isFetching: false, activeFriends: res?.active_friends || [] })
   }
 
@@ -99,7 +119,7 @@ export class ProfileView extends Component<Props> {
           contentInsetAdjustmentBehavior="automatic"
           style={{ backgroundColor: theme.colors.background }}
           refreshControl={
-            <RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getActiveFriends()} />
+            <RefreshControl refreshing={this.state.isFetching} onRefresh={() => this.getActiveFriends(true)} />
           }>
           {activeFriends?.length === 0 && (
             <SectionHeaderComponent title={t('empty')} backgroundColor={theme.colors.surface} />

@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef } from 'react'
 // import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
@@ -130,7 +130,6 @@ const TabContainer = ({ navigation }) => {
     refs.nav = navigation
   }
   const swipeBlockers = useRef(new Set<string>())
-  const [navSwipeEnabled, setNavSwipeEnabledState] = useState(true)
 
   const setNavSwipeEnabled = useCallback(
     (enabled: boolean, key?: string) => {
@@ -141,7 +140,6 @@ const TabContainer = ({ navigation }) => {
         swipeBlockers.current.delete(k)
       }
       const shouldEnable = swipeBlockers.current.size === 0
-      setNavSwipeEnabledState(shouldEnable)
       refs?.tabNav?.setOptions?.({
         swipeEnabled: Boolean(config.isNavGesturesEnabled && shouldEnable),
       })
@@ -193,7 +191,7 @@ const TabContainer = ({ navigation }) => {
       overScrollMode="never"
       screenOptions={{
         lazy: true,
-        swipeEnabled: Boolean(config.isNavGesturesEnabled && navSwipeEnabled),
+        swipeEnabled: config.isNavGesturesEnabled,
         ...NavOptions.tabBarOptions(theme),
       }}>
       {config.isHistoryEnabled && (

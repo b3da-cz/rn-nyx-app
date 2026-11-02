@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, LayoutAnimation, View } from 'react-native'
+import { FlatList, InteractionManager, LayoutAnimation, View } from 'react-native'
 import { FetchProgressComponent, FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
 import {
   MainContext,
@@ -53,6 +53,7 @@ export class MailView extends Component<Props> {
   navFocusListener?: Function
   navBlurListener?: Function
   navTabPressListener?: Function
+  isUnmounted = false
   _revealQueue: Promise<any> = Promise.resolve()
   _lastHandledSharedText?: string
   _lastHandledSharedFile?: any
@@ -86,6 +87,7 @@ export class MailView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.nyx = this.context.nyx
     if (this.context?.refs) {
       this.context.refs.MailView = this
@@ -99,13 +101,23 @@ export class MailView extends Component<Props> {
       this.setState({ isSubmenuVisible: false, isMsgBtnVisible: false })
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
         this.getLatestMessages()
       }
     })
     this.setTheme()
-    setTimeout(() => this.getLatestMessages(), 100)
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getLatestMessages()
+      }
+    })
     this.handleSharedContent()
     this.handleComposeRequest()
   }
@@ -162,6 +174,7 @@ export class MailView extends Component<Props> {
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true
     if (this.context?.refs?.MailView === this) {
       this.context.refs.MailView = null
     }

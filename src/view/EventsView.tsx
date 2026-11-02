@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { FlatList, RefreshControl, View } from 'react-native'
+import { FlatList, InteractionManager, RefreshControl, View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { useIsFocused } from '@react-navigation/native'
 import type { EventArea, EventCalendarDay, EventCategory, EventListItem } from 'nyx-api'
@@ -127,14 +127,35 @@ export const EventsView = ({ navigation }: Props) => {
   )
 
   useEffect(() => {
-    load(filtersRef.current)
-    const focus = navigation.addListener('focus', () => load(filtersRef.current, true))
+    let unmounted = false
+    InteractionManager.runAfterInteractions(() => {
+      if (unmounted) {
+        return
+      }
+      const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+      if (isFocused) {
+        load(filtersRef.current, true)
+      }
+    })
+    const focus = navigation.addListener('focus', () => {
+      InteractionManager.runAfterInteractions(() => {
+        if (unmounted) {
+          return
+        }
+        const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+        if (isFocused) {
+          load(filtersRef.current, true)
+        }
+      })
+    })
     const tabPress = navigation.getParent()?.addListener('tabPress', () => {
-      if (navigation.isFocused()) {
+      const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+      if (isFocused) {
         load(filtersRef.current, true)
       }
     })
     return () => {
+      unmounted = true
       focus()
       tabPress?.()
     }

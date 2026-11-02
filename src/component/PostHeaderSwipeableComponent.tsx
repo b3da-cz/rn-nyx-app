@@ -64,7 +64,6 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
 
   componentWillUnmount() {
     this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}`)
-    this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}_open`)
   }
 
   handleTouchStart = () => {
@@ -78,6 +77,10 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     if (!this.props.isInteractive) {
       return
     }
+    this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}`)
+  }
+
+  onSwipeEnd = () => {
     this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${this.props.post?.id}`)
   }
 
@@ -275,12 +278,9 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
           dragOffsetFromRightEdge={10}
           activeOffsetX={[-10, 10]}
           disallowInterruption={true}
-          onSwipeableWillOpen={() => {
-            this.mainContext?.refs?.setNavSwipeEnabled?.(false, `post_${post.id}_open`)
-          }}
-          onSwipeableClose={() => {
-            this.mainContext?.refs?.setNavSwipeEnabled?.(true, `post_${post.id}_open`)
-          }}
+          onSwipeableWillOpen={this.onSwipeEnd}
+          onSwipeableWillClose={this.onSwipeEnd}
+          onSwipeableClose={this.onSwipeEnd}
           renderLeftActions={
             this.props.mailMode
               ? () => this.renderMailLeftActions()

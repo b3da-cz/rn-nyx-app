@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { LayoutAnimation, SectionList, View } from 'react-native'
+import { InteractionManager, LayoutAnimation, SectionList, View } from 'react-native'
 import { FetchProgressComponent, PostComponent, SectionHeaderComponent } from '../component'
 import {
   MainContext,
@@ -43,6 +43,7 @@ export class RemindersView extends Component<Props> {
   refScroll: any
   navFocusListener?: Function
   navTabPressListener?: Function
+  isUnmounted = false
   _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
@@ -58,22 +59,43 @@ export class RemindersView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      setTimeout(() => this.getReminders(), 100)
+      InteractionManager.runAfterInteractions(() => {
+        if (this.isUnmounted) {
+          return
+        }
+        const isFocused =
+          typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+        if (isFocused && !this.state.isFetching) {
+          this.getReminders()
+        }
+      })
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
         this.getReminders()
       }
     })
     this.setTheme()
-    setTimeout(() => this.getReminders(), 100)
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getReminders()
+      }
+    })
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true
     if (this.navFocusListener) {
       this.navFocusListener()
     }

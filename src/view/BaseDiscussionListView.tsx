@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { InteractionManager } from 'react-native'
 import { FAB } from 'react-native-paper'
 import { MainContext, Nyx, Storage, Styling } from '../lib'
 
@@ -14,11 +15,13 @@ export class BaseDiscussionListView<P> extends Component<Props> {
   navFocusListener?: Function
   navTabPressListener?: Function
   listRequest = 0
+  isUnmounted = false
   constructor(props) {
     super(props)
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.config = this.context.config
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
@@ -26,28 +29,31 @@ export class BaseDiscussionListView<P> extends Component<Props> {
       this.scheduleList()
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
+      const isFocused = typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
         this.getList()
       }
     })
-    setTimeout(() => {
-      this.init()
-      this.scheduleList()
-    }, 100)
+    this.init()
+    this.scheduleList()
   }
 
   scheduleList() {
     const request = ++this.listRequest
-    setTimeout(() => {
-      if (request !== this.listRequest) {
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted || request !== this.listRequest) {
+        return
+      }
+      const isFocused = typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (!isFocused) {
         return
       }
       this.getList()
-    }, 100)
+    })
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true
     if (this.navFocusListener) {
       this.navFocusListener()
     }

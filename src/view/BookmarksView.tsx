@@ -117,7 +117,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     return this.context?.config?.isDiscussionCacheEnabled !== false
   }
 
-  showBookmarks(bookmarks, reminderCount, includeSeen) {
+  showBookmarks(bookmarks, reminderCount, includeSeen, isAnimated = false) {
     this.fetchedIncludesSeen = includeSeen
     const sectionedBookmarks = (bookmarks || []).map(b => ({
       title: b.category.category_name,
@@ -126,7 +126,9 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     if (this.shownCategories.length === 0) {
       this.shownCategories = Array.from(new Set(sectionedBookmarks.map(section => section.title)))
     }
-    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    if (isAnimated) {
+      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
+    }
     this.setState({
       reminderCount: reminderCount || 0,
       sectionedBookmarks,
@@ -145,7 +147,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     await updateDiscussionListCache(list => rememberBookmarksOnList(list, bookmarks, reminderCount, includeSeen))
   }
 
-  async getList() {
+  async getList(isAnimated = false) {
     this.ensureReady()
     this.syncSharedSettings()
     this.setState({ isFetching: true })
@@ -164,7 +166,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         0,
       )
       if (!res?.error && res?.bookmarks?.length) {
-        this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen)
+        this.showBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen, isAnimated)
         if (totalItems > 0 || includeSeen) {
           this.saveBookmarks(res.bookmarks, res.reminder_count || 0, includeSeen).catch(e => console.warn(e))
         }
@@ -187,7 +189,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       if (this.cacheOn()) {
         const store = await readDiscussionListCache()
         if (store.bookmarks?.bookmarks?.length) {
-          this.showBookmarks(store.bookmarks.bookmarks, store.bookmarks.reminderCount, store.bookmarks.includeSeen)
+          this.showBookmarks(store.bookmarks.bookmarks, store.bookmarks.reminderCount, store.bookmarks.includeSeen, isAnimated)
           servedFromCache = true
           return
         }

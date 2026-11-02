@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, View } from 'react-native'
+import { FlatList, InteractionManager, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
 import { FetchProgressComponent, PostComponent, RatingDetailComponent } from '../component'
@@ -43,6 +43,7 @@ export class NotificationsView extends Component<Props> {
   refScroll: any
   navFocusListener?: Function
   navTabPressListener?: Function
+  isUnmounted = false
   _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
@@ -55,21 +56,42 @@ export class NotificationsView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.nyx = this.context.nyx
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
-      setTimeout(() => this.getNotifications(), 100)
+      InteractionManager.runAfterInteractions(() => {
+        if (this.isUnmounted) {
+          return
+        }
+        const isFocused =
+          typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+        if (isFocused && !this.state.isFetching) {
+          this.getNotifications()
+        }
+      })
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
         this.getNotifications()
       }
     })
     this.setTheme()
-    this.getNotifications()
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getNotifications()
+      }
+    })
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true
     if (this.navFocusListener) {
       this.navFocusListener()
     }

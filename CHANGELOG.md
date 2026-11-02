@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.2
+- plynulý swipe mezi záložkami v navigaci bez záseků (odložení načítání a přípravy dat na dokončení přechodu přes InteractionManager)
+- optimalizace zobrazení záložek (Bookmarks) bez trhání rozvržení během gesta
+- oprava odemknutí swipu v navigaci po otevření akčního menu v hlavičce příspěvku (navigace se odemkne po uvolnění tažení)
+- odstranění nadbytečného překreslování kořenového navigátoru při dotyku na hlavičku příspěvku
+
 ## 0.36.1
 - oprava zablokování dotyků v diskuzi na pozici scrollu 0 (při otevření nebo posunutí úplně nahoru)
 - swipe na hlavičce příspěvku má přednost před přepínáním záložek ve ViewPageru navigace

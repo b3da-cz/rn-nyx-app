@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { FlatList, View } from 'react-native'
+import { FlatList, InteractionManager, View } from 'react-native'
 import { FetchProgressComponent, PostComponent, RatingFilterBarComponent } from '../component'
 import {
   MainContext,
@@ -42,6 +42,7 @@ export class LastPostsView extends Component<Props> {
   filters: string[] = []
   blockedUsers: string[] = []
   navTabPressListener?: Function
+  isUnmounted = false
   _revealQueue: Promise<any> = Promise.resolve()
   constructor(props) {
     super(props)
@@ -57,20 +58,32 @@ export class LastPostsView extends Component<Props> {
   }
 
   componentDidMount() {
+    this.isUnmounted = false
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters]
     this.blockedUsers = [...this.context.blockedUsers]
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
-      const isFocused = this.props.navigation.isFocused()
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
       if (isFocused && !this.state.isFetching) {
         this.getLastPosts()
       }
     })
     this.setTheme()
-    this.getLastPosts()
+    InteractionManager.runAfterInteractions(() => {
+      if (this.isUnmounted) {
+        return
+      }
+      const isFocused =
+        typeof this.props.navigation?.isFocused === 'function' ? this.props.navigation.isFocused() : true
+      if (isFocused && !this.state.isFetching) {
+        this.getLastPosts()
+      }
+    })
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true
     if (this.navTabPressListener) {
       this.navTabPressListener()
     }
