@@ -285,6 +285,7 @@ const App: () => ReactNode = () => {
       isNavGesturesEnabled: conf.isNavGesturesEnabled === undefined ? false : !!conf.isNavGesturesEnabled,
       isShowingReadOnLists: conf.isShowingReadOnLists === undefined ? true : !!conf.isShowingReadOnLists,
       isSwipeablePostHeader: conf.isSwipeablePostHeader === undefined ? true : !!conf.isSwipeablePostHeader,
+      isLocalLastReadEnabled: conf.isLocalLastReadEnabled === undefined ? true : !!conf.isLocalLastReadEnabled,
       isTextSelectionEnabled: conf.isTextSelectionEnabled === undefined ? true : !!conf.isTextSelectionEnabled,
       isPostMarkdownEnabled: conf.isPostMarkdownEnabled === undefined ? true : !!conf.isPostMarkdownEnabled,
       isUploadVideoTagEnabled:

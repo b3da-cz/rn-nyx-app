@@ -21,13 +21,13 @@ export function normalizeBookmarkSectionFilters(value: unknown): Record<string, 
   return filters
 }
 
-function isUnreadDiscussion(discussion?: { unreadPostCount?: number }): boolean {
-  return (discussion?.unreadPostCount ?? 0) > 0
+function isUnreadDiscussion(discussion?: { unreadPostCount?: number; localUnreadCount?: number }): boolean {
+  return (discussion?.unreadPostCount ?? 0) > 0 || (discussion?.localUnreadCount ?? 0) > 0
 }
 
 // Unread or read on a section overrides the list-wide star filter.
 // While the setting is off, stored section modes are ignored.
-export function filterBookmarkSection<T extends { unreadPostCount?: number }>(
+export function filterBookmarkSection<T extends { unreadPostCount?: number; localUnreadCount?: number }>(
   discussions: T[] | undefined,
   filter: string | undefined,
   isShowingRead: boolean,

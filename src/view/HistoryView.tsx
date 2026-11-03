@@ -2,7 +2,9 @@ import React from 'react'
 import { ScrollView, RefreshControl, View, LayoutAnimation } from 'react-native'
 import { DiscussionRowComponent } from '../component'
 import {
+  applyLocalLastReadToDiscussions,
   filterDiscussions,
+  hasAnyLocalLastRead,
   LayoutAnimConf,
   readDiscussionListCache,
   recountDiscussionList,
@@ -49,8 +51,16 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     if (isAnimated) {
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     }
+    const withLocal = applyLocalLastReadToDiscussions(
+      filterDiscussions(recountDiscussionList(discussions || []), this.filters),
+      this.context?.config,
+    )
+    const configShowingRead = this.context?.config?.isShowingReadOnLists
+    const showingRead = typeof configShowingRead === 'boolean' ? configShowingRead : this.state.isShowingRead
     this.setState({
-      discussions: filterDiscussions(recountDiscussionList(discussions || []), this.filters),
+      discussions: showingRead
+        ? withLocal
+        : withLocal.filter(d => (d.unreadPostCount ?? 0) > 0 || (d.localUnreadCount ?? 0) > 0),
       isFetching: false,
     })
   }
@@ -92,12 +102,13 @@ export class HistoryView extends BaseDiscussionListView<Props> {
     if (!hasData || force) {
       this.setState({ isFetching: true })
     }
+    const fetchRead = showingRead || hasAnyLocalLastRead(this.context?.config)
     this.nyx?.holdErrors()
     let servedFromCache = false
     try {
       let res
       try {
-        res = await this.nyx?.api.getHistory(showingRead)
+        res = await this.nyx?.api.getHistory(fetchRead)
       } catch (e) {
         res = null
       }

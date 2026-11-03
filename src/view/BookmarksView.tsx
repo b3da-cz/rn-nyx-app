@@ -3,10 +3,12 @@ import { LayoutAnimation, SectionList, View } from 'react-native'
 import { DiscussionRowComponent, SectionHeaderComponent } from '../component'
 import {
   BookmarkSectionReadFilter,
+  applyLocalLastReadToDiscussions,
   bookmarkFetchIncludesSeen,
   bookmarkSectionReadFilterIcon,
   filterBookmarkSection,
   filterDiscussions,
+  hasAnyLocalLastRead,
   LayoutAnimConf,
   nextBookmarkSectionReadFilter,
   normalizeBookmarkSectionFilters,
@@ -121,7 +123,10 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     this.fetchedIncludesSeen = includeSeen
     const sectionedBookmarks = (bookmarks || []).map(b => ({
       title: b.category.category_name,
-      data: filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
+      data: applyLocalLastReadToDiscussions(
+        filterDiscussions(recountDiscussionList(b.bookmarks), this.filters),
+        this.context?.config,
+      ),
     }))
     if (this.shownCategories.length === 0) {
       this.shownCategories = Array.from(new Set(sectionedBookmarks.map(section => section.title)))
@@ -158,7 +163,9 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
     if (!hasData || force) {
       this.setState({ isFetching: true })
     }
-    const includeSeen = bookmarkFetchIncludesSeen(this.sectionFilterEnabled, this.showingRead, this.sectionFilters)
+    const includeSeen =
+      bookmarkFetchIncludesSeen(this.sectionFilterEnabled, this.showingRead, this.sectionFilters) ||
+      hasAnyLocalLastRead(this.context?.config)
     this.nyx?.holdErrors()
     let servedFromCache = false
     try {

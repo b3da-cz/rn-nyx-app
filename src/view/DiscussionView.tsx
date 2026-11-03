@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ActivityIndicator, FlatList, Platform, RefreshControl, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, RefreshControl, ToastAndroid, View } from 'react-native'
 import {
   AdvertisementComponent,
   BookmarkCategoriesDialog,
@@ -64,6 +64,11 @@ import {
   resolveFetchProgressMode,
   revealImageInPosts,
   t,
+  consumeLocalLastRead,
+  getLocalLastRead,
+  isLocalLastReadEnabled,
+  showNotificationBanner,
+  toggleLocalLastRead,
   Theme,
   toEventDetail,
   wait,
@@ -99,6 +104,7 @@ type State = {
   board: any[]
   bookmarkCategories: any[]
   lastSeenPostId?: number
+  localLastReadPostId?: number
   filterText: string
   filterRating: number
   filterUser: string
@@ -163,6 +169,7 @@ export class DiscussionView extends Component<Props> {
       board: [],
       bookmarkCategories: [],
       lastSeenPostId: props.lastSeenPostId,
+      localLastReadPostId: undefined,
       filterText: '',
       filterRating: 0,
       filterUser: '',
@@ -345,8 +352,10 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadInitialDiscussion() {
-    if (this.props.jumpToLastSeen) {
-      await this.loadDiscussionToLastSeen(this.props.lastSeenPostId)
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
+    const localLastRead = isLocalLastReadEnabled(this.context?.config) ? consumeLocalLastRead(discussionId) : null
+    if (this.props.jumpToLastSeen || localLastRead) {
+      await this.loadDiscussionToLastSeen(localLastRead || this.props.lastSeenPostId)
       return
     }
     await this.reloadDiscussionLatest()
@@ -354,6 +363,16 @@ export class DiscussionView extends Component<Props> {
 
   async loadDiscussionToLastSeen(knownLastSeenPostId?: number) {
     const discussionId = this.props.id
+    if (!knownLastSeenPostId && isLocalLastReadEnabled(this.context?.config)) {
+      const localLastRead = consumeLocalLastRead(discussionId)
+      if (localLastRead) {
+        knownLastSeenPostId = localLastRead
+      }
+    }
+    if (knownLastSeenPostId && Number(knownLastSeenPostId) > 0) {
+      this._lastSeenPostId = Number(knownLastSeenPostId)
+      this._sessionInitialLastSeenPostId = Number(knownLastSeenPostId)
+    }
     this.nyx?.holdErrors()
     this.fetchLock = true
     this._pendingDiscussion = null
@@ -997,10 +1016,12 @@ export class DiscussionView extends Component<Props> {
   revealLoadedPlaceholders() {
     const posts = (this._posts.length ? this._posts : this.state.posts).slice()
     let next = posts
+    const revealedImages: any[] = []
     for (const post of posts) {
       for (const img of post.parsed?.images || []) {
         if (img?.src && img.skipDownload && !img.revealed && !img.cached && hasLoadedImageUrl(img.src)) {
           next = applyRevealedImageToPosts(next, img)
+          revealedImages.push(img)
         }
       }
     }
@@ -1009,6 +1030,7 @@ export class DiscussionView extends Component<Props> {
     }
     const fontSize = this.state.theme?.metrics?.fontSizes?.p
     this.publishPosts(fontSize ? applyRevealedImageLayout(next, fontSize) : next)
+    revealedImages.forEach(img => this.revealPostImage(img))
   }
 
   async revealPostImageNow(image) {
@@ -1096,6 +1118,54 @@ export class DiscussionView extends Component<Props> {
     this._posts = posts
     this.setState({ posts })
   }
+
+  async onSetLastRead(post) {
+    if (!post?.discussion_id || !post?.id) {
+      return
+    }
+    const unreadCount = (this._posts || []).filter(
+      p => !p?.isClubStart && Number(p?.id) > Number(post.id),
+    ).length
+    const result = await toggleLocalLastRead(post.discussion_id, post.id, unreadCount)
+    if (result.isSet) {
+      this._lastSeenPostId = post.id
+      this._sessionInitialLastSeenPostId = post.id
+      applyUnreadFlags(this._posts, post.id, true)
+      this.markDiscussionVisited()
+      this.setState({
+        localLastReadPostId: post.id,
+        lastSeenPostId: post.id,
+        posts: [...this._posts],
+      })
+      if (Platform.OS === 'android') {
+        ToastAndroid.showWithGravity(t('lastReadSet'), ToastAndroid.SHORT, ToastAndroid.BOTTOM)
+      } else {
+        showNotificationBanner({
+          title: t('lastReadSet'),
+        })
+      }
+    } else {
+      const topId = (this._posts || []).find(p => !p?.isClubStart)?.id
+      if (topId) {
+        this._lastSeenPostId = topId
+        this._sessionInitialLastSeenPostId = topId
+        applyUnreadFlags(this._posts, topId, true)
+      }
+      this.markDiscussionVisited()
+      this.setState({
+        localLastReadPostId: undefined,
+        posts: [...this._posts],
+      })
+      if (Platform.OS === 'android') {
+        ToastAndroid.showWithGravity(t('lastReadCleared'), ToastAndroid.SHORT, ToastAndroid.BOTTOM)
+      } else {
+        showNotificationBanner({
+          title: t('lastReadCleared'),
+        })
+      }
+    }
+  }
+
 
   eventDetailFromResponse(loaded: EventDetailData | null) {
     if (this._attendanceSaving) {
@@ -1461,6 +1531,7 @@ export class DiscussionView extends Component<Props> {
               isHeaderInteractive={!item.isClubStart}
               isReply={false}
               isUnread={!!item.new && !item.isClubStart}
+              isLocalLastRead={this.state.localLastReadPostId === item.id}
               onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
               onImage={(image, images) => this.showImages(image, images)}
               onDelete={postId => this.onPostDelete(postId)}
@@ -1470,6 +1541,7 @@ export class DiscussionView extends Component<Props> {
               onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
               onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
+              onSetLastRead={p => this.onSetLastRead(p)}
               onPostHeight={(postId, height) => this.onPostHeight(postId, height)}
             />
           )}

@@ -3,9 +3,8 @@ import { LayoutAnimation, ToastAndroid, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
-import { RNNotificationBanner } from 'react-native-notification-banner'
 import { ButtonSquareComponent, confirm, RatingDetailComponent } from '../component'
-import { LayoutAnimConf, Nyx, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
+import { LayoutAnimConf, MainContext, Nyx, isLocalLastReadEnabled, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
 import { PostHeaderCommonComponent } from './PostHeaderCommonComponent'
 
 type Props = {
@@ -15,10 +14,12 @@ type Props = {
   isReply: boolean
   isUnread: boolean
   isInteractive: boolean
+  isLocalLastRead?: boolean
   onReply?: Function
   onRepliesShow?: Function
   onDelete: Function
   onReminder?: Function
+  onSetLastRead?: Function
   onPostRated?: Function
 }
 type State = {
@@ -34,7 +35,9 @@ type State = {
   headerHeight: number
 }
 export class PostHeaderComponent extends Component<Props> {
+  static contextType = MainContext
   state: Readonly<State>
+
   constructor(props) {
     super(props)
     this.state = {
@@ -126,6 +129,13 @@ export class PostHeaderComponent extends Component<Props> {
     typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
   }
 
+  setLocalLastRead(post) {
+    this.toggleButtons(false)
+    if (typeof this.props.onSetLastRead === 'function') {
+      this.props.onSetLastRead(post)
+    }
+  }
+
   async deletePost(post) {
     const res = await confirm(t('confirm'), `${t('delete.post')}?`)
     if (res) {
@@ -177,10 +187,19 @@ export class PostHeaderComponent extends Component<Props> {
       return null
     }
     let visibleBtns = 4
+    const config = this.context?.config
+    const showLocalLastRead =
+      isLocalLastReadEnabled(config) &&
+      this.props.isInteractive &&
+      !post.parsed?.advertisement &&
+      Boolean(post.discussion_id && post.discussion_id > 0)
     if (!post.parsed?.advertisement) {
       visibleBtns++
     }
     if (post.can_be_reminded) {
+      visibleBtns++
+    }
+    if (showLocalLastRead) {
       visibleBtns++
     }
     if (post.can_be_deleted) {
@@ -211,9 +230,11 @@ export class PostHeaderComponent extends Component<Props> {
                 isReply={this.props.isReply}
                 isUnread={this.props.isUnread}
                 isInteractive={this.props.isInteractive}
+                isLocalLastRead={this.props.isLocalLastRead}
                 getRating={p => this.getRating(p)}
                 showReplies={p => this.showReplies(p)}
                 setReminder={p => this.setReminder(p)}
+                setLastRead={p => this.setLocalLastRead(p)}
                 reportPost={p => this.reportPost(p)}
               />
             </TouchableRipple>
@@ -269,6 +290,16 @@ export class PostHeaderComponent extends Component<Props> {
                   icon={'bell'}
                   color={post.reminder ? colors.primary : undefined}
                   onPress={() => this.setReminder(post)}
+                />
+              )}
+              {showLocalLastRead && (
+                <ButtonSquareComponent
+                  key={`${post.id}_btn_last_read`}
+                  width={btnWidth}
+                  height={buttonHeight}
+                  icon={'bookmark'}
+                  color={this.props.isLocalLastRead ? colors.primary : undefined}
+                  onPress={() => this.setLocalLastRead(post)}
                 />
               )}
               {!post.parsed?.advertisement && (

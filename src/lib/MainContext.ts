@@ -4,10 +4,8 @@ import { Nyx } from './Nyx'
 import { defaultThemeOptions, ThemeOptions } from './Theme'
 import { TIMELINE_VISIBLE_DAYS_DEFAULT } from './eventTimeline'
 import {
-  FETCH_PROGRESS_ENTER_DEFAULT,
-  FETCH_PROGRESS_GLOBAL_DEFAULT,
-  FETCH_PROGRESS_LISTS_DEFAULT,
-  FETCH_PROGRESS_MORE_DEFAULT,
+  FETCH_PROGRESS_ENTER_DEFAULT, FETCH_PROGRESS_GLOBAL_DEFAULT,
+  FETCH_PROGRESS_LISTS_DEFAULT, FETCH_PROGRESS_MORE_DEFAULT,
 } from './fetchProgress'
 import { DISCUSSION_CACHE_LIMIT_DEFAULT } from './discussionCache'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
@@ -30,6 +28,7 @@ export type MainContextConfig = {
   isNavGesturesEnabled: boolean
   isShowingReadOnLists: boolean
   isSwipeablePostHeader: boolean
+  isLocalLastReadEnabled: boolean
   isTextSelectionEnabled: boolean
   isPostMarkdownEnabled: boolean
   isUploadVideoTagEnabled: boolean
@@ -93,6 +92,7 @@ export const initialConfig: MainContextConfig = {
   isNavGesturesEnabled: false,
   isShowingReadOnLists: true,
   isSwipeablePostHeader: true,
+  isLocalLastReadEnabled: true,
   isTextSelectionEnabled: true,
   isPostMarkdownEnabled: true,
   isUploadVideoTagEnabled: true,

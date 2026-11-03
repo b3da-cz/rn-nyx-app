@@ -41,6 +41,15 @@ describe('bookmark section read filter', () => {
     expect(filterBookmarkSection(discussions, 'all', false, true).map(d => d.id)).toEqual([1, 3])
   })
 
+  it('treats discussions with localUnreadCount > 0 as unread', () => {
+    const withLocal = [
+      { id: 1, unreadPostCount: 0, localUnreadCount: 5 },
+      { id: 2, unreadPostCount: 0, localUnreadCount: 0 },
+    ]
+    expect(filterBookmarkSection(withLocal, 'unread', true, true).map(d => d.id)).toEqual([1])
+    expect(filterBookmarkSection(withLocal, 'read', true, true).map(d => d.id)).toEqual([2])
+  })
+
   it('ignores stored section modes while the setting is off', () => {
     expect(filterBookmarkSection(discussions, 'read', true, false)).toBe(discussions)
     expect(filterBookmarkSection(discussions, 'read', false, false).map(d => d.id)).toEqual([1, 3])

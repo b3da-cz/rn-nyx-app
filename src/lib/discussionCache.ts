@@ -1,3 +1,5 @@
+import { isPlaceholderImageSize } from './imageDownload'
+
 export const DISCUSSION_CACHE_LIMIT_DEFAULT = 30
 export const DISCUSSION_CACHE_LIMIT_MAX = 1000
 
@@ -182,7 +184,9 @@ export const snapshotPostLayout = (post: any): CachedPostRecord => {
 }
 
 const imageLayoutReady = (img: any) =>
-  !img?.src || img.src.includes('youtu') || (img.width > 0 && img.height > 0)
+  !img?.src ||
+  img.src.includes('youtu') ||
+  (img.width > 0 && img.height > 0 && !isPlaceholderImageSize(img) && !img.skipDownload)
 
 export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEntry | null) => {
   if (!entry) {

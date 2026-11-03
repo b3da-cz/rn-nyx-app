@@ -25,6 +25,7 @@ import {
   Nyx,
   TOKEN,
   generateUuidV4,
+  isPlaceholderImageSize,
   isPostMarkdownEnabled,
   isTextSelectionEnabled,
   MainContext,
@@ -39,6 +40,7 @@ type Props = {
   nyx: Nyx
   isReply?: boolean
   isUnread?: boolean
+  isLocalLastRead?: boolean
   isHeaderInteractive?: boolean
   isHeaderPressable?: boolean
   headerSwipeable?: boolean
@@ -54,6 +56,7 @@ type Props = {
   onDelete?: Function
   onPostRated?: Function
   onReminder?: Function
+  onSetLastRead?: Function
   onDiceRoll?: Function
   onPollVote?: Function
   onPostHeight?: (postId: number | string, height: number) => void
@@ -83,6 +86,8 @@ export class PostComponent extends Component<Props> {
 
   shouldComponentUpdate(nextProps, nextState, nextContext) {
     return (
+      this.props.isLocalLastRead !== nextProps.isLocalLastRead ||
+      this.props.isUnread !== nextProps.isUnread ||
       this.props.post.rating !== nextProps.post.rating ||
       this.props.post.reminder !== nextProps.post.reminder ||
       this.props.post.id !== nextProps.post.id ||
@@ -161,7 +166,8 @@ export class PostComponent extends Component<Props> {
     // }
     if (!img.src.includes('img.youtube.com')) {
       const isPlaceholder = !!img.skipDownload && !img.revealed && !img.cached
-      const hasMeasuredSize = img.width > 0 && img.height > 0
+      const hasMeasuredSize =
+        img.width > 0 && img.height > 0 && !isPlaceholder && !isPlaceholderImageSize(img)
       return (
         <ImageComponent
           key={`${img.id}-${isPlaceholder ? 'ph' : 'img'}`}
@@ -451,7 +457,7 @@ export class PostComponent extends Component<Props> {
     return (
       <View
         onLayout={
-          showFormatted
+          showFormatted || images?.length > 0
             ? event => {
                 const height = event.nativeEvent.layout.height
                 if (post?.id != null && height > 0) {
@@ -493,6 +499,8 @@ export class PostComponent extends Component<Props> {
             onReminder={(p, isReminder) =>
               typeof this.props.onReminder === 'function' ? this.props.onReminder(p, isReminder) : null
             }
+            isLocalLastRead={!!this.props.isLocalLastRead}
+            onSetLastRead={p => (typeof this.props.onSetLastRead === 'function' ? this.props.onSetLastRead(p) : null)}
             onSwipe={isSwiping =>
               typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
             }
@@ -505,6 +513,8 @@ export class PostComponent extends Component<Props> {
             isReply={!!this.props.isReply}
             isUnread={!!this.props.isUnread}
             isInteractive={!!this.props.isHeaderInteractive}
+            isLocalLastRead={!!this.props.isLocalLastRead}
+            onSetLastRead={p => (typeof this.props.onSetLastRead === 'function' ? this.props.onSetLastRead(p) : null)}
             onReply={(discussionId, postId, username) =>
               typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null
             }
@@ -521,11 +531,16 @@ export class PostComponent extends Component<Props> {
           />
         )}
         <View style={{ height: 5 }} />
-        <View style={{ position: 'relative', paddingRight: formatMarkdown && !showFormatted ? 36 : 0 }}>
+        <View style={{ position: 'relative' }}>
         {showFormatted ? (
-          <View style={{ paddingLeft: 5, paddingRight: 40 }}>
+          <View style={{ paddingHorizontal: 5 }}>
             {splitPostFlow(post.content).map((segment, index) => (
-              <View key={`${segment.type}-${index}`}>{this.renderFlowSegment(segment, images, codeBlocks, spoilers, ytBlocks, videos)}</View>
+              <View
+                key={`${segment.type}-${index}`}
+                style={segment.type === 'markdown' ? { paddingRight: 35 } : undefined}
+              >
+                {this.renderFlowSegment(segment, images, codeBlocks, spoilers, ytBlocks, videos)}
+              </View>
             ))}
           </View>
         ) : post?.content_raw?.type !== 'advertisement' &&
@@ -535,7 +550,7 @@ export class PostComponent extends Component<Props> {
               return (
                 <Text
                   selectable={isTextSelectionEnabled(this.context.config)}
-                  style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'red' }}
+                  style={{ paddingLeft: 5, paddingRight: formatMarkdown ? 36 : 5, borderWidth: 0, borderColor: 'red' }}
                   key={generateUuidV4()}>
                   {block.blocks.map(part => {
                     if (part.startsWith(TOKEN.REPLY)) {

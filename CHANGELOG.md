@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.0
+- lokální nastavení posledního přečteného příspěvku (záložka v hlavičce příspěvku)
+- možnost zapnout/vypnout v Nastavení > Čtení (výchozí: zapnuto)
+- v diskuzích se za tlačítko upomínky přidá tlačítko se záložkou, které lokálně uloží pozici posledního přečteného příspěvku a počet lokálně nepřečtených příspěvků
+- pozice se uchová do příští návštěvy diskuze, kdy se spotřebuje a diskuze se otevře u označeného příspěvku (další návštěvy se pak berou opět ze serveru, pokud uživatel nenastaví záložku znovu)
+- v seznamech Sledovaných a Historie se u klubu s lokální záložkou zobrazí vpravo ikona záložky s počtem lokálně nepřečtených příspěvků (vedle případných nových nepřečtených příspěvků ze serveru)
+- oprava rozměrů a šířky náhledů obrázků v klubech (ignorování zástupných rozměrů 3:2 z cache, přepočet skutečného poměru stran po dekódování obrázku a plná šířka u formátovaných příspěvků)
+
 ## 0.38.0
 - Historie a Záložky se po návratu z diskuze obnoví hned, bez čekání na vypršení intervalu
 - globální časové razítko `lastDiscussionViewedAt` v MainContext.refs

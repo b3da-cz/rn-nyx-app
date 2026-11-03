@@ -19,7 +19,9 @@ type Props = {
   getRating: Function
   showReplies: Function
   setReminder: Function
+  setLastRead?: Function
   reportPost: Function
+  isLocalLastRead?: boolean
 }
 export const PostHeaderCommonComponent: React.FC<Props> = ({
   post,
@@ -28,9 +30,11 @@ export const PostHeaderCommonComponent: React.FC<Props> = ({
   isReply,
   isUnread,
   isInteractive,
+  isLocalLastRead,
   getRating,
   showReplies,
   setReminder,
+  setLastRead,
   reportPost,
 }) => {
   const {
@@ -119,6 +123,15 @@ export const PostHeaderCommonComponent: React.FC<Props> = ({
             height={40}
             color={post.reminder ? colors.primary : undefined}
             onPress={() => setReminder(post)}
+          />
+        )}
+        {isLocalLastRead && (
+          <ButtonSquareComponent
+            icon={'bookmark'}
+            width={20}
+            height={40}
+            color={colors.primary}
+            onPress={() => (typeof setLastRead === 'function' ? setLastRead(post) : null)}
           />
         )}
         {!isInteractive && post.id > 0 && (

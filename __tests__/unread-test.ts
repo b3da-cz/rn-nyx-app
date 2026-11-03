@@ -1,4 +1,4 @@
-import { getOldestUnreadIndex } from '../src/lib/unread'
+import { applyUnreadFlags, getOldestUnreadIndex } from '../src/lib/unread'
 
 const posts = (...ids: number[]) => ids.map(id => ({ id }))
 
@@ -30,3 +30,22 @@ describe('getOldestUnreadIndex', () => {
     expect(getOldestUnreadIndex(list)).toBe(1)
   })
 })
+
+describe('applyUnreadFlags', () => {
+  it('sets new flag on posts newer than lastSeen', () => {
+    const list: any[] = [{ id: 12 }, { id: 10 }, { id: 8 }]
+    applyUnreadFlags(list, 9)
+    expect(list[0].new).toBe(true)
+    expect(list[1].new).toBe(true)
+    expect(list[2].new).toBeUndefined()
+  })
+
+  it('resets new flag when strictReset is true', () => {
+    const list = [{ id: 12, new: false }, { id: 10, new: false }, { id: 8, new: true }]
+    applyUnreadFlags(list, 9, true)
+    expect(list[0].new).toBe(true)
+    expect(list[1].new).toBe(true)
+    expect(list[2].new).toBe(false)
+  })
+})
+

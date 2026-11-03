@@ -168,6 +168,7 @@ type State = {
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   isSwipeablePostHeader: boolean
+  isLocalLastReadEnabled: boolean
   isTextSelectionEnabled: boolean
   isPostMarkdownEnabled: boolean
   isUploadVideoTagEnabled: boolean
@@ -507,6 +508,7 @@ export class SettingsView extends Component<Props> {
       isBookmarkSectionReadFilterEnabled:
         config.isBookmarkSectionReadFilterEnabled === undefined ? true : !!config.isBookmarkSectionReadFilterEnabled,
       isSwipeablePostHeader: config.isSwipeablePostHeader === undefined ? true : !!config.isSwipeablePostHeader,
+      isLocalLastReadEnabled: config.isLocalLastReadEnabled === undefined ? true : !!config.isLocalLastReadEnabled,
       isTextSelectionEnabled: config.isTextSelectionEnabled === undefined ? true : !!config.isTextSelectionEnabled,
       isPostMarkdownEnabled: config.isPostMarkdownEnabled === undefined ? true : !!config.isPostMarkdownEnabled,
       isUploadVideoTagEnabled:
@@ -1033,6 +1035,13 @@ export class SettingsView extends Component<Props> {
               label={t('profile.isSwipeablePostHeader')}
               value={!!this.state.isSwipeablePostHeader}
               onChange={val => this.setOption('isSwipeablePostHeader', val)}
+            />
+            <FormRowToggleComponent
+              card
+              rowHeight={rowHeight}
+              label={t('profile.isLocalLastReadEnabled')}
+              value={this.state.isLocalLastReadEnabled !== false}
+              onChange={val => this.setOption('isLocalLastReadEnabled', val)}
             />
             <FormRowToggleComponent
               card

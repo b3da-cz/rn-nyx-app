@@ -6,7 +6,7 @@ import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
 import { RNNotificationBanner } from 'react-native-notification-banner'
 import { ButtonSquareComponent, confirm, RatingDetailComponent } from '../component'
-import { LayoutAnimConf, MainContext, Nyx, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
+import { LayoutAnimConf, MainContext, Nyx, isLocalLastReadEnabled, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
 import { PostHeaderCommonComponent } from './PostHeaderCommonComponent'
 
 type Props = {
@@ -17,11 +17,13 @@ type Props = {
   isUnread: boolean
   isInteractive: boolean
   isPressable: boolean
+  isLocalLastRead?: boolean
   onPress?: Function
   onReply?: Function
   onRepliesShow?: Function
   onDelete: Function
   onReminder?: Function
+  onSetLastRead?: Function
   onPostRated?: Function
   onSwipe?: Function
   mailMode?: boolean
@@ -168,6 +170,13 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
   }
 
+  setLocalLastRead(post) {
+    this.refSwipeable?.close()
+    if (typeof this.props.onSetLastRead === 'function') {
+      this.props.onSetLastRead(post)
+    }
+  }
+
   async deletePost(post) {
     const res = await confirm(t('confirm'), `${t('delete.post')}?`)
     if (res) {
@@ -260,6 +269,12 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     if (post.location === 'header' || post.location === 'home') {
       return null
     }
+    const config = this.context?.config
+    const showLocalLastRead =
+      isLocalLastReadEnabled(config) &&
+      !this.props.mailMode &&
+      !post.parsed?.advertisement &&
+      Boolean(post.discussion_id && post.discussion_id > 0)
     return (
       <View
         onTouchStart={this.handleTouchStart}
@@ -314,6 +329,15 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
                           rectButton
                           color={post.reminder ? colors.primary : undefined}
                           onPress={() => this.setReminder(post)}
+                        />
+                      ),
+                      showLocalLastRead && (
+                        <ButtonSquareComponent
+                          key={`${post.id}_btn_last_read`}
+                          icon={'bookmark'}
+                          rectButton
+                          color={this.props.isLocalLastRead ? colors.primary : undefined}
+                          onPress={() => this.setLocalLastRead(post)}
                         />
                       ),
                       post.can_be_deleted && (
@@ -375,9 +399,11 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
               isReply={this.props.isReply}
               isUnread={this.props.isUnread}
               isInteractive={this.props.isInteractive}
+              isLocalLastRead={this.props.isLocalLastRead}
               getRating={p => this.getRating(p)}
               showReplies={p => this.showReplies(p)}
               setReminder={p => this.setReminder(p)}
+              setLastRead={p => this.setLocalLastRead(p)}
               reportPost={p => this.reportPost(p)}
             />
           </TouchableRipple>

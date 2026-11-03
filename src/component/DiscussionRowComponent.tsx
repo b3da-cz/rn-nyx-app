@@ -19,7 +19,9 @@ export const DiscussionRowComponent = React.memo(
     const isBookmarksResultType = discussion.discussion_id
     const id = isBookmarksResultType ? discussion.discussion_id : discussion.id
     const unreadPostCount = discussion.unreadPostCount ?? 0
-    const textColor = unreadPostCount > 0 || isAccented ? colors.text : colors.disabled
+    const localUnreadCount = discussion.localUnreadCount ?? 0
+    const hasUnread = unreadPostCount > 0 || localUnreadCount > 0
+    const textColor = hasUnread || isAccented ? colors.text : colors.disabled
     return (
       <TouchableRipple
         key={id}
@@ -30,17 +32,17 @@ export const DiscussionRowComponent = React.memo(
           paddingLeft: blocks.small,
           paddingRight: blocks.medium,
           marginBottom: blocks.small,
-          borderColor: unreadPostCount > 0 ? colors.primary : colors.row,
+          borderColor: hasUnread ? colors.primary : colors.row,
           borderLeftWidth: 3,
         }}
-        onPress={() => (typeof onPress === 'function' ? onPress(id) : null)}
+        onPress={() => (typeof onPress === 'function' ? onPress(id, discussion.last_seen_post_id) : null)}
         onLongPress={() => (typeof onLongPress === 'function' ? onLongPress(id) : null)}>
         <View style={[Styling.groups.flexRowSpbCentered, { minHeight: blocks.rowDiscussion }]}>
           <Text
             numberOfLines={1}
             style={[
               {
-                maxWidth: !(isBookmarksResultType && unreadPostCount > 0)
+                maxWidth: !(isBookmarksResultType && hasUnread)
                   ? '100%'
                   : unreadPostCount > 1000
                   ? '65%'
@@ -51,12 +53,14 @@ export const DiscussionRowComponent = React.memo(
             ]}>
             {isBookmarksResultType ? discussion.full_name : discussion.discussion_name}
           </Text>
-          {isBookmarksResultType && unreadPostCount > 0 && (
+          {isBookmarksResultType && hasUnread && (
             <View style={Styling.groups.flexRowSpbCentered}>
-              <Text numberOfLines={1} style={{ color: textColor }}>
-                {unreadPostCount}
-                {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}`}
-              </Text>
+              {unreadPostCount > 0 ? (
+                <Text numberOfLines={1} style={{ color: textColor }}>
+                  {unreadPostCount}
+                  {`${discussion.new_replies_count > 0 ? `+${discussion.new_replies_count}` : ''}`}
+                </Text>
+              ) : null}
               {discussion.new_images_count > 0 ? (
                 <Icon name="image" size={14} style={{ paddingLeft: blocks.medium }} color={textColor} />
               ) : null}
@@ -68,6 +72,12 @@ export const DiscussionRowComponent = React.memo(
               ) : null}
               {discussion.new_links_count > 0 ? (
                 <Text style={{ color: textColor }}>{discussion.new_links_count}</Text>
+              ) : null}
+              {localUnreadCount > 0 ? (
+                <Icon name="bookmark" size={14} style={{ paddingLeft: blocks.medium }} color={textColor} />
+              ) : null}
+              {localUnreadCount > 0 ? (
+                <Text style={{ color: textColor }}>{localUnreadCount}</Text>
               ) : null}
             </View>
           )}
@@ -83,6 +93,7 @@ export const DiscussionRowComponent = React.memo(
       (prev.discussion?.discussion_id === next.discussion?.discussion_id &&
         prev.discussion?.id === next.discussion?.id &&
         prev.discussion?.unreadPostCount === next.discussion?.unreadPostCount &&
+        prev.discussion?.localUnreadCount === next.discussion?.localUnreadCount &&
         prev.discussion?.new_replies_count === next.discussion?.new_replies_count &&
         prev.discussion?.new_images_count === next.discussion?.new_images_count &&
         prev.discussion?.new_links_count === next.discussion?.new_links_count &&

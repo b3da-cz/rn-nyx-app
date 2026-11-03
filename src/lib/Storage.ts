@@ -65,6 +65,7 @@ const StorageKeys = {
   discussionListCache: 'discussionListCache',
   feedCache: 'feedCache',
   messageDrafts: 'messageDrafts',
+  localLastRead: 'localLastRead',
 }
 
 const set = async (key: string, value: any) => {
@@ -191,6 +192,12 @@ const getFingerprintBackgroundAt = async (): Promise<number | null> => {
 
 const setFingerprintBackgroundAt = async (at: number | null) =>
   set(StorageKeys.fingerprintBackgroundAt, at == null ? null : { at })
+
+const getLocalLastReadStore = async (): Promise<Record<string, number>> =>
+  (await get(StorageKeys.localLastRead)) || {}
+
+const setLocalLastReadStore = async (store: Record<string, number>) =>
+  set(StorageKeys.localLastRead, store)
 
 const readRawStorageItem = async (key: string, retries = 1): Promise<string | null> => {
   if (mmkvInstance) {
@@ -473,6 +480,8 @@ export const Storage = {
   setFeedCache,
   getMessageDrafts,
   setMessageDrafts,
+  getLocalLastReadStore,
+  setLocalLastReadStore,
   removeAll,
   isMmkvAvailable: () => !!mmkvInstance,
   getMmkv: () => mmkvInstance,

@@ -85,6 +85,24 @@ describe('discussion cache', () => {
     expect(fresh[0].parsed.height).toBeUndefined()
   })
 
+  it('does not lock post height when cached image only has 3:2 placeholder dimensions', () => {
+    const entry = syncCachedPage({ id: '9', openedAt: 1, posts: {}, pages: {} }, 'latest', [
+      {
+        id: 1,
+        content: 'post 1',
+        parsed: {
+          height: 260,
+          imagesHeight: 220,
+          images: [{ src: 'https://nyx.cz/1.jpg', width: 3, height: 2, skipDownload: true, byteLength: 500000 }],
+        },
+      },
+    ])
+    const fresh: any[] = [{ id: 1, content: 'post 1', parsed: { images: [{ src: 'https://nyx.cz/1.jpg' }] } }]
+    applyCachedLayouts(fresh, entry)
+    expect(fresh[0].parsed.height).toBeUndefined()
+    expect(fresh[0].parsed.images[0].byteLength).toBe(500000)
+  })
+
   it('keeps history and bookmarks and reports club dates', () => {
     const entry = syncCachedPage({ id: '9', openedAt: 1, posts: {}, pages: {}, common: { discussion: { name_static: 'Klub' } } }, 'latest', [
       { id: 1, content: 'a', inserted_at: '2020-01-02 10:00:00', parsed: { height: 80, images: [] } },

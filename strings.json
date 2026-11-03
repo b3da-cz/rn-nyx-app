@@ -512,6 +512,10 @@
       "cs": "Swipovací hlavička příspěvku",
       "en": "Swipeable post header"
     },
+    "isLocalLastReadEnabled": {
+      "cs": "Nastavit poslední přečtený",
+      "en": "Set last read post"
+    },
     "isTextSelectionEnabled": {
       "cs": "Označování textu příspěvků",
       "en": "Select text in posts"
@@ -1073,6 +1077,14 @@
     "cs": "Zkopírováno do schránky",
     "en": "Coppied to clipboard"
   },
+  "lastReadSet": {
+    "cs": "Poslední přečtený nastaven",
+    "en": "Last read post set"
+  },
+  "lastReadCleared": {
+    "cs": "Poslední přečtený zrušen",
+    "en": "Last read post cleared"
+  },
   "exit": {
     "cs": "Zavřít",
     "en": "Exit"
@@ -1097,6 +1109,10 @@
     "remind": {
       "cs": "Uložit do upomínek",
       "en": "Set reminder"
+    },
+    "lastRead": {
+      "cs": "Nastavit poslední přečtený",
+      "en": "Set last read"
     },
     "delete": {
       "cs": "Smazat",

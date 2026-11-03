@@ -53,6 +53,23 @@ export const ImageComponent = ({
     rememberLoadedImageUrl(src)
     setIsLoaded(true)
   }
+  const handleLoad = (event?: any) => {
+    const srcW = event?.nativeEvent?.source?.width
+    const srcH = event?.nativeEvent?.source?.height
+    if (!isCoverResizeMode && srcW > 0 && srcH > 0) {
+      if (width) {
+        const nextHeight = srcH * (width / srcW)
+        setImgWidth(width)
+        if (Math.abs(nextHeight - imgHeight) > 1) {
+          setImgHeight(nextHeight)
+        }
+      } else if (height) {
+        setImgWidth(srcW * (height / srcH))
+        setImgHeight(height)
+      }
+    }
+    markLoaded()
+  }
 
   useEffect(() => {
     return subscribeLoadedImageUrls(() => {
@@ -214,7 +231,7 @@ export const ImageComponent = ({
               resizeMode={isCoverResizeMode ? 'cover' : 'contain'}
               source={{ uri: src }}
               fadeDuration={0}
-              onLoad={markLoaded}
+              onLoad={handleLoad}
               onLoadEnd={markLoaded}
             />
             {!isLoaded && (

@@ -29,7 +29,11 @@ export const getOldestUnreadIndex = (posts: any[] = [], lastSeenPostId?: number 
   return 0
 }
 
-export const applyUnreadFlags = (posts: any[] = [], lastSeenPostId?: number | string | null): any[] => {
+export const applyUnreadFlags = (
+  posts: any[] = [],
+  lastSeenPostId?: number | string | null,
+  strictReset = false,
+): any[] => {
   const lastSeen = Number(lastSeenPostId)
   if (!Number.isFinite(lastSeen) || lastSeen <= 0 || !Array.isArray(posts)) {
     return posts
@@ -37,7 +41,10 @@ export const applyUnreadFlags = (posts: any[] = [], lastSeenPostId?: number | st
   for (const post of posts) {
     if (Number(post?.id) > lastSeen) {
       post.new = true
+    } else if (strictReset) {
+      post.new = false
     }
   }
   return posts
 }
+
