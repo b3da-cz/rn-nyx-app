@@ -16,9 +16,9 @@ import {
 import { LlmLumoQuota } from '../component/llm/LlmLumoQuota'
 import {
   fetchLlmModels,
-  formatPricing,
-  LUMO_MODEL_ID,
-  LUMO_MODEL_NAME,
+  canonicalLumoModelId,
+  canonicalLumoModelName,
+  isProtonModel,
   LlmProviderId,
   LlmSavedModels,
   normalizeLlmProvider,
@@ -273,13 +273,17 @@ export class SettingsView extends Component<Props> {
     this.llmListProvider = provider
     try {
       const cached = await Storage.getCachedLlmModels(provider)
+      const hasLumo = provider === 'lumo' ? (cached || []).some(m => isProtonModel(m.id)) : true
       if (
         this.llmListProvider === provider &&
         Array.isArray(cached) &&
         cached.length > 0 &&
+        hasLumo &&
         (this.state.models || []).length === 0
       ) {
         this.setState({ models: cached })
+      } else if (provider === 'lumo' && (!cached || cached.length === 0 || !hasLumo)) {
+        void this.fetchModels({ keepSelection: true })
       }
     } catch (e) {
       console.warn('Failed to load cached LLM models', e)
@@ -541,9 +545,14 @@ export class SettingsView extends Component<Props> {
       openaiApiKey: config?.openaiApiKey || '',
       openaiBaseUrl: config?.openaiBaseUrl || '',
       llmModels: this.llmModelsFromConfig(config),
-      selectedLlmModel: resolveStoredLlmProvider(config) === 'lumo' ? LUMO_MODEL_ID : config?.selectedLlmModel || '',
+      selectedLlmModel:
+        resolveStoredLlmProvider(config) === 'lumo'
+          ? canonicalLumoModelId(config?.llmModels?.lumo?.id || config?.selectedLlmModel)
+          : config?.selectedLlmModel || '',
       selectedLlmModelName:
-        resolveStoredLlmProvider(config) === 'lumo' ? LUMO_MODEL_NAME : config?.selectedLlmModelName || '',
+        resolveStoredLlmProvider(config) === 'lumo'
+          ? canonicalLumoModelName(config?.llmModels?.lumo?.id || config?.selectedLlmModel)
+          : config?.selectedLlmModelName || '',
       isFetchingModels: false,
       keyboardPad: 0,
       models: [],
@@ -561,7 +570,8 @@ export class SettingsView extends Component<Props> {
       config?.llmModels && typeof config.llmModels === 'object' ? { ...config.llmModels } : {}
     const provider = resolveStoredLlmProvider(config)
     if (provider === 'lumo') {
-      stored.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+      const id = canonicalLumoModelId(stored?.lumo?.id || config?.selectedLlmModel)
+      stored.lumo = { id, name: canonicalLumoModelName(id) }
       return stored
     }
     if (!stored[provider] && config?.selectedLlmModel) {
@@ -595,7 +605,7 @@ export class SettingsView extends Component<Props> {
         return null
       }
     }
-    if (!apiKey.trim()) {
+    if (provider !== 'lumo' && !apiKey.trim()) {
       this.setState({
         llmError:
           provider === 'openai'
@@ -701,7 +711,8 @@ export class SettingsView extends Component<Props> {
       }
     }
     if (next === 'lumo') {
-      llmModels.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+      const id = canonicalLumoModelId(llmModels.lumo?.id || this.state.selectedLlmModel)
+      llmModels.lumo = { id, name: canonicalLumoModelName(id) }
     }
     const restored = next === 'lumo' ? llmModels.lumo : llmModels[next]
     await this.setOptions({
@@ -714,8 +725,11 @@ export class SettingsView extends Component<Props> {
     this.setState({ models: [], llmError: null, isModelPickerVisible: false })
     try {
       const cached = await Storage.getCachedLlmModels(next)
-      if (this.llmListProvider === next && Array.isArray(cached)) {
+      const hasLumo = next === 'lumo' ? (cached || []).some(m => isProtonModel(m.id)) : true
+      if (this.llmListProvider === next && Array.isArray(cached) && hasLumo && cached.length > 0) {
         this.setState({ models: cached })
+      } else if (next === 'lumo') {
+        void this.fetchModels({ keepSelection: true })
       }
     } catch (e) {
       console.warn('Failed to load cached LLM models', e)
@@ -1473,7 +1487,17 @@ export class SettingsView extends Component<Props> {
 
               {this.llmProvider() === 'lumo' ? (
                 <>
-                  <View
+                  <TouchableOpacity
+                    onPress={async () => {
+                      let models = this.state.models || []
+                      const hasLumo = models.some(m => isProtonModel(m.id))
+                      if (models.length === 0 || !hasLumo) {
+                        models = (await this.fetchModels()) || []
+                      }
+                      if (models.length > 0) {
+                        this.setState({ models, isModelPickerVisible: true })
+                      }
+                    }}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -1496,16 +1520,17 @@ export class SettingsView extends Component<Props> {
                       <Text
                         numberOfLines={1}
                         style={{
-                          color: theme.colors.faded,
+                          color: theme.colors.text,
                           fontSize: theme.metrics.fontSizes.p,
                           fontWeight: '600',
                           marginTop: 2,
                         }}>
-                        {LUMO_MODEL_NAME}
+                        {this.state.selectedLlmModelName || canonicalLumoModelName(this.state.selectedLlmModel)}
                       </Text>
                     </View>
-                  </View>
-                  <LlmLumoQuota />
+                    <Icon name="chevron-right" size={20} color={theme.colors.faded} />
+                  </TouchableOpacity>
+                  <LlmLumoQuota modelId={this.state.selectedLlmModel} />
                 </>
               ) : (this.llmProvider() !== 'openai' ||
                 (!!(this.state.openaiBaseUrl || '').trim() && !!(this.state.openaiApiKey || '').trim())) && (
@@ -1599,7 +1624,7 @@ export class SettingsView extends Component<Props> {
         <LlmModelPickerDialog
           isVisible={!!this.state.isModelPickerVisible}
           models={this.state.models || []}
-          catalog={this.llmProvider() === 'openai' ? 'openai' : 'openrouter'}
+          catalog={this.llmProvider()}
           isLoading={!!this.state.isFetchingModels}
           loadError={this.state.llmError}
           selectedModelId={this.state.selectedLlmModel || ''}

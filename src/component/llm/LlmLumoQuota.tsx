@@ -4,12 +4,16 @@ import { Text } from 'react-native-paper'
 import { lumoQuotaBarRatio, lumoQuotaPercentLabel, t, useTheme } from '../../lib'
 import { useLumoQuota } from './useLumoQuota'
 
-export const LlmLumoQuota: React.FC = () => {
+type Props = {
+  modelId?: string
+}
+
+export const LlmLumoQuota: React.FC<Props> = ({ modelId }) => {
   const {
     colors,
     metrics: { blocks, fontSizes },
   } = useTheme()
-  const snapshot = useLumoQuota(true)
+  const snapshot = useLumoQuota(true, modelId)
 
   const rows = [
     {

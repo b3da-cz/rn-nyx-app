@@ -162,7 +162,7 @@ describe('OpenAI-compatible endpoint', () => {
     const result = await sendOpenRouterChat({
       provider: 'lumo',
       apiKey: '',
-      model: 'other',
+      model: 'lumo',
       userPrompt: 'Shrň to',
       discussionId: 7,
       posts: [
@@ -180,7 +180,27 @@ describe('OpenAI-compatible endpoint', () => {
     expect(url).toBe('https://lumo-api.proton.me/ai/v1/chat/completions')
     expect(init.headers.Authorization).toBeUndefined()
     expect(init.headers['Content-Type']).toBe('application/json')
-    expect(JSON.parse(init.body).model).toBe('lumo')
+    expect(JSON.parse(init.body).model).toBe('lumo-lite')
+  })
+
+  it('rejects unsupported models when using Proton Lumo provider', async () => {
+    await expect(
+      sendOpenRouterChat({
+        provider: 'lumo',
+        apiKey: '',
+        model: 'google/gemini-2.5-flash',
+        userPrompt: 'Shrň to',
+        discussionId: 7,
+        posts: [
+          {
+            id: 1,
+            username: 'pepa',
+            inserted_at: '2026-10-04 12:00:00',
+            parsed: { clearText: 'Dneska prší.' },
+          },
+        ],
+      }),
+    ).rejects.toThrow(/Proton Lumo/)
   })
 
   it('does not call Proton Lumo after the minute limit', async () => {

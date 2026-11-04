@@ -10,7 +10,7 @@ import {
 import { DISCUSSION_CACHE_LIMIT_DEFAULT } from './discussionCache'
 import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
-import { LUMO_MODEL_ID, LUMO_MODEL_NAME } from './lumo'
+import { LUMO_DEFAULT_MODEL_ID, LUMO_DEFAULT_MODEL_NAME } from './lumo'
 
 export type MainContextConfig = {
   isLoaded: boolean
@@ -122,9 +122,9 @@ export const initialConfig: MainContextConfig = {
   openRouterApiKey: '',
   openaiApiKey: '',
   openaiBaseUrl: '',
-  llmModels: { lumo: { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME } },
-  selectedLlmModel: LUMO_MODEL_ID,
-  selectedLlmModelName: LUMO_MODEL_NAME,
+  llmModels: { lumo: { id: LUMO_DEFAULT_MODEL_ID, name: LUMO_DEFAULT_MODEL_NAME } },
+  selectedLlmModel: LUMO_DEFAULT_MODEL_ID,
+  selectedLlmModelName: LUMO_DEFAULT_MODEL_NAME,
   llmSystemPrompt: '',
   theme: 'system',
   themeOptions: { ...defaultThemeOptions },

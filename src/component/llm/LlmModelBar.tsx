@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
+  canonicalLumoModelId,
+  canonicalLumoModelName,
   fetchLlmModels,
+  isProtonModel,
   LlmProviderId,
-  LUMO_MODEL_NAME,
   lumoQuotaBarRatio,
   normalizeLlmProvider,
   OpenRouterModel,
@@ -34,7 +36,7 @@ export const LlmModelBar: React.FC<Props> = ({
 }) => {
   const resolvedProvider = normalizeLlmProvider(provider)
   const isLumo = resolvedProvider === 'lumo'
-  const lumoQuota = useLumoQuota(isLumo)
+  const lumoQuota = useLumoQuota(isLumo, currentModelId)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
   const [models, setModels] = useState<OpenRouterModel[]>([])
   const [isFetching, setIsFetching] = useState(false)
@@ -82,35 +84,34 @@ export const LlmModelBar: React.FC<Props> = ({
     let cached: OpenRouterModel[] = []
     try {
       cached = (await Storage.getCachedLlmModels(resolvedProvider)) || []
-      if (Array.isArray(cached) && cached.length > 0) {
+      const hasLumo = isLumo ? cached.some(m => isProtonModel(m.id)) : true
+      if (Array.isArray(cached) && cached.length > 0 && hasLumo) {
         setModels(cached)
         setLoadError(null)
+      } else {
+        cached = []
       }
     } catch (e) {
       console.warn('Failed to load cached models', e)
     }
 
-    if (cached.length === 0 && apiKey) {
+    if (cached.length === 0 && (apiKey || isLumo)) {
       await reloadModels()
     }
   }
 
-  if (isLumo) {
-    const ratio = lumoQuotaBarRatio(lumoQuota.rpdUsed, lumoQuota.rpdMax)
-    return (
-      <LlmFormRow
-        label={t('llm.model')}
-        value={`${LUMO_MODEL_NAME} [${lumoQuota.rpdUsed}/${lumoQuota.rpdMax}]`}
-        progressRatio={ratio}
-      />
-    )
-  }
+  const lumoRatio = isLumo ? lumoQuotaBarRatio(lumoQuota.rpdUsed, lumoQuota.rpdMax) : undefined
+  const lumoDisplayName = currentModelName || canonicalLumoModelName(currentModelId)
+  const displayValue = isLumo
+    ? `${lumoDisplayName} [${lumoQuota.rpdUsed}/${lumoQuota.rpdMax}]`
+    : currentModelName || currentModelId || t('profile.llm.selectModel')
 
   return (
     <>
       <LlmFormRow
         label={t('llm.model')}
-        value={currentModelName || currentModelId || t('profile.llm.selectModel')}
+        value={displayValue}
+        progressRatio={lumoRatio}
         onPress={handleOpenPicker}
       />
       <LlmModelPickerDialog
@@ -119,7 +120,7 @@ export const LlmModelBar: React.FC<Props> = ({
         isLoading={isFetching}
         loadError={loadError}
         catalog={resolvedProvider}
-        selectedModelId={currentModelId}
+        selectedModelId={isLumo ? canonicalLumoModelId(currentModelId) : currentModelId}
         isGlobal={isGlobalModel}
         showGlobalToggle
         onReload={() => {

@@ -38,8 +38,8 @@ import {
   openLocalTextFile,
   setAppLanguage,
   SharedData,
-  LUMO_MODEL_ID,
-  LUMO_MODEL_NAME,
+  canonicalLumoModelId,
+  canonicalLumoModelName,
   resolveStoredLlmProvider,
   Storage,
   subscribeShareReceived,
@@ -243,15 +243,23 @@ const App: () => ReactNode = () => {
     let conf = stored || initialConfig
     setAppLanguage(conf.language || 'auto')
     const resolvedProvider = resolveStoredLlmProvider(conf)
+    const canonicalModelId =
+      resolvedProvider === 'lumo'
+        ? canonicalLumoModelId(stored?.llmModels?.lumo?.id || stored?.selectedLlmModel)
+        : stored?.selectedLlmModel
+    const canonicalModelName =
+      resolvedProvider === 'lumo'
+        ? canonicalLumoModelName(canonicalModelId)
+        : stored?.selectedLlmModelName
     if (
       stored &&
       (stored.llmProvider !== resolvedProvider ||
         !stored.llmProviderChosen ||
-        (resolvedProvider === 'lumo' && stored.selectedLlmModel !== LUMO_MODEL_ID))
+        (resolvedProvider === 'lumo' && stored.selectedLlmModel !== canonicalModelId))
     ) {
       const llmModels = stored.llmModels && typeof stored.llmModels === 'object' ? { ...stored.llmModels } : {}
       if (resolvedProvider === 'lumo') {
-        llmModels.lumo = { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+        llmModels.lumo = { id: canonicalModelId, name: canonicalModelName }
       }
       const nextStored = {
         ...stored,
@@ -259,8 +267,8 @@ const App: () => ReactNode = () => {
         llmProviderChosen: true,
         ...(resolvedProvider === 'lumo'
           ? {
-              selectedLlmModel: LUMO_MODEL_ID,
-              selectedLlmModelName: LUMO_MODEL_NAME,
+              selectedLlmModel: canonicalModelId,
+              selectedLlmModelName: canonicalModelName,
               llmModels,
             }
           : {}),
@@ -320,8 +328,10 @@ const App: () => ReactNode = () => {
       openaiApiKey: conf.openaiApiKey || '',
       openaiBaseUrl: conf.openaiBaseUrl || '',
       llmModels: conf.llmModels && typeof conf.llmModels === 'object' ? conf.llmModels : {},
-      selectedLlmModel: resolvedProvider === 'lumo' ? LUMO_MODEL_ID : conf.selectedLlmModel || '',
-      selectedLlmModelName: resolvedProvider === 'lumo' ? LUMO_MODEL_NAME : conf.selectedLlmModelName || '',
+      selectedLlmModel:
+        resolvedProvider === 'lumo' ? canonicalLumoModelId(conf.selectedLlmModel) : conf.selectedLlmModel || '',
+      selectedLlmModelName:
+        resolvedProvider === 'lumo' ? canonicalLumoModelName(conf.selectedLlmModel) : conf.selectedLlmModelName || '',
       llmSystemPrompt: conf.llmSystemPrompt || '',
       theme: conf.theme === undefined ? 'system' : conf.theme,
       themeOptions: conf.themeOptions === undefined ? { ...defaultThemeOptions } : conf.themeOptions,

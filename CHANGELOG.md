@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.4
+- podpora modelů Proton Lumo: Lumo Lite (250 RPD), Lumo Max (50 RPD) a Apertus 15 (Swiss AI, 500 RPD)
+- samostatné sledování a limity kvót (RPD / RPM) pro jednotlivé modely Protonu
+- možnost přepínání Proton modelů přímo kliknutím na lištu asistenta i v Nastavení
+- rozdělení dialogu výběru modelů do kategorií (Proton, Oblíbené, Vše)
+- zobrazení stavu a limitů RPD u Proton modelů v dialogu výběru modelu (u jiných než Proton modelů se kvóty nezobrazují)
+- oddělení mezipaměti modelů pro Proton Lumo od OpenRouteru a zamezení nechtěnému odeslání nepodporovaných modelů na Proton API
+
 ## 0.39.3
 - oprava otevírání textových souborů a příloh (.md apod.) v diskuzních klubech (předání názvu souboru z popisku odkazu v MarkdownViewComponent pro zobrazení dialogu Stáhnout / Otevřít stejně jako v poště)
 

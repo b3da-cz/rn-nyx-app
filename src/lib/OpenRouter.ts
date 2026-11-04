@@ -6,7 +6,19 @@ import {
 } from './llmAgents'
 import { llmPostDay } from './llmPostSelection'
 import { consumeLlmStreamBody, createLlmStreamState, finishLlmStreamBody, LlmStreamState } from './llmStream'
-import { assertLumoQuota, LUMO_BASE_URL, LUMO_CONTEXT_TOKENS, LUMO_MODEL_ID, LUMO_MODEL_NAME } from './lumo'
+import {
+  assertLumoQuota,
+  canonicalLumoModelId,
+  canonicalLumoModelName,
+  isProtonModel,
+  LUMO_BASE_URL,
+  LUMO_CONTEXT_TOKENS,
+  LUMO_DEFAULT_MODEL_ID,
+  LUMO_DEFAULT_MODEL_NAME,
+  LUMO_MODEL_ID,
+  LUMO_MODEL_NAME,
+  LUMO_MODELS,
+} from './lumo'
 import { t } from './Strings'
 
 export type OpenRouterPricing = {
@@ -227,7 +239,10 @@ export function llmConnectionFromConfig(config?: LlmConnectionConfig | null): Ll
 
 export function activeLlmModel(config?: LlmConnectionConfig | null): { id: string; name: string } {
   if (resolveStoredLlmProvider(config) === 'lumo') {
-    return { id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME }
+    const rawId = (config as any)?.llmModels?.lumo?.id || config?.selectedLlmModel
+    const id = canonicalLumoModelId(rawId)
+    const name = canonicalLumoModelName(id)
+    return { id, name }
   }
   const id = (config?.selectedLlmModel || '').trim()
   return { id, name: (config?.selectedLlmModelName || id).trim() }
@@ -358,7 +373,36 @@ export async function fetchLlmModels({
 }): Promise<OpenRouterModel[]> {
   const provider = normalizeLlmProvider(providerInput)
   if (provider === 'lumo') {
-    return [{ id: LUMO_MODEL_ID, name: LUMO_MODEL_NAME, context_length: LUMO_CONTEXT_TOKENS }]
+    try {
+      const res = await fetch(llmApiUrl(LUMO_BASE_URL, 'models'), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.ok) {
+        const json = await res.json()
+        const fetched = modelsFromApiPayload(json)
+        if (fetched.length > 0) {
+          return fetched.map(m => {
+            const canonical = canonicalLumoModelId(m.id)
+            const preset = LUMO_MODELS.find(item => item.id === canonical)
+            return {
+              id: m.id,
+              name: preset?.name || m.name || m.id,
+              description: preset?.description || m.description,
+              context_length: m.context_length || preset?.context_length || LUMO_CONTEXT_TOKENS,
+            }
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch lumo models from API, using defaults', e)
+    }
+    return LUMO_MODELS.map(m => ({
+      id: m.id,
+      name: m.name,
+      description: m.description,
+      context_length: m.context_length,
+    }))
   }
   const trimmedKey = (apiKey || '').trim()
   if (!trimmedKey) {
@@ -543,7 +587,13 @@ export async function sendOpenRouterChat({
   const provider = normalizeLlmProvider(providerInput)
   const resolvedBase =
     provider === 'lumo' ? LUMO_BASE_URL : provider === 'openai' ? normalizeOpenAiBaseUrl(baseUrl || '') : OPENROUTER_BASE_URL
-  const resolvedModel = provider === 'lumo' ? LUMO_MODEL_ID : model
+  const resolvedModel = provider === 'lumo' ? canonicalLumoModelId(model) : model
+  if (provider === 'lumo' && model && !isProtonModel(model)) {
+    throw new Error(
+      t('profile.llm.unsupportedLumoModel') ||
+        'Proton Lumo podporuje pouze modely Lumo Lite, Lumo Max a Apertus 15. Pro ostatní modely přepněte na OpenRouter.',
+    )
+  }
   const trimmedKey = (apiKey || '').trim()
   if (provider !== 'lumo' && !trimmedKey) {
     throw new Error(provider === 'openai' ? 'Chybí API klíč.' : 'Chybí OpenRouter API klíč.')
@@ -617,7 +667,7 @@ export async function sendOpenRouterChat({
     `--- Konec příspěvků ---`
 
   if (provider === 'lumo') {
-    await assertLumoQuota()
+    await assertLumoQuota(resolvedModel)
   }
 
   onProgress?.(

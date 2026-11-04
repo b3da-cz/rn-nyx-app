@@ -2,14 +2,26 @@ import React, { useMemo, useState } from 'react'
 import { ActivityIndicator, FlatList, Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native'
 import { IconButton, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { formatPricing, OpenRouterModel, RECOMMENDED_MODEL_IDS, Storage, Styling, t, useTheme } from '../lib'
+import {
+  formatPricing,
+  getLumoModelsQuotaSnapshot,
+  isProtonModel,
+  lumoMaxRpdForModel,
+  LUMO_MODELS,
+  OpenRouterModel,
+  RECOMMENDED_MODEL_IDS,
+  Storage,
+  Styling,
+  t,
+  useTheme,
+} from '../lib'
 import { FormRowToggleComponent } from './FormRowToggleComponent'
 
 type Props = {
   isVisible: boolean
   models: OpenRouterModel[]
   selectedModelId: string
-  catalog?: 'openrouter' | 'openai'
+  catalog?: 'openrouter' | 'openai' | 'lumo'
   isLoading?: boolean
   loadError?: string | null
   isGlobal?: boolean
@@ -20,7 +32,16 @@ type Props = {
   onCancel: () => void
 }
 
-type FilterCategory = 'favorites' | 'recommended' | 'all' | 'free' | 'google' | 'anthropic' | 'meta' | 'deepseek'
+type FilterCategory =
+  | 'proton'
+  | 'favorites'
+  | 'recommended'
+  | 'all'
+  | 'free'
+  | 'google'
+  | 'anthropic'
+  | 'meta'
+  | 'deepseek'
 
 export const LlmModelPickerDialog: React.FC<Props> = ({
   isVisible,
@@ -42,11 +63,22 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     metrics: { blocks, fontSizes },
   } = theme
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<FilterCategory>(catalog === 'openai' ? 'all' : 'recommended')
+  const [category, setCategory] = useState<FilterCategory>(
+    catalog === 'lumo' ? 'proton' : catalog === 'openai' ? 'all' : 'recommended',
+  )
   const [favoriteModelIds, setFavoriteModelIds] = useState<string[]>([])
   const [saveAsGlobal, setSaveAsGlobal] = useState(!!isGlobal)
+  const [lumoQuotas, setLumoQuotas] = useState<Record<string, { used: number; max: number }>>({})
   const shownCategory: FilterCategory =
-    catalog === 'openai' && category !== 'favorites' && category !== 'all' ? 'all' : category
+    catalog === 'lumo'
+      ? category === 'favorites' || category === 'all'
+        ? category
+        : 'proton'
+      : catalog === 'openai'
+        ? category === 'favorites' || category === 'all'
+          ? category
+          : 'all'
+        : category
 
   React.useEffect(() => {
     if (isVisible) {
@@ -60,6 +92,14 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     }
   }, [isVisible])
 
+  React.useEffect(() => {
+    if (isVisible && catalog === 'lumo') {
+      getLumoModelsQuotaSnapshot()
+        .then(q => setLumoQuotas(q || {}))
+        .catch(() => undefined)
+    }
+  }, [isVisible, catalog])
+
   const toggleFavorite = async (modelId: string) => {
     const isFav = favoriteModelIds.includes(modelId)
     const next = isFav ? favoriteModelIds.filter(id => id !== modelId) : [...favoriteModelIds, modelId]
@@ -67,10 +107,29 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     await Storage.setFavoriteLlmModels(next)
   }
 
-  const filteredModels = useMemo(() => {
-    let list = models
+  const allModels = useMemo(() => {
+    if (catalog === 'lumo') {
+      const existing = new Set(models.map(m => m.id))
+      const protonPreset = LUMO_MODELS.map(m => ({
+        id: m.id,
+        name: m.name,
+        description: m.description,
+        context_length: m.context_length,
+      }))
+      const missing = protonPreset.filter(m => !existing.has(m.id))
+      if (missing.length > 0) {
+        return [...missing, ...models]
+      }
+    }
+    return models
+  }, [models, catalog])
 
-    if (shownCategory === 'favorites') {
+  const filteredModels = useMemo(() => {
+    let list = allModels
+
+    if (shownCategory === 'proton') {
+      list = list.filter(m => isProtonModel(m.id))
+    } else if (shownCategory === 'favorites') {
       list = list.filter(m => favoriteModelIds.includes(m.id))
     } else if (shownCategory === 'recommended') {
       list = list.filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
@@ -96,28 +155,43 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
     }
 
     return list
-  }, [models, shownCategory, search, favoriteModelIds])
+  }, [allModels, shownCategory, search, favoriteModelIds])
 
   if (!isVisible) {
     return null
   }
 
   const categoryOptions: { value: FilterCategory; label: string }[] =
-    catalog === 'openai'
+    catalog === 'lumo'
       ? [
+          { value: 'proton', label: 'Proton' },
           { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
           { value: 'all', label: t('llm.categoryAll') || 'Vše' },
         ]
-      : [
-          { value: 'recommended', label: t('llm.categoryRecommended') || 'Doporučené' },
-          { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
-          { value: 'free', label: t('llm.categoryFree') || 'Zdarma' },
-          { value: 'all', label: t('llm.categoryAll') || 'Vše' },
-          { value: 'google', label: 'Google' },
-          { value: 'anthropic', label: 'Anthropic' },
-          { value: 'deepseek', label: 'DeepSeek' },
-          { value: 'meta', label: 'Meta Llama' },
-        ]
+      : catalog === 'openai'
+        ? [
+            { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
+            { value: 'all', label: t('llm.categoryAll') || 'Vše' },
+          ]
+        : [
+            { value: 'recommended', label: t('llm.categoryRecommended') || 'Doporučené' },
+            { value: 'favorites', label: `${t('llm.categoryFavorites') || 'Oblíbené'} (${favoriteModelIds.length})` },
+            { value: 'free', label: t('llm.categoryFree') || 'Zdarma' },
+            { value: 'all', label: t('llm.categoryAll') || 'Vše' },
+            { value: 'google', label: 'Google' },
+            { value: 'anthropic', label: 'Anthropic' },
+            { value: 'deepseek', label: 'DeepSeek' },
+            { value: 'meta', label: 'Meta Llama' },
+          ]
+
+  const handleReload = () => {
+    if (catalog === 'lumo') {
+      getLumoModelsQuotaSnapshot()
+        .then(q => setLumoQuotas(q || {}))
+        .catch(() => undefined)
+    }
+    onReload?.()
+  }
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={false} onRequestClose={onCancel}>
@@ -135,7 +209,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
             {t('llm.modelPickerTitle') || 'Výběr LLM modelu'}
           </Text>
           <Text style={{ color: colors.faded, fontSize: fontSizes.small }}>
-            {`${filteredModels.length} / ${models.length}`}
+            {`${filteredModels.length} / ${allModels.length}`}
           </Text>
           {onReload ? (
             isLoading ? (
@@ -147,7 +221,7 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                 color={colors.primary}
                 rippleColor={colors.ripple}
                 accessibilityLabel={t('profile.llm.refreshModels') || 'Aktualizovat modely'}
-                onPress={onReload}
+                onPress={handleReload}
               />
             )
           ) : null}
@@ -273,9 +347,13 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
           renderItem={({ item }) => {
             const isSelected = item.id === selectedModelId
             const isFavorite = favoriteModelIds.includes(item.id)
-            const pricingStr = formatPricing(item.pricing)
+            const isProton = isProtonModel(item.id)
+            const lumoQuota = isProton ? lumoQuotas[item.id] || { used: 0, max: lumoMaxRpdForModel(item.id) } : null
+            const quotaLabel = lumoQuota ? `(${lumoQuota.used}/${lumoQuota.max})` : ''
+            const pricingStr = isProton ? '' : formatPricing(item.pricing)
             const contextStr = item.context_length ? `${Math.round(item.context_length / 1000)}k ctx` : ''
-            const metaParts = [contextStr, pricingStr].filter(Boolean).join('  ·  ')
+            const rpdStr = lumoQuota ? `${lumoQuota.used}/${lumoQuota.max} RPD` : ''
+            const metaParts = [contextStr, rpdStr, pricingStr].filter(Boolean).join('  ·  ')
 
             return (
               <TouchableRipple
@@ -300,6 +378,11 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                         fontWeight: isSelected ? '700' : '400',
                       }}>
                       {item.name}
+                      {!!quotaLabel && (
+                        <Text style={{ color: colors.faded, fontSize: fontSizes.small, fontWeight: '400' }}>
+                          {`  ${quotaLabel}`}
+                        </Text>
+                      )}
                     </Text>
                     <TouchableOpacity
                       onPress={() => toggleFavorite(item.id)}
@@ -311,6 +394,11 @@ export const LlmModelPickerDialog: React.FC<Props> = ({
                   <Text numberOfLines={1} style={{ color: colors.faded, fontSize: fontSizes.small, marginTop: 2 }}>
                     {item.id}
                   </Text>
+                  {!!item.description && (
+                    <Text numberOfLines={2} style={{ color: colors.faded, fontSize: fontSizes.small - 1, marginTop: 2 }}>
+                      {item.description}
+                    </Text>
+                  )}
                   {!!metaParts && (
                     <Text numberOfLines={1} style={{ color: colors.faded, fontSize: fontSizes.small - 1, marginTop: 2 }}>
                       {metaParts}

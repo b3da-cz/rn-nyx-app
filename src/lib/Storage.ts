@@ -129,12 +129,15 @@ const getLlmHistory = async () => (await get(StorageKeys.llmHistory)) || []
 const setLlmHistory = async history => set(StorageKeys.llmHistory, history)
 
 const cachedLlmModelsFor = (raw, provider?: string) => {
-  const key = provider === 'openai' ? 'openai' : 'openrouter'
-  if (Array.isArray(raw)) {
-    return key === 'openrouter' ? raw : []
-  }
+  const key = provider === 'lumo' ? 'lumo' : provider === 'openai' ? 'openai' : 'openrouter'
   if (raw && typeof raw === 'object' && Array.isArray(raw[key])) {
     return raw[key]
+  }
+  if (provider === 'lumo') {
+    return []
+  }
+  if (Array.isArray(raw)) {
+    return key === 'openrouter' ? raw : []
   }
   return []
 }
@@ -143,7 +146,7 @@ const getCachedLlmModels = async (provider?: string) =>
   cachedLlmModelsFor(await get(StorageKeys.cachedLlmModels), provider)
 
 const setCachedLlmModels = async (models, provider?: string) => {
-  const key = provider === 'openai' ? 'openai' : 'openrouter'
+  const key = provider === 'lumo' ? 'lumo' : provider === 'openai' ? 'openai' : 'openrouter'
   const raw = await get(StorageKeys.cachedLlmModels)
   const store = Array.isArray(raw) ? { openrouter: raw } : raw && typeof raw === 'object' ? { ...raw } : {}
   store[key] = models

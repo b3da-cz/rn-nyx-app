@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
-import { emptyLumoQuota, lumoQuotaSnapshot, LumoQuotaSnapshot, readLumoQuota, subscribeLumoQuota } from '../../lib'
+import {
+  canonicalLumoModelId,
+  emptyLumoQuota,
+  LUMO_DEFAULT_MODEL_ID,
+  lumoQuotaSnapshot,
+  LumoQuotaSnapshot,
+  readLumoQuota,
+  subscribeLumoQuota,
+} from '../../lib'
 
-const initialSnapshot = (): LumoQuotaSnapshot => lumoQuotaSnapshot(emptyLumoQuota())
+const initialSnapshot = (modelId: string): LumoQuotaSnapshot =>
+  lumoQuotaSnapshot(emptyLumoQuota(), modelId)
 
-export function useLumoQuota(enabled = true): LumoQuotaSnapshot {
-  const [snapshot, setSnapshot] = useState<LumoQuotaSnapshot>(initialSnapshot)
+export function useLumoQuota(enabled = true, modelId = LUMO_DEFAULT_MODEL_ID): LumoQuotaSnapshot {
+  const canonicalId = canonicalLumoModelId(modelId)
+  const [snapshot, setSnapshot] = useState<LumoQuotaSnapshot>(() => initialSnapshot(canonicalId))
 
   useEffect(() => {
     if (!enabled) {
@@ -12,7 +22,7 @@ export function useLumoQuota(enabled = true): LumoQuotaSnapshot {
     }
     let alive = true
     const pull = () => {
-      readLumoQuota()
+      readLumoQuota(canonicalId)
         .then(next => {
           if (alive) {
             setSnapshot(next)
@@ -21,9 +31,9 @@ export function useLumoQuota(enabled = true): LumoQuotaSnapshot {
         .catch(() => undefined)
     }
     pull()
-    const unsubscribe = subscribeLumoQuota(next => {
+    const unsubscribe = subscribeLumoQuota(() => {
       if (alive) {
-        setSnapshot(next)
+        pull()
       }
     })
     const timer = setInterval(pull, 1000)
@@ -32,7 +42,7 @@ export function useLumoQuota(enabled = true): LumoQuotaSnapshot {
       unsubscribe()
       clearInterval(timer)
     }
-  }, [enabled])
+  }, [enabled, canonicalId])
 
   return snapshot
 }
