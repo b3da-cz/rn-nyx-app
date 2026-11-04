@@ -46,6 +46,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
   ready = false
   fetchedIncludesSeen = false
   appliedFeature = true
+  rawBookmarks: any[] = []
   constructor(props) {
     super(props)
     this.state = {
@@ -121,6 +122,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
   }
 
   showBookmarks(bookmarks, reminderCount, includeSeen, isAnimated = false) {
+    this.rawBookmarks = bookmarks || []
     this.fetchedIncludesSeen = includeSeen
     const sectionedBookmarks = (bookmarks || []).map(b => ({
       title: b.category.category_name,
@@ -202,8 +204,8 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
         })
         return
       }
-      if (this.state.sectionedBookmarks?.some(section => section.data?.length)) {
-        this.setState({ isFetching: false })
+      if (this.rawBookmarks?.length) {
+        this.showBookmarks(this.rawBookmarks, this.state.reminderCount, this.fetchedIncludesSeen, isAnimated)
         servedFromCache = true
         return
       }
@@ -214,6 +216,15 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
           servedFromCache = true
           return
         }
+      }
+      if (this.state.sectionedBookmarks?.some(section => section.data?.length)) {
+        const sectionedBookmarks = this.state.sectionedBookmarks.map(section => ({
+          ...section,
+          data: applyLocalLastReadToDiscussions(section.data, this.context?.config),
+        }))
+        this.setState({ sectionedBookmarks, isFetching: false })
+        servedFromCache = true
+        return
       }
       this.setState({
         isFetching: false,

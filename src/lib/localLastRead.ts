@@ -86,28 +86,19 @@ export function getLocalLastRead(discussionId?: number | string | null): number 
   return getLocalLastReadEntry(discussionId)?.postId ?? null
 }
 
-export async function setLocalLastRead(
-  discussionId: number | string,
-  postId: number | string | null,
-  unreadCount = 1,
-): Promise<void> {
+export async function setLocalLastRead(discussionId: number | string, postId: number | string | null, unreadCount = 1): Promise<void> {
   if (!isHydrated) await hydrateLocalLastRead()
   const discKey = String(discussionId)
   const numericPostId = Number(postId)
-  if (!numericPostId || numericPostId <= 0) {
-    delete memoryStore[discKey]
-  } else {
+  if (!numericPostId || numericPostId <= 0) delete memoryStore[discKey]
+  else {
     const count = Number(unreadCount)
     memoryStore[discKey] = { postId: Math.trunc(numericPostId), unreadCount: Number.isFinite(count) && count >= 0 ? Math.trunc(count) : 1 }
   }
   await Storage.setLocalLastReadStore(memoryStore)
 }
 
-export async function toggleLocalLastRead(
-  discussionId: number | string,
-  postId: number | string,
-  unreadCount = 1,
-): Promise<{ isSet: boolean; postId: number | null; unreadCount: number }> {
+export async function toggleLocalLastRead(discussionId: number | string, postId: number | string, unreadCount = 1) {
   const current = getLocalLastRead(discussionId)
   const target = Math.trunc(Number(postId))
   if (current === target) {
@@ -139,11 +130,17 @@ export async function clearLocalLastRead(discussionId?: number | string | null):
 }
 
 export function applyLocalLastReadToDiscussions(discussions: any[] = [], config?: any): any[] {
-  if (!Array.isArray(discussions) || !isLocalLastReadEnabled(config)) return discussions
-  if (!isHydrated) trySyncHydrate()
+  if (!Array.isArray(discussions)) return discussions
+  const enabled = isLocalLastReadEnabled(config)
+  if (enabled && !isHydrated) trySyncHydrate()
   return discussions.map(d => {
     const discId = d?.discussion_id ?? d?.id
-    const entry = getLocalLastReadEntry(discId)
-    return entry ? { ...d, last_seen_post_id: entry.postId, localUnreadCount: entry.unreadCount } : d
+    const entry = enabled ? getLocalLastReadEntry(discId) : null
+    if (entry) return { ...d, _serverLastSeenPostId: d._serverLastSeenPostId ?? d.last_seen_post_id, last_seen_post_id: entry.postId, localUnreadCount: entry.unreadCount }
+    if (d?.localUnreadCount !== undefined || d?._serverLastSeenPostId !== undefined) {
+      const { localUnreadCount, _serverLastSeenPostId, ...rest } = d
+      return { ...rest, last_seen_post_id: _serverLastSeenPostId ?? d.last_seen_post_id }
+    }
+    return d
   })
 }

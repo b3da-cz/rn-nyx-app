@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.39.2
+- oprava resetu lokálního unreadu při návštěvě klubu v offline režimu (znovunačtení ze surových dat/cache po návratu na seznamy Sledovaných a Historie, odstranění badge a obnova původního serverového stavu)
+
 ## 0.39.1
 - oprava zachování lokálních záložek a nepřečtených příspěvků po restartu aplikace (automatická synchronní i asynchronní rehydratace ze storage při startu aplikace a před načtením seznamů)
 

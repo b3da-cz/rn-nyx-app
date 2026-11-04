@@ -150,4 +150,26 @@ describe('localLastRead', () => {
     const hydrated = await hydrateLocalLastRead()
     expect(hydrated['999']).toEqual({ postId: 12345, unreadCount: 7 })
   })
+
+  it('resets local unread in discussions list once consumed, restoring server last seen id', async () => {
+    await setLocalLastRead(100, 555, 5)
+
+    const rawDiscussions = [
+      { discussion_id: 100, last_seen_post_id: 560, unreadPostCount: 0 },
+    ]
+
+    // Apply local unread: discussion becomes unread with local badge and post id 555
+    const withLocal = applyLocalLastReadToDiscussions(rawDiscussions, { isLocalLastReadEnabled: true })
+    expect(withLocal[0].last_seen_post_id).toBe(555)
+    expect(withLocal[0].localUnreadCount).toBe(5)
+
+    // User enters club: consumed
+    consumeLocalLastRead(100)
+    expect(getLocalLastRead(100)).toBeNull()
+
+    // Offline return: re-applying to the rendered discussion list clears local unread and restores server post id 560
+    const reset = applyLocalLastReadToDiscussions(withLocal, { isLocalLastReadEnabled: true })
+    expect(reset[0].last_seen_post_id).toBe(560)
+    expect(reset[0].localUnreadCount).toBeUndefined()
+  })
 })

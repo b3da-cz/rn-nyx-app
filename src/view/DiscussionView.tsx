@@ -217,6 +217,9 @@ export class DiscussionView extends Component<Props> {
     })
     this.setFocusOnStart()
     this.setTheme()
+    if (isLocalLastReadEnabled(this.context?.config) && (this.props.postId || this.props.showBoard || this.props.showRights || this.props.showStats)) {
+      consumeLocalLastRead(this.props.id)
+    }
     if (this.props.postId && this.props.postId > 0 && this.props.showReplies) {
       this.fetchReplies(this.props.id, this.props.postId)
     } else if (this.props.postId && this.props.postId > 0) {
@@ -255,7 +258,7 @@ export class DiscussionView extends Component<Props> {
       this._clubStartPost = null
       this._listGeneration += 1
       this.setState({ discussionId: this.props.id, posts: [], isFetching: true, fetchProgress: emptyFetchProgress() }, () => {
-        this.reloadDiscussionLatest(true)
+        this.loadInitialDiscussion()
       })
     }
     this.handleSharedContent()

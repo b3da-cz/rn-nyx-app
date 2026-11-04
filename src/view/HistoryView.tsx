@@ -27,6 +27,7 @@ type State = {
 }
 export class HistoryView extends BaseDiscussionListView<Props> {
   state: Readonly<State>
+  rawDiscussions: any[] = []
   constructor(props) {
     super(props)
     this.state = {
@@ -49,6 +50,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
   }
 
   showDiscussions(discussions, isAnimated = false) {
+    this.rawDiscussions = discussions || []
     if (isAnimated) {
       LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     }
@@ -125,8 +127,8 @@ export class HistoryView extends BaseDiscussionListView<Props> {
         }
         return
       }
-      if (this.state.discussions?.length) {
-        this.setState({ isFetching: false })
+      if (this.rawDiscussions?.length) {
+        this.showDiscussions(this.rawDiscussions, isAnimated)
         servedFromCache = true
         return
       }
@@ -134,6 +136,17 @@ export class HistoryView extends BaseDiscussionListView<Props> {
       if (cached?.discussions?.length) {
         this.lastFetchAt = Date.now()
         this.showDiscussions(cached.discussions, isAnimated)
+        servedFromCache = true
+        return
+      }
+      if (this.state.discussions?.length) {
+        const withLocal = applyLocalLastReadToDiscussions(this.state.discussions, this.context?.config)
+        this.setState({
+          discussions: showingRead
+            ? withLocal
+            : withLocal.filter(d => (d.unreadPostCount ?? 0) > 0 || (d.localUnreadCount ?? 0) > 0),
+          isFetching: false,
+        })
         servedFromCache = true
         return
       }
