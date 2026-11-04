@@ -5,6 +5,7 @@ describe('useLlmDateFilter computePresetRange', () => {
   const base = at(2026, 10, 28)
 
   it('computes short presets relative to current day', () => {
+    expect(computePresetRange('fill_context', base)).toEqual({ dateFrom: '', dateTo: '2026-10-28' })
     expect(computePresetRange('today', base)).toEqual({ dateFrom: '2026-10-28', dateTo: '2026-10-28' })
     expect(computePresetRange('yesterday', base)).toEqual({ dateFrom: '2026-10-27', dateTo: '2026-10-28' })
     expect(computePresetRange('3days', base)).toEqual({ dateFrom: '2026-10-25', dateTo: '2026-10-28' })

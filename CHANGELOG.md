@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.39.5
+- nová volba „Zaplnit kontext“ v časovém filtru asistenta (automaticky natáhne od aktuálního okamžiku do minulosti tolik příspěvků, kolik se vejde do kontextu zvoleného modelu)
+- zapamatování naposledy zvoleného časového filtru pro každý klub zvlášť
+- automatické načtení příspěvků odpovídajících vybranému časovému rozsahu při příchodu na obrazovku asistenta
+- zapamatování naposledy použitého zadání (promptu) v asistentu pro každý klub zvlášť
+- zachování promptu po odeslání dotazu i při požadavku na nový dotaz (žádné automatické mazání)
+
 ## 0.39.4
 - podpora modelů Proton Lumo: Lumo Lite (250 RPD), Lumo Max (50 RPD) a Apertus 15 (Swiss AI, 500 RPD)
 - samostatné sledování a limity kvót (RPD / RPM) pro jednotlivé modely Protonu

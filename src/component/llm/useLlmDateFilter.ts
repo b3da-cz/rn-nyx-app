@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { isoDate } from '../../lib/events'
+import { Storage } from '../../lib/Storage'
 import { DatePreset } from './LlmDateFilterBar'
 
 function subtractDays(date: Date, days: number): Date {
@@ -33,6 +34,9 @@ export function computePresetRange(
   today = new Date(),
 ): { dateFrom: string; dateTo: string } {
   const todayStr = isoDate(today)
+  if (preset === 'fill_context') {
+    return { dateFrom: '', dateTo: todayStr }
+  }
   if (preset === 'today') {
     return { dateFrom: todayStr, dateTo: todayStr }
   }
@@ -69,27 +73,98 @@ export function computePresetRange(
   return { dateFrom: todayStr, dateTo: todayStr }
 }
 
-export function useLlmDateFilter() {
+export function useLlmDateFilter(discussionId?: number | string) {
   const [datePreset, setDatePreset] = useState<DatePreset>('today')
   const [dateFrom, setDateFrom] = useState(() => isoDate(new Date()))
   const [dateTo, setDateTo] = useState(() => isoDate(new Date()))
+  const [isLoaded, setIsLoaded] = useState(!discussionId)
+
+  useEffect(() => {
+    if (!discussionId) {
+      setIsLoaded(true)
+      return
+    }
+    let cancelled = false
+    Storage.getLlmClubDateFilter(discussionId)
+      .then(saved => {
+        if (cancelled) {
+          return
+        }
+        if (saved?.preset) {
+          setDatePreset(saved.preset as DatePreset)
+          if (saved.preset === 'custom') {
+            if (saved.dateFrom) setDateFrom(saved.dateFrom)
+            if (saved.dateTo) setDateTo(saved.dateTo)
+          } else {
+            const range = computePresetRange(saved.preset as DatePreset, new Date())
+            setDateFrom(range.dateFrom)
+            setDateTo(range.dateTo)
+          }
+        }
+        setIsLoaded(true)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsLoaded(true)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [discussionId])
 
   const applyPreset = (preset: DatePreset) => {
     setDatePreset(preset)
-    if (preset === 'custom') {
-      return
+    let nextFrom = dateFrom
+    let nextTo = dateTo
+    if (preset !== 'custom') {
+      const range = computePresetRange(preset, new Date())
+      nextFrom = range.dateFrom
+      nextTo = range.dateTo
+      setDateFrom(nextFrom)
+      setDateTo(nextTo)
     }
-    const range = computePresetRange(preset, new Date())
-    setDateFrom(range.dateFrom)
-    setDateTo(range.dateTo)
+    if (discussionId) {
+      void Storage.setLlmClubDateFilter(discussionId, {
+        preset,
+        dateFrom: preset === 'custom' ? nextFrom : undefined,
+        dateTo: preset === 'custom' ? nextTo : undefined,
+      })
+    }
+  }
+
+  const handleDateFromChange = (val: string) => {
+    setDateFrom(val)
+    if (discussionId) {
+      void Storage.setLlmClubDateFilter(discussionId, {
+        preset: 'custom',
+        dateFrom: val,
+        dateTo,
+      })
+    }
+  }
+
+  const handleDateToChange = (val: string) => {
+    setDateTo(val)
+    if (discussionId) {
+      void Storage.setLlmClubDateFilter(discussionId, {
+        preset: 'custom',
+        dateFrom,
+        dateTo: val,
+      })
+    }
   }
 
   return {
     datePreset,
     dateFrom,
     dateTo,
-    setDateFrom,
-    setDateTo,
+    setDateFrom: handleDateFromChange,
+    setDateTo: handleDateToChange,
+    setInternalDateFrom: setDateFrom,
+    setInternalDateTo: setDateTo,
     applyPreset,
+    isLoaded,
+    setDatePreset,
   }
 }

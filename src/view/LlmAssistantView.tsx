@@ -8,6 +8,7 @@ import {
   defaultAgentRule,
   emptyViewerRights,
   formatAgentTtlLabel,
+  getDistinctPosts,
   activeLlmModel,
   llmConnectionFromConfig,
   MainContext,
@@ -15,6 +16,7 @@ import {
   parseAgentRule,
   showNotificationBanner,
   signedInUsername,
+  Storage,
   Styling,
   t,
   useTheme,
@@ -59,6 +61,8 @@ export const LlmAssistantView: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<TabType>(discussionId ? 'assistant' : 'library')
   const [prompt, setPrompt] = useState('')
   const [posts, setPosts] = useState<any[]>(initialPosts)
+  const postsRef = useRef(posts)
+  postsRef.current = posts
   const [historyCount, setHistoryCount] = useState(0)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [rule, setRule] = useState<AgentRule>(agentRule || defaultAgentRule())
@@ -90,6 +94,31 @@ export const LlmAssistantView: React.FC<Props> = ({
   const onStickActions = useCallback((dock: LlmAnswerDock | null) => {
     setAnswerDock(dock)
   }, [])
+
+  useEffect(() => {
+    if (!discussionId) {
+      return
+    }
+    let cancelled = false
+    void Storage.getLlmClubPrompt(discussionId).then(savedPrompt => {
+      if (!cancelled && savedPrompt) {
+        setPrompt(savedPrompt)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [discussionId])
+
+  const handlePromptChange = useCallback(
+    (val: string) => {
+      setPrompt(val)
+      if (discussionId) {
+        void Storage.setLlmClubPrompt(discussionId, val)
+      }
+    },
+    [discussionId],
+  )
 
   const scrollToPrompt = () => {
     answerScroll.markIntentionalScroll()
@@ -151,8 +180,12 @@ export const LlmAssistantView: React.FC<Props> = ({
         setRights(viewerRightsFromDiscussion(res.discussion_common, signedInUsername(nyx)))
         setVerifyFailed(false)
         setPolicyReady(true)
-        if (seededPosts.current.length === 0 && res?.posts?.length) {
-          setPosts(res.posts)
+        if (res?.posts?.length) {
+          setPosts(prev => {
+            const merged = getDistinctPosts(res.posts, prev)
+            postsRef.current = merged
+            return merged
+          })
         }
       })
       .catch((e: any) => {
@@ -195,13 +228,35 @@ export const LlmAssistantView: React.FC<Props> = ({
   }, [rightsDenied, colors.error])
 
   const handleLoadOlderPosts = async (): Promise<number> => {
-    if (!discussionId || !nyx || posts.length === 0) {
+    if (!discussionId || !nyx || postsRef.current.length === 0) {
       return 0
     }
-    const bottomPostId = posts[posts.length - 1].id
+    const currentList = postsRef.current
+    const valid = currentList.filter(p => p && p.id != null && p.location !== 'header')
+    if (valid.length === 0) {
+      return 0
+    }
+    const bottomPost = valid.reduce((oldest, current) => {
+      if (!oldest) {
+        return current
+      }
+      const oldId = Number(oldest.id)
+      const curId = Number(current.id)
+      if (!isNaN(oldId) && !isNaN(curId)) {
+        return curId < oldId ? current : oldest
+      }
+      return (current.inserted_at || '') < (oldest.inserted_at || '') ? current : oldest
+    }, null as any)
+
+    const bottomPostId = bottomPost?.id
+    if (!bottomPostId) {
+      return 0
+    }
     const res: any = await nyx.api.getDiscussion(`${discussionId}?order=older_than&from_id=${bottomPostId}`)
     if (res?.posts?.length > 0) {
-      setPosts(prev => [...prev, ...res.posts])
+      const merged = getDistinctPosts(res.posts, postsRef.current)
+      postsRef.current = merged
+      setPosts(merged)
       return res.posts.length
     }
     return 0
@@ -283,7 +338,7 @@ export const LlmAssistantView: React.FC<Props> = ({
               defaultModelName={activeModel.name}
               systemPrompt={config.llmSystemPrompt}
               prompt={prompt}
-              onChangePrompt={setPrompt}
+              onChangePrompt={handlePromptChange}
               onLoadMorePosts={handleLoadOlderPosts}
               onNavigateToPost={handleNavigateToPost}
               onPromptFocus={() => {
@@ -340,7 +395,7 @@ export const LlmAssistantView: React.FC<Props> = ({
           activeDiscussionId={discussionId}
           clubTtlMs={rule.found ? rule.ttlMs : 0}
           onUsePrompt={usedPrompt => {
-            setPrompt(usedPrompt)
+            handlePromptChange(usedPrompt)
             setActiveTab('assistant')
           }}
           onNavigateToPost={handleNavigateToPost}

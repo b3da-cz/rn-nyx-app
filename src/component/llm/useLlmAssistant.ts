@@ -4,9 +4,12 @@ import {
   applySystemPromptChoice,
   deleteLlmHistoryEntry,
   filterAndFormatPostsForLlm,
+  fitPostsToContext,
   getLlmHistory,
+  getModelMaxContext,
   initialLlmRangeSelection,
   isContextLengthError,
+  isoDate,
   llmPostKey,
   llmPostOrder,
   LlmPendingTask,
@@ -43,13 +46,14 @@ type Params = {
 
 export function useLlmAssistant(p: Params) {
   const context = useContext(MainContext)
-  const dateFilter = useLlmDateFilter()
+  const dateFilter = useLlmDateFilter(p.discussionId)
   const { dateFrom, dateTo } = dateFilter
   const [modelId, setModelId] = useState(p.defaultModelId)
   const [modelName, setModelName] = useState(p.defaultModelName || p.defaultModelId)
   const [isGlobalModel, setIsGlobalModel] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState(p.systemPrompt)
   const [isGlobalSystemPrompt, setIsGlobalSystemPrompt] = useState(false)
+  const [cachedModels, setCachedModels] = useState<any[]>([])
   const modelRef = useRef({ id: p.defaultModelId, name: p.defaultModelName || p.defaultModelId })
   const systemPromptRef = useRef(p.systemPrompt)
   const modelTouched = useRef(false)
@@ -162,15 +166,66 @@ export function useLlmAssistant(p: Params) {
     return Promise.resolve()
   }
 
+  useEffect(() => {
+    let cancelled = false
+    Storage.getCachedLlmModels(p.provider)
+      .then(models => {
+        if (!cancelled && Array.isArray(models)) {
+          setCachedModels(models)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [p.provider])
+
   const activeTask = useMemo(
     () => pendingTasks.find(task => `${task.discussionId}` === `${discussionId}`),
     [pendingTasks, discussionId],
   )
   const isSending = activeTask?.status === 'pending'
 
+  const maxContext = useMemo(
+    () => getModelMaxContext(modelId, cachedModels),
+    [modelId, cachedModels],
+  )
+
+  const contextFit = useMemo(() => {
+    if (dateFilter.datePreset !== 'fill_context') {
+      return null
+    }
+    return fitPostsToContext(p.posts, {
+      maxContext,
+      prompt: p.prompt,
+      systemPrompt: systemPromptRef.current,
+      discussionTitle: p.discussionTitle,
+    })
+  }, [dateFilter.datePreset, p.posts, maxContext, p.prompt, p.discussionTitle])
+
+  useEffect(() => {
+    if (dateFilter.datePreset === 'fill_context') {
+      dateFilter.setInternalDateFrom(contextFit?.dateFrom || '')
+      dateFilter.setInternalDateTo(contextFit?.dateTo || isoDate(new Date()))
+    }
+  }, [dateFilter.datePreset, contextFit?.dateFrom, contextFit?.dateTo])
+
+  const postsToFormat = useMemo(() => {
+    if (dateFilter.datePreset === 'fill_context') {
+      return contextFit?.posts || []
+    }
+    return p.posts
+  }, [dateFilter.datePreset, contextFit?.posts, p.posts])
+
   const formatted = useMemo(
-    () => filterAndFormatPostsForLlm(p.posts, dateFrom || undefined, dateTo || undefined, p.discussionTitle),
-    [p.posts, dateFrom, dateTo, p.discussionTitle],
+    () =>
+      filterAndFormatPostsForLlm(
+        postsToFormat,
+        dateFilter.datePreset === 'fill_context' ? undefined : dateFrom || undefined,
+        dateFilter.datePreset === 'fill_context' ? undefined : dateTo || undefined,
+        p.discussionTitle,
+      ),
+    [postsToFormat, dateFilter.datePreset, dateFrom, dateTo, p.discussionTitle],
   )
   const order = useMemo(() => llmPostOrder(formatted.matchedPosts), [formatted.matchedPosts])
   const orderKey = order.join('\n')
@@ -187,18 +242,90 @@ export function useLlmAssistant(p: Params) {
     [formatted.matchedPosts, picked],
   )
   const { count: postCount, wordCount } = useMemo(
-    () => filterAndFormatPostsForLlm(selectedPosts, dateFrom || undefined, dateTo || undefined, p.discussionTitle),
-    [selectedPosts, dateFrom, dateTo, p.discussionTitle],
+    () =>
+      filterAndFormatPostsForLlm(
+        selectedPosts,
+        dateFilter.datePreset === 'fill_context' ? undefined : dateFrom || undefined,
+        dateFilter.datePreset === 'fill_context' ? undefined : dateTo || undefined,
+        p.discussionTitle,
+      ),
+    [selectedPosts, dateFilter.datePreset, dateFrom, dateTo, p.discussionTitle],
   )
   const ignoredCount = formatted.ignoredCount
 
   const canLoadOlder = useMemo(() => {
-    if (!p.onLoadMorePosts || !dateFrom) {
+    if (!p.onLoadMorePosts) {
+      return false
+    }
+    if (dateFilter.datePreset === 'fill_context') {
+      return !!contextFit?.canFitMore && p.posts.length > 0
+    }
+    if (!dateFrom) {
       return false
     }
     const valid = p.posts.filter(post => post && post.inserted_at && post.location !== 'header')
     return valid.length > 0 && valid[valid.length - 1].inserted_at.substring(0, 10) > dateFrom
-  }, [p.posts, dateFrom, p.onLoadMorePosts])
+  }, [p.posts, dateFilter.datePreset, contextFit?.canFitMore, dateFrom, p.onLoadMorePosts])
+
+  const reachedEndRef = useRef(false)
+  const autoLoadCountRef = useRef(0)
+  const autoLoadingActiveRef = useRef(false)
+
+  useEffect(() => {
+    reachedEndRef.current = false
+    autoLoadCountRef.current = 0
+  }, [discussionId, dateFilter.datePreset])
+
+  useEffect(() => {
+    if (!dateFilter.isLoaded || !p.onLoadMorePosts || isSending || !!activeTask) {
+      return
+    }
+    if (!canLoadOlder || reachedEndRef.current || autoLoadCountRef.current >= 25) {
+      return
+    }
+    if (autoLoadingActiveRef.current) {
+      return
+    }
+
+    let cancelled = false
+    autoLoadingActiveRef.current = true
+    setIsLoadingOlder(true)
+
+    p.onLoadMorePosts()
+      .then(added => {
+        if (cancelled) {
+          return
+        }
+        autoLoadCountRef.current++
+        if (added <= 0) {
+          reachedEndRef.current = true
+        }
+      })
+      .catch(e => {
+        console.warn('Auto load older posts error', e)
+        if (!cancelled) {
+          reachedEndRef.current = true
+        }
+      })
+      .finally(() => {
+        autoLoadingActiveRef.current = false
+        if (!cancelled) {
+          setIsLoadingOlder(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      autoLoadingActiveRef.current = false
+    }
+  }, [
+    dateFilter.isLoaded,
+    canLoadOlder,
+    p.onLoadMorePosts,
+    isSending,
+    activeTask,
+    p.posts.length,
+  ])
 
   const loadOlder = async () => {
     if (!p.onLoadMorePosts || isLoadingOlder) {
@@ -217,10 +344,12 @@ export function useLlmAssistant(p: Params) {
   const agentAllowed = p.agentAllowed !== false
   const canSend = agentAllowed && !isSending && !!p.prompt.trim() && postCount > 0 && !!modelRef.current.id
 
+  const effectiveDateFrom = dateFilter.datePreset === 'fill_context' ? contextFit?.dateFrom : dateFrom
+  const effectiveDateTo = dateFilter.datePreset === 'fill_context' ? contextFit?.dateTo : dateTo
   const taskPosts = () => ({
     posts: selectedPosts,
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
+    dateFrom: effectiveDateFrom || undefined,
+    dateTo: effectiveDateTo || undefined,
     postCount,
   })
 
@@ -245,7 +374,6 @@ export function useLlmAssistant(p: Params) {
         ttlMs: p.ttlMs,
         ...taskPosts(),
       })
-      p.onChangePrompt('')
     } catch (e: any) {
       setErrorMessage(e?.message || t('llm.errorStartingQuery') || 'Chyba při zahájení dotazu.')
     }

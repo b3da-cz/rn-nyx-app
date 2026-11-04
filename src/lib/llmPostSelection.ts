@@ -1,3 +1,5 @@
+import { isProtonModel, LUMO_CONTEXT_TOKENS } from './lumo'
+
 export type LlmRangeSelection = {
   order: string[]
   start: number
@@ -331,4 +333,108 @@ export function trimPostsToContext(params: TrimPostsParams): TrimmedPostsResult 
     trimmedCount: chronological.length - kept.length,
   }
 }
+
+export function getModelMaxContext(
+  modelId?: string,
+  cachedModels?: { id: string; context_length?: number }[],
+): number {
+  if (!modelId) {
+    return 32768
+  }
+  if (isProtonModel(modelId)) {
+    return LUMO_CONTEXT_TOKENS
+  }
+  const found = cachedModels?.find(m => m.id === modelId)
+  if (found?.context_length && found.context_length > 0) {
+    return found.context_length
+  }
+  return 32768
+}
+
+export type ContextBudgetParams = {
+  maxContext: number
+  prompt?: string
+  systemPrompt?: string
+  discussionTitle?: string
+}
+
+export function calculateContextPostBudget(params: ContextBudgetParams): number {
+  const { maxContext, prompt = '', systemPrompt = '', discussionTitle = '' } = params
+  const outputTokens = Math.min(4096, Math.floor(maxContext * 0.15))
+  const availableInput = Math.max(1000, maxContext - outputTokens)
+  const targetInputTokens = Math.floor(availableInput * 0.85)
+  const fixedChars = prompt.length + (systemPrompt.length || 500) + discussionTitle.length + 1200
+  const fixedTokens = Math.ceil(fixedChars * 0.45)
+  return Math.max(500, targetInputTokens - fixedTokens)
+}
+
+export type FitPostsInContextResult = {
+  posts: any[]
+  postCount: number
+  dateFrom?: string
+  dateTo?: string
+  canFitMore: boolean
+  accumulatedTokens: number
+  budgetForPosts: number
+}
+
+export function fitPostsToContext(
+  posts: any[] = [],
+  params: ContextBudgetParams,
+): FitPostsInContextResult {
+  const budgetForPosts = calculateContextPostBudget(params)
+  const valid = posts.filter(
+    post => post && post.location !== 'header' && post.location !== 'home' && !post.isClubStart,
+  )
+
+  // Order newest first (largest ID / latest inserted_at)
+  const newestFirst = [...valid].sort((a, b) => {
+    if (a?.id != null && b?.id != null) {
+      const numA = Number(a.id)
+      const numB = Number(b.id)
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numB - numA
+      }
+    }
+    const aTime = a?.inserted_at || ''
+    const bTime = b?.inserted_at || ''
+    const timeCmp = bTime.localeCompare(aTime)
+    if (timeCmp !== 0) {
+      return timeCmp
+    }
+    return String(b?.id || '').localeCompare(String(a?.id || ''))
+  })
+
+  let accumulatedTokens = 0
+  const kept: any[] = []
+  let hitLimit = false
+
+  for (const post of newestFirst) {
+    const postLen = llmPostLineLength(post)
+    const postTokens = Math.max(5, Math.ceil(postLen * 0.45) + 4)
+    if (kept.length > 0 && accumulatedTokens + postTokens > budgetForPosts) {
+      hitLimit = true
+      break
+    }
+    kept.push(post)
+    accumulatedTokens += postTokens
+  }
+
+  const newestKept = kept[0]
+  const oldestKept = kept[kept.length - 1]
+  const dateTo = newestKept ? llmPostDay(newestKept) || undefined : undefined
+  const dateFrom = oldestKept ? llmPostDay(oldestKept) || undefined : undefined
+  const canFitMore = !hitLimit && accumulatedTokens + 50 <= budgetForPosts
+
+  return {
+    posts: kept,
+    postCount: kept.length,
+    dateFrom,
+    dateTo,
+    canFitMore,
+    accumulatedTokens,
+    budgetForPosts,
+  }
+}
+
 

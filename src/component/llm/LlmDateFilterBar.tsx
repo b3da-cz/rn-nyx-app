@@ -8,6 +8,7 @@ import { LlmFormRow } from './LlmFormRow'
 import { formatLlmDate } from './llmFormat'
 
 export type DatePreset =
+  | 'fill_context'
   | 'today'
   | 'yesterday'
   | '3days'
@@ -69,6 +70,7 @@ export const LlmDateFilterBar: React.FC<Props> = ({
   }
 
   const presets: { value: DatePreset; label: string }[] = [
+    { value: 'fill_context', label: t('llm.fillContext') || 'Zaplnit kontext' },
     { value: 'today', label: t('llm.today') },
     { value: 'yesterday', label: t('llm.yesterdayAndToday') },
     { value: '3days', label: t('llm.last3Days') },

@@ -1,4 +1,6 @@
 import {
+  fitPostsToContext,
+  getModelMaxContext,
   initialLlmRangeSelection,
   isContextLengthError,
   llmPostDay,
@@ -144,5 +146,51 @@ describe('llm post selection', () => {
     expect(res.posts[res.posts.length - 1].id).toBe(4)
     expect(res.dateFrom).toBe(llmPostDay(res.posts[0]))
     expect(res.dateTo).toBe('2026-10-25')
+  })
+
+  it('resolves model max context length properly', () => {
+    expect(getModelMaxContext('lumo-lite')).toBe(131072)
+    expect(getModelMaxContext('lumo-max')).toBe(131072)
+    expect(getModelMaxContext('apertus-15')).toBe(131072)
+    expect(getModelMaxContext('custom-model', [{ id: 'custom-model', context_length: 65536 }])).toBe(65536)
+    expect(getModelMaxContext('unknown-model')).toBe(32768)
+  })
+
+  it('fitPostsToContext fits posts from newest to oldest into model budget', () => {
+    const posts = [
+      { id: 1, inserted_at: '2026-10-20 10:00:00', content: 'Short post 1' },
+      { id: 2, inserted_at: '2026-10-21 10:00:00', content: 'Post 2 with some text' },
+      { id: 3, inserted_at: '2026-10-22 10:00:00', content: 'Post 3' },
+      { id: 4, inserted_at: '2026-10-23 10:00:00', content: 'Post 4 newest' },
+    ]
+    const res = fitPostsToContext(posts, {
+      maxContext: 32768,
+      prompt: 'Shrnuti',
+      discussionTitle: 'Klub',
+    })
+    expect(res.posts.length).toBe(4)
+    expect(res.posts[0].id).toBe(4) // newest first
+    expect(res.posts[3].id).toBe(1) // oldest
+    expect(res.dateTo).toBe('2026-10-23')
+    expect(res.dateFrom).toBe('2026-10-20')
+    expect(res.canFitMore).toBe(true)
+  })
+
+  it('fitPostsToContext stops accumulating when context budget is exceeded', () => {
+    const posts = [
+      { id: 1, inserted_at: '2026-10-20 10:00:00', content: 'A'.repeat(2000) },
+      { id: 2, inserted_at: '2026-10-21 10:00:00', content: 'B'.repeat(2000) },
+      { id: 3, inserted_at: '2026-10-22 10:00:00', content: 'C'.repeat(2000) },
+      { id: 4, inserted_at: '2026-10-23 10:00:00', content: 'D'.repeat(2000) },
+    ]
+    // Very small context
+    const res = fitPostsToContext(posts, {
+      maxContext: 2500,
+      prompt: 'A',
+      discussionTitle: 'T',
+    })
+    expect(res.posts.length).toBeLessThan(4)
+    expect(res.posts[0].id).toBe(4) // newest is always kept
+    expect(res.canFitMore).toBe(false)
   })
 })

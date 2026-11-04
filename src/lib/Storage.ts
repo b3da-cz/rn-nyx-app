@@ -66,6 +66,8 @@ const StorageKeys = {
   feedCache: 'feedCache',
   messageDrafts: 'messageDrafts',
   localLastRead: 'localLastRead',
+  llmClubPrompts: 'llmClubPrompts',
+  llmClubDateFilters: 'llmClubDateFilters',
 }
 
 const set = async (key: string, value: any) => {
@@ -419,6 +421,38 @@ const getMessageDrafts = async () => get(StorageKeys.messageDrafts)
 
 const setMessageDrafts = async drafts => set(StorageKeys.messageDrafts, drafts)
 
+const getLlmClubPrompt = async (discussionId: number | string): Promise<string> => {
+  const store = (await get(StorageKeys.llmClubPrompts)) || {}
+  return store[String(discussionId)] || ''
+}
+
+const setLlmClubPrompt = async (discussionId: number | string, prompt: string): Promise<void> => {
+  const store = (await get(StorageKeys.llmClubPrompts)) || {}
+  const key = String(discussionId)
+  if (prompt) {
+    store[key] = prompt
+  } else {
+    delete store[key]
+  }
+  await set(StorageKeys.llmClubPrompts, store)
+}
+
+const getLlmClubDateFilter = async (
+  discussionId: number | string,
+): Promise<{ preset: string; dateFrom?: string; dateTo?: string } | null> => {
+  const store = (await get(StorageKeys.llmClubDateFilters)) || {}
+  return store[String(discussionId)] || null
+}
+
+const setLlmClubDateFilter = async (
+  discussionId: number | string,
+  filter: { preset: string; dateFrom?: string; dateTo?: string },
+): Promise<void> => {
+  const store = (await get(StorageKeys.llmClubDateFilters)) || {}
+  store[String(discussionId)] = filter
+  await set(StorageKeys.llmClubDateFilters, store)
+}
+
 const removeAll = async () => {
   if (mmkvInstance) {
     mmkvInstance.clearAll()
@@ -435,6 +469,8 @@ const removeAll = async () => {
     set(StorageKeys.llmPendingTasks, null),
     set(StorageKeys.llmPromptTemplates, null),
     set(StorageKeys.messageDrafts, null),
+    set(StorageKeys.llmClubPrompts, null),
+    set(StorageKeys.llmClubDateFilters, null),
   ])
   await AsyncStorage.clear().catch(() => {})
 }
@@ -485,6 +521,10 @@ export const Storage = {
   setMessageDrafts,
   getLocalLastReadStore,
   setLocalLastReadStore,
+  getLlmClubPrompt,
+  setLlmClubPrompt,
+  getLlmClubDateFilter,
+  setLlmClubDateFilter,
   removeAll,
   isMmkvAvailable: () => !!mmkvInstance,
   getMmkv: () => mmkvInstance,
