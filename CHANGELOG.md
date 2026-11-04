@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.39.3
+- oprava otevírání textových souborů a příloh (.md apod.) v diskuzních klubech (předání názvu souboru z popisku odkazu v MarkdownViewComponent pro zobrazení dialogu Stáhnout / Otevřít stejně jako v poště)
+
 ## 0.39.2
 - oprava resetu lokálního unreadu při návštěvě klubu v offline režimu (znovunačtení ze surových dat/cache po návratu na seznamy Sledovaných a Historie, odstranění badge a obnova původního serverového stavu)
 

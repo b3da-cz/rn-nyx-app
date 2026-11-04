@@ -130,8 +130,9 @@ export class PostComponent extends Component<Props> {
         key={link.id}
         isPressable={true}
         onPress={() => {
-          const api = (this.context as any)?.nyx?.api
-          if (api && promptTextFile(link.url, link.text, api)) {
+          const absoluteUrl = link.url?.startsWith('/') ? `https://nyx.cz${link.url}` : link.url
+          const api = (this.context as any)?.nyx?.api || this.props.nyx?.api
+          if (api && promptTextFile(absoluteUrl, link.text, api)) {
             return
           }
           Linking.openURL(link.url).catch(() => {
@@ -361,6 +362,7 @@ export class PostComponent extends Component<Props> {
         <MarkdownViewComponent
           key={`md-${segment.text.slice(0, 24)}`}
           content={segment.text}
+          nyx={this.props.nyx}
           selectable={isTextSelectionEnabled(this.context.config)}
           query={this.props.searchQuery}
           onPlainPress={this.plainPress()}

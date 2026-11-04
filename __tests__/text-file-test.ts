@@ -11,6 +11,8 @@ describe('textFileKind', () => {
   it('reads the extension from the url or the link text', () => {
     expect(textFileKind('https://nyx.cz/files/notes.MD?x=1')).toBe('md')
     expect(textFileKind('https://nyx.cz/file/123', 'export.csv')).toBe('csv')
+    expect(textFileKind('https://nyx.cz/file/123', 'soubor.md')).toBe('md')
+    expect(textFileKind('https://nyx.cz/file/123', 'https://nyx.cz/file/123')).toBeNull()
     expect(textFileKind('https://nyx.cz/file/123', 'readme')).toBeNull()
     expect(textFileKind('/tmp/app.js')).toBe('js')
     expect(textFileKind('https://example.com/a.log')).toBe('log')

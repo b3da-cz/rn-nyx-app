@@ -12,18 +12,20 @@ import {
 } from 'react-native'
 import { searchMatchRanges } from '../lib/discussionRights'
 import { isTextSelectionEnabled, MainContext } from '../lib/MainContext'
+import type { Nyx } from '../lib/Nyx'
 import { promptTextFile } from '../lib/textFilePrompt'
 import { useTheme } from '../lib/Theme'
 import { SearchHighlight } from './SearchHighlight'
 
 type Props = {
   content: string
+  nyx?: Nyx
   selectable?: boolean
   alwaysSelectable?: boolean
   style?: StyleProp<ViewStyle>
   showUserAvatars?: boolean
   onNavigateToPost?: (discussionId: number | string, postId?: number | string) => void
-  onLinkPress?: (url: string) => void
+  onLinkPress?: (url: string, label?: string) => void
   onPlainPress?: () => void
   query?: string
   activeIndex?: number | null
@@ -90,6 +92,7 @@ export function countMarkdownSearchHits(markdown: string, query: string, avatars
 
 export const MarkdownViewComponent: React.FC<Props> = ({
   content,
+  nyx,
   selectable = true,
   alwaysSelectable = false,
   style,
@@ -108,14 +111,15 @@ export const MarkdownViewComponent: React.FC<Props> = ({
 
   const blocks = useMemo(() => parseMarkdownBlocks(content), [content])
 
-  const handleLink = (url: string) => {
+  const handleLink = (url: string, label?: string) => {
     if (onLinkPress) {
-      onLinkPress(url)
+      onLinkPress(url, label)
       return
     }
     const cleanUrl = url.trim().replace(/[.,;:!?]+$/, '')
-    const api = mainContext?.nyx?.api
-    if (api && promptTextFile(cleanUrl, cleanUrl, api)) {
+    const absoluteUrl = cleanUrl.startsWith('/') ? `https://nyx.cz${cleanUrl}` : cleanUrl
+    const api = nyx?.api || mainContext?.nyx?.api
+    if (api && promptTextFile(absoluteUrl, label || cleanUrl, api)) {
       return
     }
     const match = cleanUrl.match(/(?:https?:\/\/nyx\.cz)?\/discussion\/(\d+)(?:\/id\/(\d+))?/)
@@ -125,8 +129,8 @@ export const MarkdownViewComponent: React.FC<Props> = ({
       onNavigateToPost(discussionId, postId)
       return
     }
-    Linking.openURL(cleanUrl).catch(e => {
-      console.warn('Failed to open url:', cleanUrl, e)
+    Linking.openURL(absoluteUrl).catch(e => {
+      console.warn('Failed to open url:', absoluteUrl, e)
     })
   }
 
@@ -209,7 +213,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
 
           if (shouldRenderAvatar && avatarUri) {
             return (
-              <Text key={idx} onPress={() => handleLink(token.url)}>
+              <Text key={idx} onPress={() => handleLink(token.url, token.text)}>
                 <Image
                   source={{ uri: avatarUri }}
                   style={{
@@ -240,7 +244,7 @@ export const MarkdownViewComponent: React.FC<Props> = ({
           return (
             <Text
               key={idx}
-              onPress={() => handleLink(token.url)}
+              onPress={() => handleLink(token.url, token.text)}
               style={[
                 styles.link,
                 { color: colors.link || colors.secondary },
