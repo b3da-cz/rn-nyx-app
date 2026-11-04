@@ -66,6 +66,7 @@ import {
   t,
   consumeLocalLastRead,
   getLocalLastRead,
+  hydrateLocalLastRead,
   isLocalLastReadEnabled,
   showNotificationBanner,
   toggleLocalLastRead,
@@ -352,6 +353,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadInitialDiscussion() {
+    await hydrateLocalLastRead().catch(() => {})
     const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
     const localLastRead = isLocalLastReadEnabled(this.context?.config) ? consumeLocalLastRead(discussionId) : null
     if (this.props.jumpToLastSeen || localLastRead) {
@@ -362,6 +364,7 @@ export class DiscussionView extends Component<Props> {
   }
 
   async loadDiscussionToLastSeen(knownLastSeenPostId?: number) {
+    await hydrateLocalLastRead().catch(() => {})
     const discussionId = this.props.id
     if (!knownLastSeenPostId && isLocalLastReadEnabled(this.context?.config)) {
       const localLastRead = consumeLocalLastRead(discussionId)

@@ -17,6 +17,7 @@ import {
   createTheme,
   defaultThemeOptions,
   getInitialShare,
+  hydrateLocalLastRead,
   importTheme,
   initialConfig,
   initFCM,
@@ -341,11 +342,14 @@ const App: () => ReactNode = () => {
     return f
   }
 
-  const loadStorage = async ({ getConfig = true, getFilters = true, getBlockedUsers = true }) => ({
-    config: getConfig ? await loadConfig() : config,
-    filters: getFilters ? await loadFilters() : filters,
-    blockedUsers: getBlockedUsers ? await loadBlockedUsers() : blockedUsers,
-  })
+  const loadStorage = async ({ getConfig = true, getFilters = true, getBlockedUsers = true }) => {
+    await hydrateLocalLastRead().catch(() => {})
+    return {
+      config: getConfig ? await loadConfig() : config,
+      filters: getFilters ? await loadFilters() : filters,
+      blockedUsers: getBlockedUsers ? await loadBlockedUsers() : blockedUsers,
+    }
+  }
 
   const handleDeepLink = async (url: string) => {
     if (url === 'nnn://setdevfilters' || url === 'nnn://setprodfilters') {
@@ -368,6 +372,7 @@ const App: () => ReactNode = () => {
   }
 
   const init = async () => {
+    await hydrateLocalLastRead().catch(() => {})
     const conf = await loadConfig()
     const isAuth = await initNyx()
     if (isAuth) {

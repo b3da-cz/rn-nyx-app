@@ -9,12 +9,14 @@ import {
   clearLocalLastRead,
   isLocalLastReadEnabled,
   applyLocalLastReadToDiscussions,
+  hydrateLocalLastRead,
   normalizeLocalLastRead,
+  resetLocalLastRead,
 } from '../src/lib/localLastRead'
 
 describe('localLastRead', () => {
-  beforeEach(() => {
-    initLocalLastRead({})
+  beforeEach(async () => {
+    await clearLocalLastRead()
   })
 
   it('normalizes local last read records correctly', () => {
@@ -130,5 +132,22 @@ describe('localLastRead', () => {
     const disabled = applyLocalLastReadToDiscussions(discussions, { isLocalLastReadEnabled: false })
     expect(disabled[0].last_seen_post_id).toBe(560)
     expect(disabled[0].localUnreadCount).toBeUndefined()
+  })
+
+  it('survives app restart by rehydrating from storage', async () => {
+    await setLocalLastRead(999, 12345, 7)
+    expect(getLocalLastRead(999)).toBe(12345)
+
+    // Simulate process restart: memory reset and unhydrated
+    resetLocalLastRead()
+
+    // Immediate sync or async reads restore from persistent storage
+    expect(getLocalLastRead(999)).toBe(12345)
+    expect(getLocalLastReadEntry(999)).toEqual({ postId: 12345, unreadCount: 7 })
+    expect(hasAnyLocalLastRead()).toBe(true)
+
+    // Explicit hydrate call also returns the hydrated store
+    const hydrated = await hydrateLocalLastRead()
+    expect(hydrated['999']).toEqual({ postId: 12345, unreadCount: 7 })
   })
 })

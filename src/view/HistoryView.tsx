@@ -5,6 +5,7 @@ import {
   applyLocalLastReadToDiscussions,
   filterDiscussions,
   hasAnyLocalLastRead,
+  hydrateLocalLastRead,
   LayoutAnimConf,
   readDiscussionListCache,
   recountDiscussionList,
@@ -93,6 +94,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
   }
 
   async getList(isAnimated = false, force = false) {
+    await hydrateLocalLastRead().catch(() => {})
     const configShowingRead = this.context?.config?.isShowingReadOnLists
     const showingRead = typeof configShowingRead === 'boolean' ? configShowingRead : this.state.isShowingRead
     if (showingRead !== this.state.isShowingRead) {

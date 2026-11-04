@@ -9,6 +9,7 @@ import {
   filterBookmarkSection,
   filterDiscussions,
   hasAnyLocalLastRead,
+  hydrateLocalLastRead,
   LayoutAnimConf,
   nextBookmarkSectionReadFilter,
   normalizeBookmarkSectionFilters,
@@ -157,6 +158,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
   }
 
   async getList(isAnimated = false, force = false) {
+    await hydrateLocalLastRead().catch(() => {})
     this.ensureReady()
     this.syncSharedSettings()
     const hasData = this.hasData()

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.39.1
+- oprava zachování lokálních záložek a nepřečtených příspěvků po restartu aplikace (automatická synchronní i asynchronní rehydratace ze storage při startu aplikace a před načtením seznamů)
+
 ## 0.39.0
 - lokální nastavení posledního přečteného příspěvku (záložka v hlavičce příspěvku)
 - možnost zapnout/vypnout v Nastavení > Čtení (výchozí: zapnuto)
