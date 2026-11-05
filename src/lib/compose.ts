@@ -62,7 +62,32 @@ export const videoSrcKey = (link?: string | null) => {
   return link.replace(/^https?:\/\/(www\.)?nyx\.cz/i, '').split('?')[0]
 }
 
-export const uniqueVideoTags = <T extends { link?: string | null }>(tags: T[]) => {
+// Containers Android WebView can't decode: it plays the audio track only and
+// leaves a blank square above the controls. nyx stores uploads as
+// original.bin?name=<file>, so the real extension is in the name param.
+const UNPLAYABLE_VIDEO_EXT = /\.(mkv|avi|wmv|flv|mpe?g|vob|divx|xvid|rm|rmvb|asf)$/i
+
+export const isInlinePlayableVideo = (link?: string | null) => {
+  if (!link) {
+    return true
+  }
+  const [path, query = ''] = link.split('#')[0].split('?')
+  const nameParam = query
+    .split('&')
+    .map(pair => pair.split('='))
+    .find(([key]) => key === 'name')?.[1]
+  let name = path
+  if (nameParam) {
+    try {
+      name = decodeURIComponent(nameParam.replace(/\+/g, ' '))
+    } catch {
+      name = nameParam
+    }
+  }
+  return !UNPLAYABLE_VIDEO_EXT.test(name.trim())
+}
+
+export const uniqueVideoTags =<T extends { link?: string | null }>(tags: T[]) => {
   const seen = new Set<string>()
   const kept: T[] = []
   const dropped: T[] = []
