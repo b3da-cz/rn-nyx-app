@@ -655,7 +655,8 @@ export class DiscussionView extends Component<Props> {
       if (fromCache) {
         servedFromCache = true
       }
-      this.trackLoad({ ...request, done: 1 })
+      const requestBytes = !servedFromCache && res?.posts ? JSON.stringify(res).length : 0
+      this.trackLoad({ ...request, done: 1, networkBytes: requestBytes })
       if (res?.discussion_common) {
         this._agentPolicy = {
           rule: parseAgentRule(agentRuleSource(res.discussion_common.discussion_specific_data?.header)),

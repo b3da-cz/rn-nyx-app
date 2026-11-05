@@ -6,7 +6,7 @@ import ImageViewer from 'react-native-image-zoom-viewer'
 import RNFetchBlob from 'react-native-blob-util'
 import Share from 'react-native-share'
 import Clipboard from '@react-native-clipboard/clipboard'
-import { LoaderComponent } from '../component'
+import { ImageLoaderComponent } from '../component'
 import { MainContext, fetchImageByteLength, formatImageSizeKb, rememberLoadedImageUrl, t } from '../lib'
 
 type Props = {
@@ -225,7 +225,11 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
         onChange={i => setIndex(i)}
         onClick={() => toggleChrome()}
         onSave={img => share(img)}
-        loadingRender={() => <LoaderComponent />}
+        loadingRender={() => (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ImageLoaderComponent size={12} />
+          </View>
+        )}
         menuContext={{ saveToLocal: t('share'), cancel: t('cancel') }}
         renderIndicator={() => <View />}
         renderHeader={i => {

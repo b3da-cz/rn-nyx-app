@@ -116,7 +116,7 @@ export const fetchImageSizes = async (
   sizeTimeoutMs?: number,
 ) => {
   try {
-    const jobs: { post: any; index: number; url: string }[] = []
+    const jobs: { post: any; index: number; url: string; cached: boolean; byteLength?: number }[] = []
     for (const post of posts) {
       if (!(post.parsed?.images?.length > 0) || post.content_raw?.type === 'advertisement') {
         continue
@@ -129,19 +129,29 @@ export const fetchImageSizes = async (
         if (!url) {
           return
         }
-        jobs.push({ post, index, url })
+        jobs.push({
+          post,
+          index,
+          url,
+          cached: !!img.cached,
+          byteLength: typeof img.byteLength === 'number' && img.byteLength > 0 ? img.byteLength : undefined,
+        })
       })
     }
     if (jobs.length) {
-      emitProgress(onProgress, { id: 'sizes', done: 0, total: jobs.length })
+      emitProgress(onProgress, { id: 'sizes', done: 0, total: jobs.length, networkBytes: 0 })
     }
     const resolvedSizeTimeout =
       typeof sizeTimeoutMs === 'number' && sizeTimeoutMs > 0 ? sizeTimeoutMs : getConfiguredImageSizeTimeoutMs()
     let done = 0
+    let sizesNetworkBytes = 0
     for (const job of jobs) {
-      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url })
+      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url, networkBytes: sizesNetworkBytes })
       try {
         const { width, height } = await getImageSize(job.url, resolvedSizeTimeout)
+        if (width > 0 && height > 0 && !job.cached && job.byteLength) {
+          sizesNetworkBytes += job.byteLength
+        }
         const images = job.post.parsed.images.slice()
         images[job.index] = { ...images[job.index], width, height }
         job.post.parsed.images = images
@@ -149,7 +159,7 @@ export const fetchImageSizes = async (
         console.warn(e)
       }
       done += 1
-      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url })
+      emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url, networkBytes: sizesNetworkBytes })
     }
   } catch (e) {
     console.warn(e) // TODO: remove
@@ -274,9 +284,10 @@ export const applyImageDownloadPolicy = async (
       }
     }
     if (byteTargets.length) {
-      emitProgress(onProgress, { id: 'bytes', done: 0, total: byteTargets.length })
+      emitProgress(onProgress, { id: 'bytes', done: 0, total: byteTargets.length, networkBytes: 0 })
     }
     let byteDone = 0
+    let byteNetworkBytes = 0
     for (const post of posts) {
       if (!post.parsed?.images?.length || post.content_raw?.type === 'advertisement') {
         continue
@@ -300,14 +311,18 @@ export const applyImageDownloadPolicy = async (
           done: byteDone,
           total: byteTargets.length,
           detail: img.src,
+          networkBytes: byteNetworkBytes,
         })
         const bytes = await fetchImageByteLength(img.src, resolvedFileTimeout)
         byteDone += 1
+        // HEAD request network overhead (headers ~512 bytes)
+        byteNetworkBytes += 512
         emitProgress(onProgress, {
           id: 'bytes',
           done: byteDone,
           total: byteTargets.length,
           detail: img.src,
+          networkBytes: byteNetworkBytes,
         })
         if (shouldSkipImageDownload(bytes, maxKb)) {
           nextImages.push(applyImagePlaceholder({ ...img, byteLength: bytes }))

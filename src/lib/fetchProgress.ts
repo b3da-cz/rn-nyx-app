@@ -64,6 +64,7 @@ export type FetchProgressEvent = {
   detail?: string
   done: number
   total: number
+  networkBytes?: number
 }
 
 export type FetchProgressStep = {
@@ -72,13 +73,15 @@ export type FetchProgressStep = {
   detail?: string
   done: number
   total: number
+  networkBytes?: number
 }
 
 export type FetchProgressState = {
   steps: FetchProgressStep[]
+  networkBytes?: number
 }
 
-export const emptyFetchProgress = (): FetchProgressState => ({ steps: [] })
+export const emptyFetchProgress = (): FetchProgressState => ({ steps: [], networkBytes: 0 })
 
 export const reduceFetchProgress = (
   state: FetchProgressState | undefined,
@@ -93,13 +96,32 @@ export const reduceFetchProgress = (
     detail: event.detail !== undefined ? event.detail : prev?.detail,
     done: event.done,
     total: event.total,
+    networkBytes: event.networkBytes !== undefined ? event.networkBytes : prev?.networkBytes,
   }
   if (index < 0) {
     steps.push(next)
   } else {
     steps[index] = next
   }
-  return { steps }
+  let totalBytes = 0
+  for (const step of steps) {
+    if (step.networkBytes && step.networkBytes > 0) {
+      totalBytes += step.networkBytes
+    }
+  }
+  return { steps, networkBytes: totalBytes }
+}
+
+export const formatNetworkBytes = (bytes?: number | null): string | null => {
+  if (bytes == null || bytes <= 0) {
+    return null
+  }
+  const kb = bytes / 1024
+  if (kb < 1024) {
+    return `${Math.max(1, Math.round(kb))} kB`
+  }
+  const mb = kb / 1024
+  return `${mb.toFixed(3)} MB`
 }
 
 export const fetchProgressRatio = (state?: FetchProgressState | null) => {
@@ -112,7 +134,7 @@ export const fetchProgressRatio = (state?: FetchProgressState | null) => {
     total += step.total
     done += Math.min(Math.max(step.done, 0), step.total)
   }
-  return { done, total, ratio: total > 0 ? done / total : 0 }
+  return { done, total, ratio: total > 0 ? done / total : 0, networkBytes: state?.networkBytes || 0 }
 }
 
 export const shortenFetchDetail = (value?: string) => {

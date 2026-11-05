@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.39.7
+- zobrazení objemu dat přenesených po síti při načítání klubu v souhrnném progress panelu (v kB / MB na 3 desetinná místa, bez započtení položek z mezipaměti)
+- sjednocení animace načítání obrázku v galerii na pulzující tečky shodné s příspěvky
+
 ## 0.39.6
 - nastavení vlastních timeoutů (v ms) pro stahování a zjišťování velikosti a rozměrů obrázků v Nastavení médií
 

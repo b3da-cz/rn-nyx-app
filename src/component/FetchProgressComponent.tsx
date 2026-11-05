@@ -4,6 +4,7 @@ import { ProgressBar } from 'react-native-paper'
 import {
   FetchProgressState,
   fetchProgressRatio,
+  formatNetworkBytes,
   shortenFetchDetail,
   t,
   useTheme,
@@ -31,7 +32,8 @@ const stepLabel = (id: string, label?: string) => {
 export const FetchProgressComponent = ({ progress, fill = true, detailed = true }: Props) => {
   const theme = useTheme()
   const steps = progress?.steps || []
-  const { done, total, ratio } = fetchProgressRatio(progress)
+  const { done, total, ratio, networkBytes } = fetchProgressRatio(progress)
+  const networkBytesLabel = formatNetworkBytes(networkBytes)
   const shown = useRef(0)
   useEffect(() => {
     if (steps.length > shown.current) {
@@ -51,6 +53,7 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
             label={t('load.overall')}
             count={total > 0 ? `${done}/${total}` : ''}
             percent={total > 0 ? `${pct} %` : ''}
+            networkBytes={networkBytesLabel}
             progress={ratio}
             color={colors.primary}
             textColor={colors.text}
@@ -69,6 +72,7 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
                 key={step.id}
                 label={stepLabel(step.id, step.label)}
                 count={fraction}
+                networkBytes={formatNetworkBytes(step.networkBytes)}
                 progress={bar}
                 detail={shortenFetchDetail(step.detail)}
                 color={colors.primary}
@@ -96,6 +100,7 @@ type RowProps = {
   label: string
   count?: string
   percent?: string
+  networkBytes?: string | null
   detail?: string
   progress: number
   color?: string
@@ -112,6 +117,7 @@ const ProgressRow = ({
   label,
   count,
   percent,
+  networkBytes,
   detail,
   progress,
   color,
@@ -140,6 +146,11 @@ const ProgressRow = ({
             {label}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: padding }}>
+            {networkBytes ? (
+              <Text style={{ color: detailColor, fontSize: detailSize, marginRight: 8 }}>
+                {networkBytes}
+              </Text>
+            ) : null}
             {count ? (
               <Text style={{ color: textColor, fontSize: detailSize, fontWeight: '400' }}>{count}</Text>
             ) : null}

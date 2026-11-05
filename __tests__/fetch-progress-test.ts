@@ -1,6 +1,7 @@
 import {
   emptyFetchProgress,
   fetchProgressRatio,
+  formatNetworkBytes,
   reduceFetchProgress,
   resolveFetchProgressMode,
   settleWithin,
@@ -16,7 +17,26 @@ describe('fetch progress', () => {
     expect(updated.steps[0].label).toBe('Klub')
     expect(updated.steps[1].done).toBe(1)
     expect(updated.steps[1].detail).toBe('https://nyx.cz/b.jpg')
-    expect(fetchProgressRatio(updated)).toEqual({ done: 1, total: 4, ratio: 0.25 })
+    expect(fetchProgressRatio(updated)).toEqual({ done: 1, total: 4, ratio: 0.25, networkBytes: 0 })
+  })
+
+  it('formats network bytes in kB and MB with 3 decimals over 1024 kB', () => {
+    expect(formatNetworkBytes(null)).toBeNull()
+    expect(formatNetworkBytes(0)).toBeNull()
+    expect(formatNetworkBytes(-5)).toBeNull()
+    expect(formatNetworkBytes(512)).toBe('1 kB')
+    expect(formatNetworkBytes(50 * 1024)).toBe('50 kB')
+    expect(formatNetworkBytes(1024 * 1024 - 1)).toBe('1024 kB')
+    expect(formatNetworkBytes(1024 * 1024)).toBe('1.000 MB')
+    expect(formatNetworkBytes(1.5 * 1024 * 1024)).toBe('1.500 MB')
+    expect(formatNetworkBytes(2534567)).toBe('2.417 MB')
+  })
+
+  it('accumulates networkBytes across steps', () => {
+    const s1 = reduceFetchProgress(emptyFetchProgress(), { id: 'request', done: 1, total: 1, networkBytes: 50000 })
+    const s2 = reduceFetchProgress(s1, { id: 'sizes', done: 1, total: 2, networkBytes: 200000 })
+    expect(s2.networkBytes).toBe(250000)
+    expect(fetchProgressRatio(s2).networkBytes).toBe(250000)
   })
 
   it('keeps the previous file name when a later tick omits it', () => {
