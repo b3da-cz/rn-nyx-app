@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/Feather'
 import {
   fetchImageByteLength,
   formatImageSizeKb,
+  getImageSize,
   hasLoadedImageUrl,
   isImageCached,
   isImageDownloadOff,
@@ -110,7 +111,7 @@ export const ImageComponent = ({
           }
           return
         }
-        const bytes = await fetchImageByteLength(src)
+        const bytes = await fetchImageByteLength(src, config?.imageFileTimeoutMs)
         if (!cancelled) {
           setSizeLabel(formatImageSizeKb(bytes))
         }
@@ -122,7 +123,7 @@ export const ImageComponent = ({
         }
         return
       }
-      const bytes = await fetchImageByteLength(src)
+      const bytes = await fetchImageByteLength(src, config?.imageFileTimeoutMs)
       if (!cancelled) {
         setBlocked(hasLoadedImageUrl(src) ? false : shouldSkipImageDownload(bytes, maxKb))
         setSizeLabel(formatImageSizeKb(bytes))
@@ -132,9 +133,10 @@ export const ImageComponent = ({
     return () => {
       cancelled = true
     }
-  }, [byteLength, maxKb, skipDownload, src])
+  }, [byteLength, config?.imageFileTimeoutMs, maxKb, skipDownload, src])
 
   useLayoutEffect(() => {
+    let cancelled = false
     try {
       if (blocked) {
         const w = width || 300
@@ -146,10 +148,9 @@ export const ImageComponent = ({
         setImgWidth(width)
         setImgHeight(height)
       } else {
-        Image.getSize(
-          src,
-          (natW, natH) => {
-            if (!(natW > 0) || !(natH > 0)) {
+        getImageSize(src, config?.imageSizeTimeoutMs)
+          .then(({ width: natW, height: natH }) => {
+            if (cancelled || !(natW > 0) || !(natH > 0)) {
               return
             }
             if (width) {
@@ -162,15 +163,17 @@ export const ImageComponent = ({
               setImgWidth(natW)
               setImgHeight(natH)
             }
-          },
-          error => console.warn(error),
-        )
+          })
+          .catch(() => {})
       }
     } catch (e) {
       setImgWidth(width || 300)
       setImgHeight((width || 300) / 2.5)
     }
-  }, [blocked, height, src, useExactSize, width])
+    return () => {
+      cancelled = true
+    }
+  }, [blocked, config?.imageSizeTimeoutMs, height, src, useExactSize, width])
 
   const {
     colors,

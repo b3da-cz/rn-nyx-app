@@ -176,6 +176,45 @@ export const formatImageSizeKb = (byteLength?: number | null): ImageSizeLabel | 
 const byteLengthByUrl = new Map<string, number | null>()
 
 export const IMAGE_BYTE_FETCH_TIMEOUT_MS = 8000
+export const IMAGE_SIZE_TIMEOUT_MS = 4000
+export const IMAGE_TIMEOUT_MIN_MS = 100
+export const IMAGE_TIMEOUT_MAX_MS = 120000
+
+export const normalizeImageFileTimeoutMs = (value?: unknown) => {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n <= 0) {
+    return IMAGE_BYTE_FETCH_TIMEOUT_MS
+  }
+  return Math.max(IMAGE_TIMEOUT_MIN_MS, Math.min(IMAGE_TIMEOUT_MAX_MS, Math.round(n)))
+}
+
+export const normalizeImageSizeTimeoutMs = (value?: unknown) => {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n <= 0) {
+    return IMAGE_SIZE_TIMEOUT_MS
+  }
+  return Math.max(IMAGE_TIMEOUT_MIN_MS, Math.min(IMAGE_TIMEOUT_MAX_MS, Math.round(n)))
+}
+
+let configuredImageFileTimeoutMs = IMAGE_BYTE_FETCH_TIMEOUT_MS
+let configuredImageSizeTimeoutMs = IMAGE_SIZE_TIMEOUT_MS
+
+export const setConfiguredImageTimeouts = (fileTimeoutMs?: unknown, sizeTimeoutMs?: unknown) => {
+  if (fileTimeoutMs !== undefined && fileTimeoutMs !== null && fileTimeoutMs !== '') {
+    configuredImageFileTimeoutMs = normalizeImageFileTimeoutMs(fileTimeoutMs)
+  }
+  if (sizeTimeoutMs !== undefined && sizeTimeoutMs !== null && sizeTimeoutMs !== '') {
+    configuredImageSizeTimeoutMs = normalizeImageSizeTimeoutMs(sizeTimeoutMs)
+  }
+}
+
+export const getConfiguredImageFileTimeoutMs = () => configuredImageFileTimeoutMs
+export const getConfiguredImageSizeTimeoutMs = () => configuredImageSizeTimeoutMs
+
+export const resetConfiguredImageTimeouts = () => {
+  configuredImageFileTimeoutMs = IMAGE_BYTE_FETCH_TIMEOUT_MS
+  configuredImageSizeTimeoutMs = IMAGE_SIZE_TIMEOUT_MS
+}
 
 const headerValue = (res: { headers?: { get?: (name: string) => string | null } } | null, name: string) =>
   res?.headers?.get?.(name) ?? null
@@ -211,7 +250,7 @@ const fetchWithin = async (
 
 export const fetchImageByteLength = async (
   url?: string,
-  timeoutMs = IMAGE_BYTE_FETCH_TIMEOUT_MS,
+  timeoutMs?: number,
 ): Promise<number | null> => {
   if (!url) {
     return null
@@ -219,7 +258,9 @@ export const fetchImageByteLength = async (
   if (byteLengthByUrl.has(url)) {
     return byteLengthByUrl.get(url) ?? null
   }
-  const deadline = Date.now() + timeoutMs
+  const resolvedTimeout =
+    typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : configuredImageFileTimeoutMs
+  const deadline = Date.now() + resolvedTimeout
   const remaining = () => deadline - Date.now()
   const head = await fetchWithin(url, { method: 'HEAD' }, remaining())
   const fromHead = Number(headerValue(head, 'content-length'))

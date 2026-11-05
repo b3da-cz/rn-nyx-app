@@ -8,7 +8,7 @@ import {
   FETCH_PROGRESS_LISTS_DEFAULT, FETCH_PROGRESS_MORE_DEFAULT,
 } from './fetchProgress'
 import { DISCUSSION_CACHE_LIMIT_DEFAULT } from './discussionCache'
-import { IMAGE_DOWNLOAD_UNLIMITED } from './imageDownload'
+import { IMAGE_BYTE_FETCH_TIMEOUT_MS, IMAGE_DOWNLOAD_UNLIMITED, IMAGE_SIZE_TIMEOUT_MS } from './imageDownload'
 import type { BookmarkSectionReadFilter } from './bookmarkSections'
 import { LUMO_DEFAULT_MODEL_ID, LUMO_DEFAULT_MODEL_NAME } from './lumo'
 
@@ -38,6 +38,8 @@ export type MainContextConfig = {
   isUnreadToggleEnabled: boolean
   isBookmarkSectionReadFilterEnabled: boolean
   imageDownloadMaxKb: number | null
+  imageFileTimeoutMs: number
+  imageSizeTimeoutMs: number
   isDiscussionCacheEnabled: boolean
   discussionCacheLimit: number
   isFetchProgressEnabled: boolean
@@ -102,6 +104,8 @@ export const initialConfig: MainContextConfig = {
   isUnreadToggleEnabled: true,
   isBookmarkSectionReadFilterEnabled: true,
   imageDownloadMaxKb: IMAGE_DOWNLOAD_UNLIMITED,
+  imageFileTimeoutMs: IMAGE_BYTE_FETCH_TIMEOUT_MS,
+  imageSizeTimeoutMs: IMAGE_SIZE_TIMEOUT_MS,
   isDiscussionCacheEnabled: true,
   discussionCacheLimit: DISCUSSION_CACHE_LIMIT_DEFAULT,
   isFetchProgressEnabled: true,

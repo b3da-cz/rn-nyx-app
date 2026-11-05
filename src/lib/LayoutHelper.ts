@@ -7,6 +7,8 @@ import {
   applyRevealedImageToPosts,
   computeImagesHeight,
   fetchImageByteLength,
+  getConfiguredImageFileTimeoutMs,
+  getConfiguredImageSizeTimeoutMs,
   hasLoadedImageUrl,
   isImageDownloadOff,
   isImageDownloadUnlimited,
@@ -61,7 +63,10 @@ export const isImageCached = async (url?: string): Promise<boolean> => {
   return cached.has(url)
 }
 
-const getImageSize = async (url: string): Promise<{ width: number; height: number }> => {
+export const getImageSize = async (
+  url: string,
+  timeoutMs?: number,
+): Promise<{ width: number; height: number }> => {
   return new Promise(resolve => {
     let done = false
     const finish = (width: number, height: number) => {
@@ -71,7 +76,9 @@ const getImageSize = async (url: string): Promise<{ width: number; height: numbe
       done = true
       resolve({ width, height })
     }
-    const timeout = setTimeout(() => finish(0, 0), 4000)
+    const resolvedTimeout =
+      typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : getConfiguredImageSizeTimeoutMs()
+    const timeout = setTimeout(() => finish(0, 0), resolvedTimeout)
     try {
       Image.getSize(
         url,
@@ -106,6 +113,7 @@ export const fetchImageSizes = async (
   posts: any[],
   isFullImgSize?: boolean,
   onProgress?: (event: FetchProgressEvent) => void,
+  sizeTimeoutMs?: number,
 ) => {
   try {
     const jobs: { post: any; index: number; url: string }[] = []
@@ -127,11 +135,13 @@ export const fetchImageSizes = async (
     if (jobs.length) {
       emitProgress(onProgress, { id: 'sizes', done: 0, total: jobs.length })
     }
+    const resolvedSizeTimeout =
+      typeof sizeTimeoutMs === 'number' && sizeTimeoutMs > 0 ? sizeTimeoutMs : getConfiguredImageSizeTimeoutMs()
     let done = 0
     for (const job of jobs) {
       emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url })
       try {
-        const { width, height } = await getImageSize(job.url)
+        const { width, height } = await getImageSize(job.url, resolvedSizeTimeout)
         const images = job.post.parsed.images.slice()
         images[job.index] = { ...images[job.index], width, height }
         job.post.parsed.images = images
@@ -226,10 +236,16 @@ export const applyImageDownloadPolicy = async (
   posts: any[],
   maxKb?: number | null,
   onProgress?: (event: FetchProgressEvent) => void,
+  fileTimeoutMs?: number,
+  sizeTimeoutMs?: number,
 ) => {
   try {
+    const resolvedFileTimeout =
+      typeof fileTimeoutMs === 'number' && fileTimeoutMs > 0 ? fileTimeoutMs : getConfiguredImageFileTimeoutMs()
+    const resolvedSizeTimeout =
+      typeof sizeTimeoutMs === 'number' && sizeTimeoutMs > 0 ? sizeTimeoutMs : getConfiguredImageSizeTimeoutMs()
     if (isImageDownloadUnlimited(maxKb)) {
-      return fetchImageSizes(posts, false, onProgress)
+      return fetchImageSizes(posts, false, onProgress, resolvedSizeTimeout)
     }
     const srcs: string[] = []
     for (const post of posts) {
@@ -285,7 +301,7 @@ export const applyImageDownloadPolicy = async (
           total: byteTargets.length,
           detail: img.src,
         })
-        const bytes = await fetchImageByteLength(img.src)
+        const bytes = await fetchImageByteLength(img.src, resolvedFileTimeout)
         byteDone += 1
         emitProgress(onProgress, {
           id: 'bytes',
@@ -305,7 +321,7 @@ export const applyImageDownloadPolicy = async (
         layoutEpoch: (post.parsed.layoutEpoch || 0) + 1,
       }
     }
-    return fetchImageSizes(posts, false, onProgress)
+    return fetchImageSizes(posts, false, onProgress, resolvedSizeTimeout)
   } catch (e) {
     console.warn(e)
     Bugfender.error('ERROR_LAYOUT_HELPER', e.stack)

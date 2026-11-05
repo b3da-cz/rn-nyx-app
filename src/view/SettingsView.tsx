@@ -59,6 +59,11 @@ import {
   resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
+  normalizeImageFileTimeoutMs,
+  normalizeImageSizeTimeoutMs,
+  setConfiguredImageTimeouts,
+  IMAGE_BYTE_FETCH_TIMEOUT_MS,
+  IMAGE_SIZE_TIMEOUT_MS,
   normalizeTimelineVisibleDays,
   setAppLanguage,
   uploadSizeLabel,
@@ -177,6 +182,8 @@ type State = {
   isAppCoverEnabled: boolean
   hasFingerprint: boolean
   imageDownloadMaxKb: number | null
+  imageFileTimeoutMs: number | string
+  imageSizeTimeoutMs: number | string
   isDiscussionCacheEnabled: boolean
   discussionCacheLimit: number | string
   discussionCacheReport: {
@@ -522,6 +529,8 @@ export class SettingsView extends Component<Props> {
       isAppCoverEnabled: !!config?.isAppCoverEnabled,
       hasFingerprint: false,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(config?.imageDownloadMaxKb),
+      imageFileTimeoutMs: normalizeImageFileTimeoutMs(config?.imageFileTimeoutMs),
+      imageSizeTimeoutMs: normalizeImageSizeTimeoutMs(config?.imageSizeTimeoutMs),
       isDiscussionCacheEnabled: config?.isDiscussionCacheEnabled !== false,
       discussionCacheLimit: normalizeDiscussionCacheLimit(config?.discussionCacheLimit),
       discussionCacheReport: null,
@@ -751,12 +760,21 @@ export class SettingsView extends Component<Props> {
     const conf = (await Storage.getConfig()) || {}
     this.setState(patch)
     Object.assign(conf, patch)
+    if (patch.imageFileTimeoutMs !== undefined || patch.imageSizeTimeoutMs !== undefined) {
+      setConfiguredImageTimeouts(conf.imageFileTimeoutMs, conf.imageSizeTimeoutMs)
+    }
     await Storage.setConfig(conf)
     this.props.onConfigChange()
   }
 
   async setOption(name, val) {
     const conf = await Storage.getConfig()
+    if (name === 'imageFileTimeoutMs' || name === 'imageSizeTimeoutMs') {
+      setConfiguredImageTimeouts(
+        name === 'imageFileTimeoutMs' ? val : conf?.imageFileTimeoutMs,
+        name === 'imageSizeTimeoutMs' ? val : conf?.imageSizeTimeoutMs,
+      )
+    }
     const isBookmarksCollision =
       name === 'isBookmarksEnabled' && !val && this.state.initialRouteName === 'bookmarksStack'
     const isHistoryCollision = name === 'isHistoryEnabled' && !val && this.state.initialRouteName === 'historyStack'
@@ -1090,6 +1108,72 @@ export class SettingsView extends Component<Props> {
               onSelect={val => this.setOption('imageDownloadMaxKb', normalizeImageDownloadMaxKb(val))}
               options={this.imageDownloadOptions()}
             />
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                height: rowHeight,
+                overflow: 'hidden',
+                backgroundColor: theme.colors.surface,
+                borderRadius: 0,
+                marginBottom: theme.metrics.blocks.small,
+                paddingHorizontal: theme.metrics.blocks.medium,
+              }}>
+              <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                {t('profile.imageFileTimeout')}
+              </Text>
+              <TextInput
+                value={String(this.state.imageFileTimeoutMs ?? IMAGE_BYTE_FETCH_TIMEOUT_MS)}
+                keyboardType="number-pad"
+                onChangeText={val => this.setState({ imageFileTimeoutMs: val.replace(/[^0-9]/g, '') })}
+                onBlur={() =>
+                  this.setOption(
+                    'imageFileTimeoutMs',
+                    normalizeImageFileTimeoutMs(this.state.imageFileTimeoutMs),
+                  )
+                }
+                style={{
+                  width: 90,
+                  color: theme.colors.text,
+                  fontSize: theme.metrics.fontSizes.p,
+                  textAlign: 'right',
+                  paddingVertical: 8,
+                }}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                height: rowHeight,
+                overflow: 'hidden',
+                backgroundColor: theme.colors.surface,
+                borderRadius: 0,
+                marginBottom: theme.metrics.blocks.small,
+                paddingHorizontal: theme.metrics.blocks.medium,
+              }}>
+              <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.metrics.fontSizes.p }}>
+                {t('profile.imageDimensionsTimeout')}
+              </Text>
+              <TextInput
+                value={String(this.state.imageSizeTimeoutMs ?? IMAGE_SIZE_TIMEOUT_MS)}
+                keyboardType="number-pad"
+                onChangeText={val => this.setState({ imageSizeTimeoutMs: val.replace(/[^0-9]/g, '') })}
+                onBlur={() =>
+                  this.setOption(
+                    'imageSizeTimeoutMs',
+                    normalizeImageSizeTimeoutMs(this.state.imageSizeTimeoutMs),
+                  )
+                }
+                style={{
+                  width: 90,
+                  color: theme.colors.text,
+                  fontSize: theme.metrics.fontSizes.p,
+                  textAlign: 'right',
+                  paddingVertical: 8,
+                }}
+              />
+            </View>
             <SettingsSelectRow
               rowHeight={rowHeight}
               label={t('profile.fetchProgress')}

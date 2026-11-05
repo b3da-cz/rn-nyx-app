@@ -33,6 +33,9 @@ import {
   resolveFetchProgressGlobal,
   normalizeFingerprintLockMinutes,
   normalizeImageDownloadMaxKb,
+  normalizeImageFileTimeoutMs,
+  normalizeImageSizeTimeoutMs,
+  setConfiguredImageTimeouts,
   navigationRef,
   normalizeTimelineVisibleDays,
   openLocalTextFile,
@@ -276,6 +279,10 @@ const App: () => ReactNode = () => {
       await Storage.setConfig(nextStored)
       conf = nextStored
     }
+    setConfiguredImageTimeouts(
+      normalizeImageFileTimeoutMs(conf.imageFileTimeoutMs),
+      normalizeImageSizeTimeoutMs(conf.imageSizeTimeoutMs),
+    )
     setConfig({
       isLoaded: true,
       isBookmarksEnabled: conf.isBookmarksEnabled === undefined ? true : !!conf.isBookmarksEnabled,
@@ -306,6 +313,8 @@ const App: () => ReactNode = () => {
       isBookmarkSectionReadFilterEnabled:
         conf.isBookmarkSectionReadFilterEnabled === undefined ? true : !!conf.isBookmarkSectionReadFilterEnabled,
       imageDownloadMaxKb: normalizeImageDownloadMaxKb(conf.imageDownloadMaxKb),
+      imageFileTimeoutMs: normalizeImageFileTimeoutMs(conf.imageFileTimeoutMs),
+      imageSizeTimeoutMs: normalizeImageSizeTimeoutMs(conf.imageSizeTimeoutMs),
       isDiscussionCacheEnabled: conf.isDiscussionCacheEnabled !== false,
       discussionCacheLimit: normalizeDiscussionCacheLimit(conf.discussionCacheLimit),
       isFetchProgressEnabled: resolveFetchProgressGlobal(conf) !== 'off',

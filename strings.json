@@ -536,6 +536,14 @@
       "cs": "Stahování obrázků",
       "en": "Image download"
     },
+    "imageFileTimeout": {
+      "cs": "Timeout velikosti souboru (ms)",
+      "en": "File size timeout (ms)"
+    },
+    "imageDimensionsTimeout": {
+      "cs": "Timeout rozměrů obrázku (ms)",
+      "en": "Image dimensions timeout (ms)"
+    },
     "fetchProgress": {
       "cs": "Průběh načítání",
       "en": "Load progress"

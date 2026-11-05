@@ -1,15 +1,25 @@
 import {
+  IMAGE_BYTE_FETCH_TIMEOUT_MS,
   IMAGE_DOWNLOAD_OFF,
   IMAGE_DOWNLOAD_UNLIMITED,
+  IMAGE_SIZE_TIMEOUT_MS,
+  IMAGE_TIMEOUT_MAX_MS,
+  IMAGE_TIMEOUT_MIN_MS,
   fetchImageByteLength,
   applyImagePlaceholder,
   applyRevealedImageLayoutAtWidth,
   applyRevealedImageToPosts,
   formatImageSizeKb,
+  getConfiguredImageFileTimeoutMs,
+  getConfiguredImageSizeTimeoutMs,
   hasLoadedImageUrl,
   isPlaceholderImageSize,
   normalizeImageDownloadMaxKb,
+  normalizeImageFileTimeoutMs,
+  normalizeImageSizeTimeoutMs,
   rememberLoadedImageUrl,
+  resetConfiguredImageTimeouts,
+  setConfiguredImageTimeouts,
   shouldShowCachedImage,
   shouldSkipImageDownload,
   subscribeLoadedImageUrls,
@@ -21,6 +31,38 @@ describe('imageDownload', () => {
     expect(normalizeImageDownloadMaxKb(null)).toBe(IMAGE_DOWNLOAD_UNLIMITED)
     expect(normalizeImageDownloadMaxKb('unlimited')).toBe(IMAGE_DOWNLOAD_UNLIMITED)
     expect(normalizeImageDownloadMaxKb('nope')).toBe(IMAGE_DOWNLOAD_UNLIMITED)
+  })
+
+  it('normalizes file and image size timeouts', () => {
+    expect(normalizeImageFileTimeoutMs(undefined)).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(normalizeImageFileTimeoutMs(null)).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(normalizeImageFileTimeoutMs(0)).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(normalizeImageFileTimeoutMs(-10)).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(normalizeImageFileTimeoutMs('invalid')).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(normalizeImageFileTimeoutMs(50)).toBe(IMAGE_TIMEOUT_MIN_MS)
+    expect(normalizeImageFileTimeoutMs(5000)).toBe(5000)
+    expect(normalizeImageFileTimeoutMs(999999)).toBe(IMAGE_TIMEOUT_MAX_MS)
+
+    expect(normalizeImageSizeTimeoutMs(undefined)).toBe(IMAGE_SIZE_TIMEOUT_MS)
+    expect(normalizeImageSizeTimeoutMs(null)).toBe(IMAGE_SIZE_TIMEOUT_MS)
+    expect(normalizeImageSizeTimeoutMs(0)).toBe(IMAGE_SIZE_TIMEOUT_MS)
+    expect(normalizeImageSizeTimeoutMs(-10)).toBe(IMAGE_SIZE_TIMEOUT_MS)
+    expect(normalizeImageSizeTimeoutMs(3000)).toBe(3000)
+    expect(normalizeImageSizeTimeoutMs(999999)).toBe(IMAGE_TIMEOUT_MAX_MS)
+  })
+
+  it('updates and resets configured timeouts', () => {
+    resetConfiguredImageTimeouts()
+    expect(getConfiguredImageFileTimeoutMs()).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(getConfiguredImageSizeTimeoutMs()).toBe(IMAGE_SIZE_TIMEOUT_MS)
+
+    setConfiguredImageTimeouts(12000, 6000)
+    expect(getConfiguredImageFileTimeoutMs()).toBe(12000)
+    expect(getConfiguredImageSizeTimeoutMs()).toBe(6000)
+
+    resetConfiguredImageTimeouts()
+    expect(getConfiguredImageFileTimeoutMs()).toBe(IMAGE_BYTE_FETCH_TIMEOUT_MS)
+    expect(getConfiguredImageSizeTimeoutMs()).toBe(IMAGE_SIZE_TIMEOUT_MS)
   })
 
   it('accepts off and the listed kb caps', () => {

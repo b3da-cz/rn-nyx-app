@@ -445,11 +445,13 @@ export const prepareNotifications = async (
   themeBaseFontSize?,
   imageDownloadMaxKb?: number | null,
   onProgress?: (event: FetchProgressEvent) => void,
+  imageFileTimeoutMs?: number,
+  imageSizeTimeoutMs?: number,
 ) => {
   const parsed = parseNotificationsContent(notifications)
   const posts = notificationPosts(parsed)
   if (posts.length) {
-    await applyImageDownloadPolicy(posts, imageDownloadMaxKb, onProgress)
+    await applyImageDownloadPolicy(posts, imageDownloadMaxKb, onProgress, imageFileTimeoutMs, imageSizeTimeoutMs)
     if (themeBaseFontSize) {
       await getBlockSizes(posts, themeBaseFontSize, undefined, onProgress)
     }
@@ -482,6 +484,8 @@ export const preparePosts = async (
   imageDownloadMaxKb?: number | null,
   onProgress?: (event: FetchProgressEvent) => void,
   cacheEntry?: { posts?: Record<string, any> } | null,
+  imageFileTimeoutMs?: number,
+  imageSizeTimeoutMs?: number,
 ) => {
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
@@ -491,7 +495,7 @@ export const preparePosts = async (
   if (calculateSizes) {
     const pending = postsNeedingLayout(parsedPosts)
     if (pending.length) {
-      await applyImageDownloadPolicy(pending, imageDownloadMaxKb, onProgress)
+      await applyImageDownloadPolicy(pending, imageDownloadMaxKb, onProgress, imageFileTimeoutMs, imageSizeTimeoutMs)
       await getBlockSizes(pending, themeBaseFontSize, undefined, onProgress)
     }
     return assignPostOffsets(parsedPosts)

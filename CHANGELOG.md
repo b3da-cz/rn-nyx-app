@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.39.6
+- nastavení vlastních timeoutů (v ms) pro stahování a zjišťování velikosti a rozměrů obrázků v Nastavení médií
+
 ## 0.39.5
 - nová volba „Zaplnit kontext“ v časovém filtru asistenta (automaticky natáhne od aktuálního okamžiku do minulosti tolik příspěvků, kolik se vejde do kontextu zvoleného modelu)
 - zapamatování naposledy zvoleného časového filtru pro každý klub zvlášť

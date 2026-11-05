@@ -51,7 +51,7 @@ const ratingsFromImages = (images: any[] = []) => {
 }
 
 export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onIndexChange, onRated }: Props) => {
-  const { nyx } = useContext(MainContext) as any
+  const { nyx, config } = useContext(MainContext) as any
   const sharing = useRef(false)
   const ratingLock = useRef(false)
   const urls = useMemo(
@@ -102,7 +102,7 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
     }
     let cancelled = false
     setSizeLabel(null)
-    fetchImageByteLength(img?.url || img?.src).then(bytes => {
+    fetchImageByteLength(img?.url || img?.src, config?.imageFileTimeoutMs).then(bytes => {
       if (!cancelled) {
         setSizeLabel(formatImageSizeKb(bytes))
       }
@@ -110,7 +110,7 @@ export const ImageModal = ({ isShowing = true, images, imgIndex = 0, onExit, onI
     return () => {
       cancelled = true
     }
-  }, [currentIndex, urls])
+  }, [config?.imageFileTimeoutMs, currentIndex, urls])
 
   const setIndex = (i?: number) => {
     const next = urls.length ? Math.min(Math.max(0, i || 0), urls.length - 1) : 0
