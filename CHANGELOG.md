@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.39.8
+- úsporné zjišťování rozměrů obrázků přes HTTP Range požadavky (stažení pouze úvodních kilobajtů namísto stahování celého souboru pro PNG, JPEG, WebP, GIF, BMP, AVIF a SVG) s automatickým fallbackem
+
 ## 0.39.7
 - zobrazení objemu dat přenesených po síti při načítání klubu v souhrnném progress panelu (v kB / MB na 3 desetinná místa, bez započtení položek z mezipaměti)
 - sjednocení animace načítání obrázku v galerii na pulzující tečky shodné s příspěvky

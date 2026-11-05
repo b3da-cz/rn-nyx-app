@@ -20,6 +20,7 @@ import {
 import { discussionRequestBlockHeight, discussionRequestFromPost } from './discussionRequest'
 import { attachPollMedia, pollContentHeight, pollLayoutModel } from './poll'
 import { FetchProgressEvent, settleWithin } from './fetchProgress'
+import { fetchImageDimensionsFromHeader } from './imageHeaderParser'
 
 const IMAGE_CACHE_QUERY_TIMEOUT_MS = 4000
 
@@ -63,9 +64,9 @@ export const isImageCached = async (url?: string): Promise<boolean> => {
   return cached.has(url)
 }
 
-export const getImageSize = async (
+const getNativeImageSize = (
   url: string,
-  timeoutMs?: number,
+  timeoutMs: number,
 ): Promise<{ width: number; height: number }> => {
   return new Promise(resolve => {
     let done = false
@@ -76,9 +77,7 @@ export const getImageSize = async (
       done = true
       resolve({ width, height })
     }
-    const resolvedTimeout =
-      typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : getConfiguredImageSizeTimeoutMs()
-    const timeout = setTimeout(() => finish(0, 0), resolvedTimeout)
+    const timeout = setTimeout(() => finish(0, 0), timeoutMs)
     try {
       Image.getSize(
         url,
@@ -97,6 +96,31 @@ export const getImageSize = async (
       finish(0, 0)
     }
   })
+}
+
+export const getImageSize = async (
+  url: string,
+  timeoutMs?: number,
+  isCached?: boolean,
+): Promise<{ width: number; height: number; bytesRead?: number }> => {
+  const resolvedTimeout =
+    typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : getConfiguredImageSizeTimeoutMs()
+
+  const cached = isCached ?? hasLoadedImageUrl(url)
+  if (cached || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    const size = await getNativeImageSize(url, resolvedTimeout)
+    return { ...size, bytesRead: 0 }
+  }
+
+  try {
+    const headerResult = await fetchImageDimensionsFromHeader(url, resolvedTimeout)
+    if (headerResult && headerResult.width > 0 && headerResult.height > 0) {
+      return headerResult
+    }
+  } catch (e) {}
+
+  const fallback = await getNativeImageSize(url, resolvedTimeout)
+  return fallback
 }
 
 const imageMeasureUrl = (img: any, isFullImgSize?: boolean) =>
@@ -148,9 +172,9 @@ export const fetchImageSizes = async (
     for (const job of jobs) {
       emitProgress(onProgress, { id: 'sizes', done, total: jobs.length, detail: job.url, networkBytes: sizesNetworkBytes })
       try {
-        const { width, height } = await getImageSize(job.url, resolvedSizeTimeout)
-        if (width > 0 && height > 0 && !job.cached && job.byteLength) {
-          sizesNetworkBytes += job.byteLength
+        const { width, height, bytesRead } = await getImageSize(job.url, resolvedSizeTimeout, job.cached)
+        if (width > 0 && height > 0 && !job.cached) {
+          sizesNetworkBytes += typeof bytesRead === 'number' ? bytesRead : (job.byteLength || 0)
         }
         const images = job.post.parsed.images.slice()
         images[job.index] = { ...images[job.index], width, height }
