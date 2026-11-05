@@ -2,7 +2,7 @@ import { Bugfender } from '@bugfender/rn-bugfender'
 import he from 'he'
 import { parse } from 'node-html-parser'
 import { applyImageDownloadPolicy, getBlockSizes } from './LayoutHelper'
-import { uniqueVideoTags } from './compose'
+import { isInlinePlayableVideo, uniqueVideoTags } from './compose'
 import { generateUuidV4, getDistinctPosts } from './Util'
 
 export const TOKEN = {
@@ -296,8 +296,10 @@ export class Parser {
     // An upload is stored as an attachment, and older clients also pasted a
     // <video> into the message. Both point at the same file.
     const { kept, dropped } = uniqueVideoTags(tags)
-    this.videosToDelete = dropped
-    return kept
+    // the attachment link stays in the post, so an unplayable file is still reachable
+    const unplayable = kept.filter(v => !isInlinePlayableVideo(v.link))
+    this.videosToDelete = [...dropped, ...unplayable]
+    return kept.filter(v => isInlinePlayableVideo(v.link))
   }
 
   getYtBlocksForCleanup() {
