@@ -6,6 +6,7 @@ import {
   isResizableImageUpload,
   isUploadTooLarge,
   isFileEmbedded,
+  isInlinePlayableVideo,
   isVideoUpload,
   jpegUploadName,
   uniqueVideoTags,
@@ -73,6 +74,19 @@ describe('uploaded video', () => {
     ])
     expect(kept.map(tag => tag.raw)).toEqual(['message', 'other'])
     expect(dropped.map(tag => tag.raw)).toEqual(['same-file', 'attachment'])
+  })
+
+  it('skips the inline player for containers the WebView cannot decode', () => {
+    expect(
+      isInlinePlayableVideo(
+        'https://nyx.cz/files/000/031/3159756_1ef5560584d9dad67496/original.bin?name=Hale+And+Pace+40.mkv',
+      ),
+    ).toBe(false)
+    expect(isInlinePlayableVideo('https://nyx.cz/files/x/original.bin?name=clip%20one.AVI')).toBe(false)
+    expect(isInlinePlayableVideo('https://nyx.cz/files/x/original.bin?name=clip.mp4')).toBe(true)
+    expect(isInlinePlayableVideo('https://nyx.cz/files/x/original.bin')).toBe(true)
+    expect(isInlinePlayableVideo('https://example.com/movie.mkv')).toBe(false)
+    expect(isInlinePlayableVideo(null)).toBe(true)
   })
 })
 

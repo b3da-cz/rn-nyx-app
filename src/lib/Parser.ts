@@ -5,7 +5,7 @@ import { applyCachedLayouts } from './discussionCache'
 import { attachPollMedia } from './poll'
 import { FetchProgressEvent } from './fetchProgress'
 import { applyImageDownloadPolicy, assignPostOffsets, getBlockSizes, postsNeedingLayout } from './LayoutHelper'
-import { uniqueVideoTags } from './compose'
+import { isInlinePlayableVideo, uniqueVideoTags } from './compose'
 import { generateUuidV4, getDistinctPosts } from './Util'
 
 export const TOKEN = {
@@ -299,8 +299,10 @@ export class Parser {
     // An upload is stored as an attachment, and older clients also pasted a
     // <video> into the message. Both point at the same file.
     const { kept, dropped } = uniqueVideoTags(tags)
-    this.videosToDelete = dropped
-    return kept
+    // the attachment link stays in the post, so an unplayable file is still reachable
+    const unplayable = kept.filter(v => !isInlinePlayableVideo(v.link))
+    this.videosToDelete = [...dropped, ...unplayable]
+    return kept.filter(v => isInlinePlayableVideo(v.link))
   }
 
   getYtBlocksForCleanup() {
