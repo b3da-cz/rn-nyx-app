@@ -1,9 +1,8 @@
 import React, { Component } from 'react'
-import { FlatList, InteractionManager, LayoutAnimation, View } from 'react-native'
+import { FlatList, InteractionManager, View } from 'react-native'
 import { FetchProgressComponent, FormRowSelectComponent, MessageBoxDialog, PostComponent } from '../component'
 import {
   MainContext,
-  LayoutAnimConf,
   emptyFetchProgress,
   FetchProgressEvent,
   FetchProgressState,
@@ -290,7 +289,6 @@ export class MailView extends Component<Props> {
         return
       }
       servedFromCache = false
-      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
       this.lastFetchAt = Date.now()
       this.setState({
         conversations: loaded.conversations,
@@ -331,7 +329,6 @@ export class MailView extends Component<Props> {
       this.context?.config?.imageDownloadMaxKb,
       this.trackLoad,
     )
-    LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
     this.setState({
       conversations: res?.conversations || this.state.conversations,
       messages: parsedMessages,
@@ -365,7 +362,6 @@ export class MailView extends Component<Props> {
         return
       }
       servedFromCache = false
-      LayoutAnimation.configureNext(LayoutAnimConf.easeInEaseOut)
       this.setState({
         activeRecipient: username,
         conversations: loaded.conversations,

@@ -74,6 +74,7 @@ export type FetchProgressStep = {
   done: number
   total: number
   networkBytes?: number
+  baseBytes?: number
 }
 
 export type FetchProgressState = {
@@ -90,13 +91,27 @@ export const reduceFetchProgress = (
   const steps = (state?.steps || []).slice()
   const index = steps.findIndex(step => step.id === event.id)
   const prev = index >= 0 ? steps[index] : undefined
+
+  let baseBytes = prev?.baseBytes || 0
+  let stepBytes = prev?.networkBytes || 0
+
+  if (event.networkBytes !== undefined) {
+    const prevNet = prev?.networkBytes || 0
+    const currentPassBytes = Math.max(0, prevNet - baseBytes)
+    if (event.networkBytes < currentPassBytes) {
+      baseBytes = prevNet
+    }
+    stepBytes = baseBytes + event.networkBytes
+  }
+
   const next: FetchProgressStep = {
     id: event.id,
     label: event.label || prev?.label || '',
     detail: event.detail !== undefined ? event.detail : prev?.detail,
     done: event.done,
     total: event.total,
-    networkBytes: event.networkBytes !== undefined ? event.networkBytes : prev?.networkBytes,
+    networkBytes: stepBytes,
+    baseBytes,
   }
   if (index < 0) {
     steps.push(next)

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { InteractionManager, LayoutAnimation, SectionList, View } from 'react-native'
+import { InteractionManager, SectionList, View } from 'react-native'
 import { FetchProgressComponent, PostComponent, SectionHeaderComponent } from '../component'
 import {
   MainContext,

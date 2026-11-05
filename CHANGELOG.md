@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.39.9
+- oprava sčítání objemu síťových dat při načítání diskuze (průběžné kumulativní sčítání napříč všemi dávkami načítání i hlavičkou bez resetu souhrnu na nulu)
+- odstranění problematických LayoutAnimation přechodů z progress panelu načítání, pošty a upomínek (oprava náhodného ztmavování a zasekávání průhlednosti textu na Androidu)
+
 ## 0.39.8
 - úsporné zjišťování rozměrů obrázků přes HTTP Range požadavky (stažení pouze úvodních kilobajtů namísto stahování celého souboru pro PNG, JPEG, WebP, GIF, BMP, AVIF a SVG) s automatickým fallbackem
 

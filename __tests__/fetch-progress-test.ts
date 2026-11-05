@@ -32,11 +32,20 @@ describe('fetch progress', () => {
     expect(formatNetworkBytes(2534567)).toBe('2.417 MB')
   })
 
-  it('accumulates networkBytes across steps', () => {
+  it('accumulates networkBytes across steps and multiple passes of the same step', () => {
     const s1 = reduceFetchProgress(emptyFetchProgress(), { id: 'request', done: 1, total: 1, networkBytes: 50000 })
     const s2 = reduceFetchProgress(s1, { id: 'sizes', done: 1, total: 2, networkBytes: 200000 })
     expect(s2.networkBytes).toBe(250000)
     expect(fetchProgressRatio(s2).networkBytes).toBe(250000)
+
+    // Second batch of sizes starts with networkBytes 0 (e.g. newer_than or next page)
+    const s3 = reduceFetchProgress(s2, { id: 'sizes', done: 0, total: 1, networkBytes: 0 })
+    expect(s3.networkBytes).toBe(250000) // does not drop to 50000!
+
+    // Second batch finishes with 30000 bytes
+    const s4 = reduceFetchProgress(s3, { id: 'sizes', done: 1, total: 1, networkBytes: 30000 })
+    expect(s4.networkBytes).toBe(280000) // 250000 + 30000
+    expect(fetchProgressRatio(s4).networkBytes).toBe(280000)
   })
 
   it('keeps the previous file name when a later tick omits it', () => {

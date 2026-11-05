@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react'
-import { ActivityIndicator, LayoutAnimation, Text, View } from 'react-native'
+import React from 'react'
+import { ActivityIndicator, Text, View } from 'react-native'
 import { ProgressBar } from 'react-native-paper'
 import {
   FetchProgressState,
@@ -34,13 +34,6 @@ export const FetchProgressComponent = ({ progress, fill = true, detailed = true 
   const steps = progress?.steps || []
   const { done, total, ratio, networkBytes } = fetchProgressRatio(progress)
   const networkBytesLabel = formatNetworkBytes(networkBytes)
-  const shown = useRef(0)
-  useEffect(() => {
-    if (steps.length > shown.current) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    }
-    shown.current = steps.length
-  }, [steps.length])
   const colors = theme?.colors || {}
   const blocks = theme?.metrics?.blocks || { medium: 8, small: 4 }
   const fontSizes = theme?.metrics?.fontSizes || { p: 15, small: 12 }
