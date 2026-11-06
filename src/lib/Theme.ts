@@ -29,7 +29,7 @@ export type Theme = {
     faded: string
     link: string
     ripple: string
-    row: string
+    row?: string
     transparent: string
   }
   dark: boolean

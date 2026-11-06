@@ -157,7 +157,7 @@ export class HistoryView extends BaseDiscussionListView<Props> {
   }
 
   render() {
-    const { theme } = this.state
+    const theme = this.context?.theme || this.state.theme
     if (!theme) {
       return null
     }

@@ -1,14 +1,20 @@
 # Changelog
 
+## 0.40.1
+- okamžitá synchronizace barvy stavového řádku (StatusBar), navigační hlavičky a dolní lišty gest při přepnutí světlého/tmavého režimu přímo na obrazovce nastavení vzhledu
+- plná reaktivita motivu vzhledu v celé aplikaci (ProfileView, BookmarksView, HistoryView, MailView, NotificationsView, LastPostsView a mezery mezi řádky diskuzí) okamžitě po úpravě bez nutnosti restartu aplikace
+- oprava chyby sestavení (odstranění nepodporovaného TypeScript declare modifikátoru v ThemeView)
+- obnovení plně transparentní Barvy D (transparent bez výplně na řádcích diskuzí a bezpečné fallbacky na barvu karty pro dialogy)
+- oprava pozice FAB tlačítka na záložce Vlastních upomínek: odstranění zdvojeného zdvihu nad záložkovou lištou a přesné sjednocení výšky s FAB tlačítkem v klubech a poště
+- posun dialogu pro vytvoření nového seznamu upomínek výše nad softwarovou klávesnici pro nerušenou viditelnost vstupního pole i tlačítek
+
 ## 0.40.0
 - přepracování motivů vzhledu: okamžitá synchronizace náhledu i horních ovládacích prvků (výběr motivu, písma, odsazení a barev) v nastavení vzhledu bez prodlev a zbytečného přerenderování aplikace při každé úpravě
-- promítnutí změn vzhledu do celé aplikace jednorázově při opuštění obrazovky nastavení vzhledu
-- oprava světlého a tmavého režimu (odstranění hardcodovaného `dark: true` v `createTheme` a správný fallback pro `colors.row` v `Palette` pro eliminaci černého textu na tmavém pozadí)
+- oprava světlého a tmavého režimu (odstranění hardcodovaného `dark: true` v `createTheme` pro eliminaci černého textu na tmavém pozadí)
 - sjednocení dialogu pro přidání do upomínek i dialogu pro vytvoření nového seznamu s dialogem sdílení (ostré rohy, nativní textový řádek s vymazáním, řádky na celou šířku dialogu bez bočních okrajů, sladěná velikost hlavičky a akcí)
 - horní navigační záložky v Upomínkách sladěny se stylem segmentovaných přepínačů (výrazná aktivní záložka, tmavší neaktivní záložky, sjednocené ohraničení s primárním levým akcentem, bez zaoblení)
 - seznam vlastních upomínek na celou šířku bez bočních okrajů a zaoblení, odstranění tlačítka smazání z řádku
 - v detailu vlastního seznamu v záhlaví doplněno zobrazení počtu příspěvků a dvoudotykové smazání celého seznamu (DoubleTapDeleteButton s ikonami koše a potvrzení)
-- oprava přetrvávání a pozice FAB tlačítka na záložce Vlastních upomínek (odstranění Portal obalu a zohlednění SafeBottom a navigace na pozadí, zarovnání do stejné výšky jako FAB v diskuzích a poště)
 - podpora vlastních offline seznamů upomínek s možností uložení z pošty i diskuzí
 - barevné odlišení zvonečku na hlavičce příspěvku: primární barva pro serverové upomínky Nyxu, sekundární barva pro vlastní offline seznamy
 - klepnutí na aktivní zvoneček odebere příspěvek z upomínek / vlastních seznamů

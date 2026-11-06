@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Linking, LogBox, Platform, ToastAndroid, UIManager, useColorScheme } from 'react-native'
+import { Linking, LogBox, Platform, StatusBar, ToastAndroid, UIManager, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { NetworkProvider } from 'react-native-offline'
@@ -47,6 +47,7 @@ import {
   Storage,
   subscribeShareReceived,
   t,
+  ThemeContext,
   UnreadContextProvider,
   wait,
 } from './src/lib'
@@ -417,59 +418,65 @@ const App: () => ReactNode = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top', 'bottom']}>
+        <StatusBar
+          backgroundColor={theme.colors.background}
+          barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        />
         <NetworkProvider pingServerUrl={'https://nyx.cz'}>
         <PaperProvider theme={theme}>
-          {!isAppLoaded && <LoaderComponent theme={theme} />}
-          {isAppLoaded && isAuthenticated && (
-            <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
-              <UnreadContextProvider>
-                <NavigationContainer ref={navigationRef} theme={theme}>
-                  <NestedBackHandler navigationRef={navigationRef} />
-                  <Router
-                    nyx={nyx}
-                    refs={refs}
+          <ThemeContext.Provider value={theme}>
+            {!isAppLoaded && <LoaderComponent theme={theme} />}
+            {isAppLoaded && isAuthenticated && (
+              <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
+                <UnreadContextProvider>
+                  <NavigationContainer ref={navigationRef} theme={theme}>
+                    <NestedBackHandler navigationRef={navigationRef} />
+                    <Router
+                      nyx={nyx}
+                      refs={refs}
+                      theme={theme}
+                      onConfigReload={() => loadConfig()}
+                      onFiltersReload={() => loadStorage({ getConfig: false })}
+                    />
+                  </NavigationContainer>
+                  <RatingPromptComponent
                     theme={theme}
-                    onConfigReload={() => loadConfig()}
-                    onFiltersReload={() => loadStorage({ getConfig: false })}
+                    onSupport={() => {
+                      if (navigationRef.isReady()) {
+                        ;(navigationRef.current as any)?.navigate('support')
+                      }
+                    }}
                   />
-                </NavigationContainer>
-                <RatingPromptComponent
-                  theme={theme}
-                  onSupport={() => {
-                    if (navigationRef.isReady()) {
-                      ;(navigationRef.current as any)?.navigate('support')
-                    }
-                  }}
-                />
-                <ShareTargetDialog
-                  visible={isShareDialogVisible}
-                  sharedData={sharedData}
-                  nyx={nyx}
-                  theme={theme}
-                  onSelectDestination={handleShareDestination}
-                  onDismiss={() => {
-                    setIsShareDialogVisible(false)
-                    setSharedData(null)
-                  }}
-                />
-              </UnreadContextProvider>
-            </MainContext.Provider>
-          )}
-          {isAppLoaded && !isAuthenticated && (
-            <LoginView
+                  <ShareTargetDialog
+                    visible={isShareDialogVisible}
+                    sharedData={sharedData}
+                    nyx={nyx}
+                    theme={theme}
+                    onSelectDestination={handleShareDestination}
+                    onDismiss={() => {
+                      setIsShareDialogVisible(false)
+                      setSharedData(null)
+                    }}
+                  />
+                </UnreadContextProvider>
+              </MainContext.Provider>
+            )}
+            {isAppLoaded && !isAuthenticated && (
+              <LoginView
+                theme={theme}
+                confirmationCode={confirmationCode}
+                onUsername={(username, testToken) => initNyx(username, false, testToken)}
+                onLogin={() => onLogin()}
+              />
+            )}
+            <AppGuard
+              ready={config.isLoaded}
+              enabled={!!config.isFingerprintLockEnabled}
+              minutes={config.fingerprintLockMinutes}
+              cover={!!config.isAppCoverEnabled}
               theme={theme}
-              confirmationCode={confirmationCode}
-              onUsername={(username, testToken) => initNyx(username, false, testToken)}
-              onLogin={() => onLogin()}
             />
-          )}
-          <AppGuard
-            ready={config.isLoaded}
-            enabled={!!config.isFingerprintLockEnabled}
-            minutes={config.fingerprintLockMinutes}
-            cover={!!config.isAppCoverEnabled}
-            theme={theme}
-          />
+          </ThemeContext.Provider>
         </PaperProvider>
         </NetworkProvider>
       </SafeAreaView>

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Appearance, ScrollView, ToastAndroid, View } from 'react-native'
+import { Appearance, ScrollView, StatusBar, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { FAB, Provider as PaperProvider } from 'react-native-paper'
 import {
@@ -8,6 +8,7 @@ import {
   FormRowSelectComponent,
   SafeBottom,
   SectionHeaderComponent,
+  StackHeaderComponent,
 } from '../component'
 import {
   defaultThemeOptions,
@@ -35,7 +36,6 @@ type State = {
 }
 export class ThemeView extends Component<Props, State> {
   static contextType = MainContext
-  context!: React.ContextType<typeof MainContext>
   nyx?: Nyx
   hasChanges = false
   unsubscribeBlur?: () => void
@@ -57,7 +57,7 @@ export class ThemeView extends Component<Props, State> {
   }
 
   async componentDidMount() {
-    this.nyx = this.context.nyx
+    this.nyx = (this.context as any)?.nyx
     if (!this.props.config) {
       const conf = await Storage.getConfig()
       if (conf) {
@@ -93,6 +93,9 @@ export class ThemeView extends Component<Props, State> {
         : selectedTheme === 'dark'
     const theme = createTheme({ ...themeOptions, isDarkTheme: isDark })
     this.setState({ themeOptions, selectedTheme, theme })
+    this.props.navigation?.setOptions?.({
+      header: props => <StackHeaderComponent {...props} theme={theme} />,
+    })
   }
 
   exportTheme() {
@@ -109,6 +112,7 @@ export class ThemeView extends Component<Props, State> {
     const conf = (await Storage.getConfig()) || {}
     conf.theme = theme
     await Storage.setConfig(conf)
+    this.props.onConfigChange?.()
   }
 
   async setThemeOption(key, val) {
@@ -130,10 +134,14 @@ export class ThemeView extends Component<Props, State> {
     const fontSizes = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     return (
       <ThemeContext.Provider value={theme}>
-        <MainContext.Provider value={{ ...this.context, theme }}>
+        <MainContext.Provider value={{ ...(this.context as any), theme }}>
           <PaperProvider theme={theme}>
             <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
-        <ScrollView style={{ backgroundColor: theme.colors.background }}>
+              <StatusBar
+                backgroundColor={theme.colors.background}
+                barStyle={theme.dark ? 'light-content' : 'dark-content'}
+              />
+              <ScrollView style={{ backgroundColor: theme.colors.background }}>
           <View style={{ height: theme.metrics.blocks.rowDiscussion + 33 }}>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ width: '33.333%' }}>
@@ -250,6 +258,23 @@ export class ThemeView extends Component<Props, State> {
               onPress={() => this.exportTheme()}
             />
           )}
+        </SafeBottom>
+        <SafeBottom>
+          {bottom =>
+            bottom > 0 ? (
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  bottom: -bottom,
+                  left: 0,
+                  right: 0,
+                  height: bottom,
+                  backgroundColor: theme.colors.background,
+                }}
+              />
+            ) : null
+          }
         </SafeBottom>
             </View>
           </PaperProvider>

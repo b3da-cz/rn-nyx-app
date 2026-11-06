@@ -112,7 +112,8 @@ export class ProfileView extends Component<Props> {
   }
 
   render() {
-    const { activeFriends, theme, username } = this.state
+    const theme = (this.context as any)?.theme || this.state.theme
+    const { activeFriends, username } = this.state
     if (!theme) {
       return null
     }

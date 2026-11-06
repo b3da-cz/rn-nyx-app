@@ -52,13 +52,13 @@ export const ShareClubPicker: FC<Props> = ({ nyx, theme, onSelectClub }) => {
   const renderItem = (item: ShareClub, prefix: string) => {
     const isUnread = (item.unreadCount ?? 0) > 0
     const textColor = isUnread ? colors.text : colors.disabled
-    const borderColor = isUnread ? (colors.primary || '#d32f2f') : (colors.row || '#1a1b1d')
+    const borderColor = isUnread ? (colors.primary || '#d32f2f') : (colors.row || colors.card || '#1a1b1d')
     return (
       <TouchableRipple
         key={`${prefix}_${item.id}`}
         onPress={() => onSelectClub(item)}
         style={{
-          backgroundColor: colors.row || '#1a1b1d',
+          backgroundColor: colors.row || colors.card || '#1a1b1d',
           borderLeftWidth: 3,
           borderLeftColor: borderColor,
           paddingVertical: 9,

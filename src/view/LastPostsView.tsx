@@ -186,13 +186,14 @@ export class LastPostsView extends Component<Props> {
   }
 
   render() {
+    const theme = this.context?.theme || this.state.theme
     const listEmpty = !this.state.posts.length
     const loadSteps = this.state.fetchProgress?.steps || []
     const progressMode = resolveFetchProgressMode(this.context?.config, 'lists')
     const showProgress = progressMode !== 'off' && this.state.isFetching
     const loadActive = showProgress && loadSteps.length > 0
     return (
-      <View style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}>
+      <View style={{ flex: 1, backgroundColor: theme?.colors?.background }}>
         <RatingFilterBarComponent
           onFilter={(minRating, isRatedByFriends, isRatedByMe) =>
             this.setFilter(minRating, isRatedByFriends, isRatedByMe)
@@ -207,11 +208,11 @@ export class LastPostsView extends Component<Props> {
         )}
         <FlatList
           data={this.state.posts}
-          extraData={this.state}
+          extraData={`${theme?.dark}|${this.state.posts.length}|${this.state.isFetching}`}
           keyExtractor={item => `${item.uuid}`}
           refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getLastPosts()}
-          style={{ flex: 1, backgroundColor: this.state.theme?.colors?.background }}
+          style={{ flex: 1, backgroundColor: theme?.colors?.background }}
           contentContainerStyle={listEmpty ? { flexGrow: 1 } : undefined}
           ListEmptyComponent={
             showProgress ? (

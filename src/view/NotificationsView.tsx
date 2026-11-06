@@ -275,7 +275,8 @@ export class NotificationsView extends Component<Props> {
   }
 
   render() {
-    if (!this.state.theme) {
+    const theme = this.context?.theme || this.state.theme
+    if (!theme) {
       return null
     }
     const listEmpty = !this.state.posts.length
@@ -284,7 +285,7 @@ export class NotificationsView extends Component<Props> {
     const showProgress = progressMode !== 'off' && this.state.isFetching
     const loadActive = showProgress && loadSteps.length > 0
     return (
-      <View style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         {loadActive && !listEmpty && (
           <FetchProgressComponent
             progress={this.state.fetchProgress}
@@ -293,10 +294,10 @@ export class NotificationsView extends Component<Props> {
           />
         )}
         <FlatList
-          style={{ flex: 1, backgroundColor: this.state.theme.colors.background }}
+          style={{ flex: 1, backgroundColor: theme.colors.background }}
           ref={r => (this.refScroll = r)}
           data={this.state.posts}
-          extraData={this.state}
+          extraData={`${theme?.dark}|${this.state.posts.length}|${this.state.isFetching}`}
           keyExtractor={item => `${item.data.id}`}
           refreshing={this.state.isFetching && !showProgress}
           onRefresh={() => this.getNotifications()}
@@ -306,7 +307,7 @@ export class NotificationsView extends Component<Props> {
               <FetchProgressComponent progress={this.state.fetchProgress} fill detailed={progressMode === 'detailed'} />
             ) : null
           }
-          renderItem={({ item }) => this.renderItem(item, this.state.theme!)}
+          renderItem={({ item }) => this.renderItem(item, theme)}
         />
       </View>
     )

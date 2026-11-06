@@ -319,7 +319,8 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
   )
 
   render() {
-    const { shownCategories, sectionedBookmarks, sectionReadFilters, isShowingRead, theme, isFetching } = this.state
+    const theme = this.context?.theme || this.state.theme
+    const { shownCategories, sectionedBookmarks, sectionReadFilters, isShowingRead, isFetching } = this.state
     if (!theme) {
       return null
     }
@@ -337,7 +338,7 @@ export class BookmarksView extends BaseDiscussionListView<Props> {
       <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <SectionList
           sections={sections}
-          extraData={`${featureOn}|${this.state.isShowingRead}|${shownCategories.join('\n')}|${JSON.stringify(
+          extraData={`${theme?.dark}|${theme?.metrics?.blocks?.small}|${featureOn}|${this.state.isShowingRead}|${shownCategories.join('\n')}|${JSON.stringify(
             sectionReadFilters,
           )}`}
           stickySectionHeadersEnabled={true}

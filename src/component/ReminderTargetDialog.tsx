@@ -150,7 +150,7 @@ export const ReminderTargetDialog: FC<Props> = ({
                       alignItems: 'center',
                       paddingVertical: 9,
                       paddingHorizontal: 10,
-                      backgroundColor: colors.row || '#1a1b1d',
+                      backgroundColor: colors.row || colors.card || '#1a1b1d',
                       borderLeftWidth: 3,
                       borderLeftColor: colors.secondary || '#4dabf7',
                       borderRadius: 0,

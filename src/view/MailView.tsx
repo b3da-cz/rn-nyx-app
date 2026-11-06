@@ -431,11 +431,12 @@ export class MailView extends Component<Props> {
   }
 
   getPickerItemColor(val, hasUnreadMail?: boolean) {
+    const theme = this.context?.theme || this.state.theme
     return hasUnreadMail
-      ? this.state.theme!.colors.accent
+      ? theme?.colors?.accent
       : // : this.state.activeRecipient === val
         // ? this.state.theme!.colors.primary
-        this.state.theme!.colors.text
+        theme?.colors?.text
   }
 
   renderMessage(msg) {
@@ -462,7 +463,8 @@ export class MailView extends Component<Props> {
   }
 
   render() {
-    const { activeRecipient, conversations, theme } = this.state
+    const theme = this.context?.theme || this.state.theme
+    const { activeRecipient, conversations } = this.state
     if (!theme) {
       return null
     }

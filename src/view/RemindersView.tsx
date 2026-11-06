@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { FlatList, InteractionManager, TextInput, View } from 'react-native'
 import { Button, Dialog, FAB, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { FetchProgressComponent, PostComponent, SafeBottom } from '../component'
+import { FetchProgressComponent, PostComponent } from '../component'
 import {
   confirm,
   createCustomReminderList,
@@ -344,7 +344,7 @@ export class RemindersView extends Component<Props> {
       <View
         style={{
           flexDirection: 'row',
-          backgroundColor: colors.row || '#1a1b1d',
+          backgroundColor: colors.row || colors.card || '#1a1b1d',
           borderLeftWidth: 3,
           borderColor: colors.primary || '#d32f2f',
           marginBottom: 0,
@@ -596,23 +596,19 @@ export class RemindersView extends Component<Props> {
 
         {/* FAB on Custom Tab */}
         {this.state.isFocused && activeTab === 'custom' && (
-          <SafeBottom>
-            {insetBottom => (
-              <FAB
-                icon="plus"
-                color="#FFFFFF"
-                visible={this.state.isFocused && activeTab === 'custom'}
-                style={{
-                  position: 'absolute',
-                  margin: 16,
-                  right: 0,
-                  bottom: (config?.isBottomTabs ? 45 : 0) + insetBottom,
-                  backgroundColor: colors.primary || '#d32f2f',
-                }}
-                onPress={() => this.setState({ isCreateDialogOpen: true, newListName: '' })}
-              />
-            )}
-          </SafeBottom>
+          <FAB
+            icon="plus"
+            color="#FFFFFF"
+            visible={this.state.isFocused && activeTab === 'custom'}
+            style={{
+              position: 'absolute',
+              margin: 16,
+              right: 0,
+              bottom: 0,
+              backgroundColor: colors.primary || '#d32f2f',
+            }}
+            onPress={() => this.setState({ isCreateDialogOpen: true, newListName: '' })}
+          />
         )}
 
         {/* Dialog to create a new custom list */}
@@ -625,6 +621,7 @@ export class RemindersView extends Component<Props> {
               borderRadius: 4,
               marginHorizontal: 12,
               overflow: 'hidden',
+              transform: [{ translateY: -80 }],
             }}>
             {/* Header */}
             <View
@@ -664,7 +661,7 @@ export class RemindersView extends Component<Props> {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: colors.row || '#1a1b1d',
+                  backgroundColor: colors.row || colors.card || '#1a1b1d',
                   borderLeftWidth: 3,
                   borderLeftColor: colors.secondary || '#4dabf7',
                   paddingHorizontal: 10,
