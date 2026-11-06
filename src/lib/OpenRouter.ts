@@ -699,7 +699,12 @@ export async function sendOpenRouterChat({
       streamed = await postChatStream(
         completionUrl,
         headers,
-        JSON.stringify({ model: resolvedModel, messages, stream: true }),
+        JSON.stringify({
+          model: resolvedModel,
+          messages,
+          stream: true,
+          ...(provider === 'lumo' ? { lumo: { client_type: 'frontend' } } : {}),
+        }),
         publish,
       )
     } catch (err: any) {
@@ -720,7 +725,11 @@ export async function sendOpenRouterChat({
   const res = await fetch(completionUrl, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: resolvedModel, messages }),
+    body: JSON.stringify({
+      model: resolvedModel,
+      messages,
+      ...(provider === 'lumo' ? { lumo: { client_type: 'frontend' } } : {}),
+    }),
   })
 
   onProgress?.(`HTTP status ${res.status}: Čekám na dokončení generování...`)

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.2
+- oprava chyby Proton Lumo ("Request rejected by policy" / 403 blocked_by_policy): doplnění `lumo: { client_type: 'frontend' }` do těla požadavků pro streaming i fallback
+
 ## 0.40.1
 - okamžitá synchronizace barvy stavového řádku (StatusBar), navigační hlavičky a dolní lišty gest při přepnutí světlého/tmavého režimu přímo na obrazovce nastavení vzhledu
 - plná reaktivita motivu vzhledu v celé aplikaci (ProfileView, BookmarksView, HistoryView, MailView, NotificationsView, LastPostsView a mezery mezi řádky diskuzí) okamžitě po úpravě bez nutnosti restartu aplikace

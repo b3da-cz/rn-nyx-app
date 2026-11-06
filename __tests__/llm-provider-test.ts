@@ -181,6 +181,7 @@ describe('OpenAI-compatible endpoint', () => {
     expect(init.headers.Authorization).toBeUndefined()
     expect(init.headers['Content-Type']).toBe('application/json')
     expect(JSON.parse(init.body).model).toBe('lumo-lite')
+    expect(JSON.parse(init.body).lumo).toEqual({ client_type: 'frontend' })
   })
 
   it('rejects unsupported models when using Proton Lumo provider', async () => {
