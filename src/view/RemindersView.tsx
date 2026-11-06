@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import { FlatList, InteractionManager, View } from 'react-native'
-import { Button, Dialog, FAB, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper'
+import { FlatList, InteractionManager, TextInput, View } from 'react-native'
+import { Button, Dialog, FAB, Portal, Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { FetchProgressComponent, PostComponent } from '../component'
+import { FetchProgressComponent, PostComponent, SafeBottom } from '../component'
 import {
   confirm,
   createCustomReminderList,
@@ -49,6 +49,7 @@ type State = {
   isCreateDialogOpen: boolean
   newListName: string
   theme?: Theme
+  isFocused: boolean
 }
 
 export class RemindersView extends Component<Props> {
@@ -58,6 +59,7 @@ export class RemindersView extends Component<Props> {
   filters: any[] = []
   refScroll: any
   navFocusListener?: Function
+  navBlurListener?: Function
   navTabPressListener?: Function
   unsubscribeCustomReminders?: () => void
   isUnmounted = false
@@ -76,6 +78,7 @@ export class RemindersView extends Component<Props> {
       isCreateDialogOpen: false,
       newListName: '',
       theme: undefined,
+      isFocused: typeof props.navigation?.isFocused === 'function' ? props.navigation.isFocused() : true,
     }
   }
 
@@ -84,6 +87,7 @@ export class RemindersView extends Component<Props> {
     this.nyx = this.context.nyx
     this.filters = [...this.context.filters, ...this.context.blockedUsers]
     this.navFocusListener = this.props.navigation.addListener('focus', () => {
+      this.setState({ isFocused: true })
       InteractionManager.runAfterInteractions(() => {
         if (this.isUnmounted) {
           return
@@ -97,6 +101,9 @@ export class RemindersView extends Component<Props> {
           }
         }
       })
+    })
+    this.navBlurListener = this.props.navigation.addListener('blur', () => {
+      this.setState({ isFocused: false })
     })
     this.navTabPressListener = this.props.navigation.getParent()?.addListener('tabPress', () => {
       const isFocused =
@@ -131,6 +138,9 @@ export class RemindersView extends Component<Props> {
     this.isUnmounted = true
     if (this.navFocusListener) {
       this.navFocusListener()
+    }
+    if (this.navBlurListener) {
+      this.navBlurListener()
     }
     if (this.navTabPressListener) {
       this.navTabPressListener()
@@ -585,20 +595,24 @@ export class RemindersView extends Component<Props> {
         )}
 
         {/* FAB on Custom Tab */}
-        {activeTab === 'custom' && (
-          <Portal>
-            <FAB
-              icon="plus"
-              color="#FFFFFF"
-              style={{
-                position: 'absolute',
-                right: 16,
-                bottom: (config?.isBottomTabs ? 45 : 0) + 16,
-                backgroundColor: colors.primary || '#d32f2f',
-              }}
-              onPress={() => this.setState({ isCreateDialogOpen: true, newListName: '' })}
-            />
-          </Portal>
+        {this.state.isFocused && activeTab === 'custom' && (
+          <SafeBottom>
+            {insetBottom => (
+              <FAB
+                icon="plus"
+                color="#FFFFFF"
+                visible={this.state.isFocused && activeTab === 'custom'}
+                style={{
+                  position: 'absolute',
+                  margin: 16,
+                  right: 0,
+                  bottom: (config?.isBottomTabs ? 45 : 0) + insetBottom,
+                  backgroundColor: colors.primary || '#d32f2f',
+                }}
+                onPress={() => this.setState({ isCreateDialogOpen: true, newListName: '' })}
+              />
+            )}
+          </SafeBottom>
         )}
 
         {/* Dialog to create a new custom list */}
@@ -608,39 +622,100 @@ export class RemindersView extends Component<Props> {
             onDismiss={() => this.setState({ isCreateDialogOpen: false })}
             style={{
               backgroundColor: colors.surface || '#222426',
-              borderRadius: 6,
-              marginHorizontal: 16,
+              borderRadius: 4,
+              marginHorizontal: 12,
+              overflow: 'hidden',
             }}>
-            <Dialog.Title
+            {/* Header */}
+            <View
               style={{
-                color: colors.text,
-                fontSize: fontSizes.h3,
-                fontWeight: 'bold',
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: colors.card || '#2a2b2e',
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderBottomWidth: 0.5,
+                borderBottomColor: colors.border || '#333',
               }}>
-              {t('reminders.createList') || 'Vytvořit seznam'}
-            </Dialog.Title>
-            <Dialog.Content>
-              <TextInput
-                mode="outlined"
-                label={t('reminders.listName') || 'Název seznamu'}
-                placeholder={t('reminders.listNamePlaceholder') || 'Zadejte název seznamu...'}
-                value={this.state.newListName}
-                onChangeText={text => this.setState({ newListName: text })}
-                autoFocus
-                textColor={colors.text}
-                style={{ backgroundColor: colors.card || '#1e1f21' }}
+              <Icon
+                name="bookmark"
+                size={18}
+                color={colors.secondary || '#4dabf7'}
+                style={{ marginRight: 10 }}
               />
+              <Text
+                style={{
+                  flex: 1,
+                  color: colors.text,
+                  fontSize: fontSizes.h3,
+                  fontWeight: 'bold',
+                }}>
+                {t('reminders.createList') || 'Vytvořit seznam'}
+              </Text>
+              <TouchableRipple
+                onPress={() => this.setState({ isCreateDialogOpen: false })}
+                style={{ padding: 4 }}>
+                <Icon name="x" size={18} color={colors.disabled || '#888'} />
+              </TouchableRipple>
+            </View>
+
+            <Dialog.Content style={{ paddingHorizontal: 2, paddingTop: 4, paddingBottom: 0 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: colors.row || '#1a1b1d',
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.secondary || '#4dabf7',
+                  paddingHorizontal: 10,
+                  marginBottom: 2,
+                }}>
+                <Icon
+                  name="edit-2"
+                  size={16}
+                  color={colors.secondary || '#4dabf7'}
+                  style={{ marginRight: 8 }}
+                />
+                <TextInput
+                  value={this.state.newListName}
+                  onChangeText={text => this.setState({ newListName: text })}
+                  autoFocus
+                  placeholder={t('reminders.listNamePlaceholder') || 'Zadejte název seznamu...'}
+                  placeholderTextColor={colors.disabled || '#666'}
+                  selectionColor={colors.secondary || '#4dabf7'}
+                  style={{
+                    flex: 1,
+                    height: 42,
+                    color: colors.text,
+                    fontSize: fontSizes.p,
+                    paddingHorizontal: 4,
+                  }}
+                  onSubmitEditing={() => {
+                    if (this.state.newListName?.trim()) {
+                      this.onCreateList()
+                    }
+                  }}
+                />
+                {!!this.state.newListName && (
+                  <TouchableRipple
+                    onPress={() => this.setState({ newListName: '' })}
+                    style={{ padding: 4 }}>
+                    <Icon name="x" size={16} color={colors.disabled || '#666'} />
+                  </TouchableRipple>
+                )}
+              </View>
             </Dialog.Content>
-            <Dialog.Actions>
+
+            <Dialog.Actions style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
               <Button
                 onPress={() => this.setState({ isCreateDialogOpen: false })}
-                color={colors.faded || '#888'}>
+                color={colors.disabled || '#888'}>
                 {t('cancel') || 'Zrušit'}
               </Button>
               <Button
                 disabled={!this.state.newListName?.trim()}
                 onPress={() => this.onCreateList()}
-                color={colors.primary || '#d32f2f'}>
+                color={colors.secondary || '#4dabf7'}>
                 {t('reminders.createList') || 'Vytvořit'}
               </Button>
             </Dialog.Actions>
