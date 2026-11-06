@@ -334,11 +334,12 @@ export class RemindersView extends Component<Props> {
       <View
         style={{
           flexDirection: 'row',
-          backgroundColor: colors.card || '#2a2b2e',
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border || '#333',
+          backgroundColor: colors.row || '#1a1b1d',
+          borderLeftWidth: 3,
+          borderColor: colors.primary || '#d32f2f',
+          marginBottom: 0,
         }}>
-        {tabs.map(tab => {
+        {tabs.map((tab, index) => {
           const isSelected = this.state.activeTab === tab.key
           return (
             <TouchableRipple
@@ -347,17 +348,22 @@ export class RemindersView extends Component<Props> {
               rippleColor={colors.ripple}
               style={{
                 flex: 1,
-                paddingVertical: 12,
+                minHeight: 44,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderBottomWidth: 2,
-                borderBottomColor: isSelected ? colors.primary : 'transparent',
+                paddingVertical: 10,
+                paddingHorizontal: 4,
+                backgroundColor: isSelected ? (colors.card || '#2a2b2e') : colors.transparent,
+                borderRightWidth: index < tabs.length - 1 ? 1 : 0,
+                borderColor: colors.border || '#333',
               }}>
               <Text
+                numberOfLines={1}
                 style={{
-                  fontSize: fontSizes.p,
+                  fontSize: fontSizes.small,
                   fontWeight: isSelected ? '700' : '400',
-                  color: isSelected ? (colors.primary || '#d32f2f') : (colors.faded || '#888'),
+                  color: isSelected ? colors.text : (colors.faded || '#888'),
+                  textAlign: 'center',
                 }}>
                 {`${tab.label}${tab.count > 0 ? ` (${tab.count})` : ''}`}
               </Text>
@@ -386,10 +392,10 @@ export class RemindersView extends Component<Props> {
         rippleColor={colors.ripple}
         style={{
           backgroundColor: colors.card || '#2a2b2e',
-          padding: 14,
-          marginHorizontal: 12,
-          marginTop: 10,
-          borderRadius: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          marginBottom: 2,
+          borderRadius: 0,
           borderLeftWidth: 3,
           borderLeftColor: colors.secondary || '#4dabf7',
           flexDirection: 'row',
@@ -402,7 +408,7 @@ export class RemindersView extends Component<Props> {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 6,
+                marginBottom: 4,
               }}>
               <Text
                 style={{
@@ -432,7 +438,7 @@ export class RemindersView extends Component<Props> {
                 </Text>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
               <Text style={{ fontSize: fontSizes.small - 1, color: colors.faded || '#888' }}>
                 {t('reminders.created') || 'Vytvořeno'}: {formatTimestamp(item.createdAt)}
               </Text>
@@ -441,13 +447,7 @@ export class RemindersView extends Component<Props> {
               </Text>
             </View>
           </View>
-          <TouchableRipple
-            onPress={() => this.onDeleteList(item.id)}
-            rippleColor={colors.ripple}
-            style={{ padding: 8, marginLeft: 4 }}>
-            <Icon name="trash-2" size={16} color={colors.disabled || '#666'} />
-          </TouchableRipple>
-          <Icon name="chevron-right" size={20} color={colors.faded || '#888'} style={{ marginLeft: 2 }} />
+          <Icon name="chevron-right" size={20} color={colors.faded || '#888'} style={{ marginLeft: 6 }} />
         </>
       </TouchableRipple>
     )

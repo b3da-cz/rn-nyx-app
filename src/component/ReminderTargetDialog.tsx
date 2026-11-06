@@ -67,8 +67,8 @@ export const ReminderTargetDialog: FC<Props> = ({
         onDismiss={onDismiss}
         style={{
           backgroundColor: colors.surface || '#222426',
-          borderRadius: 6,
-          marginHorizontal: 16,
+          borderRadius: 4,
+          marginHorizontal: 12,
           overflow: 'hidden',
           maxHeight: '85%',
         }}>
@@ -78,8 +78,8 @@ export const ReminderTargetDialog: FC<Props> = ({
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: colors.card || '#2a2b2e',
-            paddingHorizontal: 14,
-            paddingVertical: 12,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
             borderBottomWidth: 0.5,
             borderBottomColor: colors.border || '#333',
           }}>
@@ -92,23 +92,23 @@ export const ReminderTargetDialog: FC<Props> = ({
           </TouchableRipple>
         </View>
 
-        <Dialog.Content style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 }}>
+        <Dialog.Content style={{ paddingHorizontal: 2, paddingTop: 2, paddingBottom: 0 }}>
           {/* Top Primary Button: Nyx Reminders */}
           <TouchableRipple
             onPress={onSaveToNyx}
             rippleColor={colors.ripple}
             style={{
               backgroundColor: colors.primary || '#d32f2f',
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderRadius: 4,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 0,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 14,
+              marginBottom: 4,
             }}>
             <>
-              <Icon name="bell" size={18} color="#FFFFFF" style={{ marginRight: 10 }} />
+              <Icon name="bell" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={{ color: '#FFFFFF', fontSize: fontSizes.p, fontWeight: '700' }}>
                 {nyxLabel}
               </Text>
@@ -116,19 +116,23 @@ export const ReminderTargetDialog: FC<Props> = ({
           </TouchableRipple>
 
           {/* Section Divider / Label */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border || '#333' }} />
+          <View
+            style={{
+              backgroundColor: colors.card || '#2a2b2e',
+              height: 26,
+              justifyContent: 'center',
+              paddingHorizontal: 8,
+              marginBottom: 2,
+            }}>
             <Text
               style={{
                 color: colors.faded || '#888',
-                fontSize: fontSizes.small,
-                fontWeight: '600',
-                marginHorizontal: 10,
+                fontSize: 11,
+                fontWeight: 'bold',
                 textTransform: 'uppercase',
               }}>
               {t('reminders.saveToCustom') || 'Uložit do vlastního seznamu'}
             </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border || '#333' }} />
           </View>
 
           {/* Custom Lists List or Empty State */}
@@ -144,20 +148,20 @@ export const ReminderTargetDialog: FC<Props> = ({
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
+                      paddingVertical: 9,
+                      paddingHorizontal: 10,
                       backgroundColor: colors.row || '#1a1b1d',
                       borderLeftWidth: 3,
                       borderLeftColor: colors.secondary || '#4dabf7',
-                      borderRadius: 4,
-                      marginBottom: 8,
+                      borderRadius: 0,
+                      marginBottom: 2,
                     }}>
                     <>
                       <Icon
                         name="bookmark"
-                        size={18}
+                        size={16}
                         color={colors.secondary || '#4dabf7'}
-                        style={{ marginRight: 12 }}
+                        style={{ marginRight: 10 }}
                       />
                       <View style={{ flex: 1 }}>
                         <Text
@@ -165,11 +169,11 @@ export const ReminderTargetDialog: FC<Props> = ({
                           style={{ color: colors.text, fontSize: fontSizes.p, fontWeight: 'bold' }}>
                           {list.name}
                         </Text>
-                        <Text style={{ color: colors.faded || '#888', fontSize: fontSizes.small, marginTop: 2 }}>
-                          {count} {count === 1 ? 'příspěvek' : count >= 2 && count <= 4 ? 'příspěvky' : 'příspěvků'}
-                        </Text>
                       </View>
-                      <Icon name="plus" size={18} color={colors.secondary || '#4dabf7'} />
+                      <Text style={{ color: colors.faded || '#888', fontSize: fontSizes.small, marginRight: 8 }}>
+                        {count} {count === 1 ? 'příspěvek' : count >= 2 && count <= 4 ? 'příspěvky' : 'příspěvků'}
+                      </Text>
+                      <Icon name="plus" size={16} color={colors.secondary || '#4dabf7'} />
                     </>
                   </TouchableRipple>
                 )
@@ -180,13 +184,13 @@ export const ReminderTargetDialog: FC<Props> = ({
               style={{
                 padding: 14,
                 backgroundColor: colors.card || '#2a2b2e',
-                borderRadius: 4,
-                borderWidth: 1,
+                borderRadius: 0,
+                borderWidth: 0.5,
                 borderColor: colors.border || '#333',
-                marginBottom: 8,
+                marginBottom: 2,
                 alignItems: 'center',
               }}>
-              <Icon name="info" size={24} color={colors.secondary || '#4dabf7'} style={{ marginBottom: 8 }} />
+              <Icon name="info" size={24} color={colors.secondary || '#4dabf7'} style={{ marginBottom: 6 }} />
               <Text
                 style={{
                   color: colors.text,
@@ -210,8 +214,8 @@ export const ReminderTargetDialog: FC<Props> = ({
           )}
         </Dialog.Content>
 
-        <Dialog.Actions style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Button onPress={onDismiss} color={colors.faded || '#888'}>
+        <Dialog.Actions style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+          <Button onPress={onDismiss} color={colors.disabled || '#888'}>
             {t('cancel') || 'Zrušit'}
           </Button>
         </Dialog.Actions>

@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.39.10
-- redesign obrazovky Upomínky: horní navigační záložky pro Poštu, Diskuze a Vlastní offline seznamy
-- podpora vlastních offline seznamů upomínek (vytvoření nového seznamu přes FAB +, zobrazení názvu, počtu příspěvků, data vytvoření a úpravy, řazení dle naposledy upravených)
-- samostatné zobrazení detailu vlastního seznamu s příspěvky ve FlatListu (včetně možnosti odebrání příspěvku či smazání celého seznamu)
-- dialog výběru cíle při přidání příspěvku do upomínek: primární tlačítko pro uložení na Nyx (pošta/diskuze) a scrollovatelný výběr vlastních offline seznamů
+## 0.40.0
+- přepracování motivů vzhledu: okamžitá synchronizace náhledu i horních ovládacích prvků (výběr motivu, písma, odsazení a barev) v nastavení vzhledu bez prodlev a zbytečného přerenderování aplikace při každé úpravě
+- promítnutí změn vzhledu do celé aplikace jednorázově při opuštění obrazovky nastavení vzhledu
+- oprava světlého a tmavého režimu (odstranění hardcodovaného `dark: true` v `createTheme` a správný fallback pro `colors.row` v `Palette` pro eliminaci černého textu na tmavém pozadí)
+- sjednocení dialogu pro přidání do upomínek s dialogem sdílení (ostré rohy, řádky vlastních seznamů na celou šířku dialogu bez bočních okrajů, sladěná velikost hlavičky a akcí)
+- horní navigační záložky v Upomínkách sladěny se stylem segmentovaných přepínačů (výrazná aktivní záložka, tmavší neaktivní záložky, sjednocené ohraničení s primárním levým akcentem, bez zaoblení)
+- seznam vlastních upomínek na celou šířku bez bočních okrajů a zaoblení, odstranění tlačítka smazání z řádku
+- v detailu vlastního seznamu v záhlaví doplněno zobrazení počtu příspěvků a dvoudotykové smazání celého seznamu (DoubleTapDeleteButton s ikonami koše a potvrzení)
+- podpora vlastních offline seznamů upomínek s možností uložení z pošty i diskuzí
 - barevné odlišení zvonečku na hlavičce příspěvku: primární barva pro serverové upomínky Nyxu, sekundární barva pro vlastní offline seznamy
 - klepnutí na aktivní zvoneček odebere příspěvek z upomínek / vlastních seznamů
 

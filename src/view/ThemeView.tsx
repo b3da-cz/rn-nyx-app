@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import { ScrollView, ToastAndroid, View } from 'react-native'
+import { Appearance, ScrollView, ToastAndroid, View } from 'react-native'
 import Clipboard from '@react-native-clipboard/clipboard'
-import { FAB } from 'react-native-paper'
+import { FAB, Provider as PaperProvider } from 'react-native-paper'
 import {
   androidStackBottomInset,
   ComponentExamplesComponent,
@@ -16,6 +16,7 @@ import {
   Storage,
   t,
   Theme,
+  ThemeContext,
   IBMColorPalette,
   createTheme,
   Nyx,
@@ -25,38 +26,73 @@ import {
 type Props = {
   config: any
   onConfigChange: Function
+  navigation?: any
 }
 type State = {
   theme: Theme
   themeOptions: ThemeOptions
   selectedTheme: string
 }
-export class ThemeView extends Component<Props> {
+export class ThemeView extends Component<Props, State> {
   static contextType = MainContext
+  context!: React.ContextType<typeof MainContext>
   nyx?: Nyx
-  state: Readonly<Partial<State>> = {}
+  hasChanges = false
+  unsubscribeBlur?: () => void
+
   constructor(props) {
     super(props)
-    this.loadSettings()
+    const config = props.config
+    const themeOptions = config?.themeOptions || { ...defaultThemeOptions }
+    const selectedTheme = config?.theme || 'system'
+    const isDark =
+      selectedTheme === 'system'
+        ? Appearance.getColorScheme() === 'dark'
+        : selectedTheme === 'dark'
+    this.state = {
+      themeOptions,
+      selectedTheme,
+      theme: createTheme({ ...themeOptions, isDarkTheme: isDark }),
+    }
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this.nyx = this.context.nyx
-    this.setTheme()
+    if (!this.props.config) {
+      const conf = await Storage.getConfig()
+      if (conf) {
+        const themeOptions = conf.themeOptions || { ...defaultThemeOptions }
+        const selectedTheme = conf.theme || 'system'
+        this.updatePreview(themeOptions, selectedTheme)
+      }
+    }
+    if (this.props.navigation?.addListener) {
+      this.unsubscribeBlur = this.props.navigation.addListener('beforeRemove', () => {
+        if (this.hasChanges) {
+          this.hasChanges = false
+          this.props.onConfigChange?.()
+        }
+      })
+    }
   }
 
-  // componentWillUnmount() {
-  //   this.props.onConfigChange()
-  // }
-
-  setTheme() {
-    this.setState({ theme: this.context.theme })
+  componentWillUnmount() {
+    if (this.unsubscribeBlur) {
+      this.unsubscribeBlur()
+    }
+    if (this.hasChanges) {
+      this.hasChanges = false
+      this.props.onConfigChange?.()
+    }
   }
 
-  previewTheme() {
-    const params = this.state && this.state.themeOptions ? this.state.themeOptions : { ...defaultThemeOptions }
-    const theme = createTheme(params)
-    this.setState({ theme })
+  updatePreview(themeOptions: ThemeOptions, selectedTheme: string) {
+    const isDark =
+      selectedTheme === 'system'
+        ? Appearance.getColorScheme() === 'dark'
+        : selectedTheme === 'dark'
+    const theme = createTheme({ ...themeOptions, isDarkTheme: isDark })
+    this.setState({ themeOptions, selectedTheme, theme })
   }
 
   exportTheme() {
@@ -66,34 +102,23 @@ export class ThemeView extends Component<Props> {
     ToastAndroid.showWithGravity(t('coppied'), ToastAndroid.LONG, ToastAndroid.BOTTOM)
   }
 
-  async loadSettings() {
-    let { config } = this.props
-    if (!config) {
-      config = await Storage.getConfig()
-    }
-    this.state = {
-      themeOptions: config?.themeOptions || { ...defaultThemeOptions },
-      selectedTheme: config?.theme || 'system',
-    }
-  }
-
   async setSelectedTheme(theme: string) {
-    const conf = await Storage.getConfig()
-    this.setState({ selectedTheme: theme })
+    this.hasChanges = true
+    const themeOptions = this.state.themeOptions || { ...defaultThemeOptions }
+    this.updatePreview(themeOptions, theme)
+    const conf = (await Storage.getConfig()) || {}
     conf.theme = theme
     await Storage.setConfig(conf)
-    this.props.onConfigChange()
   }
 
   async setThemeOption(key, val) {
-    const conf = await Storage.getConfig()
-    const themeOptions = this.state && this.state.themeOptions ? this.state.themeOptions : { ...defaultThemeOptions }
-    themeOptions[key] = val
-    this.setState({ themeOptions })
+    this.hasChanges = true
+    const themeOptions = { ...(this.state.themeOptions || defaultThemeOptions), [key]: val }
+    const selectedTheme = this.state.selectedTheme || 'system'
+    this.updatePreview(themeOptions, selectedTheme)
+    const conf = (await Storage.getConfig()) || {}
     conf.themeOptions = themeOptions
     await Storage.setConfig(conf)
-    // this.previewTheme()
-    this.props.onConfigChange()
   }
 
   render() {
@@ -104,7 +129,10 @@ export class ThemeView extends Component<Props> {
     const palette = ['blue', 'cyan', 'coolGray', 'green', 'magenta', 'purple', 'red', 'teal']
     const fontSizes = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     return (
-      <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
+      <ThemeContext.Provider value={theme}>
+        <MainContext.Provider value={{ ...this.context, theme }}>
+          <PaperProvider theme={theme}>
+            <View style={{ backgroundColor: theme.colors.background, height: '100%' }}>
         <ScrollView style={{ backgroundColor: theme.colors.background }}>
           <View style={{ height: theme.metrics.blocks.rowDiscussion + 33 }}>
             <View style={{ flexDirection: 'row' }}>
@@ -223,7 +251,10 @@ export class ThemeView extends Component<Props> {
             />
           )}
         </SafeBottom>
-      </View>
+            </View>
+          </PaperProvider>
+        </MainContext.Provider>
+      </ThemeContext.Provider>
     )
   }
 }

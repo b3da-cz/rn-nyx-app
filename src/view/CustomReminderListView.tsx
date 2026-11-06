@@ -2,9 +2,8 @@ import React, { Component } from 'react'
 import { FlatList, View } from 'react-native'
 import { Text, TouchableRipple } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/Feather'
-import { PostComponent, StackHeaderComponent } from '../component'
+import { DoubleTapDeleteButton, PostComponent, StackHeaderComponent } from '../component'
 import {
-  confirm,
   CustomReminderList,
   deleteCustomReminderList,
   galleryImagesFromPosts,
@@ -32,6 +31,7 @@ type State = {
 
 export class CustomReminderListView extends Component<Props> {
   static contextType = MainContext
+  context!: React.ContextType<typeof MainContext>
   state: Readonly<State>
   nyx?: Nyx
   unsubscribeCustomReminders?: () => void
@@ -84,17 +84,11 @@ export class CustomReminderListView extends Component<Props> {
     }
   }
 
-  async onDeleteList() {
+  async deleteList() {
     const listId = this.state.list?.id || this.props.route?.params?.listId
     if (!listId) return
-    const ok = await confirm(
-      t('reminders.deleteList') || 'Smazat seznam',
-      t('reminders.deleteListConfirm') || 'Opravdu chcete smazat tento seznam?',
-    )
-    if (ok) {
-      await deleteCustomReminderList(listId)
-      this.props.navigation.goBack()
-    }
+    await deleteCustomReminderList(listId)
+    this.props.navigation.goBack()
   }
 
   showPost(discussionId: number, postId: number) {
@@ -147,12 +141,18 @@ export class CustomReminderListView extends Component<Props> {
           back={{ title: '' }}
           theme={theme}
           right={
-            <TouchableRipple
-              onPress={() => this.onDeleteList()}
-              rippleColor={colors.ripple}
-              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="trash-2" size={20} color={colors.disabled || '#888'} />
-            </TouchableRipple>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: colors.faded || '#888', fontSize: fontSizes.small, marginRight: 4 }}>
+                {posts.length} {posts.length === 1 ? 'příspěvek' : posts.length >= 2 && posts.length <= 4 ? 'příspěvky' : 'příspěvků'}
+              </Text>
+              <DoubleTapDeleteButton
+                flat
+                iconSize={18}
+                iconColor={colors.disabled || '#888'}
+                onDelete={() => this.deleteList()}
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+              />
+            </View>
           }
         />
         <FlatList

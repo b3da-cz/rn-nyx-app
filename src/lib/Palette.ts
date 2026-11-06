@@ -140,7 +140,7 @@ export const createPalette = (
   ripple: withAlpha(IBMColorPalette[`${primaryColor}${isDarkTheme ? '50' : '60'}`], 0.4),
   row:
     surfaceColor === undefined
-      ? undefined
+      ? IBMColorPalette[`coolGray${isDarkTheme ? '100' : '10'}`]
       : IBMColorPalette[
           `${surfaceColor}${surfaceColor !== 'black' && surfaceColor !== 'white' ? (isDarkTheme ? '100' : '10') : ''}`
         ],

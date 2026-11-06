@@ -119,9 +119,9 @@ const Settings = ({ navigation }) => {
   )
 }
 
-const ThemeScreen = () => {
+const ThemeScreen = ({ navigation }) => {
   const { config } = useContext(MainContext)
-  return <ThemeView config={config} onConfigChange={() => routerHandlers.onConfigReload()} />
+  return <ThemeView navigation={navigation} config={config} onConfigChange={() => routerHandlers.onConfigReload()} />
 }
 
 const TabContainer = ({ navigation }) => {

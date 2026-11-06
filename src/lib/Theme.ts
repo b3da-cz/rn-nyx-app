@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { createContext, useContext, useEffect } from 'react'
 import { Dimensions } from 'react-native'
 import { DefaultTheme as rnnDefaultTheme, useTheme as rnnUseTheme } from '@react-navigation/native'
 import { createPalette } from './Palette'
@@ -94,7 +94,7 @@ export const createTheme = ({
 }: ThemeInit): Theme => ({
   animation: { scale: animationScale },
   colors: createPalette(isDarkTheme, primaryColor, secondaryColor, tertiaryColor, surfaceColor, backgroundColor),
-  dark: true,
+  dark: Boolean(isDarkTheme),
   fonts: {
     light: { fontFamily: 'sans-serif-light', fontWeight: 'normal' },
     medium: { fontFamily: 'Verdana', fontWeight: 'normal' },
@@ -131,10 +131,16 @@ export const createTheme = ({
   roundness,
 })
 
+export const ThemeContext = createContext<Theme | null>(null)
+
 // react-navigation v7 throws outside NavigationContainer; v5 returned its default theme.
 // Restore the v5 behavior for components rendered outside the container (Loader, Login),
 // which detect the incomplete theme and fall back to their theme prop.
 export const useTheme = (): Theme => {
+  const localTheme = useContext(ThemeContext)
+  if (localTheme?.colors) {
+    return localTheme
+  }
   try {
     return <Theme>rnnUseTheme()
   } catch (e) {
