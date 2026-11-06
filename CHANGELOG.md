@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.10
+- redesign obrazovky Upomínky: horní navigační záložky pro Poštu, Diskuze a Vlastní offline seznamy
+- podpora vlastních offline seznamů upomínek (vytvoření nového seznamu přes FAB +, zobrazení názvu, počtu příspěvků, data vytvoření a úpravy, řazení dle naposledy upravených)
+- samostatné zobrazení detailu vlastního seznamu s příspěvky ve FlatListu (včetně možnosti odebrání příspěvku či smazání celého seznamu)
+- dialog výběru cíle při přidání příspěvku do upomínek: primární tlačítko pro uložení na Nyx (pošta/diskuze) a scrollovatelný výběr vlastních offline seznamů
+- barevné odlišení zvonečku na hlavičce příspěvku: primární barva pro serverové upomínky Nyxu, sekundární barva pro vlastní offline seznamy
+- klepnutí na aktivní zvoneček odebere příspěvek z upomínek / vlastních seznamů
+
 ## 0.39.9
 - oprava sčítání objemu síťových dat při načítání diskuze (průběžné kumulativní sčítání napříč všemi dávkami načítání i hlavičkou bez resetu souhrnu na nulu)
 - odstranění problematických LayoutAnimation přechodů z progress panelu načítání, pošty a upomínek (oprava náhodného ztmavování a zasekávání průhlednosti textu na Androidu)

@@ -32,6 +32,8 @@ import {
   pollIsClosed,
   promptTextFile,
   searchMatchRanges,
+  isPostInCustomReminders,
+  subscribeCustomReminders,
 } from '../lib'
 import { postCanFormatMarkdown, splitPostFlow } from '../lib/postMarkdown'
 
@@ -65,22 +67,46 @@ type State = {
   isFetching: boolean
   ratings: any
   markdownRaw: boolean
+  isCustomReminded: boolean
 }
 export class PostComponent extends Component<Props> {
   static contextType = MainContext
   state: Readonly<State>
+  unsubscribeCustomReminders?: () => void
   constructor(props) {
     super(props)
     this.state = {
       isFetching: false,
       ratings: {},
       markdownRaw: false,
+      isCustomReminded: isPostInCustomReminders(props.post?.id),
+    }
+  }
+
+  componentDidMount() {
+    this.unsubscribeCustomReminders = subscribeCustomReminders(() => {
+      const isCustomReminded = isPostInCustomReminders(this.props.post?.id)
+      if (isCustomReminded !== this.state.isCustomReminded) {
+        this.setState({ isCustomReminded })
+      }
+    })
+  }
+
+  componentWillUnmount() {
+    if (this.unsubscribeCustomReminders) {
+      this.unsubscribeCustomReminders()
     }
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.post?.id !== this.props.post?.id && this.state.markdownRaw) {
-      this.setState({ markdownRaw: false })
+    if (prevProps.post?.id !== this.props.post?.id) {
+      if (this.state.markdownRaw) {
+        this.setState({ markdownRaw: false })
+      }
+      const isCustomReminded = isPostInCustomReminders(this.props.post?.id)
+      if (isCustomReminded !== this.state.isCustomReminded) {
+        this.setState({ isCustomReminded })
+      }
     }
   }
 
@@ -90,6 +116,7 @@ export class PostComponent extends Component<Props> {
       this.props.isUnread !== nextProps.isUnread ||
       this.props.post.rating !== nextProps.post.rating ||
       this.props.post.reminder !== nextProps.post.reminder ||
+      this.state.isCustomReminded !== nextState.isCustomReminded ||
       this.props.post.id !== nextProps.post.id ||
       this.props.post.content !== nextProps.post.content ||
       this.props.post.content_raw !== nextProps.post.content_raw ||
@@ -502,6 +529,7 @@ export class PostComponent extends Component<Props> {
               typeof this.props.onReminder === 'function' ? this.props.onReminder(p, isReminder) : null
             }
             isLocalLastRead={!!this.props.isLocalLastRead}
+            isCustomReminded={this.state.isCustomReminded}
             onSetLastRead={p => (typeof this.props.onSetLastRead === 'function' ? this.props.onSetLastRead(p) : null)}
             onSwipe={isSwiping =>
               typeof this.props.onHeaderSwipe === 'function' ? this.props.onHeaderSwipe(isSwiping) : null
@@ -516,6 +544,8 @@ export class PostComponent extends Component<Props> {
             isUnread={!!this.props.isUnread}
             isInteractive={!!this.props.isHeaderInteractive}
             isLocalLastRead={!!this.props.isLocalLastRead}
+            isCustomReminded={this.state.isCustomReminded}
+            mailMode={!!this.props.mailMode}
             onSetLastRead={p => (typeof this.props.onSetLastRead === 'function' ? this.props.onSetLastRead(p) : null)}
             onReply={(discussionId, postId, username) =>
               typeof this.props.onReply === 'function' ? this.props.onReply(discussionId, postId, username) : null

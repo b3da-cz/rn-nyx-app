@@ -22,6 +22,7 @@ type Props = {
   setLastRead?: Function
   reportPost: Function
   isLocalLastRead?: boolean
+  isCustomReminded?: boolean
 }
 export const PostHeaderCommonComponent: React.FC<Props> = ({
   post,
@@ -31,6 +32,7 @@ export const PostHeaderCommonComponent: React.FC<Props> = ({
   isUnread,
   isInteractive,
   isLocalLastRead,
+  isCustomReminded,
   getRating,
   showReplies,
   setReminder,
@@ -116,12 +118,12 @@ export const PostHeaderCommonComponent: React.FC<Props> = ({
             ratingsNegative={ratings?.negative || []}
           />
         )}
-        {post.reminder && (
+        {(post.reminder || isCustomReminded) && (
           <ButtonSquareComponent
             icon={'bell'}
             width={20}
             height={40}
-            color={post.reminder ? colors.primary : undefined}
+            color={post.reminder ? colors.primary : colors.secondary}
             onPress={() => setReminder(post)}
           />
         )}

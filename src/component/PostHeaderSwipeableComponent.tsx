@@ -5,8 +5,19 @@ import { Swipeable } from 'react-native-gesture-handler'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
 import { RNNotificationBanner } from 'react-native-notification-banner'
-import { ButtonSquareComponent, confirm, RatingDetailComponent } from '../component'
-import { LayoutAnimConf, MainContext, Nyx, isLocalLastReadEnabled, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
+import { ButtonSquareComponent, confirm, RatingDetailComponent, ReminderTargetDialog } from '../component'
+import {
+  addPostToCustomList,
+  isLocalLastReadEnabled,
+  LayoutAnimConf,
+  MainContext,
+  Nyx,
+  removePostFromAllCustomLists,
+  rgbToHex,
+  showNotificationBanner,
+  t,
+  Theme,
+} from '../lib'
 import { PostHeaderCommonComponent } from './PostHeaderCommonComponent'
 
 type Props = {
@@ -18,6 +29,7 @@ type Props = {
   isInteractive: boolean
   isPressable: boolean
   isLocalLastRead?: boolean
+  isCustomReminded?: boolean
   onPress?: Function
   onReply?: Function
   onRepliesShow?: Function
@@ -31,6 +43,7 @@ type Props = {
 type State = {
   isFetching: boolean
   isRatingRowVisible: boolean
+  isReminderDialogOpen: boolean
   ratings: {
     positive: any[]
     negative: any[]
@@ -50,6 +63,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
     this.state = {
       isFetching: false,
       isRatingRowVisible: false,
+      isReminderDialogOpen: false,
       ratings: {
         positive: [],
         negative: [],
@@ -161,13 +175,45 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
   }
 
   async setReminder(post) {
-    if (this.props.mailMode) {
-      await this.props.nyx.api.setReminder(0, post.id, !post.reminder)
+    const isCustom = Boolean(this.props.isCustomReminded)
+    if (post.reminder || isCustom) {
+      if (post.reminder) {
+        if (this.props.mailMode || post.location === 'mail' || !post.discussion_id) {
+          await this.props.nyx.api.setReminder(0, post.id, false)
+        } else {
+          await this.props.nyx.api.setReminder(post.discussion_id, post.id, false)
+        }
+        post.reminder = false
+      }
+      if (isCustom) {
+        await removePostFromAllCustomLists(post.id)
+      }
+      this.refSwipeable?.close()
+      typeof this.props.onReminder === 'function' ? this.props.onReminder(post, false) : null
+      this.forceUpdate()
     } else {
-      await this.props.nyx.api.setReminder(post.discussion_id, post.id, !post.reminder)
+      this.refSwipeable?.close()
+      this.setState({ isReminderDialogOpen: true })
     }
-    this.refSwipeable?.close()
-    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
+  }
+
+  async onSaveNyxReminder(post) {
+    if (this.props.mailMode || post.location === 'mail' || !post.discussion_id) {
+      await this.props.nyx.api.setReminder(0, post.id, true)
+    } else {
+      await this.props.nyx.api.setReminder(post.discussion_id, post.id, true)
+    }
+    post.reminder = true
+    this.setState({ isReminderDialogOpen: false })
+    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, true) : null
+    this.forceUpdate()
+  }
+
+  async onSaveCustomReminder(listId: string, post) {
+    await addPostToCustomList(listId, post)
+    this.setState({ isReminderDialogOpen: false })
+    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, true) : null
+    this.forceUpdate()
   }
 
   setLocalLastRead(post) {
@@ -233,7 +279,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
             key={`${post.id}_btn_remind`}
             icon={'bell'}
             rectButton
-            color={post.reminder ? colors.primary : undefined}
+            color={post.reminder ? colors.primary : this.props.isCustomReminded ? colors.secondary : undefined}
             onPress={() => this.setReminder(post)}
           />,
           <ButtonSquareComponent
@@ -322,12 +368,12 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
                         rectButton
                         onPress={() => this.onShare()}
                       />,
-                      post.can_be_reminded && (
+                      (post.can_be_reminded || this.props.isCustomReminded || post.reminder) && (
                         <ButtonSquareComponent
                           key={`${post.id}_btn_remind`}
                           icon={'bell'}
                           rectButton
-                          color={post.reminder ? colors.primary : undefined}
+                          color={post.reminder ? colors.primary : this.props.isCustomReminded ? colors.secondary : undefined}
                           onPress={() => this.setReminder(post)}
                         />
                       ),
@@ -400,6 +446,7 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
               isUnread={this.props.isUnread}
               isInteractive={this.props.isInteractive}
               isLocalLastRead={this.props.isLocalLastRead}
+              isCustomReminded={this.props.isCustomReminded}
               getRating={p => this.getRating(p)}
               showReplies={p => this.showReplies(p)}
               setReminder={p => this.setReminder(p)}
@@ -422,6 +469,17 @@ export class PostHeaderSwipeableComponent extends Component<Props> {
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
             isPositive={false}
+          />
+        )}
+        {this.state.isReminderDialogOpen && (
+          <ReminderTargetDialog
+            visible={this.state.isReminderDialogOpen}
+            post={post}
+            mailMode={this.props.mailMode || post.location === 'mail'}
+            theme={this.props.theme}
+            onDismiss={() => this.setState({ isReminderDialogOpen: false })}
+            onSaveToNyx={() => this.onSaveNyxReminder(post)}
+            onSaveToCustomList={listId => this.onSaveCustomReminder(listId, post)}
           />
         )}
       </View>

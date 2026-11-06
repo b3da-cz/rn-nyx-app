@@ -1,0 +1,221 @@
+import React, { FC, useEffect, useState } from 'react'
+import { ScrollView, View } from 'react-native'
+import { Button, Dialog, Portal, Text, TouchableRipple } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/Feather'
+import {
+  CustomReminderList,
+  getCustomReminderLists,
+  subscribeCustomReminders,
+  t,
+  Theme,
+  useTheme,
+} from '../lib'
+
+type Props = {
+  visible: boolean
+  post: any
+  mailMode?: boolean
+  theme?: Theme
+  onDismiss: () => void
+  onSaveToNyx: () => void
+  onSaveToCustomList: (listId: string) => void
+}
+
+export const ReminderTargetDialog: FC<Props> = ({
+  visible,
+  post,
+  mailMode,
+  theme: themeProp,
+  onDismiss,
+  onSaveToNyx,
+  onSaveToCustomList,
+}) => {
+  const hookTheme = useTheme()
+  const theme = themeProp || hookTheme
+  const colors = theme?.colors || ({} as any)
+  const fontSizes = theme?.metrics?.fontSizes || { h3: 16, p: 14, small: 12 }
+  const [lists, setLists] = useState<CustomReminderList[]>([])
+
+  useEffect(() => {
+    if (!visible) return
+    let active = true
+    getCustomReminderLists().then(loaded => {
+      if (active) setLists(loaded)
+    })
+    const unsub = subscribeCustomReminders(() => {
+      getCustomReminderLists().then(loaded => {
+        if (active) setLists(loaded)
+      })
+    })
+    return () => {
+      active = false
+      unsub()
+    }
+  }, [visible])
+
+  if (!visible || !post) return null
+
+  const isMail = Boolean(mailMode || post.location === 'mail' || !post.discussion_id)
+  const nyxLabel = isMail
+    ? t('reminders.saveToNyxMail') || 'Uložit do pošty na Nyxu'
+    : t('reminders.saveToNyxDiscussion') || 'Uložit do diskuzí na Nyxu'
+
+  return (
+    <Portal>
+      <Dialog
+        visible={visible}
+        onDismiss={onDismiss}
+        style={{
+          backgroundColor: colors.surface || '#222426',
+          borderRadius: 6,
+          marginHorizontal: 16,
+          overflow: 'hidden',
+          maxHeight: '85%',
+        }}>
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.card || '#2a2b2e',
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            borderBottomWidth: 0.5,
+            borderBottomColor: colors.border || '#333',
+          }}>
+          <Icon name="bell" size={18} color={colors.primary || '#d32f2f'} style={{ marginRight: 10 }} />
+          <Text style={{ flex: 1, color: colors.text, fontSize: fontSizes.h3, fontWeight: 'bold' }}>
+            {t('reminders.targetDialogTitle') || 'Přidat do připomínek'}
+          </Text>
+          <TouchableRipple onPress={onDismiss} style={{ padding: 4 }}>
+            <Icon name="x" size={18} color={colors.disabled || '#888'} />
+          </TouchableRipple>
+        </View>
+
+        <Dialog.Content style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 }}>
+          {/* Top Primary Button: Nyx Reminders */}
+          <TouchableRipple
+            onPress={onSaveToNyx}
+            rippleColor={colors.ripple}
+            style={{
+              backgroundColor: colors.primary || '#d32f2f',
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              borderRadius: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 14,
+            }}>
+            <>
+              <Icon name="bell" size={18} color="#FFFFFF" style={{ marginRight: 10 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: fontSizes.p, fontWeight: '700' }}>
+                {nyxLabel}
+              </Text>
+            </>
+          </TouchableRipple>
+
+          {/* Section Divider / Label */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border || '#333' }} />
+            <Text
+              style={{
+                color: colors.faded || '#888',
+                fontSize: fontSizes.small,
+                fontWeight: '600',
+                marginHorizontal: 10,
+                textTransform: 'uppercase',
+              }}>
+              {t('reminders.saveToCustom') || 'Uložit do vlastního seznamu'}
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border || '#333' }} />
+          </View>
+
+          {/* Custom Lists List or Empty State */}
+          {lists.length > 0 ? (
+            <ScrollView style={{ maxHeight: 240 }} nestedScrollEnabled>
+              {lists.map(list => {
+                const count = list.posts?.length || 0
+                return (
+                  <TouchableRipple
+                    key={list.id}
+                    onPress={() => onSaveToCustomList(list.id)}
+                    rippleColor={colors.ripple}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      backgroundColor: colors.row || '#1a1b1d',
+                      borderLeftWidth: 3,
+                      borderLeftColor: colors.secondary || '#4dabf7',
+                      borderRadius: 4,
+                      marginBottom: 8,
+                    }}>
+                    <>
+                      <Icon
+                        name="bookmark"
+                        size={18}
+                        color={colors.secondary || '#4dabf7'}
+                        style={{ marginRight: 12 }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          numberOfLines={1}
+                          style={{ color: colors.text, fontSize: fontSizes.p, fontWeight: 'bold' }}>
+                          {list.name}
+                        </Text>
+                        <Text style={{ color: colors.faded || '#888', fontSize: fontSizes.small, marginTop: 2 }}>
+                          {count} {count === 1 ? 'příspěvek' : count >= 2 && count <= 4 ? 'příspěvky' : 'příspěvků'}
+                        </Text>
+                      </View>
+                      <Icon name="plus" size={18} color={colors.secondary || '#4dabf7'} />
+                    </>
+                  </TouchableRipple>
+                )
+              })}
+            </ScrollView>
+          ) : (
+            <View
+              style={{
+                padding: 14,
+                backgroundColor: colors.card || '#2a2b2e',
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: colors.border || '#333',
+                marginBottom: 8,
+                alignItems: 'center',
+              }}>
+              <Icon name="info" size={24} color={colors.secondary || '#4dabf7'} style={{ marginBottom: 8 }} />
+              <Text
+                style={{
+                  color: colors.text,
+                  fontSize: fontSizes.p,
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  marginBottom: 4,
+                }}>
+                {t('reminders.noCustomLists') || 'Nemáte žádné vlastní seznamy'}
+              </Text>
+              <Text
+                style={{
+                  color: colors.faded || '#888',
+                  fontSize: fontSizes.small,
+                  textAlign: 'center',
+                }}>
+                {t('reminders.noCustomListsHint') ||
+                  'Můžete je vytvořit v záložce Připomínky > Vlastní.'}
+              </Text>
+            </View>
+          )}
+        </Dialog.Content>
+
+        <Dialog.Actions style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+          <Button onPress={onDismiss} color={colors.faded || '#888'}>
+            {t('cancel') || 'Zrušit'}
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  )
+}

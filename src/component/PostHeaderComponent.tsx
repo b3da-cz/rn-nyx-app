@@ -3,8 +3,19 @@ import { LayoutAnimation, ToastAndroid, View } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 import Share from 'react-native-share'
-import { ButtonSquareComponent, confirm, RatingDetailComponent } from '../component'
-import { LayoutAnimConf, MainContext, Nyx, isLocalLastReadEnabled, rgbToHex, showNotificationBanner, t, Theme } from '../lib'
+import { ButtonSquareComponent, confirm, RatingDetailComponent, ReminderTargetDialog } from '../component'
+import {
+  addPostToCustomList,
+  isLocalLastReadEnabled,
+  LayoutAnimConf,
+  MainContext,
+  Nyx,
+  removePostFromAllCustomLists,
+  rgbToHex,
+  showNotificationBanner,
+  t,
+  Theme,
+} from '../lib'
 import { PostHeaderCommonComponent } from './PostHeaderCommonComponent'
 
 type Props = {
@@ -15,6 +26,8 @@ type Props = {
   isUnread: boolean
   isInteractive: boolean
   isLocalLastRead?: boolean
+  isCustomReminded?: boolean
+  mailMode?: boolean
   onReply?: Function
   onRepliesShow?: Function
   onDelete: Function
@@ -26,6 +39,7 @@ type State = {
   areButtonsVisible: boolean
   isFetching: boolean
   isRatingRowVisible: boolean
+  isReminderDialogOpen: boolean
   ratings: {
     positive: any[]
     negative: any[]
@@ -44,6 +58,7 @@ export class PostHeaderComponent extends Component<Props> {
       areButtonsVisible: false,
       isFetching: false,
       isRatingRowVisible: false,
+      isReminderDialogOpen: false,
       ratings: {
         positive: [],
         negative: [],
@@ -124,9 +139,44 @@ export class PostHeaderComponent extends Component<Props> {
   }
 
   async setReminder(post) {
-    await this.props.nyx.api.setReminder(post.discussion_id, post.id, !post.reminder)
-    this.toggleButtons(false)
-    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, !post.reminder) : null
+    const isCustom = Boolean(this.props.isCustomReminded)
+    if (post.reminder || isCustom) {
+      if (post.reminder) {
+        if (this.props.mailMode || post.location === 'mail' || !post.discussion_id) {
+          await this.props.nyx.api.setReminder(0, post.id, false)
+        } else {
+          await this.props.nyx.api.setReminder(post.discussion_id, post.id, false)
+        }
+        post.reminder = false
+      }
+      if (isCustom) {
+        await removePostFromAllCustomLists(post.id)
+      }
+      this.toggleButtons(false)
+      typeof this.props.onReminder === 'function' ? this.props.onReminder(post, false) : null
+      this.forceUpdate()
+    } else {
+      this.setState({ isReminderDialogOpen: true })
+    }
+  }
+
+  async onSaveNyxReminder(post) {
+    if (this.props.mailMode || post.location === 'mail' || !post.discussion_id) {
+      await this.props.nyx.api.setReminder(0, post.id, true)
+    } else {
+      await this.props.nyx.api.setReminder(post.discussion_id, post.id, true)
+    }
+    post.reminder = true
+    this.setState({ isReminderDialogOpen: false, areButtonsVisible: false })
+    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, true) : null
+    this.forceUpdate()
+  }
+
+  async onSaveCustomReminder(listId: string, post) {
+    await addPostToCustomList(listId, post)
+    this.setState({ isReminderDialogOpen: false, areButtonsVisible: false })
+    typeof this.props.onReminder === 'function' ? this.props.onReminder(post, true) : null
+    this.forceUpdate()
   }
 
   setLocalLastRead(post) {
@@ -196,7 +246,7 @@ export class PostHeaderComponent extends Component<Props> {
     if (!post.parsed?.advertisement) {
       visibleBtns++
     }
-    if (post.can_be_reminded) {
+    if (post.can_be_reminded || this.props.isCustomReminded || post.reminder) {
       visibleBtns++
     }
     if (showLocalLastRead) {
@@ -231,6 +281,7 @@ export class PostHeaderComponent extends Component<Props> {
                 isUnread={this.props.isUnread}
                 isInteractive={this.props.isInteractive}
                 isLocalLastRead={this.props.isLocalLastRead}
+                isCustomReminded={this.props.isCustomReminded}
                 getRating={p => this.getRating(p)}
                 showReplies={p => this.showReplies(p)}
                 setReminder={p => this.setReminder(p)}
@@ -282,13 +333,13 @@ export class PostHeaderComponent extends Component<Props> {
                 icon={'share'}
                 onPress={() => this.onShare()}
               />
-              {post.can_be_reminded && (
+              {(post.can_be_reminded || this.props.isCustomReminded || post.reminder) && (
                 <ButtonSquareComponent
                   key={`${post.id}_btn_remind`}
                   width={btnWidth}
                   height={buttonHeight}
                   icon={'bell'}
-                  color={post.reminder ? colors.primary : undefined}
+                  color={post.reminder ? colors.primary : this.props.isCustomReminded ? colors.secondary : undefined}
                   onPress={() => this.setReminder(post)}
                 />
               )}
@@ -356,6 +407,17 @@ export class PostHeaderComponent extends Component<Props> {
             ratingWidth={this.state.ratingWidth}
             ratingHeight={this.state.ratingHeight}
             isPositive={false}
+          />
+        )}
+        {this.state.isReminderDialogOpen && (
+          <ReminderTargetDialog
+            visible={this.state.isReminderDialogOpen}
+            post={post}
+            mailMode={this.props.mailMode || post.location === 'mail'}
+            theme={this.props.theme}
+            onDismiss={() => this.setState({ isReminderDialogOpen: false })}
+            onSaveToNyx={() => this.onSaveNyxReminder(post)}
+            onSaveToCustomList={listId => this.onSaveCustomReminder(listId, post)}
           />
         )}
       </View>

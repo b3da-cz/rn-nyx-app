@@ -68,6 +68,7 @@ const StorageKeys = {
   localLastRead: 'localLastRead',
   llmClubPrompts: 'llmClubPrompts',
   llmClubDateFilters: 'llmClubDateFilters',
+  customReminders: 'customReminders',
 }
 
 const set = async (key: string, value: any) => {
@@ -203,6 +204,12 @@ const getLocalLastReadStore = async (): Promise<Record<string, number>> =>
 
 const setLocalLastReadStore = async (store: Record<string, number>) =>
   set(StorageKeys.localLastRead, store)
+
+const getCustomRemindersStore = async (): Promise<any[]> =>
+  (await get(StorageKeys.customReminders)) || []
+
+const setCustomRemindersStore = async (lists: any[]) =>
+  set(StorageKeys.customReminders, lists)
 
 const readRawStorageItem = async (key: string, retries = 1): Promise<string | null> => {
   if (mmkvInstance) {
@@ -521,6 +528,8 @@ export const Storage = {
   setMessageDrafts,
   getLocalLastReadStore,
   setLocalLastReadStore,
+  getCustomRemindersStore,
+  setCustomRemindersStore,
   getLlmClubPrompt,
   setLlmClubPrompt,
   getLlmClubDateFilter,

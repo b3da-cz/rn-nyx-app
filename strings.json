@@ -273,6 +273,86 @@
     "inDiscussions": {
       "cs": "V klubech",
       "en": "In topics"
+    },
+    "tabMail": {
+      "cs": "Pošta",
+      "en": "Mail"
+    },
+    "tabDiscussions": {
+      "cs": "Diskuze",
+      "en": "Discussions"
+    },
+    "tabCustom": {
+      "cs": "Vlastní",
+      "en": "Custom"
+    },
+    "customEmpty": {
+      "cs": "Zatím nemáte žádný vlastní seznam",
+      "en": "No custom lists yet"
+    },
+    "customEmptyDesc": {
+      "cs": "Klepněte na tlačítko + níže pro vytvoření nového seznamu",
+      "en": "Tap the + button below to create a new list"
+    },
+    "createList": {
+      "cs": "Vytvořit seznam",
+      "en": "Create list"
+    },
+    "listName": {
+      "cs": "Název seznamu",
+      "en": "List name"
+    },
+    "listNamePlaceholder": {
+      "cs": "Zadejte název seznamu...",
+      "en": "Enter list name..."
+    },
+    "postsCount": {
+      "cs": "příspěvků",
+      "en": "posts"
+    },
+    "created": {
+      "cs": "Vytvořeno",
+      "en": "Created"
+    },
+    "updated": {
+      "cs": "Upraveno",
+      "en": "Updated"
+    },
+    "deleteList": {
+      "cs": "Smazat seznam",
+      "en": "Delete list"
+    },
+    "deleteListConfirm": {
+      "cs": "Opravdu chcete smazat tento seznam?",
+      "en": "Are you sure you want to delete this list?"
+    },
+    "targetDialogTitle": {
+      "cs": "Přidat do připomínek",
+      "en": "Add to reminders"
+    },
+    "saveToNyx": {
+      "cs": "Uložit do připomínek na Nyxu",
+      "en": "Save to Nyx reminders"
+    },
+    "saveToNyxMail": {
+      "cs": "Uložit do pošty na Nyxu",
+      "en": "Save to Nyx mail"
+    },
+    "saveToNyxDiscussion": {
+      "cs": "Uložit do diskuzí na Nyxu",
+      "en": "Save to Nyx discussions"
+    },
+    "saveToCustom": {
+      "cs": "Uložit do vlastního seznamu",
+      "en": "Save to custom list"
+    },
+    "noCustomLists": {
+      "cs": "Nemáte žádné vlastní seznamy",
+      "en": "You have no custom lists"
+    },
+    "noCustomListsHint": {
+      "cs": "Můžete je vytvořit v záložce Připomínky > Vlastní.",
+      "en": "You can create them in Reminders > Custom."
     }
   },
   "discussionRequest": {
