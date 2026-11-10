@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.4
+- optimalizace paměti a odstranění postupného zpomalování aplikace (Hermes GC lag): zavedení pevných limitů pro paměťovou cache diskuzí (max 200 příspěvků a 10 stránek na klub s automatickým LRU odmazáváním neaktivních příspěvků a ořezáním mapy klubů v úložišti na 100 položek)
+
 ## 0.40.3
 - optimalizace paměti a odstranění prodlev v diskuzích: podmíněné renderování dialogů přes `<Portal>` (RatingDetailDialogComponent, SpoilerComponent a AttendeesDialog) pouze při jejich aktivním otevření namísto stovek trvale přítomných skrytých overlayů v kořenovém stromu
 

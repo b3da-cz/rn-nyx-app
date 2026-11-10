@@ -256,7 +256,24 @@ const readStoredJson = async key => {
 
 const clubStorageKey = (id: string | number) => `discussionCache:club:${id}`
 
+const MAX_SAVED_CLUB_MAP_SIZE = 100
+
 const lastSavedClubMap = new Map<string, any>()
+
+const pruneLastSavedClubMap = () => {
+  if (lastSavedClubMap.size <= MAX_SAVED_CLUB_MAP_SIZE) {
+    return
+  }
+  const overflow = lastSavedClubMap.size - MAX_SAVED_CLUB_MAP_SIZE
+  let count = 0
+  for (const key of lastSavedClubMap.keys()) {
+    lastSavedClubMap.delete(key)
+    count += 1
+    if (count >= overflow) {
+      break
+    }
+  }
+}
 
 const getCachedClub = async (id: string | number) => {
   const clubId = String(id || '')
@@ -266,6 +283,7 @@ const getCachedClub = async (id: string | number) => {
   const club = await readStoredJson(clubStorageKey(clubId))
   if (club && typeof club === 'object') {
     lastSavedClubMap.set(clubId, club)
+    pruneLastSavedClubMap()
     return club
   }
   return null
@@ -277,6 +295,7 @@ const setCachedClub = async (id: string | number, club: any) => {
     return
   }
   lastSavedClubMap.set(clubId, club)
+  pruneLastSavedClubMap()
   const key = clubStorageKey(clubId)
   const str = JSON.stringify(club)
   if (mmkvInstance) {
@@ -331,6 +350,7 @@ const getDiscussionCache = async () => {
       discussions.push({ id, openedAt: Number(item?.openedAt) || 0, posts: {}, pages: {} })
     }
   }
+  pruneLastSavedClubMap()
   return { discussions }
 }
 
@@ -372,6 +392,7 @@ const setDiscussionCache = async cache => {
         }
       }
     }
+    pruneLastSavedClubMap()
     const manifest = {
       sharded: true,
       index: discussions.map(club => ({

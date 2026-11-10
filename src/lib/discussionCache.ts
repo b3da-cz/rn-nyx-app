@@ -2,6 +2,8 @@ import { isPlaceholderImageSize } from './imageDownload'
 
 export const DISCUSSION_CACHE_LIMIT_DEFAULT = 30
 export const DISCUSSION_CACHE_LIMIT_MAX = 1000
+export const MAX_CACHED_PAGES_PER_CLUB = 10
+export const MAX_CACHED_POSTS_PER_CLUB = 200
 
 export type CachedImageLayout = {
   src: string
@@ -278,6 +280,47 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
     }
     stored[String(post.id)] = snapshotPostLayout(post)
   })
+
+  // Prune historical pages if they exceed limit
+  const specialPages = ['latest', 'header']
+  const otherPageKeys = Object.keys(pages).filter(k => !specialPages.includes(k))
+  const maxOtherPages = Math.max(1, MAX_CACHED_PAGES_PER_CLUB - specialPages.filter(k => pages[k]).length)
+  if (otherPageKeys.length > maxOtherPages) {
+    const toDrop = otherPageKeys.slice(0, otherPageKeys.length - maxOtherPages)
+    toDrop.forEach(k => {
+      delete pages[k]
+    })
+  }
+
+  // Prune posts not referenced by any kept page
+  const referencedIds = new Set<string>()
+  Object.values(pages).forEach(idList => {
+    if (Array.isArray(idList)) {
+      idList.forEach(id => referencedIds.add(String(id)))
+    }
+  })
+  Object.keys(stored).forEach(id => {
+    if (!referencedIds.has(id)) {
+      delete stored[id]
+    }
+  })
+
+  // Cap total posts per club if still exceeding limit
+  const storedIds = Object.keys(stored)
+  if (storedIds.length > MAX_CACHED_POSTS_PER_CLUB) {
+    storedIds.sort((a, b) => Number(b) - Number(a))
+    const dropIds = new Set(storedIds.slice(MAX_CACHED_POSTS_PER_CLUB))
+    dropIds.forEach(id => {
+      delete stored[id]
+    })
+    Object.keys(pages).forEach(key => {
+      const list = pages[key] || []
+      if (list.some(id => dropIds.has(id))) {
+        pages[key] = list.filter(id => !dropIds.has(id))
+      }
+    })
+  }
+
   return { ...entry, posts: stored, pages }
 }
 
