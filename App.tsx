@@ -2,7 +2,7 @@
  * @format
  * @flow
  */
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { Linking, LogBox, Platform, StatusBar, ToastAndroid, UIManager, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -413,7 +413,14 @@ const App: () => ReactNode = () => {
     init()
   }
 
-  const theme = createTheme({ ...config.themeOptions, isDarkTheme: themeType === 'dark' })
+  const theme = useMemo(
+    () => createTheme({ ...config.themeOptions, isDarkTheme: themeType === 'dark' }),
+    [config.themeOptions, themeType],
+  )
+  const mainContextValue = useMemo(
+    () => ({ config, nyx, filters, blockedUsers, theme, refs }),
+    [config, nyx, filters, blockedUsers, theme, refs],
+  )
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
@@ -427,7 +434,7 @@ const App: () => ReactNode = () => {
           <ThemeContext.Provider value={theme}>
             {!isAppLoaded && <LoaderComponent theme={theme} />}
             {isAppLoaded && isAuthenticated && (
-              <MainContext.Provider value={{ config, nyx, filters, blockedUsers, theme, refs }}>
+              <MainContext.Provider value={mainContextValue}>
                 <UnreadContextProvider>
                   <NavigationContainer ref={navigationRef} theme={theme}>
                     <NestedBackHandler navigationRef={navigationRef} />

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.7
+- optimalizace re-renderů kořene: memoizace theme a hodnoty MainContext.Provider (useMemo) v App.tsx, zamezení kaskádového přerenderování celé stromové hierarchie a komponent závislých na kontextu při změnách lokálního stavu v kořenu
+
 ## 0.40.6
 - oprava úniků listenerů a chybějících závislostí v useEffect:
   - App.tsx: doplnění prázdného pole závislostí [] do useEffect pro Linking a bezpečné odregistrování subscription.remove() namísto dříve neustálého přeregistrovávání listeneru při každém renderu kořene
