@@ -247,6 +247,9 @@ export class DiscussionView extends Component<Props> {
   }
 
   componentDidUpdate(prevProps: Props) {
+    if (this.context?.theme && this.context.theme !== this.state.theme) {
+      this.setTheme()
+    }
     if (this.props.id && this.props.id !== prevProps.id) {
       this._sessionInitialLastSeenPostId =
         this.props.lastSeenPostId && Number(this.props.lastSeenPostId) > 0
@@ -1396,6 +1399,41 @@ export class DiscussionView extends Component<Props> {
     return actions
   }
 
+  handleDiscussionDetailShow = (discussionId, postId) => this.showPost(discussionId, postId)
+  handleImagesShow = (image, images) => this.showImages(image, images)
+  handlePostDelete = postId => this.onPostDelete(postId)
+  handleReply = (discussionId, postId, username) => this.onReply(discussionId, postId, username)
+  handleRepliesShow = (discussionId, postId) => this.showReplies(discussionId, postId)
+  handlePostRated = updatedPost => this.onPostRated(updatedPost)
+  handleDiceRoll = updatedPost => this.onDiceRollOrPollVote(updatedPost)
+  handlePollVote = updatedPost => this.onDiceRollOrPollVote(updatedPost)
+  handleReminder = (post, isReminder) => this.onReminder(post, isReminder)
+  handleSetLastRead = p => this.onSetLastRead(p)
+  handlePostHeight = (postId, height) => this.onPostHeight(postId, height)
+
+  renderItem = ({ item }) => (
+    <PostComponent
+      key={item.id}
+      post={item}
+      nyx={this.nyx!}
+      isHeaderInteractive={!item.isClubStart}
+      isReply={false}
+      isUnread={!!item.new && !item.isClubStart}
+      isLocalLastRead={this.state.localLastReadPostId === item.id}
+      onDiscussionDetailShow={this.handleDiscussionDetailShow}
+      onImage={this.handleImagesShow}
+      onDelete={this.handlePostDelete}
+      onReply={this.handleReply}
+      onRepliesShow={this.handleRepliesShow}
+      onPostRated={this.handlePostRated}
+      onDiceRoll={this.handleDiceRoll}
+      onPollVote={this.handlePollVote}
+      onReminder={this.handleReminder}
+      onSetLastRead={this.handleSetLastRead}
+      onPostHeight={this.handlePostHeight}
+    />
+  )
+
   render() {
     if (this.props.showStats) {
       return <DiscussionStatsComponent id={this.props.id} />
@@ -1467,10 +1505,14 @@ export class DiscussionView extends Component<Props> {
           key={this.state.listEpoch || 'discussion'}
           ref={r => (this.refScroll = r)}
           data={listData}
-          extraData={this.state}
+          extraData={`${this.state.localLastReadPostId || ''}_${this.state.theme?.isDark ? '1' : '0'}`}
           nestedScrollEnabled={true}
+          removeClippedSubviews={Platform.OS === 'android'}
+          windowSize={7}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
           initialScrollIndex={listEmpty ? undefined : this.state.initialScrollIndex}
-          keyExtractor={item => `${item.uuid}`}
+          keyExtractor={item => `${item.uuid || item.id}`}
           onEndReached={() => this.loadDiscussionBottom()}
           onEndReachedThreshold={0.01}
           refreshControl={
@@ -1521,37 +1563,16 @@ export class DiscussionView extends Component<Props> {
             ) : null
           }
           getItemLayout={(data, index) => {
-            const length = (data && data[index].parsed.height) || 300
+            const length = (data && data[index]?.parsed?.height) || 300
             return {
               length,
-              offset: Math.max(0, ((data && data[index].parsed.offset) || index * 300) - length),
+              offset: Math.max(0, ((data && data[index]?.parsed?.offset) || index * 300) - length),
               index,
             }
           }}
           initialNumToRender={30}
           onScrollToIndexFailed={error => this.onScrollToIndexFailed(error)}
-          renderItem={({ item }) => (
-            <PostComponent
-              key={item.id}
-              post={item}
-              nyx={this.nyx!}
-              isHeaderInteractive={!item.isClubStart}
-              isReply={false}
-              isUnread={!!item.new && !item.isClubStart}
-              isLocalLastRead={this.state.localLastReadPostId === item.id}
-              onDiscussionDetailShow={(discussionId, postId) => this.showPost(discussionId, postId)}
-              onImage={(image, images) => this.showImages(image, images)}
-              onDelete={postId => this.onPostDelete(postId)}
-              onReply={(discussionId, postId, username) => this.onReply(discussionId, postId, username)}
-              onRepliesShow={(discussionId, postId) => this.showReplies(discussionId, postId)}
-              onPostRated={updatedPost => this.onPostRated(updatedPost)}
-              onDiceRoll={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
-              onPollVote={updatedPost => this.onDiceRollOrPollVote(updatedPost)}
-              onReminder={(post, isReminder) => this.onReminder(post, isReminder)}
-              onSetLastRead={p => this.onSetLastRead(p)}
-              onPostHeight={(postId, height) => this.onPostHeight(postId, height)}
-            />
-          )}
+          renderItem={this.renderItem}
         />
         {/*(todo avoid Portal if possible, esp. with TextInput child)*/}
         {/*<Portal>*/}

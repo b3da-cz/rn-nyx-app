@@ -256,7 +256,7 @@ const readStoredJson = async key => {
 
 const clubStorageKey = (id: string | number) => `discussionCache:club:${id}`
 
-const MAX_SAVED_CLUB_MAP_SIZE = 100
+const MAX_SAVED_CLUB_MAP_SIZE = 50
 
 const lastSavedClubMap = new Map<string, any>()
 

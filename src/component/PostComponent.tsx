@@ -24,7 +24,6 @@ import {
   eventFromPost,
   Nyx,
   TOKEN,
-  generateUuidV4,
   isPlaceholderImageSize,
   isPostMarkdownEnabled,
   isTextSelectionEnabled,
@@ -231,7 +230,7 @@ export class PostComponent extends Component<Props> {
     return <VideoTagComponent key={video.id} url={video.link} />
   }
 
-  renderTextNode(text: string, isBold?: boolean, isItalic?: boolean) {
+  renderTextNode(text: string, isBold?: boolean, isItalic?: boolean, keySuffix?: string | number) {
     if (
       this.props.post?.content_raw?.type === 'dice' ||
       this.props.post?.content_raw?.type === 'poll' ||
@@ -240,7 +239,10 @@ export class PostComponent extends Component<Props> {
     ) {
       return
     }
-    const key = generateUuidV4()
+    const key =
+      keySuffix != null
+        ? `tn_${keySuffix}`
+        : `tn_${isBold ? 'b' : ''}_${isItalic ? 'i' : ''}_${text.length}_${text.slice(0, 16)}`
     const shown = `${text.startsWith(': ') ? text.substring(2) : text}${text.endsWith('\n') ? '' : ' '}`
     const query = this.props.searchQuery
     if (isItalic && query && searchMatchRanges(shown, query).length > 0) {
@@ -324,8 +326,8 @@ export class PostComponent extends Component<Props> {
     const { post } = this.props
     const images =
       post.content_raw?.data?.photo_ids?.length > 0 &&
-      post.content_raw?.data?.photo_ids.map(p => ({ id: generateUuidV4(), url: `https://nyx.cz${p}` }))
-    const key = generateUuidV4()
+      post.content_raw?.data?.photo_ids.map((p, idx) => ({ id: `ad_img_${post?.id || ''}_${idx}`, url: `https://nyx.cz${p}` }))
+    const key = `ad_${post?.id || 'ad'}`
     return (
       <AdvertisementComponent
         key={key}
@@ -577,14 +579,14 @@ export class PostComponent extends Component<Props> {
           </View>
         ) : post?.content_raw?.type !== 'advertisement' &&
           blocks.length > 0 &&
-          blocks.map(block => {
+          blocks.map((block, blockIndex) => {
             if (block.isText) {
               return (
                 <Text
                   selectable={isTextSelectionEnabled(this.context.config)}
                   style={{ paddingLeft: 5, paddingRight: formatMarkdown ? 36 : 5, borderWidth: 0, borderColor: 'red' }}
-                  key={generateUuidV4()}>
-                  {block.blocks.map(part => {
+                  key={`tblk_${post?.id || ''}_${blockIndex}`}>
+                  {block.blocks.map((part, partIndex) => {
                     if (part.startsWith(TOKEN.REPLY)) {
                       const reply = replies.filter(l => l.id === part.replace(TOKEN.REPLY, ''))[0]
                       return this.renderReply(reply)
@@ -599,19 +601,21 @@ export class PostComponent extends Component<Props> {
                       return this.renderCodeBlock(codeBlock)
                     } else if (part.startsWith(TOKEN.TEXT_BOLD)) {
                       const textBold = textsBold.filter(c => c.id === part.replace(TOKEN.TEXT_BOLD, ''))[0]
-                      return this.renderTextNode(textBold.text, true)
+                      return this.renderTextNode(textBold?.text, true, false, `b_${partIndex}`)
                     } else if (part.startsWith(TOKEN.TEXT_ITALIC)) {
                       const textItalic = textsItalic.filter(c => c.id === part.replace(TOKEN.TEXT_ITALIC, ''))[0]
-                      return this.renderTextNode(textItalic.text, false, true)
+                      return this.renderTextNode(textItalic?.text, false, true, `i_${partIndex}`)
                     } else if (part?.length > 0 && !part.startsWith('###')) {
-                      return this.renderTextNode(part)
+                      return this.renderTextNode(part, false, false, `p_${partIndex}`)
                     }
                   })}
                 </Text>
               )
             } else {
               return (
-                <View style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'blue' }} key={generateUuidV4()}>
+                <View
+                  style={{ paddingHorizontal: 5, borderWidth: 0, borderColor: 'blue' }}
+                  key={`vblk_${post?.id || ''}_${blockIndex}`}>
                   {block.blocks.map(part => {
                     if (part.startsWith(TOKEN.IMG)) {
                       const img = images.filter(i => i.id === part.replace(TOKEN.IMG, ''))[0]

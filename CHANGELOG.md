@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.40.5
+- optimalizace FlatListu a vykreslování diskuzí: zavedení virtualizace (removeClippedSubviews na Androidu, zmenšení windowSize z 21 na 7 obrazovek, dávkování renderu), zúžení extraData a stabilizace callbacků v renderItem pro zamezení zbytečného přerenderování příspěvků
+- deterministické klíče v PostComponent: nahrazení náhodných UUID klíčů stabilními identifikátory textových i layoutových bloků umožňující hladkou reconciliaci React stromu namísto destrukce a znovuvytváření nativních Text prvků
+- Storage: ořezání dirty-checking paměťové mapy naposledy zapsaných klubů na 50 referencí
+
 ## 0.40.4
 - optimalizace paměti a odstranění postupného zpomalování aplikace (Hermes GC lag): zavedení pevných limitů pro paměťovou cache diskuzí (max 200 příspěvků a 10 stránek na klub s automatickým LRU odmazáváním neaktivních příspěvků a ořezáním mapy klubů v úložišti na 100 položek)
 
