@@ -314,27 +314,36 @@ const TabContainer = ({ navigation }) => {
 export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Props) => {
   routerHandlers.onConfigReload = onConfigReload
   routerHandlers.onFiltersReload = onFiltersReload
+
+  const themeRef = useRef(theme)
+  themeRef.current = theme
+  const nyxRef = useRef(nyx)
+  nyxRef.current = nyx
+  const refsRef = useRef(refs)
+  refsRef.current = refs
+
   useEffect(() => {
     purgeExpiredLlmHistory().catch(() => undefined)
     const sub = subscribeFCM(message => {
-      nyx.api.getContext()
+      nyxRef.current?.api?.getContext()
       switch (message.type) {
         case 'new_mail':
           const navigateToMail = async () => {
-            const mailRoute = refs?.tabState?.routes?.find((r: any) => r.name === 'mailStack')
+            const currentRefs = refsRef.current
+            const mailRoute = currentRefs?.tabState?.routes?.find((r: any) => r.name === 'mailStack')
             const targetKey = mailRoute?.key || 'mailStack'
-            if (refs?.jumpTo) {
-              refs.jumpTo(targetKey)
+            if (currentRefs?.jumpTo) {
+              currentRefs.jumpTo(targetKey)
             }
-            if (refs?.tabNav?.navigate) {
-              refs.tabNav.navigate('mailStack', { screen: 'mail' })
-            } else if (refs?.nav?.navigate) {
-              refs.nav.navigate('mailStack', { screen: 'mail' })
+            if (currentRefs?.tabNav?.navigate) {
+              currentRefs.tabNav.navigate('mailStack', { screen: 'mail' })
+            } else if (currentRefs?.nav?.navigate) {
+              currentRefs.nav.navigate('mailStack', { screen: 'mail' })
             } else if (rootNav?.navigate) {
               rootNav.navigate('mailStack', { screen: 'mail' })
             }
             await wait(200)
-            refs?.MailView?.getLatestMessages()
+            currentRefs?.MailView?.getLatestMessages()
           }
           if (!message.isForegroundMsg) {
             setTimeout(navigateToMail, 300)
@@ -343,7 +352,7 @@ export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Pr
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: rgbToHex(theme.colors.secondary),
+              tintColor: rgbToHex(themeRef.current.colors.secondary),
               icon: 'mail',
               onClick: async () => {
                 await navigateToMail()
@@ -360,7 +369,7 @@ export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Pr
             showNotificationBanner({
               title: message.title,
               body: message.body?.length > 90 ? `${message.body.substr(0, 90)} ...` : message.body,
-              tintColor: rgbToHex(theme.colors.primary),
+              tintColor: rgbToHex(themeRef.current.colors.primary),
               icon: 'corner-down-right',
               onClick: async () => {
                 rootNav.navigate('notificationsStack', { screen: 'notifications' })
@@ -379,7 +388,7 @@ export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Pr
       showNotificationBanner({
         title: 'LLM Asistent odpověděl',
         body: `${task.discussionTitle || 'Diskuze'}: odpověď je připravena v Knihovně`,
-        tintColor: rgbToHex(theme.colors.primary),
+        tintColor: rgbToHex(themeRef.current.colors.primary),
         icon: 'check-circle',
         onClick: async () => {
           if (rootNav && typeof rootNav.navigate === 'function') {
@@ -406,7 +415,7 @@ export const Router = ({ nyx, refs, theme, onConfigReload, onFiltersReload }: Pr
         unsubLlm()
       }
     }
-  })
+  }, [])
 
   return (
     <RootStack.Navigator

@@ -18,6 +18,7 @@ export class UnreadContextProvider extends Component<Props> {
   static contextType = MainContext
   state: State
   nyx?: Nyx
+  contextObserver?: any
   constructor(props) {
     super(props)
     this.state = {
@@ -28,9 +29,19 @@ export class UnreadContextProvider extends Component<Props> {
 
   componentDidMount() {
     this.nyx = this.context.nyx
-    this.nyx!.api.onContextUpdate.subscribe().then(nc => {
-      this.setState({ unreadMessages: nc?.user?.mail_unread || 0, unreadPosts: nc?.user?.notifications_unread || 0 })
-    })
+    if (this.nyx?.api?.onContextUpdate) {
+      this.contextObserver = this.nyx.api.onContextUpdate.subscribe()
+      this.contextObserver.then(nc => {
+        this.setState({ unreadMessages: nc?.user?.mail_unread || 0, unreadPosts: nc?.user?.notifications_unread || 0 })
+      })
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.contextObserver) {
+      this.contextObserver.unsubscribe()
+      this.contextObserver = undefined
+    }
   }
 
   render() {

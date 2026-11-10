@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.40.6
+- oprava úniků listenerů a chybějících závislostí v useEffect:
+  - App.tsx: doplnění prázdného pole závislostí [] do useEffect pro Linking a bezpečné odregistrování subscription.remove() namísto dříve neustálého přeregistrovávání listeneru při každém renderu kořene
+  - Router.tsx: doplnění dependency array [] a stabilních referencí (themeRef, nyxRef, refsRef) pro FCM notifikace a LLM listener, zamezení cyklického rušení a znovuvytváření nativních listenerů
+  - UnreadContext.tsx: správné odhlášení odběru nyx.api.onContextUpdate v componentWillUnmount přes observer.unsubscribe()
+
 ## 0.40.5
 - optimalizace FlatListu a vykreslování diskuzí: zavedení virtualizace (removeClippedSubviews na Androidu, zmenšení windowSize z 21 na 7 obrazovek, dávkování renderu), zúžení extraData a stabilizace callbacků v renderItem pro zamezení zbytečného přerenderování příspěvků
 - deterministické klíče v PostComponent: nahrazení náhodných UUID klíčů stabilními identifikátory textových i layoutových bloků umožňující hladkou reconciliaci React stromu namísto destrukce a znovuvytváření nativních Text prvků

@@ -87,11 +87,11 @@ const App: () => ReactNode = () => {
   const [isShareDialogVisible, setIsShareDialogVisible] = useState(false)
 
   useEffect(() => {
-    Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
     return () => {
-      Linking.removeAllListeners('url')
+      sub.remove()
     }
-  })
+  }, [])
 
   useEffect(() => {
     if (!isAppLoaded || !isAuthenticated) return
