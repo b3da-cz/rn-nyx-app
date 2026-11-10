@@ -409,18 +409,24 @@ export const getBlockSizes = async (
     const screenWidth = layoutScreenWidth(themeBaseFontSize)
     const minPostHeight = Math.round(75 * fontScale)
     let index = 0
+    let cumulativeOffset = 0
     if (posts.length) {
       emitProgress(onProgress, { id: 'layout', done: 0, total: posts.length })
     }
+    const allClearTexts = posts.map(p => (p.parsed?.clearText ? p.parsed.clearText : ' '))
+    const allClearHeights =
+      posts.length > 0
+        ? await rnTextSize.flatHeights({
+            text: allClearTexts,
+            width: screenWidth,
+            allowFontScaling: true,
+            ...fontSpecs,
+          })
+        : []
+
     for (const post of posts) {
-      const textHeights = await rnTextSize.flatHeights({
-        text: [post.parsed.clearText],
-        width: screenWidth,
-        allowFontScaling: true,
-        ...fontSpecs,
-      })
       const request = post.content_raw?.type === 'discussion_request' ? discussionRequestFromPost(post) : null
-      let textHeight = textHeights.reduce((a, b) => a + b)
+      let textHeight = post.parsed?.clearText ? allClearHeights[index] || 0 : 0
       let discussionRequestMeasured = 0
       if (request) {
         textHeight = 0
@@ -559,11 +565,8 @@ export const getBlockSizes = async (
             videoHeight +
             paddingBottom
       post.parsed.imagesHeight = imagesHeight
-      post.parsed.height = height < minPostHeight ? minPostHeight : height
-      post.parsed.offset = posts
-        .filter((_, i) => i <= index)
-        .map(p => p.parsed.height)
-        .reduce((a, b) => a + b)
+      cumulativeOffset += post.parsed.height
+      post.parsed.offset = cumulativeOffset
 
       index++
       emitProgress(onProgress, { id: 'layout', done: index, total: posts.length })

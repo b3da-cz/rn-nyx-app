@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.9
+- zrychlení měření layoutu diskuzí (LayoutHelper.ts): dávkové měření textů příspěvků (rnTextSize.flatHeights) v jediném nativním volání přes bridge pro celou dávku a lineární O(N) výpočet kumulativních offsetů bez zbytečných alokací
+
 ## 0.40.8
 - odstranění zbytečného NetworkProvider (react-native-offline) v App.tsx: eliminace periodických síťových HEAD požadavků na pozadí pro úsporu baterie, dat a systémových prostředků
 
