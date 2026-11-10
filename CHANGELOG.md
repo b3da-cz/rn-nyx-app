@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.40.11
+- oprava zablokování Android BackHandleru po otevření a zavření dialogu docházky na detailu události:
+  - oprava úniku listeneru v `react-native-paper` (`Modal.tsx` patch): `handleBack` již nespotřebovává hardwarové tlačítko zpět, pokud dialog není viditelný nebo renderovaný (`!visibleRef.current || !rendered`); animace `hideModal` již po svém dokončení chybně nespouští `showModal()`; na unmount komponenty je zaveden explicitní úklid odběru přes `isMountedRef`
+  - oprava `EventDetailComponent.tsx`: `AttendeesDialog` ponechává `<Portal><Dialog visible={visible}>` namontovaný pro plynulý zánik animací bez předčasného unmountu
+
 ## 0.40.10
 - oprava ukládání a obnovování výšky layoutu příspěvků z cache v `LayoutHelper.ts`: obnovení přiřazení vypočtené výšky do `post.parsed.height` v `getBlockSizes`, které bylo opomenuto při refaktoringu v 0.40.9; příspěvky se nyní opět správně ukládají do cache a při návratu do diskuze se jejich layout obnoví okamžitě bez nutnosti nového měření
 - zamezení zbytečného opětovného stahování hlaviček velikostí obrázků (`bytes` loader): pokud je `img.byteLength` již známo (z mezipaměti příspěvků), neprovádí se redundantní síťový HTTP HEAD request

@@ -1,8 +1,156 @@
+diff --git a/node_modules/react-native-paper/lib/commonjs/components/Modal.js b/node_modules/react-native-paper/lib/commonjs/components/Modal.js
+index 703d1f1..8934937 100644
+--- a/node_modules/react-native-paper/lib/commonjs/components/Modal.js
++++ b/node_modules/react-native-paper/lib/commonjs/components/Modal.js
+@@ -81,6 +81,7 @@ function Modal(_ref) {
+     testID
+   } = _ref;
+   const visibleRef = React.useRef(visible);
++  const isMountedRef = React.useRef(true);
+   React.useEffect(() => {
+     visibleRef.current = visible;
+   });
+@@ -96,6 +97,10 @@ function Modal(_ref) {
+   }
+ 
+   const handleBack = () => {
++    if (!visibleRef.current || !rendered) {
++      return false;
++    }
++
+     if (dismissable) {
+       hideModal();
+     }
+@@ -123,15 +128,8 @@ function Modal(_ref) {
+   };
+ 
+   const removeListeners = () => {
+-    var _subscription$current2;
+-
+-    if ((_subscription$current2 = subscription.current) !== null && _subscription$current2 !== void 0 && _subscription$current2.remove) {
+-      var _subscription$current3;
+-
+-      (_subscription$current3 = subscription.current) === null || _subscription$current3 === void 0 ? void 0 : _subscription$current3.remove();
+-    } else {
+-      _reactNative.BackHandler.removeEventListener('hardwareBackPress', handleBack);
+-    }
++    subscription.current?.remove();
++    subscription.current = undefined;
+   };
+ 
+   const hideModal = () => {
+@@ -158,9 +156,7 @@ function Modal(_ref) {
+         onDismiss();
+       }
+ 
+-      if (visibleRef.current) {
+-        showModal();
+-      } else {
++      if (isMountedRef.current) {
+         setRendered(false);
+       }
+     });
+@@ -179,7 +175,11 @@ function Modal(_ref) {
+     prevVisible.current = visible;
+   });
+   React.useEffect(() => {
+-    return removeListeners;
++    isMountedRef.current = true;
++    return () => {
++      isMountedRef.current = false;
++      removeListeners();
++    };
+   }, []);
+   if (!rendered) return null;
+   return /*#__PURE__*/React.createElement(_reactNative.Animated.View, {
+diff --git a/node_modules/react-native-paper/lib/module/components/Modal.js b/node_modules/react-native-paper/lib/module/components/Modal.js
+index b815ab6..525d18b 100644
+--- a/node_modules/react-native-paper/lib/module/components/Modal.js
++++ b/node_modules/react-native-paper/lib/module/components/Modal.js
+@@ -61,6 +61,7 @@ function Modal(_ref) {
+     testID
+   } = _ref;
+   const visibleRef = React.useRef(visible);
++  const isMountedRef = React.useRef(true);
+   React.useEffect(() => {
+     visibleRef.current = visible;
+   });
+@@ -76,6 +77,10 @@ function Modal(_ref) {
+   }
+ 
+   const handleBack = () => {
++    if (!visibleRef.current || !rendered) {
++      return false;
++    }
++
+     if (dismissable) {
+       hideModal();
+     }
+@@ -102,15 +107,8 @@ function Modal(_ref) {
+   };
+ 
+   const removeListeners = () => {
+-    var _subscription$current2;
+-
+-    if ((_subscription$current2 = subscription.current) !== null && _subscription$current2 !== void 0 && _subscription$current2.remove) {
+-      var _subscription$current3;
+-
+-      (_subscription$current3 = subscription.current) === null || _subscription$current3 === void 0 ? void 0 : _subscription$current3.remove();
+-    } else {
+-      BackHandler.removeEventListener('hardwareBackPress', handleBack);
+-    }
++    subscription.current?.remove();
++    subscription.current = undefined;
+   };
+ 
+   const hideModal = () => {
+@@ -136,9 +134,7 @@ function Modal(_ref) {
+         onDismiss();
+       }
+ 
+-      if (visibleRef.current) {
+-        showModal();
+-      } else {
++      if (isMountedRef.current) {
+         setRendered(false);
+       }
+     });
+@@ -157,7 +153,11 @@ function Modal(_ref) {
+     prevVisible.current = visible;
+   });
+   React.useEffect(() => {
+-    return removeListeners;
++    isMountedRef.current = true;
++    return () => {
++      isMountedRef.current = false;
++      removeListeners();
++    };
+   }, []);
+   if (!rendered) return null;
+   return /*#__PURE__*/React.createElement(Animated.View, {
 diff --git a/node_modules/react-native-paper/src/components/Modal.tsx b/node_modules/react-native-paper/src/components/Modal.tsx
-index 89734d0..fb53508 100644
+index 89734d0..11f22e1 100644
 --- a/node_modules/react-native-paper/src/components/Modal.tsx
 +++ b/node_modules/react-native-paper/src/components/Modal.tsx
-@@ -156,11 +156,10 @@ function Modal({
+@@ -111,6 +111,7 @@ function Modal({
+   testID,
+ }: Props) {
+   const visibleRef = React.useRef(visible);
++  const isMountedRef = React.useRef(true);
+ 
+   React.useEffect(() => {
+     visibleRef.current = visible;
+@@ -127,6 +128,9 @@ function Modal({
+   }
+ 
+   const handleBack = () => {
++    if (!visibleRef.current || !rendered) {
++      return false;
++    }
+     if (dismissable) {
+       hideModal();
+     }
+@@ -156,11 +160,10 @@ function Modal({
    };
  
    const removeListeners = () => {
@@ -18,6 +166,30 @@ index 89734d0..fb53508 100644
    };
  
    const hideModal = () => {
+@@ -181,9 +184,7 @@ function Modal({
+         onDismiss();
+       }
+ 
+-      if (visibleRef.current) {
+-        showModal();
+-      } else {
++      if (isMountedRef.current) {
+         setRendered(false);
+       }
+     });
+@@ -203,7 +204,11 @@ function Modal({
+   });
+ 
+   React.useEffect(() => {
+-    return removeListeners;
++    isMountedRef.current = true;
++    return () => {
++      isMountedRef.current = false;
++      removeListeners();
++    };
+   }, []);
+ 
+   if (!rendered) return null;
 diff --git a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx b/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
 index 2342881..62f2de1 100644
 --- a/node_modules/react-native-paper/src/components/TouchableRipple/TouchableRipple.native.tsx
