@@ -4,7 +4,6 @@
  */
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { InteractionManager } from 'react-native'
-// import { NetworkConsumer } from 'react-native-offline'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createMaterialTopTabNavigator, MaterialTopTabBar } from '@react-navigation/material-top-tabs'
 import { RNNotificationBanner } from 'react-native-notification-banner'

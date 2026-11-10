@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.8
+- odstranění zbytečného NetworkProvider (react-native-offline) v App.tsx: eliminace periodických síťových HEAD požadavků na pozadí pro úsporu baterie, dat a systémových prostředků
+
 ## 0.40.7
 - optimalizace re-renderů kořene: memoizace theme a hodnoty MainContext.Provider (useMemo) v App.tsx, zamezení kaskádového přerenderování celé stromové hierarchie a komponent závislých na kontextu při změnách lokálního stavu v kořenu
 

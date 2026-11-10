@@ -7,7 +7,6 @@ import type { ReactNode } from 'react'
 import { Linking, LogBox, Platform, StatusBar, ToastAndroid, UIManager, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { NetworkProvider } from 'react-native-offline'
 import { NavigationContainer } from '@react-navigation/native'
 import { Provider as PaperProvider } from 'react-native-paper'
 import RNBootSplash from 'react-native-bootsplash'
@@ -429,7 +428,6 @@ const App: () => ReactNode = () => {
           backgroundColor={theme.colors.background}
           barStyle={theme.dark ? 'light-content' : 'dark-content'}
         />
-        <NetworkProvider pingServerUrl={'https://nyx.cz'}>
         <PaperProvider theme={theme}>
           <ThemeContext.Provider value={theme}>
             {!isAppLoaded && <LoaderComponent theme={theme} />}
@@ -485,7 +483,6 @@ const App: () => ReactNode = () => {
             />
           </ThemeContext.Provider>
         </PaperProvider>
-        </NetworkProvider>
       </SafeAreaView>
     </SafeAreaProvider>
     </GestureHandlerRootView>
