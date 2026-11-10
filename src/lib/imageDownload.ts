@@ -175,6 +175,15 @@ export const formatImageSizeKb = (byteLength?: number | null): ImageSizeLabel | 
 
 const byteLengthByUrl = new Map<string, number | null>()
 
+export const hasCachedImageByteLength = (url?: string | null) =>
+  !!url && byteLengthByUrl.has(url)
+
+export const rememberImageByteLength = (url?: string | null, bytes?: number | null) => {
+  if (url && typeof bytes === 'number' && Number.isFinite(bytes) && bytes > 0) {
+    byteLengthByUrl.set(url, bytes)
+  }
+}
+
 export const IMAGE_BYTE_FETCH_TIMEOUT_MS = 8000
 export const IMAGE_SIZE_TIMEOUT_MS = 4000
 export const IMAGE_TIMEOUT_MIN_MS = 100

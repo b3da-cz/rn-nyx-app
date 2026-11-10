@@ -1,4 +1,9 @@
-import { isPlaceholderImageSize } from './imageDownload'
+import {
+  hasLoadedImageUrl,
+  isPlaceholderImageSize,
+  rememberImageByteLength,
+  shouldSkipImageDownload,
+} from './imageDownload'
 
 export const DISCUSSION_CACHE_LIMIT_DEFAULT = 30
 export const DISCUSSION_CACHE_LIMIT_MAX = 1000
@@ -21,6 +26,7 @@ export type CachedPostRecord = {
   height?: number
   imagesHeight?: number
   images?: CachedImageLayout[]
+  codeBlockHeights?: number[]
 }
 
 export type DiscussionCacheEntry = {
@@ -176,21 +182,45 @@ export const snapshotPostLayout = (post: any): CachedPostRecord => {
       cached: img.cached,
       revealed: img.revealed,
     }))
+  const codeBlockHeights =
+    Array.isArray(parsed?.codeBlocks) && parsed.codeBlocks.some((c: any) => c?.height > 0)
+      ? parsed.codeBlocks.map((c: any) => (typeof c?.height === 'number' && c.height > 0 ? c.height : 0))
+      : undefined
   return {
     post: raw,
     content: raw.content,
     height: parsed?.height,
     imagesHeight: parsed?.imagesHeight,
     images,
+    ...(codeBlockHeights ? { codeBlockHeights } : null),
   }
 }
 
-const imageLayoutReady = (img: any) =>
-  !img?.src ||
-  img.src.includes('youtu') ||
-  (img.width > 0 && img.height > 0 && !isPlaceholderImageSize(img) && !img.skipDownload)
+const imageLayoutReady = (img: any, maxKb?: number | null) => {
+  if (!img?.src || img.src.includes('youtu')) {
+    return true
+  }
+  if (img.width > 0 && img.height > 0 && !isPlaceholderImageSize(img) && !img.skipDownload) {
+    return true
+  }
+  if (
+    img.skipDownload &&
+    !img.revealed &&
+    !img.cached &&
+    !hasLoadedImageUrl(img.src) &&
+    maxKb !== undefined &&
+    shouldSkipImageDownload(img.byteLength, maxKb)
+  ) {
+    return true
+  }
+  return false
+}
 
-export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEntry | null) => {
+export const applyCachedLayouts = (
+  posts: any[] = [],
+  entry?: DiscussionCacheEntry | null,
+  maxKb?: number | null,
+) => {
   if (!entry) {
     return posts
   }
@@ -205,16 +235,20 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
     if (record.content != null && post.content != null && record.content !== post.content) {
       continue
     }
+    const isAdvertisement = post.content_raw?.type === 'advertisement'
     const bySrc = new Map((record.images || []).filter(img => img.src).map(img => [img.src, img]))
     let ready = true
     if (post.parsed.images?.length) {
       post.parsed.images = post.parsed.images.map((img: any) => {
         const hit = bySrc.get(img.src)
         if (!hit) {
-          if (!imageLayoutReady(img)) {
+          if (!isAdvertisement && !imageLayoutReady(img, maxKb)) {
             ready = false
           }
           return img
+        }
+        if (typeof hit.byteLength === 'number' && hit.byteLength > 0) {
+          rememberImageByteLength(img.src, hit.byteLength)
         }
         const next = {
           ...img,
@@ -225,7 +259,7 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
           cached: hit.cached,
           revealed: hit.revealed,
         }
-        if (!imageLayoutReady(next)) {
+        if (!isAdvertisement && !imageLayoutReady(next, maxKb)) {
           ready = false
         }
         return next
@@ -233,6 +267,15 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
     }
     if (!ready) {
       continue
+    }
+    if (
+      Array.isArray(record.codeBlockHeights) &&
+      Array.isArray(post.parsed.codeBlocks) &&
+      record.codeBlockHeights.length === post.parsed.codeBlocks.length
+    ) {
+      post.parsed.codeBlocks = post.parsed.codeBlocks.map((c: any, i: number) =>
+        record.codeBlockHeights![i] > 0 ? { ...c, height: record.codeBlockHeights![i] } : c,
+      )
     }
     post.parsed.height = record.height
     if (record.imagesHeight > 0) {
@@ -242,26 +285,36 @@ export const applyCachedLayouts = (posts: any[] = [], entry?: DiscussionCacheEnt
   return posts
 }
 
+export const syncCachedPosts = (entry: DiscussionCacheEntry, posts: any[] = []): DiscussionCacheEntry => {
+  let changed = false
+  const stored = { ...entry.posts }
+  for (const post of posts) {
+    if (!post || post.isClubStart || post.id == null || !(post.parsed?.height > 0)) {
+      continue
+    }
+    const id = String(post.id)
+    if (!stored[id]) {
+      continue
+    }
+    stored[id] = snapshotPostLayout(post)
+    changed = true
+  }
+  return changed ? { ...entry, posts: stored } : entry
+}
+
 export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, posts: any[] = []): DiscussionCacheEntry => {
   const ids = posts.filter(post => post && !post.isClubStart && post.id != null).map(post => String(post.id))
   const seen = new Set(ids)
   const previous = entry.pages[pageKey] || []
-  const pages = { ...entry.pages, [pageKey]: ids }
-
-  if (pageKey.startsWith('newer:') && ids.length > 0) {
-    const prevLatest = pages.latest || []
-    const combined = [...ids, ...prevLatest.filter(id => !seen.has(id))]
-    combined.sort((a, b) => Number(b) - Number(a))
-    pages.latest = combined.slice(0, 20)
-  } else if (!pages.latest && pageKey !== 'header' && !pageKey.includes('|') && ids.length > 0) {
-    const sorted = [...ids].sort((a, b) => Number(b) - Number(a))
-    pages.latest = sorted.slice(0, 20)
-  }
+  const pages = { ...entry.pages }
+  delete pages[pageKey]
+  pages[pageKey] = ids
 
   const stored = { ...entry.posts }
   // A refreshed page no longer lists these ids, so the posts were deleted.
-  // Drop them everywhere. Posts that only live on other pages stay.
-  const removed = previous.filter(id => !seen.has(id))
+  // Drop them everywhere. Posts that only live on other pages or scrolled past a full 20-post window stay.
+  const minId = ids.length >= 20 ? Math.min(...ids.map(id => Number(id))) : -Infinity
+  const removed = previous.filter(id => !seen.has(id) && !(Number.isFinite(minId) && Number(id) < minId))
   if (removed.length > 0) {
     const gone = new Set(removed)
     removed.forEach(id => {
@@ -274,6 +327,17 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
       }
     })
   }
+
+  if (pageKey.startsWith('newer:') && ids.length > 0) {
+    const prevLatest = pages.latest || []
+    const combined = [...ids, ...prevLatest.filter(id => !seen.has(id))]
+    combined.sort((a, b) => Number(b) - Number(a))
+    pages.latest = combined.slice(0, 20)
+  } else if (!pages.latest && pageKey !== 'header' && pageKey !== 'board' && !pageKey.includes('|') && ids.length > 0) {
+    const sorted = [...ids].sort((a, b) => Number(b) - Number(a))
+    pages.latest = sorted.slice(0, 20)
+  }
+
   posts.forEach(post => {
     if (!post || post.isClubStart || post.id == null) {
       return
@@ -282,7 +346,7 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
   })
 
   // Prune historical pages if they exceed limit
-  const specialPages = ['latest', 'header']
+  const specialPages = ['latest', 'header', 'board']
   const otherPageKeys = Object.keys(pages).filter(k => !specialPages.includes(k))
   const maxOtherPages = Math.max(1, MAX_CACHED_PAGES_PER_CLUB - specialPages.filter(k => pages[k]).length)
   if (otherPageKeys.length > maxOtherPages) {
@@ -292,23 +356,22 @@ export const syncCachedPage = (entry: DiscussionCacheEntry, pageKey: string, pos
     })
   }
 
-  // Prune posts not referenced by any kept page
-  const referencedIds = new Set<string>()
-  Object.values(pages).forEach(idList => {
-    if (Array.isArray(idList)) {
-      idList.forEach(id => referencedIds.add(String(id)))
-    }
-  })
-  Object.keys(stored).forEach(id => {
-    if (!referencedIds.has(id)) {
-      delete stored[id]
-    }
-  })
-
-  // Cap total posts per club if still exceeding limit
+  // Cap total posts per club if exceeding limit while keeping header, board, and current page posts
   const storedIds = Object.keys(stored)
   if (storedIds.length > MAX_CACHED_POSTS_PER_CLUB) {
-    storedIds.sort((a, b) => Number(b) - Number(a))
+    const protectedIds = new Set<string>([
+      ...(pages.header || []),
+      ...(pages.board || []),
+      ...ids,
+    ])
+    storedIds.sort((a, b) => {
+      const aProtected = protectedIds.has(a) ? 1 : 0
+      const bProtected = protectedIds.has(b) ? 1 : 0
+      if (aProtected !== bProtected) {
+        return bProtected - aProtected
+      }
+      return Number(b) - Number(a)
+    })
     const dropIds = new Set(storedIds.slice(MAX_CACHED_POSTS_PER_CLUB))
     dropIds.forEach(id => {
       delete stored[id]

@@ -275,6 +275,11 @@ const pruneLastSavedClubMap = () => {
   }
 }
 
+const rememberSavedClub = (clubId: string, club: any) => {
+  lastSavedClubMap.delete(clubId)
+  lastSavedClubMap.set(clubId, club)
+}
+
 const getCachedClub = async (id: string | number) => {
   const clubId = String(id || '')
   if (!clubId) {
@@ -282,7 +287,7 @@ const getCachedClub = async (id: string | number) => {
   }
   const club = await readStoredJson(clubStorageKey(clubId))
   if (club && typeof club === 'object') {
-    lastSavedClubMap.set(clubId, club)
+    rememberSavedClub(clubId, club)
     pruneLastSavedClubMap()
     return club
   }
@@ -294,7 +299,7 @@ const setCachedClub = async (id: string | number, club: any) => {
   if (!clubId || !club) {
     return
   }
-  lastSavedClubMap.set(clubId, club)
+  rememberSavedClub(clubId, club)
   pruneLastSavedClubMap()
   const key = clubStorageKey(clubId)
   const str = JSON.stringify(club)
@@ -340,7 +345,6 @@ const getDiscussionCache = async () => {
     try {
       const club = await readStoredJson(clubStorageKey(id))
       if (club && typeof club === 'object') {
-        lastSavedClubMap.set(id, club)
         discussions.push(club)
       } else if (item?.openedAt) {
         discussions.push({ id, openedAt: item.openedAt, posts: {}, pages: {} })
@@ -348,6 +352,12 @@ const getDiscussionCache = async () => {
     } catch (e) {
       console.warn(`Failed to read club "${id}" from cache:`, e)
       discussions.push({ id, openedAt: Number(item?.openedAt) || 0, posts: {}, pages: {} })
+    }
+  }
+  for (let i = Math.min(discussions.length, MAX_SAVED_CLUB_MAP_SIZE) - 1; i >= 0; i--) {
+    const club = discussions[i]
+    if (club?.id != null) {
+      rememberSavedClub(String(club.id), club)
     }
   }
   pruneLastSavedClubMap()
@@ -365,12 +375,14 @@ const setDiscussionCache = async cache => {
       })
     }
     const currentIds = new Set<string>()
-    for (const club of discussions) {
+    for (let i = 0; i < discussions.length; i++) {
+      const club = discussions[i]
       if (club && club.id != null) {
         const id = String(club.id)
         currentIds.add(id)
-        if (lastSavedClubMap.get(id) !== club) {
-          lastSavedClubMap.set(id, club)
+        const tracked = lastSavedClubMap.has(id)
+        const shouldWrite = tracked ? lastSavedClubMap.get(id) !== club : !prevIds.has(id) || i === 0
+        if (shouldWrite) {
           const key = clubStorageKey(id)
           const str = JSON.stringify(club)
           if (mmkvInstance) {
@@ -379,6 +391,12 @@ const setDiscussionCache = async cache => {
             await AsyncStorage.setItem(key, str)
           }
         }
+      }
+    }
+    for (let i = Math.min(discussions.length, MAX_SAVED_CLUB_MAP_SIZE) - 1; i >= 0; i--) {
+      const club = discussions[i]
+      if (club?.id != null) {
+        rememberSavedClub(String(club.id), club)
       }
     }
     for (const prevId of prevIds) {

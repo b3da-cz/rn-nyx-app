@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.40.12
+- oprava kompletního ukládání a obnovy cache diskuzí (výšky příspěvků, rozměry obrázků, velikosti souborů a záhlaví):
+  - `LayoutHelper.ts` / `imageDownload.ts`: přeskočení síťového zjišťování velikosti souboru (`fetchImageByteLength`) a emitování loaderu `bytes` i v druhém průchodu `applyImageDownloadPolicy`, pokud je `img.byteLength > 0` již obnoveno z cache; odstranění falešného započítávání ~512 B režie na obrázek při offline selhání nebo paměťovém zásahu
+  - `discussionCache.ts` / `Parser.ts`: předání `imageDownloadMaxKb` do `applyCachedLayouts`, díky čemuž se u příspěvků s přeskočenými obrázky (`skipDownload: true`, `3:2` placeholder) a u inzerátů (`advertisement`) plně obnoví uložená výška příspěvku (`height`, `imagesHeight`, `codeBlockHeights`) bez opakovaného spouštění kroků `cache`, `bytes`, `sizes` a `layout`
+  - `discussionCache.ts`: zachování nacachovaných příspěvků při rotaci klíčů stránek a ochrana příspěvků záhlaví (`header`), nástěnky (`board`) a aktuální stránky při ořezu na `MAX_CACHED_POSTS_PER_CLUB`
+  - `DiscussionView.tsx` / `Storage.ts`: průběžné ukládání upravených výšek příspěvků (`onPostHeight`) a rozbalených obrázků (`revealPostImageNow`) zpět do cache; udržování `lastSavedClubMap` v LRU pořadí pro nejnovější kluby
+
 ## 0.40.11
 - oprava zablokování Android BackHandleru po otevření a zavření dialogu docházky na detailu události:
   - oprava úniku listeneru v `react-native-paper` (`Modal.tsx` patch): `handleBack` již nespotřebovává hardwarové tlačítko zpět, pokud dialog není viditelný nebo renderovaný (`!visibleRef.current || !rendered`); animace `hideModal` již po svém dokončení chybně nespouští `showModal()`; na unmount komponenty je zaveden explicitní úklid odběru přes `isMountedRef`

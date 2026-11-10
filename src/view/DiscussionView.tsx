@@ -29,6 +29,7 @@ import {
   putCachedDiscussion,
   readCachedDiscussion,
   syncCachedPage,
+  syncCachedPosts,
   touchCachedDiscussion,
   updateDiscussionCache,
   filterPostsByAuthor,
@@ -344,11 +345,43 @@ export class DiscussionView extends Component<Props> {
         entry = syncCachedPage(entry, 'header', header)
       }
       if (res?.discussion_common) {
-        entry = { ...entry, common: res.discussion_common }
+        const rawHeader = res.discussion_common.discussion_specific_data?.header
+        const common = Array.isArray(rawHeader)
+          ? {
+              ...res.discussion_common,
+              discussion_specific_data: {
+                ...res.discussion_common.discussion_specific_data,
+                header: rawHeader.map(item => {
+                  if (!item || typeof item !== 'object' || !('parsed' in item)) {
+                    return item
+                  }
+                  const copy = { ...item }
+                  delete copy.parsed
+                  return copy
+                }),
+              },
+            }
+          : res.discussion_common
+        entry = { ...entry, common }
       }
       next = putCachedDiscussion(next, entry)
       return { ...next, discussions: next.discussions.slice(0, limit) }
     })
+  }
+
+  persistPostLayouts(posts?: any[]) {
+    const discussionId = this.state.discussionId ? this.state.discussionId : this.props.id
+    if (!this.discussionCacheOn() || !discussionId || !Array.isArray(posts) || !posts.length) {
+      return
+    }
+    updateDiscussionCache(current => {
+      const entry = findCachedDiscussion(current, discussionId)
+      if (!entry) {
+        return current
+      }
+      const updated = syncCachedPosts(entry, posts)
+      return updated === entry ? current : putCachedDiscussion(current, updated)
+    }).catch(e => console.warn(e))
   }
 
   async reloadDiscussionLatest(andScrollToTop = false) {
@@ -761,7 +794,13 @@ export class DiscussionView extends Component<Props> {
         this.setState(nextState)
         this.onDiscussionFetched(title, uploadedFiles)
       }
-      if (!fromCache) {
+      const hadMissingCachedLayouts =
+        fromCache &&
+        !!cacheEntry &&
+        [...(filteredPosts || []), ...(res?.discussion_common?.discussion_specific_data?.header || [])].some(
+          post => post?.id != null && !(cacheEntry.posts?.[String(post.id)]?.height > 0),
+        )
+      if (!fromCache || hadMissingCachedLayouts) {
         const pageIds = new Set((filteredPosts || []).map(post => String(post.id)))
         const pagePosts = nextPosts.filter(post => pageIds.has(String(post.id)))
         this.saveDiscussionPage(queryParts.discussionId, queryParts.pageKey, res, pagePosts, header).catch(e =>
@@ -921,6 +960,7 @@ export class DiscussionView extends Component<Props> {
       if (Array.isArray(this.state.posts)) {
         this.setState({ posts: this.state.posts.slice() })
       }
+      this.persistPostLayouts([...(this._posts || []), ...(this.state.header || [])])
     }, 50)
   }
 
@@ -1056,6 +1096,9 @@ export class DiscussionView extends Component<Props> {
     const nextPosts = await revealImageInPosts(base, image, themeBaseFontSize)
     if (nextPosts !== base) {
       this.publishPosts(nextPosts)
+    }
+    if (nextPosts !== posts) {
+      this.persistPostLayouts(nextPosts)
     }
   }
 

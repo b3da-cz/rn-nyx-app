@@ -103,6 +103,45 @@ describe('discussion cache', () => {
     expect(fresh[0].parsed.images[0].byteLength).toBe(500000)
   })
 
+  it('reuses cached post height for skipped placeholder images when maxKb still skips download', () => {
+    const entry = syncCachedPage({ id: '9', openedAt: 1, posts: {}, pages: {} }, 'latest', [
+      {
+        id: 1,
+        content: 'post 1',
+        parsed: {
+          height: 260,
+          imagesHeight: 220,
+          images: [{ src: 'https://nyx.cz/skipped.jpg', width: 3, height: 2, skipDownload: true, byteLength: 500000 }],
+        },
+      },
+    ])
+    const under200Kb: any[] = [{ id: 1, content: 'post 1', parsed: { images: [{ src: 'https://nyx.cz/skipped.jpg' }] } }]
+    applyCachedLayouts(under200Kb, entry, 200)
+    expect(under200Kb[0].parsed.height).toBe(260)
+    expect(under200Kb[0].parsed.imagesHeight).toBe(220)
+    expect(under200Kb[0].parsed.images[0].skipDownload).toBe(true)
+    expect(under200Kb[0].parsed.images[0].byteLength).toBe(500000)
+
+    const raisedLimit: any[] = [{ id: 1, content: 'post 1', parsed: { images: [{ src: 'https://nyx.cz/skipped.jpg' }] } }]
+    applyCachedLayouts(raisedLimit, entry, 600)
+    expect(raisedLimit[0].parsed.height).toBeUndefined()
+    expect(raisedLimit[0].parsed.images[0].byteLength).toBe(500000)
+  })
+
+  it('keeps header posts and cached posts when page keys rotate or post count reaches MAX_CACHED_POSTS_PER_CLUB', () => {
+    let entry: any = { id: '5', openedAt: 1, posts: {}, pages: {} }
+    entry = syncCachedPage(entry, 'header', [post(1, 'club header', 140)])
+    for (let p = 0; p < 12; p++) {
+      const fromId = (p + 1) * 20
+      const pagePosts = Array.from({ length: 18 }, (_, i) => post(fromId - i))
+      entry = syncCachedPage(entry, `older:${fromId + 1}`, pagePosts)
+      entry = syncCachedPage(entry, 'header', [post(1, 'club header', 140)])
+    }
+    expect(Object.keys(entry.posts)).toHaveLength(200)
+    expect(entry.posts['1']?.height).toBe(140)
+    expect(entry.pages.header).toEqual(['1'])
+  })
+
   it('keeps history and bookmarks and reports club dates', () => {
     const entry = syncCachedPage({ id: '9', openedAt: 1, posts: {}, pages: {}, common: { discussion: { name_static: 'Klub' } } }, 'latest', [
       { id: 1, content: 'a', inserted_at: '2020-01-02 10:00:00', parsed: { height: 80, images: [] } },

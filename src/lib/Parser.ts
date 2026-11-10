@@ -490,7 +490,7 @@ export const preparePosts = async (
   const distinctPosts = getDistinctPosts(newPosts, oldPosts)
   const parsedPosts = parsePostsContent(distinctPosts)
   if (cacheEntry) {
-    applyCachedLayouts(parsedPosts, cacheEntry)
+    applyCachedLayouts(parsedPosts, cacheEntry, imageDownloadMaxKb)
   }
   if (calculateSizes) {
     const pending = postsNeedingLayout(parsedPosts)

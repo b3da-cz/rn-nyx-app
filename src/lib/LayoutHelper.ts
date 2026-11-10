@@ -9,10 +9,12 @@ import {
   fetchImageByteLength,
   getConfiguredImageFileTimeoutMs,
   getConfiguredImageSizeTimeoutMs,
+  hasCachedImageByteLength,
   hasLoadedImageUrl,
   isImageDownloadOff,
   isImageDownloadUnlimited,
   isPlaceholderImageSize,
+  rememberImageByteLength,
   rememberLoadedImageUrl,
   shouldShowCachedImage,
   shouldSkipImageDownload,
@@ -286,8 +288,11 @@ export const applyImageDownloadPolicy = async (
     }
     const srcs: string[] = []
     for (const post of posts) {
+      if (post.content_raw?.type === 'advertisement') {
+        continue
+      }
       for (const img of post.parsed?.images || []) {
-        if (img.src) {
+        if (img.src && !img.src.includes('youtu')) {
           srcs.push(img.src)
         }
       }
@@ -333,6 +338,15 @@ export const applyImageDownloadPolicy = async (
           nextImages.push(applyImagePlaceholder({ ...img }))
           continue
         }
+        if (typeof img.byteLength === 'number' && img.byteLength > 0) {
+          rememberImageByteLength(img.src, img.byteLength)
+          if (shouldSkipImageDownload(img.byteLength, maxKb)) {
+            nextImages.push(applyImagePlaceholder({ ...img, byteLength: img.byteLength }))
+          } else {
+            nextImages.push({ ...img, skipDownload: false, byteLength: img.byteLength })
+          }
+          continue
+        }
         emitProgress(onProgress, {
           id: 'bytes',
           done: byteDone,
@@ -340,10 +354,13 @@ export const applyImageDownloadPolicy = async (
           detail: img.src,
           networkBytes: byteNetworkBytes,
         })
+        const wasByteLengthCached = hasCachedImageByteLength(img.src)
         const bytes = await fetchImageByteLength(img.src, resolvedFileTimeout)
         byteDone += 1
-        // HEAD request network overhead (headers ~512 bytes)
-        byteNetworkBytes += 512
+        if (!wasByteLengthCached && bytes != null) {
+          // HEAD request network overhead (headers ~512 bytes)
+          byteNetworkBytes += 512
+        }
         emitProgress(onProgress, {
           id: 'bytes',
           done: byteDone,

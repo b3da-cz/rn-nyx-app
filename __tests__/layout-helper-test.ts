@@ -1,6 +1,6 @@
 import { PixelRatio } from 'react-native'
 import rnTextSize from 'react-native-text-size'
-import { assignPostOffsets, getBlockSizes, postsNeedingLayout } from '../src/lib/LayoutHelper'
+import { applyImageDownloadPolicy, assignPostOffsets, getBlockSizes, postsNeedingLayout } from '../src/lib/LayoutHelper'
 
 jest.mock('react-native-text-size', () => ({
   flatHeights: jest.fn(async ({ text, fontSize }) => text.map((t: string) => (t ? t.length * (fontSize || 15) : 0))),
@@ -10,6 +10,31 @@ describe('LayoutHelper getBlockSizes', () => {
   it('keeps posts that already have a height out of the next layout pass', () => {
     const posts = [{ id: 1, parsed: { height: 80 } }, { id: 2, parsed: { height: null } }, { id: 3 }]
     expect(postsNeedingLayout(posts).map(post => post.id)).toEqual([2, 3])
+  })
+
+  it('does not emit bytes progress or overwrite cached byteLength in applyImageDownloadPolicy', async () => {
+    const events: any[] = []
+    const posts = [
+      {
+        id: 1,
+        parsed: {
+          images: [
+            {
+              src: 'https://nyx.cz/files/cached-size.jpg',
+              width: 3,
+              height: 2,
+              byteLength: 450000,
+              skipDownload: true,
+            },
+          ],
+        },
+      },
+    ]
+    await applyImageDownloadPolicy(posts, 200, event => events.push(event))
+    expect(events.filter(e => e.id === 'bytes')).toEqual([])
+    expect(events.filter(e => e.id === 'sizes')).toEqual([])
+    expect(posts[0].parsed.images[0].byteLength).toBe(450000)
+    expect(posts[0].parsed.images[0].skipDownload).toBe(true)
   })
 
   it('recomputes offsets from existing heights', () => {
