@@ -273,6 +273,9 @@ const AttendeesDialog = ({
     metrics: { blocks, fontSizes },
   } = theme
   const mine = (username || '').trim().toLowerCase()
+  if (!visible) {
+    return null
+  }
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss}>

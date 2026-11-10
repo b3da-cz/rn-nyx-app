@@ -12,22 +12,24 @@ export const SpoilerComponent = ({ text }) => {
   const selectable = isTextSelectionEnabled(useContext(MainContext).config)
   return (
     <Text>
-      <Portal>
-        <Dialog visible={isVisible} onDismiss={() => setIsVisible(false)}>
-          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
-            <ScrollView>
-              <Text
-                selectable={selectable}
-                style={{
-                  padding: blocks.large,
-                  fontSize: fontSizes.p,
-                }}>
-                {text}
-              </Text>
-            </ScrollView>
-          </Dialog.ScrollArea>
-        </Dialog>
-      </Portal>
+      {isVisible && (
+        <Portal>
+          <Dialog visible={isVisible} onDismiss={() => setIsVisible(false)}>
+            <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
+              <ScrollView>
+                <Text
+                  selectable={selectable}
+                  style={{
+                    padding: blocks.large,
+                    fontSize: fontSizes.p,
+                  }}>
+                  {text}
+                </Text>
+              </ScrollView>
+            </Dialog.ScrollArea>
+          </Dialog>
+        </Portal>
+      )}
       <Text onPress={() => setIsVisible(true)} style={{ fontSize: fontSizes.p, color: colors.link }}>
         {`SPOILER `}
       </Text>

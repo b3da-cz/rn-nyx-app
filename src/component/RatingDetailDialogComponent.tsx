@@ -26,50 +26,52 @@ export const RatingDetailDialogComponent = ({
   }
   return (
     <View>
-      <Portal>
-        <Dialog visible={isVisible} onDismiss={() => setIsVisible(false)}>
-          <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
-            <ScrollView style={{ marginVertical: 5 }}>
-              {ratingsPositive?.length > 0 && (
-                <View>
-                  <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
-                    <Icon name={'thumbs-up'} size={fontSizes.h1} color={'green'} />
-                    <Text style={{ fontSize: fontSizes.p }}>{ratingsPositive.length}</Text>
+      {isVisible && (
+        <Portal>
+          <Dialog visible={isVisible} onDismiss={() => setIsVisible(false)}>
+            <Dialog.ScrollArea style={{ paddingLeft: 5, paddingRight: 5 }}>
+              <ScrollView style={{ marginVertical: 5 }}>
+                {ratingsPositive?.length > 0 && (
+                  <View>
+                    <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
+                      <Icon name={'thumbs-up'} size={fontSizes.h1} color={'green'} />
+                      <Text style={{ fontSize: fontSizes.p }}>{ratingsPositive.length}</Text>
+                    </View>
+                    {ratingsPositive.map(r => (
+                      <UserRowComponent
+                        key={`${r.username}-${postKey}`}
+                        user={r}
+                        theme={theme}
+                        isPressable={false}
+                        marginBottom={0}
+                        marginTop={blocks.small}
+                      />
+                    ))}
                   </View>
-                  {ratingsPositive.map(r => (
-                    <UserRowComponent
-                      key={`${r.username}-${postKey}`}
-                      user={r}
-                      theme={theme}
-                      isPressable={false}
-                      marginBottom={0}
-                      marginTop={blocks.small}
-                    />
-                  ))}
-                </View>
-              )}
-              {ratingsNegative?.length > 0 && (
-                <View>
-                  <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
-                    <Icon name={'thumbs-down'} size={fontSizes.h1} color={'red'} />
-                    <Text style={{ fontSize: fontSizes.h3 }}>{ratingsNegative.length}</Text>
+                )}
+                {ratingsNegative?.length > 0 && (
+                  <View>
+                    <View style={[Styling.groups.flexRowSpbCentered, { paddingHorizontal: blocks.small }]}>
+                      <Icon name={'thumbs-down'} size={fontSizes.h1} color={'red'} />
+                      <Text style={{ fontSize: fontSizes.h3 }}>{ratingsNegative.length}</Text>
+                    </View>
+                    {ratingsNegative.map(r => (
+                      <UserRowComponent
+                        key={`${r.username}-${postKey}`}
+                        user={r}
+                        theme={theme}
+                        isPressable={false}
+                        marginBottom={0}
+                        marginTop={blocks.small}
+                      />
+                    ))}
                   </View>
-                  {ratingsNegative.map(r => (
-                    <UserRowComponent
-                      key={`${r.username}-${postKey}`}
-                      user={r}
-                      theme={theme}
-                      isPressable={false}
-                      marginBottom={0}
-                      marginTop={blocks.small}
-                    />
-                  ))}
-                </View>
-              )}
-            </ScrollView>
-          </Dialog.ScrollArea>
-        </Dialog>
-      </Portal>
+                )}
+              </ScrollView>
+            </Dialog.ScrollArea>
+          </Dialog>
+        </Portal>
+      )}
       <TouchableRipple disabled={isDisabled} rippleColor={colors.ripple} onPress={() => showRatings()}>
         <Text
           style={{

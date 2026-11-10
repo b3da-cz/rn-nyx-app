@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.40.3
+- optimalizace paměti a odstranění prodlev v diskuzích: podmíněné renderování dialogů přes `<Portal>` (RatingDetailDialogComponent, SpoilerComponent a AttendeesDialog) pouze při jejich aktivním otevření namísto stovek trvale přítomných skrytých overlayů v kořenovém stromu
+
 ## 0.40.2
 - oprava chyby Proton Lumo ("Request rejected by policy" / 403 blocked_by_policy): doplnění `lumo: { client_type: 'frontend' }` do těla požadavků pro streaming i fallback
 
