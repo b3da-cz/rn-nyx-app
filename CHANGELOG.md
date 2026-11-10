@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.40.10
+- oprava ukládání a obnovování výšky layoutu příspěvků z cache v `LayoutHelper.ts`: obnovení přiřazení vypočtené výšky do `post.parsed.height` v `getBlockSizes`, které bylo opomenuto při refaktoringu v 0.40.9; příspěvky se nyní opět správně ukládají do cache a při návratu do diskuze se jejich layout obnoví okamžitě bez nutnosti nového měření
+- zamezení zbytečného opětovného stahování hlaviček velikostí obrázků (`bytes` loader): pokud je `img.byteLength` již známo (z mezipaměti příspěvků), neprovádí se redundantní síťový HTTP HEAD request
+- oprava testu limitu `MAX_CACHED_POSTS_PER_CLUB` v `__tests__/discussion-cache-test.ts`
+
 ## 0.40.9
 - zrychlení měření layoutu diskuzí (LayoutHelper.ts): dávkové měření textů příspěvků (rnTextSize.flatHeights) v jediném nativním volání přes bridge pro celou dávku a lineární O(N) výpočet kumulativních offsetů bez zbytečných alokací
 

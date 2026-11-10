@@ -260,6 +260,9 @@ const imageNeedsByteLength = (img: any, cached: Set<string>, maxKb?: number | nu
   if (!img?.src || img.revealed || img.src.includes('youtu')) {
     return false
   }
+  if (typeof img.byteLength === 'number' && img.byteLength > 0) {
+    return false
+  }
   if (shouldShowCachedImage(cached.has(img.src), maxKb) || isImageDownloadOff(maxKb)) {
     return false
   }
@@ -564,8 +567,10 @@ export const getBlockSizes = async (
             headerSize +
             videoHeight +
             paddingBottom
+      const resolvedHeight = height < minPostHeight ? minPostHeight : height
+      post.parsed.height = resolvedHeight
       post.parsed.imagesHeight = imagesHeight
-      cumulativeOffset += post.parsed.height
+      cumulativeOffset += resolvedHeight
       post.parsed.offset = cumulativeOffset
 
       index++

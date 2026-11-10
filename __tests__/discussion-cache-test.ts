@@ -230,16 +230,25 @@ describe('discussion cache', () => {
 
   it('keeps posts from earlier visits when a later page is saved', () => {
     let entry: any = { id: '5', openedAt: 1, posts: {}, pages: {} }
-    const older = Array.from({ length: 100 }, (_, i) => post(i + 1))
-    const newer = Array.from({ length: 100 }, (_, i) => post(i + 5000))
+    const older = Array.from({ length: 80 }, (_, i) => post(i + 1))
+    const newer = Array.from({ length: 80 }, (_, i) => post(i + 5000))
     entry = syncCachedPage(entry, 'older:101', older)
     entry = syncCachedPage(entry, 'newer:100', newer)
     entry = syncCachedPage(entry, 'older:9001', [post(9000), post(8900)])
-    expect(Object.keys(entry.posts)).toHaveLength(202)
+    expect(Object.keys(entry.posts)).toHaveLength(162)
     expect(entry.posts['1']?.post.id).toBe(1)
-    expect(entry.posts['5099']?.post.id).toBe(5099)
-    expect(entry.pages['older:101']).toHaveLength(100)
-    expect(entry.pages['newer:100']).toHaveLength(100)
+    expect(entry.posts['5079']?.post.id).toBe(5079)
+    expect(entry.pages['older:101']).toHaveLength(80)
+    expect(entry.pages['newer:100']).toHaveLength(80)
+  })
+
+  it('caps total posts per club at MAX_CACHED_POSTS_PER_CLUB', () => {
+    let entry: any = { id: '5', openedAt: 1, posts: {}, pages: {} }
+    const batch1 = Array.from({ length: 150 }, (_, i) => post(i + 1))
+    const batch2 = Array.from({ length: 100 }, (_, i) => post(i + 1000))
+    entry = syncCachedPage(entry, 'page1', batch1)
+    entry = syncCachedPage(entry, 'page2', batch2)
+    expect(Object.keys(entry.posts)).toHaveLength(200)
   })
 
   it('drops a post that disappeared from a page already in the cache', () => {
