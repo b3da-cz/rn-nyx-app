@@ -131,4 +131,4 @@ Thanks to the [contributors](https://github.com/b3da-cz/rn-nyx-app/graphs/contri
 
 NNN is an unofficial client, independent of the operator of Nyx.cz. Accounts and community content are managed by Nyx.cz.
 
-`package.json` declares MIT, but this repository currently contains no standalone project license file. Third-party components retain their own licenses.
+NNN is licensed under the [MIT License](LICENSE). Third-party components retain their own licenses.
